@@ -9,7 +9,7 @@
 ## 📑 Índice
 1. [Arquitectura y Jerarquía del Panel](#1-arquitectura-y-jerarquía-del-panel)
 2. [Canvas & Display (Nivel Base)](#2-canvas--display-nivel-base)
-3. [Módulo Base: Form A, Form B y las 8 Interrelaciones](#3-módulo-base-form-a-form-b-y-las-8-interrelaciones)
+3. [Capas y Módulo Base](#3-capas-y-módulo-base)
 4. [Modifiers Stack: Especificación Detallada de los 10 Principios](#4-modifiers-stack-especificación-detallada-de-los-10-principios)
    - [4.1 Repetition (Retícula Cartesiana Regular)](#41-repetition-retícula-cartesiana-regular)
    - [4.2 Structure (Estructura Rítmica Formal)](#42-structure-estructura-rítmica-formal)
@@ -28,7 +28,7 @@
 
 ## 1. Arquitectura y Jerarquía del Panel
 
-El panel de Studio estructura la generación gráfica en una jerarquía estricta de cuatro niveles operacionales:
+El panel de Studio estructura la generación gráfica en tres niveles. Cada **capa** (hasta 5) es un módulo independiente con su propio estado de modificadores:
 
 ```
 ┌────────────────────────────────────────────────────────┐
@@ -37,20 +37,17 @@ El panel de Studio estructura la generación gráfica en una jerarquía estricta
 └───────────────────────────┬────────────────────────────┘
                             │
 ┌───────────────────────────▼────────────────────────────┐
-│              2. MÓDULO BASE (FORM A + B)               │
-│            (Unidades Geométricas Primarias)            │
+│         2. CAPAS (hasta 5) · MÓDULO BASE POR CAPA       │
+│          (Forma, escala, rotación, offset, color)       │
 └───────────────────────────┬────────────────────────────┘
                             │
 ┌───────────────────────────▼────────────────────────────┐
-│            3. INTERRELACIÓN ESPACIAL/BOOLEANA           │
-│        (8 Relaciones Formales de Wucius Wong)          │
-└───────────────────────────┬────────────────────────────┘
-                            │
-┌───────────────────────────▼────────────────────────────┐
-│              4. MODIFIERS STACK (10 PRINCIPIOS)        │
+│       3. MODIFIERS STACK (por capa, 10 PRINCIPIOS)     │
 │    (Cartesiano vs. Polar, Variación, Ruptura, Espacio) │
 └────────────────────────────────────────────────────────┘
 ```
+
+> **Nota:** el antiguo par *Form A / Form B* y sus 8 interrelaciones (detachment, touching, overlapping, penetration, union, subtraction, intersection, coincidence) fueron reemplazados por el sistema de capas. Se eliminaron del código (`state.interrelation`, `renderModule`, botones pathfinder). Las interrelaciones entre capas están **pendientes de rediseño**.
 
 ---
 
@@ -68,33 +65,19 @@ Controla el soporte físico y los límites del plano gráfico.
 
 ---
 
-## 3. Módulo Base: Form A, Form B y las 8 Interrelaciones
+## 3. Capas y Módulo Base
 
-En la teoría de Wucius Wong, el módulo básico puede ser una figura solitaria o una unidad compuesta por dos formas primarias: **Form A** (forma ancla/primaria) y **Form B** (forma satélite/secundaria).
+Cada capa es un módulo independiente. Se pueden tener hasta 5 capas con visibilidad, orden (drag & drop), forma, color y pipeline de modificadores propios.
 
-### 3.1 Controles de Form A (Módulo Primario)
-* **`shape`**: Morfología base (`circle`, `square`, `triangle`, `hexagon`, `rhombus`, `crescent`, `star4`, `cross`).
-* **`scale / width / height`**: Escala uniforme o dimensiones individuales en píxeles (base típica: 110px).
-* **`rotation`**: Ángulo inicial de orientación (0° a 360° en pasos de 5°).
-* **`offsetX / offsetY`**: Desplazamiento cartesiano relativo al centro de la celda de anclaje (-250px a +250px).
-
-### 3.2 Controles de Form B (Módulo Secundario)
-* **`enabled`** (`boolean`): Activa la presencia del segundo módulo. Si está desactivado, el sistema opera con figura única.
-* **`shape`**, **`scale`**, **`rotation`**, **`offsetX`**, **`offsetY`**: Parámetros análogos a Form A, permitiendo que Form B se traslape, orbite o colisione con Form A.
-
-### 3.3 Las 8 Interrelaciones Espaciales (`interrelation`)
-Regulan el encuentro formal y perimétrico entre Form A y Form B:
-
-1. **Detachment (Distanciamiento):** Ambas figuras coexisten en el espacio sin contacto físico ($\text{Distancia} > R_A + R_B$).
-2. **Touching (Toque):** Los bordes de ambas figuras entran en contacto tangencial en un punto o arista, sin traslape.
-3. **Overlapping (Superposición):** Form B se posa sobre Form A. La figura frontal ocluye a la posterior manteniendo su identidad.
-4. **Penetration (Penetración):** Ambas figuras conservan transparencia aparente; el área compartida se vuelve negativa o revela el fondo del papel.
-5. **Union (Unión / Boolean Unite):** Se combinan en una silueta única continua perdiendo las aristas divisorias internas.
-6. **Subtraction (Sustracción / Minus Front):** La masa de Form B sustrae y recorta físicamente la masa de Form A.
-7. **Intersection (Intersección):** Solo sobrevive la lente o masa común donde ambas figuras coinciden espacialmente.
-8. **Coincidence (Coincidencia):** Ambas figuras comparten el centro exacto pero con diferente escala o rotación (concéntricas).
-
----
+### 3.1 Controles de capa
+* **`shape`**: una de las 15 formas del selector (lista canónica del mockup de Figma, `STUDIO_SHAPE_KEYS` en `js/studio/shapes.js`): `circle`, `square`, `triangle`, `wave`, `horseshoe`, `hexagon`, `line`, `parallelogram`, `hatch`, `crescent`, `teardrop`, `cross`, `digit1`, `digit5`, `digit9`. Los botones y las tarjetas de capa usan iconos Phosphor en peso *fill* (campo `phIcon` de cada forma).
+* **`width / height`**: dimensiones del módulo (base 50).
+* **`rotation`**: ángulo de orientación.
+* **`strokeWidth`**: grosor del trazo.
+* **`offsetX / offsetY`**: desplazamiento relativo al centro.
+* **`drawMode`**: trazo o relleno.
+* **`color`**: color de la forma (hex).
+* **`visible`**: visibilidad de la capa.
 
 ## 4. Modifiers Stack: Especificación Detallada de los 10 Principios
 
@@ -169,15 +152,17 @@ Genera una ilusión de movimiento, velocidad o dimensión mediante una progresi�
   * `rotation`: Los módulos giran sistemáticamente a lo largo de la trayectoria.
   * `scale`: Los módulos aumentan o disminuyen progresivamente de masa.
   * `depth`: Gradación en el plano espacial (ilusión de avance o alejamiento).
-  * `drift`: Desplazamiento progresivo y acumulativo de Form B dentro del módulo.
+  * `drift`: Desplazamiento horizontal progresivo y acumulativo del módulo a lo largo del recorrido.
 * **`pathway`**:
   * `diagonal`: Progresión a lo largo del vector $i + j$.
   * `horizontal`: Progresión por filas de izquierda a derecha.
   * `vertical`: Progresión por columnas de arriba hacia abajo.
   * `concentric`: Progresión radial desde el centro hacia la periferia ($\sqrt{\Delta x^2 + \Delta y^2}$).
-* **`range`**: Rango total de la transición (ej. 15° a 360° en giro, o factor 0.2 a 2.5 en escala).
-* **`steps`** (1 a 4): Cantidad de ciclos o frecuencias completas en el recorrido.
-* **`reverse`** (`boolean`): Invierte el sentido del gradiente.
+* **`range`** (15° a 360°, pasos de 5°): Rango total de la transición. Aplica al atributo `rotation`.
+* **`steps`** (1 a 4): Cantidad de ciclos o frecuencias completas en el recorrido (slider *Cycles*).
+* **`reverse`** (`boolean`): Invierte el sentido del gradiente (*Reverse Gradient Direction*).
+
+**UI (Figma, nodo `5779:2472`):** tags *Attribute* (Rotate, Scale, Depth, Drift), sliders *Range* y *Cycles* con caja de valor, tags *Pathway direction* (Diagonal, Horizontal, Vertical, Concentric) y checkbox de reverse. Estado por capa en `layer.structure.gradation`. En esquema polar, `drift` aún no está implementado.
 
 ---
 
@@ -192,7 +177,7 @@ Introduce una zona de irregularidad donde prevalece una estructura regular previ
 * **`epicenterX / epicenterY`** (10% a 90%): Coordenadas normalizadas del epicentro en el canvas.
 * **`radius`** (50 a 350px): Radio espacial de influencia del evento anómalo.
 * **`intensity`** (10% a 100%): Nivel de mutación aplicada a los módulos intervenidos.
-* **`anomalousShape`**: Silueta discordante que adoptan las formas dentro del epicentro.
+* **`anomalousShape`**: Silueta discordante (una de las 15 formas) que adoptan las formas dentro del epicentro.
 * **`highlightColor`** (`boolean`): Aplica el color de acento de la paleta a los módulos anómalos.
 * **`showReticle`** (`boolean`): Renderiza la mira arquitectónica del epicentro.
 
@@ -266,11 +251,11 @@ Transforma el espacio plano bidimensional en una experiencia volumétrica de pro
 
 ## 5. Matriz de Interrelaciones, Reglas Mecánicas y Precedencias
 
-El motor de Studio implementa el modelo de **Contrato Asistido (Opción B)**, asegurando coherencia visual sin frustración en la interfaz:
+El motor de Studio implementa el modelo de **Contrato Asistido (Opción B)**, aplicado por capa,, asegurando coherencia visual sin frustración en la interfaz:
 
 ```
                            ┌─────────────────────────┐
-                           │      FORM A + B         │  (Autónomo: Siempre activo)
+                           │     CAPA (MÓDULO)       │  (Autónomo: Siempre activo)
                            └────────────┬────────────┘
                                         │
                  ┌──────────────────────┴──────────────────────┐
@@ -312,7 +297,7 @@ El motor de Studio implementa el modelo de **Contrato Asistido (Opción B)**, as
 Para incorporar estos conceptos dentro de [Abstract Studio](https://github.com/dMore88/abstract-studio):
 
 1. **Enriquecer las Difference Layers:**
-   * Utilizar la función booleana de `shapes.js` (`detachment`, `touching`, `overlapping`, `penetration`, `union`, `subtraction`, `intersection`, `coincidence`) para calcular cortes entre figuras primarias y la trama de líneas.
+   * Reutilizar las operaciones booleanas entre figuras (union, subtraction, intersection) cuando se rediseñen las interrelaciones entre capas.
 2. **Curvas de Gradación en la Trama Lineal:**
    * En lugar de una separación lineal idéntica entre líneas, aplicar la lógica de `Gradation` (`steps`, `pathway`, `rotation`, `scale`) para modular la densidad y grosor de trazo en forma de onda.
 3. **Campos Atractores en el Esculpido Automático:**

@@ -42,6 +42,14 @@ export const createDefaultLayerStructure = () => ({
     intensity: 50,
     cellJitter: 0,
     seed: 42
+  },
+  gradation: {
+    enabled: false,
+    type: "rotation", // rotation, scale, depth, drift
+    pathway: "diagonal", // diagonal, horizontal, vertical, concentric
+    range: 180, // degrees of total rotation (rotation type)
+    steps: 1, // cycles (1 to 4)
+    reverse: false
   }
 });
 
@@ -70,12 +78,6 @@ export const defaultStudioState = {
   aspectRatio: "1:1",
   layers: [defaultLayer1, defaultLayer2],
   layerOrder: ["layer-2", "layer-1"],
-  // Primary Module Form A (backward-compatibility reference)
-  formA: defaultLayer1,
-  // Secondary Module Form B (backward-compatibility reference)
-  formB: defaultLayer2,
-  // Interrelation between Form A and B
-  interrelation: "overlapping",
   invertFigureGround: false,
   wireframe: true,
   strokeWeight: 1.2,
@@ -138,7 +140,7 @@ export const defaultStudioState = {
       epicenterY: 0.5, // 0.1 to 0.9
       radius: 160, // 50 to 350
       intensity: 65, // 10 to 100
-      anomalousShape: "triangle_eq",
+      anomalousShape: "triangle",
       highlightColor: true,
       showReticle: true
     },
@@ -146,7 +148,7 @@ export const defaultStudioState = {
       enabled: false,
       dimension: "scale", // scale, shape, direction, tone
       dominanceRatio: 80, // % majority regular (60 to 95)
-      contrastShape: "star4", // shape for shape contrast
+      contrastShape: "cross", // shape for shape contrast
       scaleFactor: 2.2, // scale multiplier for scale contrast
       angle: 45, // clash angle for direction contrast
       highlightContrast: false // highlight minority elements
@@ -588,190 +590,6 @@ export class StudioEngine {
     ctx.restore();
   }
 
-  // Render the base unit form (Module) with interrelation operations
-  renderModule(ctx, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", customScaleA = null, customScaleB = null, shapeOverrideA = null, wireframeOverride = null, isAlternating = false) {
-    const { formA, formB, interrelation } = this.state;
-    const wireframe = wireframeOverride !== null ? wireframeOverride : this.state.wireframe;
-    const shapeA = shapeOverrideA || formA.shape;
-
-    const baseWA = formA.width !== undefined ? formA.width : formA.scale;
-    const baseHA = formA.height !== undefined ? formA.height : formA.scale;
-    const baseWB = formB.width !== undefined ? formB.width : formB.scale;
-    const baseHB = formB.height !== undefined ? formB.height : formB.scale;
-
-    const wA = (customScaleA ? (customScaleA * (baseWA / (formA.scale || 100))) : baseWA) * sizeMultiplier;
-    const hA = (customScaleA ? (customScaleA * (baseHA / (formA.scale || 100))) : baseHA) * sizeMultiplier;
-    const wB = (customScaleB ? (customScaleB * (baseWB / (formB.scale || 100))) : baseWB) * sizeMultiplier;
-    const hB = (customScaleB ? (customScaleB * (baseHB / (formB.scale || 100))) : baseHB) * sizeMultiplier;
-
-    const rA = Math.max(wA, hA);
-    const rB = Math.max(wB, hB);
-    const sxA = rA > 0 ? wA / rA : 1;
-    const syA = rA > 0 ? hA / rA : 1;
-    const sxB = rB > 0 ? wB / rB : 1;
-    const syB = rB > 0 ? hB / rB : 1;
-
-    const ax = (formA.offsetX || 0) * sizeMultiplier;
-    const ay = (formA.offsetY || 0) * sizeMultiplier;
-
-    // Determine actual Form B offset based on interrelation mode
-    let ox = (formB.offsetX !== undefined ? formB.offsetX : 65) * sizeMultiplier;
-    let oy = (formB.offsetY !== undefined ? formB.offsetY : 0) * sizeMultiplier;
-
-    if (interrelation === "touching") {
-      const angle = Math.atan2(oy || 0.0001, ox || 1);
-      const touchDist = (rA + rB) / 2;
-      ox = Math.cos(angle) * touchDist;
-      oy = Math.sin(angle) * touchDist;
-    } else if (interrelation === "coincidence") {
-      ox = ax;
-      oy = ay;
-    }
-
-    const wireframeA = wireframeOverride !== null ? wireframeOverride : (formA.wireframe !== undefined ? formA.wireframe : this.state.wireframe);
-    const wireframeB = wireframeOverride !== null ? wireframeOverride : (formB.wireframe !== undefined ? formB.wireframe : this.state.wireframe);
-
-    const drawFormA = (targetCtx, fg, bg, alt, wire = wireframeA) => {
-      targetCtx.save();
-      targetCtx.translate(ax, ay);
-      targetCtx.rotate((formA.rotation * Math.PI) / 180);
-      targetCtx.scale(sxA, syA);
-      this.drawShape(targetCtx, shapeA, rA, fg, wire, 2, bg, alt);
-      targetCtx.restore();
-    };
-
-    const drawFormB = (targetCtx, fg, bg, alt, wire = wireframeB, isCutout = false) => {
-      targetCtx.save();
-      targetCtx.translate(ox, oy);
-      targetCtx.rotate((formB.rotation * Math.PI) / 180);
-      targetCtx.scale(sxB, syB);
-      this.drawShape(targetCtx, formB.shape, rB, fg, wire, 2, bg, alt, isCutout);
-      targetCtx.restore();
-    };
-
-    // Check layer visibility
-    const isVisibleA = formA.visible !== false;
-    const isVisibleB = formB.enabled && formB.visible !== false;
-
-    if (!isVisibleA && !isVisibleB) {
-      return;
-    }
-    if (isVisibleA && !isVisibleB) {
-      drawFormA(ctx, fgColor, bgColor, isAlternating);
-      return;
-    }
-    if (!isVisibleA && isVisibleB) {
-      drawFormB(ctx, fgColor, bgColor, !isAlternating);
-      return;
-    }
-
-    ctx.save();
-
-    // Determine z-order from layerOrder
-    const layer1OnTop = this.state.layerOrder && this.state.layerOrder[0] === "layer-1";
-
-    // Handling 8 Interrelations
-    switch (interrelation) {
-      case "detachment":
-      case "touching":
-      case "overlapping": {
-        if (layer1OnTop) {
-          drawFormB(ctx, fgColor, bgColor, !isAlternating, wireframeB);
-          if (!wireframeA && interrelation === "overlapping") {
-            drawFormA(ctx, bgColor, bgColor, isAlternating, false, true);
-          }
-          drawFormA(ctx, fgColor, bgColor, isAlternating, wireframeA);
-        } else {
-          drawFormA(ctx, fgColor, bgColor, isAlternating, wireframeA);
-          if (!wireframeB && interrelation === "overlapping") {
-            drawFormB(ctx, bgColor, bgColor, !isAlternating, false, true);
-          }
-          drawFormB(ctx, fgColor, bgColor, !isAlternating, wireframeB);
-        }
-        break;
-      }
-
-      case "union": {
-        drawFormA(ctx, fgColor, bgColor, isAlternating, wireframeA);
-        drawFormB(ctx, fgColor, bgColor, !isAlternating, wireframeB);
-        break;
-      }
-
-      case "subtraction": {
-        const pad = Math.max(rA, rB, Math.abs(ax), Math.abs(ay), Math.abs(ox), Math.abs(oy)) * 4 + 100;
-        const offCanvas = document.createElement("canvas");
-        offCanvas.width = pad;
-        offCanvas.height = pad;
-        const offCtx = offCanvas.getContext("2d");
-        const cx = pad / 2;
-        const cy = pad / 2;
-
-        offCtx.save();
-        offCtx.translate(cx, cy);
-        drawFormA(offCtx, fgColor, null, false, false);
-        offCtx.restore();
-
-        offCtx.save();
-        offCtx.translate(cx, cy);
-        offCtx.globalCompositeOperation = "destination-out";
-        drawFormB(offCtx, fgColor, null, false, false);
-        offCtx.restore();
-
-        ctx.drawImage(offCanvas, -cx, -cy);
-        break;
-      }
-
-      case "intersection": {
-        const pad = Math.max(rA, rB, Math.abs(ax), Math.abs(ay), Math.abs(ox), Math.abs(oy)) * 4 + 100;
-        const offCanvas = document.createElement("canvas");
-        offCanvas.width = pad;
-        offCanvas.height = pad;
-        const offCtx = offCanvas.getContext("2d");
-        const cx = pad / 2;
-        const cy = pad / 2;
-
-        offCtx.save();
-        offCtx.translate(cx, cy);
-        drawFormA(offCtx, fgColor, null, false, false);
-        offCtx.restore();
-
-        offCtx.save();
-        offCtx.translate(cx, cy);
-        offCtx.globalCompositeOperation = "destination-in";
-        drawFormB(offCtx, fgColor, null, false, false);
-        offCtx.restore();
-
-        ctx.drawImage(offCanvas, -cx, -cy);
-        break;
-      }
-
-      case "penetration": {
-        ctx.save();
-        ctx.globalAlpha = 0.65;
-        drawFormA(ctx, fgColor, bgColor, isAlternating);
-        drawFormB(ctx, fgColor, bgColor, !isAlternating);
-        ctx.restore();
-        break;
-      }
-
-      case "coincidence": {
-        drawFormA(ctx, fgColor, bgColor, isAlternating);
-        ctx.save();
-        ctx.globalAlpha = 0.8;
-        drawFormB(ctx, fgColor, bgColor, !isAlternating);
-        ctx.restore();
-        break;
-      }
-
-      default: {
-        drawFormA(ctx, fgColor, bgColor, isAlternating);
-        drawFormB(ctx, fgColor, bgColor, !isAlternating);
-      }
-    }
-
-    ctx.restore();
-  }
-
   // Build the boundary path for a cell in the given grid variation
   buildCellPath(ctx, r, c, rows, cols, cx, cy, cW, cH, rep, startX) {
     ctx.beginPath();
@@ -822,7 +640,7 @@ export class StudioEngine {
     const rep = repConfig || (targetMod?.structure?.repetition) || this.state.modifiers.repetition;
     const struct = (targetMod?.structure?.formalStructure) || this.state.modifiers.structure;
     const sim = (targetMod?.structure?.similarity) || this.state.modifiers.similarity;
-    const grad = this.state.modifiers.gradation;
+    const grad = (targetMod?.structure?.gradation) || this.state.modifiers.gradation;
     const anom = this.state.modifiers.anomaly;
     const contrast = this.state.modifiers.contrast;
     const conc = this.state.modifiers.concentration;
@@ -1122,7 +940,7 @@ export class StudioEngine {
 
           if (anom.type === "focal") {
             if (inZone) {
-              cellShapeA = anom.anomalousShape || "triangle_eq";
+              cellShapeA = anom.anomalousShape || "triangle";
               ctx.rotate((Math.PI / 4) * severity * factor);
               cellScaleMul *= (1 + 0.35 * severity);
               if (anom.highlightColor) cellFg = palette.accent;
@@ -1171,7 +989,7 @@ export class StudioEngine {
               const sFactor = contrast.scaleFactor ?? 2.2;
               cellScaleMul *= sFactor;
             } else if (contrast.dimension === "shape") {
-              cellShapeA = contrast.contrastShape || "star4";
+              cellShapeA = contrast.contrastShape || "cross";
             } else if (contrast.dimension === "direction") {
               const clashAngle = ((contrast.angle ?? 45) * Math.PI) / 180;
               ctx.rotate(clashAngle);
@@ -1187,12 +1005,7 @@ export class StudioEngine {
         const scaleUnit = 1.25 * Math.min(1.0, Math.min(width, height) / 600);
         const cellRatio = Math.min(cW / usableW, cH / usableH);
         const normScale = scaleUnit * cellRatio * cellScaleMul * concScaleMul;
-        const isAlt = (r + c) % 2 === 1;
-        if (targetMod) {
-          this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA);
-        } else {
-          this.renderModule(ctx, normScale, cellFg, cellBg, null, null, cellShapeA, cellWireframe, isAlt);
-        }
+        this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA);
         ctx.restore();
       };
 
@@ -1337,7 +1150,7 @@ export class StudioEngine {
   // Render the polar radiation layout (Radiation)
   renderRadiation(ctx, width, height, palette, marginParam, usableWParam, usableHParam, targetMod = null, radConfig = null) {
     const rad = radConfig || (targetMod?.structure?.radiation) || this.state.modifiers.radiation;
-    const grad = this.state.modifiers.gradation;
+    const grad = (targetMod?.structure?.gradation) || this.state.modifiers.gradation;
     const sim = (targetMod?.structure?.similarity) || this.state.modifiers.similarity;
     const anom = this.state.modifiers.anomaly;
     const contrast = this.state.modifiers.contrast;
@@ -1586,7 +1399,7 @@ export class StudioEngine {
 
             if (anom.type === "focal") {
               if (inZone) {
-                cellShapeA = anom.anomalousShape || "triangle_eq";
+                cellShapeA = anom.anomalousShape || "triangle";
                 ctx.rotate((Math.PI / 4) * severity * factor);
                 cellScaleMul *= (1 + 0.35 * severity);
                 if (anom.highlightColor) cellFg = palette.accent;
@@ -1634,7 +1447,7 @@ export class StudioEngine {
                 const sFactor = contrast.scaleFactor ?? 2.2;
                 cellScaleMul *= sFactor;
               } else if (contrast.dimension === "shape") {
-                cellShapeA = contrast.contrastShape || "star4";
+                cellShapeA = contrast.contrastShape || "cross";
               } else if (contrast.dimension === "direction") {
                 const clashAngle = ((contrast.angle ?? 45) * Math.PI) / 180;
                 ctx.rotate(clashAngle);
@@ -1656,12 +1469,7 @@ export class StudioEngine {
           const growthFactor = 0.75 + (i / rings) * 0.45;
           const radScaleMul = isMultiCenter ? 0.7 : 1.0;
           const normScale = scaleUnit * sectorRatio * growthFactor * radScaleMul * cellScaleMul * concScaleMul;
-          const isAlt = (i + j) % 2 === 1;
-          if (targetMod) {
-            this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA);
-          } else {
-            this.renderModule(ctx, normScale, cellFg, cellBg, null, null, cellShapeA, cellWireframe, isAlt);
-          }
+          this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA);
           ctx.restore();
         }
       }
@@ -1746,10 +1554,7 @@ export class StudioEngine {
     if (Array.isArray(this.state.layers) && this.state.layers.length > 0) {
       return this.state.layers;
     }
-    const list = [];
-    if (this.state.formA) list.push(this.state.formA);
-    if (this.state.formB && this.state.formB.enabled !== false) list.push(this.state.formB);
-    return list;
+    return [];
   }
 
   // Master render method

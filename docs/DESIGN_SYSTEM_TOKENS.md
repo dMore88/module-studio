@@ -60,8 +60,26 @@ Instead of full-height fixed sidebars that occupy canvas space, the interface em
 3. **Center Canvas Viewport:**
    - Centered artboard with zoom HUD pill at bottom center (`[-] [🔍] [+]`).
    - Technical status line at bottom right (`800 × 800 PX • 2 CAPAS • RETINA HiDPI`).
-4. **Right Contextual Floating Inspector:**
-   - Shape selector grid (13 geometric glyphs).
+4. **Contextual Floating Inspector (left of the controls rail):**
+   - Shape selector grid (15 glyphs, Phosphor fill).
    - Sliders (`Ancho`, `Alto`, `Rotación`, `Grosor Trazo`).
    - Mode segment (`Trazo` vs `Relleno`).
    - Color picker with hex input.
+
+---
+
+## 🧩 5. Inspector Control Tokens (Figma: *Web apps / Abstract studio*)
+
+Used by every modifier card (`.ds-*` classes in `css/studio-pro.css`).
+
+| Element | Spec |
+| :--- | :--- |
+| Card | 400px wide, 24px padding, 20px radius, 16px gap, shadow `0 10px 20px rgba(15,38,72,.15), 0 3px 6px rgba(15,38,72,.1)` |
+| Title | Inter 14px, `#787b94`; layer badge `#e1e2eb`, Inter 12px 600 |
+| Switch | 40×24, 99999px radius; on = `#282a36` |
+| Overline label | Inter 12px 600, uppercase, tracking .24px, `#63657b` |
+| Tag | 24px high, 12px x-padding, pill; active = `#282a36` bg / `#eeeef4` text |
+| Slider | 2px track `#1d1d25`, 16px thumb (`assets/slider-thumb.svg`) |
+| Value box | 62×31, `#f0f0f2` bg, 1px `#292932`, 7px radius, Roboto Mono 15px |
+| Toggle item | Inter 16px label + 24×24 checkbox, 8px radius, border `#9ea1b8` |
+| Icons | Phosphor: regular for UI controls, fill for canvas shapes |

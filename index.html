@@ -17,7 +17,7 @@
             dark: '#18181f'
           },
           fontFamily: {
-            sans: ['Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif],
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
             mono: ['JetBrains Mono', 'monospace'],
             display: ['Space Grotesk', 'sans-serif']
           }
@@ -26,8 +26,9 @@
     }
   </script>
 
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Phosphor Icons: regular = general UI, fill = canvas shapes -->
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
 
   <!-- Module Studio Pro Stylesheet -->
   <link rel="stylesheet" href="css/studio-pro.css">
@@ -92,22 +93,22 @@
     <div class="flex items-center gap-2">
       <button type="button" id="btn-random-preset" class="header-pill-btn" title="Generate Random Parameters">
         <span>Random</span>
-        <i data-lucide="wand-2" class="w-3.5 h-3.5 text-zinc-600"></i>
+        <i class="ph ph-magic-wand text-[14px] text-zinc-600"></i>
       </button>
 
       <button type="button" id="btn-open-config" class="header-pill-btn" title="Studio Configuration">
         <span>Config</span>
-        <i data-lucide="settings" class="w-3.5 h-3.5 text-zinc-600"></i>
+        <i class="ph ph-gear text-[14px] text-zinc-600"></i>
       </button>
 
       <button type="button" id="btn-copy-svg-code" class="header-pill-btn" title="Copy Vector SVG to Clipboard">
         <span>Copy SVG</span>
-        <i data-lucide="copy" class="w-3.5 h-3.5 text-zinc-600"></i>
+        <i class="ph ph-copy text-[14px] text-zinc-600"></i>
       </button>
 
       <button type="button" id="btn-download-svg" class="header-pill-btn font-semibold" title="Download SVG File">
         <span>Download SVG</span>
-        <i data-lucide="download" class="w-3.5 h-3.5 text-zinc-700"></i>
+        <i class="ph ph-download-simple text-[14px] text-zinc-700"></i>
       </button>
     </div>
   </header>
@@ -125,7 +126,7 @@
         </div>
         <button type="button" id="btn-add-pattern" class="header-pill-btn py-1 px-2.5 text-[11px] gap-1 shadow-sm">
           <span>Add pattern</span>
-          <i data-lucide="plus" class="w-3 h-3 text-zinc-600"></i>
+          <i class="ph ph-plus text-[12px] text-zinc-600"></i>
         </button>
       </div>
 
@@ -158,7 +159,7 @@
             <span id="active-layer-indicator-badge" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#18181f] text-white">Layer 2</span>
           </div>
           <button type="button" class="close-flyout-btn" title="Close Panel">
-            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            <i class="ph ph-x text-[14px]"></i>
           </button>
         </div>
 
@@ -166,64 +167,23 @@
         <div>
           <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-2">SHAPE</div>
           
-          <!-- 15 Shape Glyphs Grid (Exact 3 Rows from Reference 1) -->
-          <div class="space-y-2">
-            <!-- Row 1 (7 shapes) -->
-            <div class="flex items-center justify-between gap-1">
-              <button type="button" class="shape-circle-btn active" data-shape="circle" title="Circle">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/></svg>
-              </button>
-              <button type="button" class="shape-circle-btn" data-shape="square" title="Square">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>
-              </button>
-              <button type="button" class="shape-circle-btn" data-shape="triangle" title="Triangle">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 4 20 20 4 20"/></svg>
-              </button>
-              <button type="button" class="shape-circle-btn" data-shape="wave" title="Sine Wave">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 12c3-4 6-4 9 0s6 4 9 0"/></svg>
-              </button>
-              <button type="button" class="shape-circle-btn" data-shape="horseshoe" title="Horseshoe">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 5v7a5 5 0 0 0 10 0V5"/></svg>
-              </button>
-              <button type="button" class="shape-circle-btn" data-shape="hexagon" title="Hexagon">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 3 20 7.5 20 16.5 12 21 4 16.5 4 7.5"/></svg>
-              </button>
-              <button type="button" class="shape-circle-btn" data-shape="line" title="Line">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="12" x2="21" y2="12"/></svg>
-              </button>
-            </div>
-
-            <!-- Row 2 (7 shapes) -->
-            <div class="flex items-center justify-between gap-1">
-              <button type="button" class="shape-circle-btn" data-shape="rhombus" title="Rhombus">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 3 21 12 12 21 3 12"/></svg>
-              </button>
-              <button type="button" class="shape-circle-btn" data-shape="hatch" title="Diagonal Hatch">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="20" x2="20" y2="4"/><line x1="4" y1="13" x2="13" y2="4"/><line x1="11" y1="20" x2="20" y2="11"/></svg>
-              </button>
-              <button type="button" class="shape-circle-btn" data-shape="crescent" title="Crescent">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 4a8 8 0 1 0 8 8c0-.4-.04-.8-.1-1.2A5 5 0 0 1 13 4z"/></svg>
-              </button>
-              <button type="button" class="shape-circle-btn" data-shape="teardrop" title="Teardrop">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3C8 8 5 12 5 15a7 7 0 0 0 14 0c0-3-3-7-7-12z"/><line x1="8" y1="15" x2="16" y2="15"/></svg>
-              </button>
-              <button type="button" class="shape-circle-btn" data-shape="cross" title="Cross">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              </button>
-              <button type="button" class="shape-circle-btn" data-shape="digit1" title="Number 1">
-                <span>1</span>
-              </button>
-              <button type="button" class="shape-circle-btn" data-shape="digit5" title="Number 5">
-                <span>5</span>
-              </button>
-            </div>
-
-            <!-- Row 3 (1 shape) -->
-            <div class="flex items-center gap-1">
-              <button type="button" class="shape-circle-btn" data-shape="digit9" title="Number 9">
-                <span>9</span>
-              </button>
-            </div>
+          <!-- 15 shape glyphs (Figma shape grid). Phosphor fill icons. -->
+          <div class="shape-grid">
+            <button type="button" class="shape-circle-btn active" data-shape="circle" title="Circle"><i class="ph-fill ph-circle text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="square" title="Square"><i class="ph-fill ph-square text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="triangle" title="Triangle"><i class="ph-fill ph-triangle text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="wave" title="Sine Wave"><i class="ph-fill ph-wave-sine text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="horseshoe" title="Horseshoe"><i class="ph-fill ph-circle-notch text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="hexagon" title="Hexagon"><i class="ph-fill ph-hexagon text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="line" title="Line"><i class="ph-fill ph-minus text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="parallelogram" title="Parallelogram"><i class="ph-fill ph-parallelogram text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="hatch" title="Diagonal Hatch"><i class="ph-fill ph-line-segments text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="crescent" title="Crescent"><i class="ph-fill ph-moon text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="teardrop" title="Teardrop"><i class="ph-fill ph-drop text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="cross" title="Cross"><i class="ph-fill ph-plus text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="digit1" title="Number 1"><i class="ph-fill ph-number-one text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="digit5" title="Number 5"><i class="ph-fill ph-number-five text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="digit9" title="Number 9"><i class="ph-fill ph-number-nine text-[16px]"></i></button>
           </div>
         </div>
 
@@ -320,7 +280,7 @@
               <span class="switch-slider"></span>
             </label>
             <button type="button" class="close-flyout-btn" title="Close Panel">
-              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              <i class="ph ph-x text-[14px]"></i>
             </button>
           </div>
         </div>
@@ -454,14 +414,14 @@
               <span class="switch-slider"></span>
             </label>
             <button type="button" class="close-flyout-btn" title="Close Panel">
-              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              <i class="ph ph-x text-[14px]"></i>
             </button>
           </div>
         </div>
 
         <!-- Warning Alert Banner: Appears dynamically only when Radiation is active in Layout structure -->
         <div id="warning-structure-radiation" class="warning-alert-box hidden">
-          <i data-lucide="alert-triangle" class="w-4 h-4 text-[#d97706] shrink-0 mt-0.5"></i>
+          <i class="ph ph-warning text-[16px] text-[#d97706] shrink-0 mt-0.5"></i>
           <span>This control cannot be used when Radiation is active in Layout structure control.</span>
         </div>
 
@@ -513,14 +473,14 @@
               <span class="switch-slider"></span>
             </label>
             <button type="button" class="close-flyout-btn" title="Close Panel">
-              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              <i class="ph ph-x text-[14px]"></i>
             </button>
           </div>
         </div>
 
         <!-- Dependency Warning Banner: Shown only when Similarity is ON but Layout Structure is OFF -->
         <div id="warning-similarity-grid" class="warning-alert-box hidden">
-          <i data-lucide="alert-triangle" class="w-4 h-4 text-[#d97706] shrink-0 mt-0.5"></i>
+          <i class="ph ph-warning text-[16px] text-[#d97706] shrink-0 mt-0.5"></i>
           <span>Requires Repetition or Radiation in Layout structure to display across a population of units.</span>
         </div>
 
@@ -559,47 +519,71 @@
       </div>
 
       <!-- ===================================================================
-           TAB 4: GRADATION
+           TAB 5: GRADATION (Figma: Web apps / Abstract studio, node 5779:2472)
+           Attribute, Range, Cycles, Pathway direction, Reverse
            =================================================================== -->
-      <div id="card-gradation" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="gradation">
-        <div class="modifier-header">
-          <div class="flex items-center gap-2">
-            <i data-lucide="trending-up" class="w-3.5 h-3.5 text-zinc-600"></i>
-            <span class="font-semibold text-xs text-[#121317]">Gradation</span>
+      <div id="card-gradation" class="flyout-tab-content ds-card hidden" data-flyout-tab="gradation">
+        <div class="ds-card-header">
+          <div class="ds-card-title">
+            <span class="ds-card-title-text">Gradation</span>
+            <span id="badge-gradation-layer" class="ds-badge">Layer 1</span>
           </div>
-          <div class="flex items-center gap-2">
-            <label class="switch">
-              <input type="checkbox" id="toggle-mod-gradation">
-              <span class="switch-slider"></span>
-            </label>
-            <button type="button" class="close-flyout-btn" title="Close Panel">
-              <i data-lucide="x" class="w-3.5 h-3.5"></i>
-            </button>
+          <label class="ds-switch" title="Enable / Disable Gradation">
+            <input type="checkbox" id="toggle-gradation-active">
+            <span class="ds-switch-track"></span>
+          </label>
+          <button type="button" class="close-flyout-btn" title="Close Panel">
+            <i class="ph ph-x text-[14px]"></i>
+          </button>
+        </div>
+
+        <!-- Dependency banner: Gradation ON but no Repetition / Radiation in this layer -->
+        <div id="warning-gradation-grid" class="warning-alert-box hidden">
+          <i class="ph ph-warning text-[16px] text-[#d97706] shrink-0 mt-0.5"></i>
+          <span>Requires Repetition or Radiation in Layout structure to display across a population of units.</span>
+        </div>
+
+        <div class="ds-field">
+          <div class="ds-label">Attribute</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-grad-type="rotation">Rotate</button>
+            <button type="button" class="ds-tag" data-grad-type="scale">Scale</button>
+            <button type="button" class="ds-tag" data-grad-type="depth">Depth</button>
+            <button type="button" class="ds-tag" data-grad-type="drift">Drift</button>
           </div>
         </div>
-        <div class="modifier-body space-y-2">
-          <div class="grid grid-cols-3 gap-1">
-            <button type="button" class="tool-btn active text-[10px]" data-grad-mode="size">Size</button>
-            <button type="button" class="tool-btn text-[10px]" data-grad-mode="rotation">Rotational</button>
-            <button type="button" class="tool-btn text-[10px]" data-grad-mode="position">Position</button>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
-                <span>Steps</span>
-                <input type="number" id="num-grad-steps" class="scrub-input w-10" value="6" min="3" max="16">
-              </div>
-              <input type="range" id="input-grad-steps" min="3" max="16" value="6">
+
+        <div class="ds-row">
+          <div class="ds-field">
+            <div class="ds-label">Range</div>
+            <div class="ds-slider">
+              <input type="range" id="input-grad-range" min="15" max="360" step="5" value="180">
+              <input type="text" id="num-grad-range" class="ds-value" value="180º" inputmode="numeric">
             </div>
-            <div>
-              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
-                <span>Rate</span>
-                <input type="number" id="num-grad-rate" class="scrub-input w-12" value="1.2" min="0.4" max="2.5" step="0.1">
-              </div>
-              <input type="range" id="input-grad-rate" min="0.4" max="2.5" step="0.1" value="1.2">
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Cycles</div>
+            <div class="ds-slider">
+              <input type="range" id="input-grad-steps" min="1" max="4" step="1" value="1">
+              <input type="text" id="num-grad-steps" class="ds-value" value="1" inputmode="numeric">
             </div>
           </div>
         </div>
+
+        <div class="ds-field">
+          <div class="ds-label">Pathway direction</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-grad-pathway="diagonal">Diagonal</button>
+            <button type="button" class="ds-tag" data-grad-pathway="horizontal">Horizontal</button>
+            <button type="button" class="ds-tag" data-grad-pathway="vertical">Vertical</button>
+            <button type="button" class="ds-tag" data-grad-pathway="concentric">Concentric</button>
+          </div>
+        </div>
+
+        <label class="ds-toggle-item">
+          <span class="ds-toggle-label">Reverse Gradient Direction</span>
+          <input type="checkbox" id="toggle-grad-reverse" class="ds-checkbox">
+        </label>
       </div>
 
       <!-- ===================================================================
@@ -608,7 +592,7 @@
       <div id="card-anomaly" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="anomaly">
         <div class="modifier-header">
           <div class="flex items-center gap-2">
-            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-zinc-600"></i>
+            <i class="ph ph-sparkle text-[14px] text-zinc-600"></i>
             <span class="font-semibold text-xs text-[#121317]">Anomaly</span>
           </div>
           <div class="flex items-center gap-2">
@@ -617,7 +601,7 @@
               <span class="switch-slider"></span>
             </label>
             <button type="button" class="close-flyout-btn" title="Close Panel">
-              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              <i class="ph ph-x text-[14px]"></i>
             </button>
           </div>
         </div>
@@ -652,7 +636,7 @@
       <div id="card-contrast" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="contrast">
         <div class="modifier-header">
           <div class="flex items-center gap-2">
-            <i data-lucide="contrast" class="w-3.5 h-3.5 text-zinc-600"></i>
+            <i class="ph ph-circle-half text-[14px] text-zinc-600"></i>
             <span class="font-semibold text-xs text-[#121317]">Contrast</span>
           </div>
           <div class="flex items-center gap-2">
@@ -661,7 +645,7 @@
               <span class="switch-slider"></span>
             </label>
             <button type="button" class="close-flyout-btn" title="Close Panel">
-              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              <i class="ph ph-x text-[14px]"></i>
             </button>
           </div>
         </div>
@@ -696,7 +680,7 @@
       <div id="card-concentration" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="concentration">
         <div class="modifier-header">
           <div class="flex items-center gap-2">
-            <i data-lucide="target" class="w-3.5 h-3.5 text-zinc-600"></i>
+            <i class="ph ph-target text-[14px] text-zinc-600"></i>
             <span class="font-semibold text-xs text-[#121317]">Concentration</span>
           </div>
           <div class="flex items-center gap-2">
@@ -705,7 +689,7 @@
               <span class="switch-slider"></span>
             </label>
             <button type="button" class="close-flyout-btn" title="Close Panel">
-              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              <i class="ph ph-x text-[14px]"></i>
             </button>
           </div>
         </div>
@@ -741,7 +725,7 @@
       <div id="card-texture" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="texture">
         <div class="modifier-header">
           <div class="flex items-center gap-2">
-            <i data-lucide="hash" class="w-3.5 h-3.5 text-zinc-600"></i>
+            <i class="ph ph-hash text-[14px] text-zinc-600"></i>
             <span class="font-semibold text-xs text-[#121317]">Texture</span>
           </div>
           <div class="flex items-center gap-2">
@@ -750,7 +734,7 @@
               <span class="switch-slider"></span>
             </label>
             <button type="button" class="close-flyout-btn" title="Close Panel">
-              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              <i class="ph ph-x text-[14px]"></i>
             </button>
           </div>
         </div>
@@ -786,7 +770,7 @@
       <div id="card-space" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="space">
         <div class="modifier-header">
           <div class="flex items-center gap-2">
-            <i data-lucide="box" class="w-3.5 h-3.5 text-zinc-600"></i>
+            <i class="ph ph-cube text-[14px] text-zinc-600"></i>
             <span class="font-semibold text-xs text-[#121317]">Space & Depth</span>
           </div>
           <div class="flex items-center gap-2">
@@ -795,7 +779,7 @@
               <span class="switch-slider"></span>
             </label>
             <button type="button" class="close-flyout-btn" title="Close Panel">
-              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              <i class="ph ph-x text-[14px]"></i>
             </button>
           </div>
         </div>
@@ -830,34 +814,34 @@
     <!-- FLOATING RIGHT CONTROLS RAIL (Vertical Black Circular Buttons Dock) -->
     <nav id="controls-rail" class="controls-rail z-35 pointer-events-auto select-none" aria-label="Controls Rail">
       <button type="button" class="rail-btn active" data-rail-tab="module" title="Module">
-        <i data-lucide="shapes" class="w-4 h-4"></i>
+        <i class="ph ph-shapes text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="layout" title="Layout Structure">
-        <i data-lucide="layout-template" class="w-4 h-4"></i>
+        <i class="ph ph-layout text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="structure" title="Structure">
-        <i data-lucide="layout-grid" class="w-4 h-4"></i>
+        <i class="ph ph-squares-four text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="similarity" title="Similarity">
-        <i data-lucide="copy" class="w-4 h-4"></i>
+        <i class="ph ph-copy text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="gradation" title="Gradation">
-        <i data-lucide="trending-up" class="w-4 h-4"></i>
+        <i class="ph ph-gradient text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="anomaly" title="Anomaly">
-        <i data-lucide="sparkles" class="w-4 h-4"></i>
+        <i class="ph ph-sparkle text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="contrast" title="Contrast">
-        <i data-lucide="contrast" class="w-4 h-4"></i>
+        <i class="ph ph-circle-half text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="concentration" title="Concentration">
-        <i data-lucide="target" class="w-4 h-4"></i>
+        <i class="ph ph-target text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="texture" title="Texture">
-        <i data-lucide="hash" class="w-4 h-4"></i>
+        <i class="ph ph-hash text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="space" title="Space & Depth">
-        <i data-lucide="box" class="w-4 h-4"></i>
+        <i class="ph ph-cube text-[16px]"></i>
       </button>
     </nav>
 

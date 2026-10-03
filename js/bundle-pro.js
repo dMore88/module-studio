@@ -167,12 +167,12 @@ const CanvasUtils = {
 };
 
 
-  const STUDIO_SHAPE_KEYS = [
-  "circle", "square", "triangle_eq", "triangle_right", "rhombus", "arrow_up", "hexagon",
-  "star4", "teardrop", "letter_a", "letter_h", "letter_z", "cross"
+  // The 15 shapes available in the studio (matches the Figma shape grid).
+// `phIcon` is the Phosphor icon name, rendered with the fill weight (`ph-fill ph-<name>`).
+const STUDIO_SHAPE_KEYS = [
+  "circle", "square", "triangle", "wave", "horseshoe", "hexagon", "line", "parallelogram", "hatch", "crescent", "teardrop", "cross", "digit1", "digit5", "digit9"
 ];
 const Shapes = {
-  // 1. Pure Geometrics
   circle: {
     id: "circle",
     name: "Circle",
@@ -187,7 +187,7 @@ const Shapes = {
       const r = size / 2;
       return `<circle cx="0" cy="0" r="${r}" />`;
     },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><circle cx="0" cy="0" r="14" fill="currentColor"/></svg>`
+    phIcon: "circle"
   },
 
   square: {
@@ -204,146 +204,67 @@ const Shapes = {
       const s = size;
       return `<rect x="${-s/2}" y="${-s/2}" width="${s}" height="${s}" />`;
     },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><rect x="-14" y="-14" width="28" height="28" fill="currentColor"/></svg>`
+    phIcon: "square"
   },
 
-  rect: {
-    id: "rect",
-    name: "Rectangle",
+  triangle: {
+    id: "triangle",
+    name: "Triangle",
     category: "geometric",
     draw(ctx, size) {
-      const w = size * 0.6;
-      const h = size;
-      ctx.beginPath();
-      ctx.rect(-w / 2, -h / 2, w, h);
-      ctx.closePath();
-    },
-    svgPath(size) {
-      const w = size * 0.6;
-      const h = size;
-      return `<rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" />`;
-    },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><rect x="-9" y="-15" width="18" height="30" fill="currentColor"/></svg>`
-  },
-
-  triangle_eq: {
-    id: "triangle_eq",
-    name: "Equilateral Triangle",
-    category: "geometric",
-    draw(ctx, size) {
-      const r = size * 0.58;
+      const r = size * 0.55;
       ctx.beginPath();
       ctx.moveTo(0, -r);
-      ctx.lineTo(r * Math.cos(Math.PI / 6), r * Math.sin(Math.PI / 6));
-      ctx.lineTo(-r * Math.cos(Math.PI / 6), r * Math.sin(Math.PI / 6));
+      ctx.lineTo(r * 0.866, r * 0.5);
+      ctx.lineTo(-r * 0.866, r * 0.5);
       ctx.closePath();
     },
     svgPath(size) {
-      const r = size * 0.58;
-      const x1 = 0, y1 = -r;
-      const x2 = r * Math.cos(Math.PI / 6), y2 = r * Math.sin(Math.PI / 6);
-      const x3 = -r * Math.cos(Math.PI / 6), y3 = r * Math.sin(Math.PI / 6);
-      return `<polygon points="${x1},${y1} ${x2},${y2} ${x3},${y3}" />`;
+      const r = size * 0.55;
+      return `<polygon points="0,${-r} ${r*0.866},${r*0.5} ${-r*0.866},${r*0.5}" />`;
     },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><polygon points="0,-15 14,12 -14,12" fill="currentColor"/></svg>`
+    phIcon: "triangle"
   },
 
-  triangle_right: {
-    id: "triangle_right",
-    name: "Right Triangle",
-    category: "geometric",
+  wave: {
+    id: "wave",
+    name: "Sine Wave",
+    category: "curved",
     draw(ctx, size) {
-      const s = size * 0.5;
+      const w = size * 0.85;
+      const a = size * 0.25;
       ctx.beginPath();
-      ctx.moveTo(-s, -s);
-      ctx.lineTo(s, s);
-      ctx.lineTo(-s, s);
-      ctx.closePath();
+      ctx.moveTo(-w / 2, 0);
+      ctx.bezierCurveTo(-w / 4, -a, -w / 4, -a, 0, 0);
+      ctx.bezierCurveTo(w / 4, a, w / 4, a, w / 2, 0);
     },
     svgPath(size) {
-      const s = size * 0.5;
-      return `<polygon points="${-s},${-s} ${s},${s} ${-s},${s}" />`;
+      const w = size * 0.85;
+      const a = size * 0.25;
+      return `<path d="M ${-w/2} 0 C ${-w/4} ${-a}, ${-w/4} ${-a}, 0 0 C ${w/4} ${a}, ${w/4} ${a}, ${w/2} 0" fill="none" stroke="currentColor" stroke-width="4" />`;
     },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><polygon points="-12,-12 12,12 -12,12" fill="currentColor"/></svg>`
+    phIcon: "wave-sine"
   },
 
-  rhombus: {
-    id: "rhombus",
-    name: "Rhombus (Diamond)",
-    category: "polygonal",
+  horseshoe: {
+    id: "horseshoe",
+    name: "Horseshoe",
+    category: "curved",
     draw(ctx, size) {
-      const rx = size * 0.45;
-      const ry = size * 0.65;
+      const w = size * 0.32;
+      const h = size * 0.45;
       ctx.beginPath();
-      ctx.moveTo(0, -ry);
-      ctx.lineTo(rx, 0);
-      ctx.lineTo(0, ry);
-      ctx.lineTo(-rx, 0);
-      ctx.closePath();
+      ctx.moveTo(-w, -h);
+      ctx.lineTo(-w, h * 0.1);
+      ctx.arc(0, h * 0.1, w, Math.PI, 0, true);
+      ctx.lineTo(w, -h);
     },
     svgPath(size) {
-      const rx = size * 0.45;
-      const ry = size * 0.65;
-      return `<polygon points="0,${-ry} ${rx},0 0,${ry} ${-rx},0" />`;
+      const w = size * 0.32;
+      const h = size * 0.45;
+      return `<path d="M ${-w} ${-h} L ${-w} ${h*0.1} A ${w} ${w} 0 0 0 ${w} ${h*0.1} L ${w} ${-h}" fill="none" stroke="currentColor" stroke-width="4" />`;
     },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><polygon points="0,-16 11,0 0,16 -11,0" fill="currentColor"/></svg>`
-  },
-
-  trapezoid: {
-    id: "trapezoid",
-    name: "Trapezoid",
-    category: "polygonal",
-    draw(ctx, size) {
-      const topW = size * 0.35;
-      const botW = size * 0.7;
-      const h = size * 0.55;
-      ctx.beginPath();
-      ctx.moveTo(-topW / 2, -h / 2);
-      ctx.lineTo(topW / 2, -h / 2);
-      ctx.lineTo(botW / 2, h / 2);
-      ctx.lineTo(-botW / 2, h / 2);
-      ctx.closePath();
-    },
-    svgPath(size) {
-      const topW = size * 0.35;
-      const botW = size * 0.7;
-      const h = size * 0.55;
-      return `<polygon points="${-topW/2},${-h/2} ${topW/2},${-h/2} ${botW/2},${h/2} ${-botW/2},${h/2}" />`;
-    },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><polygon points="-6,-10 6,-10 14,10 -14,10" fill="currentColor"/></svg>`
-  },
-
-  arrow_up: {
-    id: "arrow_up",
-    name: "Arrow Up",
-    category: "geometric",
-    draw(ctx, size) {
-      const s = size;
-      const tipY = -s * 0.48;
-      const wingY = -s * 0.05;
-      const botY = s * 0.48;
-      const wingW = s * 0.42;
-      const stemW = s * 0.18;
-      ctx.beginPath();
-      ctx.moveTo(0, tipY);
-      ctx.lineTo(wingW, wingY);
-      ctx.lineTo(stemW, wingY);
-      ctx.lineTo(stemW, botY);
-      ctx.lineTo(-stemW, botY);
-      ctx.lineTo(-stemW, wingY);
-      ctx.lineTo(-wingW, wingY);
-      ctx.closePath();
-    },
-    svgPath(size) {
-      const s = size;
-      const tipY = -s * 0.48;
-      const wingY = -s * 0.05;
-      const botY = s * 0.48;
-      const wingW = s * 0.42;
-      const stemW = s * 0.18;
-      return `<polygon points="0,${tipY} ${wingW},${wingY} ${stemW},${wingY} ${stemW},${botY} ${-stemW},${botY} ${-stemW},${wingY} ${-wingW},${wingY}" />`;
-    },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><polygon points="0,-14 12,-1 5,-1 5,14 -5,14 -5,-1 -12,-1" fill="currentColor"/></svg>`
+    phIcon: "circle-notch"
   },
 
   hexagon: {
@@ -371,59 +292,86 @@ const Shapes = {
       }
       return `<polygon points="${pts.join(" ")}" />`;
     },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><polygon points="0,-14 13,-7 13,8 0,15 -13,8 -13,-7" fill="currentColor"/></svg>`
+    phIcon: "hexagon"
   },
 
-  star4: {
-    id: "star4",
-    name: "4-Point Star",
-    category: "polygonal",
+  line: {
+    id: "line",
+    name: "Straight Line",
+    category: "linear",
     draw(ctx, size) {
-      const rOuter = size * 0.55;
-      const rInner = size * 0.18;
+      const len = size * 0.9;
+      const th = Math.max(size * 0.14, 4);
       ctx.beginPath();
-      for (let i = 0; i < 8; i++) {
-        const r = i % 2 === 0 ? rOuter : rInner;
-        const a = (i * Math.PI) / 4 - Math.PI / 2;
-        const x = r * Math.cos(a);
-        const y = r * Math.sin(a);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
+      ctx.rect(-len / 2, -th / 2, len, th);
       ctx.closePath();
     },
     svgPath(size) {
-      const rOuter = size * 0.55;
-      const rInner = size * 0.18;
-      let pts = [];
-      for (let i = 0; i < 8; i++) {
-        const r = i % 2 === 0 ? rOuter : rInner;
-        const a = (i * Math.PI) / 4 - Math.PI / 2;
-        pts.push(`${r * Math.cos(a)},${r * Math.sin(a)}`);
-      }
-      return `<polygon points="${pts.join(" ")}" />`;
+      const len = size * 0.9;
+      const th = Math.max(size * 0.14, 4);
+      return `<rect x="${-len/2}" y="${-th/2}" width="${len}" height="${th}" />`;
     },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><polygon points="0,-15 4,-4 15,0 4,4 0,15 -4,4 -15,0 -4,-4" fill="currentColor"/></svg>`
+    phIcon: "minus"
+  },
+
+  parallelogram: {
+    id: "parallelogram",
+    name: "Parallelogram",
+    category: "polygonal",
+    draw(ctx, size) {
+      const hw = size * 0.5;
+      const hh = size * 0.32;
+      const skew = size * 0.22;
+      ctx.beginPath();
+      ctx.moveTo(-hw + skew, -hh);
+      ctx.lineTo(hw + skew, -hh);
+      ctx.lineTo(hw - skew, hh);
+      ctx.lineTo(-hw - skew, hh);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const hw = size * 0.5;
+      const hh = size * 0.32;
+      const skew = size * 0.22;
+      return `<polygon points="${-hw + skew},${-hh} ${hw + skew},${-hh} ${hw - skew},${hh} ${-hw - skew},${hh}" />`;
+    },
+    phIcon: "parallelogram"
+  },
+
+  hatch: {
+    id: "hatch",
+    name: "Diagonal Hatch",
+    category: "linear",
+    draw(ctx, size) {
+      const s = size * 0.45;
+      ctx.beginPath();
+      ctx.moveTo(-s, s); ctx.lineTo(s, -s);
+      ctx.moveTo(-s * 0.3, s); ctx.lineTo(s, -s * 0.3);
+      ctx.moveTo(-s, s * 0.3); ctx.lineTo(s * 0.3, -s);
+    },
+    svgPath(size) {
+      const s = size * 0.45;
+      return `<g stroke="currentColor" stroke-width="3"><line x1="${-s}" y1="${s}" x2="${s}" y2="${-s}"/><line x1="${-s*0.3}" y1="${s}" x2="${s}" y2="${-s*0.3}"/><line x1="${-s}" y1="${s*0.3}" x2="${s*0.3}" y2="${-s}"/></g>`;
+    },
+    phIcon: "line-segments"
   },
 
   crescent: {
     id: "crescent",
-    name: "Crescent (Lúnula)",
-    category: "organic",
+    name: "Crescent",
+    category: "curved",
     draw(ctx, size) {
-      const r = size * 0.5;
+      const r = size * 0.45;
       ctx.beginPath();
-      ctx.arc(0, 0, r, -Math.PI / 2, Math.PI / 2, false);
-      ctx.arc(r * 0.45, 0, r * 0.85, Math.PI / 2, -Math.PI / 2, true);
+      ctx.arc(0, 0, r, Math.PI * 0.5, Math.PI * 1.5, false);
+      ctx.bezierCurveTo(r * 0.4, -r * 0.8, r * 0.4, r * 0.8, 0, r);
       ctx.closePath();
     },
     svgPath(size) {
-      const r = size * 0.5;
-      const cutX = r * 0.45;
-      const cutR = r * 0.85;
-      return `<path d="M 0 ${-r} A ${r} ${r} 0 0 1 0 ${r} A ${cutR} ${cutR} 0 0 0 0 ${-r} Z" />`;
+      const r = size * 0.45;
+      return `<path d="M 0 ${r} A ${r} ${r} 0 0 1 0 ${-r} C ${r*0.4} ${-r*0.8} ${r*0.4} ${r*0.8} 0 ${r} Z" />`;
     },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M 0 -14 A 14 14 0 0 1 0 14 A 12 12 0 0 0 0 -14 Z" fill="currentColor"/></svg>`
+    phIcon: "moon"
   },
 
   teardrop: {
@@ -444,141 +392,7 @@ const Shapes = {
       const l = size * 0.95;
       return `<path d="M 0 ${-l/2} C ${w/1.5} ${-l/6}, ${w/1.8} ${l/2}, 0 ${l/2} C ${-w/1.8} ${l/2}, ${-w/1.5} ${-l/6}, 0 ${-l/2} Z" />`;
     },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M 0 -14 C 10 -4, 9 13, 0 13 C -9 13, -10 -4, 0 -14 Z" fill="currentColor"/></svg>`
-  },
-
-  letter_a: {
-    id: "letter_a",
-    name: "Letter A",
-    category: "typographic",
-    draw(ctx, size) {
-      const s = size;
-      const h2 = s * 0.46;
-      const w2 = s * 0.40;
-      const topW = s * 0.10;
-      const footW = s * 0.15;
-      const barY = s * 0.10;
-      const barH = s * 0.12;
-
-      ctx.beginPath();
-      ctx.moveTo(-topW, -h2);
-      ctx.lineTo(topW, -h2);
-      ctx.lineTo(w2, h2);
-      ctx.lineTo(w2 - footW, h2);
-      ctx.lineTo(s * 0.09, barY + barH);
-      ctx.lineTo(-s * 0.09, barY + barH);
-      ctx.lineTo(-w2 + footW, h2);
-      ctx.lineTo(-w2, h2);
-      ctx.closePath();
-
-      ctx.moveTo(0, -h2 * 0.45);
-      ctx.lineTo(-s * 0.12, barY - 2);
-      ctx.lineTo(s * 0.12, barY - 2);
-      ctx.closePath();
-    },
-    svgPath(size) {
-      const s = size;
-      const h2 = s * 0.46;
-      const w2 = s * 0.40;
-      const topW = s * 0.10;
-      const footW = s * 0.15;
-      const barY = s * 0.10;
-      const barH = s * 0.12;
-      return `<path fill-rule="evenodd" d="M ${-topW} ${-h2} L ${topW} ${-h2} L ${w2} ${h2} L ${w2 - footW} ${h2} L ${s * 0.09} ${barY + barH} L ${-s * 0.09} ${barY + barH} L ${-w2 + footW} ${h2} L ${-w2} ${h2} Z M 0 ${-h2 * 0.45} L ${s * 0.12} ${barY - 2} L ${-s * 0.12} ${barY - 2} Z" />`;
-    },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><text x="0" y="5" font-family="Space Grotesk, Inter, sans-serif" font-weight="800" font-size="22" text-anchor="middle" dominant-baseline="middle" fill="currentColor">A</text></svg>`
-  },
-
-  letter_h: {
-    id: "letter_h",
-    name: "Letter H",
-    category: "typographic",
-    draw(ctx, size) {
-      const s = size;
-      const h2 = s * 0.46;
-      const w2 = s * 0.38;
-      const colW = s * 0.16;
-      const barH = s * 0.14;
-      ctx.beginPath();
-      ctx.moveTo(-w2, -h2);
-      ctx.lineTo(-w2 + colW, -h2);
-      ctx.lineTo(-w2 + colW, -barH / 2);
-      ctx.lineTo(w2 - colW, -barH / 2);
-      ctx.lineTo(w2 - colW, -h2);
-      ctx.lineTo(w2, -h2);
-      ctx.lineTo(w2, h2);
-      ctx.lineTo(w2 - colW, h2);
-      ctx.lineTo(w2 - colW, barH / 2);
-      ctx.lineTo(-w2 + colW, barH / 2);
-      ctx.lineTo(-w2 + colW, h2);
-      ctx.lineTo(-w2, h2);
-      ctx.closePath();
-    },
-    svgPath(size) {
-      const s = size;
-      const h2 = s * 0.46;
-      const w2 = s * 0.38;
-      const colW = s * 0.16;
-      const barH = s * 0.14;
-      return `<polygon points="${-w2},${-h2} ${-w2 + colW},${-h2} ${-w2 + colW},${-barH / 2} ${w2 - colW},${-barH / 2} ${w2 - colW},${-h2} ${w2},${-h2} ${w2},${h2} ${w2 - colW},${h2} ${w2 - colW},${barH / 2} ${-w2 + colW},${barH / 2} ${-w2 + colW},${h2} ${-w2},${h2}" />`;
-    },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><text x="0" y="5" font-family="Space Grotesk, Inter, sans-serif" font-weight="800" font-size="22" text-anchor="middle" dominant-baseline="middle" fill="currentColor">H</text></svg>`
-  },
-
-  letter_z: {
-    id: "letter_z",
-    name: "Letter Z",
-    category: "typographic",
-    draw(ctx, size) {
-      const s = size;
-      const h2 = s * 0.46;
-      const w2 = s * 0.38;
-      const barH = s * 0.15;
-      const diagW = s * 0.18;
-      ctx.beginPath();
-      ctx.moveTo(-w2, -h2);
-      ctx.lineTo(w2, -h2);
-      ctx.lineTo(w2, -h2 + barH);
-      ctx.lineTo(-w2 + diagW * 1.5, h2 - barH);
-      ctx.lineTo(w2, h2 - barH);
-      ctx.lineTo(w2, h2);
-      ctx.lineTo(-w2, h2);
-      ctx.lineTo(-w2, h2 - barH);
-      ctx.lineTo(w2 - diagW * 1.5, -h2 + barH);
-      ctx.lineTo(-w2, -h2 + barH);
-      ctx.closePath();
-    },
-    svgPath(size) {
-      const s = size;
-      const h2 = s * 0.46;
-      const w2 = s * 0.38;
-      const barH = s * 0.15;
-      const diagW = s * 0.18;
-      return `<polygon points="${-w2},${-h2} ${w2},${-h2} ${w2},${-h2 + barH} ${-w2 + diagW * 1.5},${h2 - barH} ${w2},${h2 - barH} ${w2},${h2} ${-w2},${h2} ${-w2},${h2 - barH} ${w2 - diagW * 1.5},${-h2 + barH} ${-w2},${-h2 + barH}" />`;
-    },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><text x="0" y="5" font-family="Space Grotesk, Inter, sans-serif" font-weight="800" font-size="22" text-anchor="middle" dominant-baseline="middle" fill="currentColor">Z</text></svg>`
-  },
-
-  capsule: {
-    id: "capsule",
-    name: "Capsule (Píldora)",
-    category: "organic",
-    draw(ctx, size) {
-      const w = size * 0.5;
-      const h = size * 0.9;
-      const r = w / 2;
-      ctx.beginPath();
-      ctx.arc(0, -h / 2 + r, r, Math.PI, 0, false);
-      ctx.arc(0, h / 2 - r, r, 0, Math.PI, false);
-      ctx.closePath();
-    },
-    svgPath(size) {
-      const w = size * 0.5;
-      const h = size * 0.9;
-      const r = w / 2;
-      return `<path d="M ${-r} ${-h/2+r} A ${r} ${r} 0 0 1 ${r} ${-h/2+r} L ${r} ${h/2-r} A ${r} ${r} 0 0 1 ${-r} ${h/2-r} Z" />`;
-    },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M -7 -6 A 7 7 0 0 1 7 -6 L 7 6 A 7 7 0 0 1 -7 6 Z" fill="currentColor"/></svg>`
+    phIcon: "drop"
   },
 
   cross: {
@@ -608,172 +422,7 @@ const Shapes = {
       const th = size * 0.18;
       return `<path d="M ${-th/2} ${-arm} L ${th/2} ${-arm} L ${th/2} ${-th/2} L ${arm} ${-th/2} L ${arm} ${th/2} L ${th/2} ${th/2} L ${th/2} ${arm} L ${-th/2} ${arm} L ${-th/2} ${th/2} L ${-arm} ${th/2} L ${-arm} ${-th/2} L ${-th/2} ${-th/2} Z" />`;
     },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M -3 -14 L 3 -14 L 3 -3 L 14 -3 L 14 3 L 3 3 L 3 14 L -3 14 L -3 3 L -14 3 L -14 -3 L -3 -3 Z" fill="currentColor"/></svg>`
-  },
-
-  c_ring: {
-    id: "c_ring",
-    name: "C-Shape Ring (Wong)",
-    category: "geometric",
-    draw(ctx, size) {
-      const outerR = size * 0.5;
-      const innerR = size * 0.26;
-      const cutAngle = Math.PI / 3;
-      ctx.beginPath();
-      const startAngle = cutAngle / 2;
-      const endAngle = 2 * Math.PI - cutAngle / 2;
-      ctx.arc(0, 0, outerR, startAngle, endAngle, false);
-      ctx.arc(0, 0, innerR, endAngle, startAngle, true);
-      ctx.closePath();
-    },
-    svgPath(size) {
-      const outerR = size * 0.5;
-      const innerR = size * 0.26;
-      const cutAngle = Math.PI / 3;
-      const sa = cutAngle / 2;
-      const ea = 2 * Math.PI - cutAngle / 2;
-      const ox1 = outerR * Math.cos(sa), oy1 = outerR * Math.sin(sa);
-      const ox2 = outerR * Math.cos(ea), oy2 = outerR * Math.sin(ea);
-      const ix1 = innerR * Math.cos(ea), iy1 = innerR * Math.sin(ea);
-      const ix2 = innerR * Math.cos(sa), iy2 = innerR * Math.sin(sa);
-      return `<path d="M ${ox1} ${oy1} A ${outerR} ${outerR} 0 1 1 ${ox2} ${oy2} L ${ix1} ${iy1} A ${innerR} ${innerR} 0 1 0 ${ix2} ${iy2} Z" />`;
-    },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M 7 12 A 14 14 0 1 1 7 -12 L 4 -7 A 8 8 0 1 0 4 7 Z" fill="currentColor"/></svg>`
-  },
-
-  line: {
-    id: "line",
-    name: "Straight Line",
-    category: "linear",
-    draw(ctx, size) {
-      const len = size * 0.9;
-      const th = Math.max(size * 0.14, 4);
-      ctx.beginPath();
-      ctx.rect(-len / 2, -th / 2, len, th);
-      ctx.closePath();
-    },
-    svgPath(size) {
-      const len = size * 0.9;
-      const th = Math.max(size * 0.14, 4);
-      return `<rect x="${-len/2}" y="${-th/2}" width="${len}" height="${th}" />`;
-    },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><rect x="-14" y="-2.5" width="28" height="5" fill="currentColor"/></svg>`
-  },
-
-  arc: {
-    id: "arc",
-    name: "Quadrant Arc",
-    category: "linear",
-    draw(ctx, size) {
-      const r = size * 0.55;
-      const th = Math.max(size * 0.16, 4);
-      ctx.beginPath();
-      ctx.arc(-r / 2, r / 2, r, -Math.PI / 2, 0, false);
-      ctx.arc(-r / 2, r / 2, r - th, 0, -Math.PI / 2, true);
-      ctx.closePath();
-    },
-    svgPath(size) {
-      const r = size * 0.55;
-      const th = Math.max(size * 0.16, 4);
-      return `<path d="M ${-r/2} ${-r/2} A ${r} ${r} 0 0 1 ${r/2} ${r/2} L ${r/2-th} ${r/2} A ${r-th} ${r-th} 0 0 0 ${-r/2} ${-r/2+th} Z" />`;
-    },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M -8 -10 A 18 18 0 0 1 10 8 L 6 8 A 14 14 0 0 0 -8 -6 Z" fill="currentColor"/></svg>`
-  },
-
-  triangle: {
-    id: "triangle",
-    name: "Triangle",
-    category: "geometric",
-    draw(ctx, size) {
-      const r = size * 0.55;
-      ctx.beginPath();
-      ctx.moveTo(0, -r);
-      ctx.lineTo(r * 0.866, r * 0.5);
-      ctx.lineTo(-r * 0.866, r * 0.5);
-      ctx.closePath();
-    },
-    svgPath(size) {
-      const r = size * 0.55;
-      return `<polygon points="0,${-r} ${r*0.866},${r*0.5} ${-r*0.866},${r*0.5}" />`;
-    },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><polygon points="0,-14 13,11 -13,11" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>`
-  },
-
-  wave: {
-    id: "wave",
-    name: "Sine Wave",
-    category: "curved",
-    draw(ctx, size) {
-      const w = size * 0.85;
-      const a = size * 0.25;
-      ctx.beginPath();
-      ctx.moveTo(-w / 2, 0);
-      ctx.bezierCurveTo(-w / 4, -a, -w / 4, -a, 0, 0);
-      ctx.bezierCurveTo(w / 4, a, w / 4, a, w / 2, 0);
-    },
-    svgPath(size) {
-      const w = size * 0.85;
-      const a = size * 0.25;
-      return `<path d="M ${-w/2} 0 C ${-w/4} ${-a}, ${-w/4} ${-a}, 0 0 C ${w/4} ${a}, ${w/4} ${a}, ${w/2} 0" fill="none" stroke="currentColor" stroke-width="4" />`;
-    },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M -14 0 C -7 -10, -7 -10, 0 0 C 7 10, 7 10, 14 0" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>`
-  },
-
-  horseshoe: {
-    id: "horseshoe",
-    name: "Horseshoe",
-    category: "curved",
-    draw(ctx, size) {
-      const w = size * 0.32;
-      const h = size * 0.45;
-      ctx.beginPath();
-      ctx.moveTo(-w, -h);
-      ctx.lineTo(-w, h * 0.1);
-      ctx.arc(0, h * 0.1, w, Math.PI, 0, true);
-      ctx.lineTo(w, -h);
-    },
-    svgPath(size) {
-      const w = size * 0.32;
-      const h = size * 0.45;
-      return `<path d="M ${-w} ${-h} L ${-w} ${h*0.1} A ${w} ${w} 0 0 0 ${w} ${h*0.1} L ${w} ${-h}" fill="none" stroke="currentColor" stroke-width="4" />`;
-    },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M -9 -12 L -9 2 A 9 9 0 0 0 9 2 L 9 -12" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>`
-  },
-
-  crescent: {
-    id: "crescent",
-    name: "Crescent",
-    category: "curved",
-    draw(ctx, size) {
-      const r = size * 0.45;
-      ctx.beginPath();
-      ctx.arc(0, 0, r, Math.PI * 0.5, Math.PI * 1.5, false);
-      ctx.bezierCurveTo(r * 0.4, -r * 0.8, r * 0.4, r * 0.8, 0, r);
-      ctx.closePath();
-    },
-    svgPath(size) {
-      const r = size * 0.45;
-      return `<path d="M 0 ${r} A ${r} ${r} 0 0 1 0 ${-r} C ${r*0.4} ${-r*0.8} ${r*0.4} ${r*0.8} 0 ${r} Z" />`;
-    },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M 0 13 A 13 13 0 0 1 0 -13 C 6 -9 6 9 0 13 Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`
-  },
-
-  hatch: {
-    id: "hatch",
-    name: "Diagonal Hatch",
-    category: "linear",
-    draw(ctx, size) {
-      const s = size * 0.45;
-      ctx.beginPath();
-      ctx.moveTo(-s, s); ctx.lineTo(s, -s);
-      ctx.moveTo(-s * 0.3, s); ctx.lineTo(s, -s * 0.3);
-      ctx.moveTo(-s, s * 0.3); ctx.lineTo(s * 0.3, -s);
-    },
-    svgPath(size) {
-      const s = size * 0.45;
-      return `<g stroke="currentColor" stroke-width="3"><line x1="${-s}" y1="${s}" x2="${s}" y2="${-s}"/><line x1="${-s*0.3}" y1="${s}" x2="${s}" y2="${-s*0.3}"/><line x1="${-s}" y1="${s*0.3}" x2="${s*0.3}" y2="${-s}"/></g>`;
-    },
-    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><line x1="-12" y1="12" x2="12" y2="-12" stroke="currentColor" stroke-width="2"/><line x1="-4" y1="12" x2="12" y2="-4" stroke="currentColor" stroke-width="2"/><line x1="-12" y1="4" x2="4" y2="-12" stroke="currentColor" stroke-width="2"/></svg>`
+    phIcon: "plus"
   },
 
   digit1: {
@@ -789,7 +438,7 @@ const Shapes = {
     svgPath(size) {
       return `<text x="0" y="0" font-family="Space Grotesk, sans-serif" font-size="${size*0.75}" font-weight="bold" text-anchor="middle" dominant-baseline="central">1</text>`;
     },
-    iconSvg: `<span class="font-bold text-sm font-mono">1</span>`
+    phIcon: "number-one"
   },
 
   digit5: {
@@ -805,7 +454,7 @@ const Shapes = {
     svgPath(size) {
       return `<text x="0" y="0" font-family="Space Grotesk, sans-serif" font-size="${size*0.75}" font-weight="bold" text-anchor="middle" dominant-baseline="central">5</text>`;
     },
-    iconSvg: `<span class="font-bold text-sm font-mono">5</span>`
+    phIcon: "number-five"
   },
 
   digit9: {
@@ -821,7 +470,7 @@ const Shapes = {
     svgPath(size) {
       return `<text x="0" y="0" font-family="Space Grotesk, sans-serif" font-size="${size*0.75}" font-weight="bold" text-anchor="middle" dominant-baseline="central">9</text>`;
     },
-    iconSvg: `<span class="font-bold text-sm font-mono">9</span>`
+    phIcon: "number-nine"
   }
 };
 
@@ -867,6 +516,14 @@ const createDefaultLayerStructure = () => ({
     intensity: 50,
     cellJitter: 0,
     seed: 42
+  },
+  gradation: {
+    enabled: false,
+    type: "rotation", // rotation, scale, depth, drift
+    pathway: "diagonal", // diagonal, horizontal, vertical, concentric
+    range: 180, // degrees of total rotation (rotation type)
+    steps: 1, // cycles (1 to 4)
+    reverse: false
   }
 });
 const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "circle", offsetX = 0, offsetY = 0, rotation = 0) => ({
@@ -893,12 +550,6 @@ const defaultStudioState = {
   aspectRatio: "1:1",
   layers: [defaultLayer1, defaultLayer2],
   layerOrder: ["layer-2", "layer-1"],
-  // Primary Module Form A (backward-compatibility reference)
-  formA: defaultLayer1,
-  // Secondary Module Form B (backward-compatibility reference)
-  formB: defaultLayer2,
-  // Interrelation between Form A and B
-  interrelation: "overlapping",
   invertFigureGround: false,
   wireframe: true,
   strokeWeight: 1.2,
@@ -961,7 +612,7 @@ const defaultStudioState = {
       epicenterY: 0.5, // 0.1 to 0.9
       radius: 160, // 50 to 350
       intensity: 65, // 10 to 100
-      anomalousShape: "triangle_eq",
+      anomalousShape: "triangle",
       highlightColor: true,
       showReticle: true
     },
@@ -969,7 +620,7 @@ const defaultStudioState = {
       enabled: false,
       dimension: "scale", // scale, shape, direction, tone
       dominanceRatio: 80, // % majority regular (60 to 95)
-      contrastShape: "star4", // shape for shape contrast
+      contrastShape: "cross", // shape for shape contrast
       scaleFactor: 2.2, // scale multiplier for scale contrast
       angle: 45, // clash angle for direction contrast
       highlightContrast: false // highlight minority elements
@@ -1410,190 +1061,6 @@ class StudioEngine {
     ctx.restore();
   }
 
-  // Render the base unit form (Module) with interrelation operations
-  renderModule(ctx, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", customScaleA = null, customScaleB = null, shapeOverrideA = null, wireframeOverride = null, isAlternating = false) {
-    const { formA, formB, interrelation } = this.state;
-    const wireframe = wireframeOverride !== null ? wireframeOverride : this.state.wireframe;
-    const shapeA = shapeOverrideA || formA.shape;
-
-    const baseWA = formA.width !== undefined ? formA.width : formA.scale;
-    const baseHA = formA.height !== undefined ? formA.height : formA.scale;
-    const baseWB = formB.width !== undefined ? formB.width : formB.scale;
-    const baseHB = formB.height !== undefined ? formB.height : formB.scale;
-
-    const wA = (customScaleA ? (customScaleA * (baseWA / (formA.scale || 100))) : baseWA) * sizeMultiplier;
-    const hA = (customScaleA ? (customScaleA * (baseHA / (formA.scale || 100))) : baseHA) * sizeMultiplier;
-    const wB = (customScaleB ? (customScaleB * (baseWB / (formB.scale || 100))) : baseWB) * sizeMultiplier;
-    const hB = (customScaleB ? (customScaleB * (baseHB / (formB.scale || 100))) : baseHB) * sizeMultiplier;
-
-    const rA = Math.max(wA, hA);
-    const rB = Math.max(wB, hB);
-    const sxA = rA > 0 ? wA / rA : 1;
-    const syA = rA > 0 ? hA / rA : 1;
-    const sxB = rB > 0 ? wB / rB : 1;
-    const syB = rB > 0 ? hB / rB : 1;
-
-    const ax = (formA.offsetX || 0) * sizeMultiplier;
-    const ay = (formA.offsetY || 0) * sizeMultiplier;
-
-    // Determine actual Form B offset based on interrelation mode
-    let ox = (formB.offsetX !== undefined ? formB.offsetX : 65) * sizeMultiplier;
-    let oy = (formB.offsetY !== undefined ? formB.offsetY : 0) * sizeMultiplier;
-
-    if (interrelation === "touching") {
-      const angle = Math.atan2(oy || 0.0001, ox || 1);
-      const touchDist = (rA + rB) / 2;
-      ox = Math.cos(angle) * touchDist;
-      oy = Math.sin(angle) * touchDist;
-    } else if (interrelation === "coincidence") {
-      ox = ax;
-      oy = ay;
-    }
-
-    const wireframeA = wireframeOverride !== null ? wireframeOverride : (formA.wireframe !== undefined ? formA.wireframe : this.state.wireframe);
-    const wireframeB = wireframeOverride !== null ? wireframeOverride : (formB.wireframe !== undefined ? formB.wireframe : this.state.wireframe);
-
-    const drawFormA = (targetCtx, fg, bg, alt, wire = wireframeA) => {
-      targetCtx.save();
-      targetCtx.translate(ax, ay);
-      targetCtx.rotate((formA.rotation * Math.PI) / 180);
-      targetCtx.scale(sxA, syA);
-      this.drawShape(targetCtx, shapeA, rA, fg, wire, 2, bg, alt);
-      targetCtx.restore();
-    };
-
-    const drawFormB = (targetCtx, fg, bg, alt, wire = wireframeB, isCutout = false) => {
-      targetCtx.save();
-      targetCtx.translate(ox, oy);
-      targetCtx.rotate((formB.rotation * Math.PI) / 180);
-      targetCtx.scale(sxB, syB);
-      this.drawShape(targetCtx, formB.shape, rB, fg, wire, 2, bg, alt, isCutout);
-      targetCtx.restore();
-    };
-
-    // Check layer visibility
-    const isVisibleA = formA.visible !== false;
-    const isVisibleB = formB.enabled && formB.visible !== false;
-
-    if (!isVisibleA && !isVisibleB) {
-      return;
-    }
-    if (isVisibleA && !isVisibleB) {
-      drawFormA(ctx, fgColor, bgColor, isAlternating);
-      return;
-    }
-    if (!isVisibleA && isVisibleB) {
-      drawFormB(ctx, fgColor, bgColor, !isAlternating);
-      return;
-    }
-
-    ctx.save();
-
-    // Determine z-order from layerOrder
-    const layer1OnTop = this.state.layerOrder && this.state.layerOrder[0] === "layer-1";
-
-    // Handling 8 Interrelations
-    switch (interrelation) {
-      case "detachment":
-      case "touching":
-      case "overlapping": {
-        if (layer1OnTop) {
-          drawFormB(ctx, fgColor, bgColor, !isAlternating, wireframeB);
-          if (!wireframeA && interrelation === "overlapping") {
-            drawFormA(ctx, bgColor, bgColor, isAlternating, false, true);
-          }
-          drawFormA(ctx, fgColor, bgColor, isAlternating, wireframeA);
-        } else {
-          drawFormA(ctx, fgColor, bgColor, isAlternating, wireframeA);
-          if (!wireframeB && interrelation === "overlapping") {
-            drawFormB(ctx, bgColor, bgColor, !isAlternating, false, true);
-          }
-          drawFormB(ctx, fgColor, bgColor, !isAlternating, wireframeB);
-        }
-        break;
-      }
-
-      case "union": {
-        drawFormA(ctx, fgColor, bgColor, isAlternating, wireframeA);
-        drawFormB(ctx, fgColor, bgColor, !isAlternating, wireframeB);
-        break;
-      }
-
-      case "subtraction": {
-        const pad = Math.max(rA, rB, Math.abs(ax), Math.abs(ay), Math.abs(ox), Math.abs(oy)) * 4 + 100;
-        const offCanvas = document.createElement("canvas");
-        offCanvas.width = pad;
-        offCanvas.height = pad;
-        const offCtx = offCanvas.getContext("2d");
-        const cx = pad / 2;
-        const cy = pad / 2;
-
-        offCtx.save();
-        offCtx.translate(cx, cy);
-        drawFormA(offCtx, fgColor, null, false, false);
-        offCtx.restore();
-
-        offCtx.save();
-        offCtx.translate(cx, cy);
-        offCtx.globalCompositeOperation = "destination-out";
-        drawFormB(offCtx, fgColor, null, false, false);
-        offCtx.restore();
-
-        ctx.drawImage(offCanvas, -cx, -cy);
-        break;
-      }
-
-      case "intersection": {
-        const pad = Math.max(rA, rB, Math.abs(ax), Math.abs(ay), Math.abs(ox), Math.abs(oy)) * 4 + 100;
-        const offCanvas = document.createElement("canvas");
-        offCanvas.width = pad;
-        offCanvas.height = pad;
-        const offCtx = offCanvas.getContext("2d");
-        const cx = pad / 2;
-        const cy = pad / 2;
-
-        offCtx.save();
-        offCtx.translate(cx, cy);
-        drawFormA(offCtx, fgColor, null, false, false);
-        offCtx.restore();
-
-        offCtx.save();
-        offCtx.translate(cx, cy);
-        offCtx.globalCompositeOperation = "destination-in";
-        drawFormB(offCtx, fgColor, null, false, false);
-        offCtx.restore();
-
-        ctx.drawImage(offCanvas, -cx, -cy);
-        break;
-      }
-
-      case "penetration": {
-        ctx.save();
-        ctx.globalAlpha = 0.65;
-        drawFormA(ctx, fgColor, bgColor, isAlternating);
-        drawFormB(ctx, fgColor, bgColor, !isAlternating);
-        ctx.restore();
-        break;
-      }
-
-      case "coincidence": {
-        drawFormA(ctx, fgColor, bgColor, isAlternating);
-        ctx.save();
-        ctx.globalAlpha = 0.8;
-        drawFormB(ctx, fgColor, bgColor, !isAlternating);
-        ctx.restore();
-        break;
-      }
-
-      default: {
-        drawFormA(ctx, fgColor, bgColor, isAlternating);
-        drawFormB(ctx, fgColor, bgColor, !isAlternating);
-      }
-    }
-
-    ctx.restore();
-  }
-
   // Build the boundary path for a cell in the given grid variation
   buildCellPath(ctx, r, c, rows, cols, cx, cy, cW, cH, rep, startX) {
     ctx.beginPath();
@@ -1644,7 +1111,7 @@ class StudioEngine {
     const rep = repConfig || (targetMod?.structure?.repetition) || this.state.modifiers.repetition;
     const struct = (targetMod?.structure?.formalStructure) || this.state.modifiers.structure;
     const sim = (targetMod?.structure?.similarity) || this.state.modifiers.similarity;
-    const grad = this.state.modifiers.gradation;
+    const grad = (targetMod?.structure?.gradation) || this.state.modifiers.gradation;
     const anom = this.state.modifiers.anomaly;
     const contrast = this.state.modifiers.contrast;
     const conc = this.state.modifiers.concentration;
@@ -1944,7 +1411,7 @@ class StudioEngine {
 
           if (anom.type === "focal") {
             if (inZone) {
-              cellShapeA = anom.anomalousShape || "triangle_eq";
+              cellShapeA = anom.anomalousShape || "triangle";
               ctx.rotate((Math.PI / 4) * severity * factor);
               cellScaleMul *= (1 + 0.35 * severity);
               if (anom.highlightColor) cellFg = palette.accent;
@@ -1993,7 +1460,7 @@ class StudioEngine {
               const sFactor = contrast.scaleFactor ?? 2.2;
               cellScaleMul *= sFactor;
             } else if (contrast.dimension === "shape") {
-              cellShapeA = contrast.contrastShape || "star4";
+              cellShapeA = contrast.contrastShape || "cross";
             } else if (contrast.dimension === "direction") {
               const clashAngle = ((contrast.angle ?? 45) * Math.PI) / 180;
               ctx.rotate(clashAngle);
@@ -2009,12 +1476,7 @@ class StudioEngine {
         const scaleUnit = 1.25 * Math.min(1.0, Math.min(width, height) / 600);
         const cellRatio = Math.min(cW / usableW, cH / usableH);
         const normScale = scaleUnit * cellRatio * cellScaleMul * concScaleMul;
-        const isAlt = (r + c) % 2 === 1;
-        if (targetMod) {
-          this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA);
-        } else {
-          this.renderModule(ctx, normScale, cellFg, cellBg, null, null, cellShapeA, cellWireframe, isAlt);
-        }
+        this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA);
         ctx.restore();
       };
 
@@ -2159,7 +1621,7 @@ class StudioEngine {
   // Render the polar radiation layout (Radiation)
   renderRadiation(ctx, width, height, palette, marginParam, usableWParam, usableHParam, targetMod = null, radConfig = null) {
     const rad = radConfig || (targetMod?.structure?.radiation) || this.state.modifiers.radiation;
-    const grad = this.state.modifiers.gradation;
+    const grad = (targetMod?.structure?.gradation) || this.state.modifiers.gradation;
     const sim = (targetMod?.structure?.similarity) || this.state.modifiers.similarity;
     const anom = this.state.modifiers.anomaly;
     const contrast = this.state.modifiers.contrast;
@@ -2408,7 +1870,7 @@ class StudioEngine {
 
             if (anom.type === "focal") {
               if (inZone) {
-                cellShapeA = anom.anomalousShape || "triangle_eq";
+                cellShapeA = anom.anomalousShape || "triangle";
                 ctx.rotate((Math.PI / 4) * severity * factor);
                 cellScaleMul *= (1 + 0.35 * severity);
                 if (anom.highlightColor) cellFg = palette.accent;
@@ -2456,7 +1918,7 @@ class StudioEngine {
                 const sFactor = contrast.scaleFactor ?? 2.2;
                 cellScaleMul *= sFactor;
               } else if (contrast.dimension === "shape") {
-                cellShapeA = contrast.contrastShape || "star4";
+                cellShapeA = contrast.contrastShape || "cross";
               } else if (contrast.dimension === "direction") {
                 const clashAngle = ((contrast.angle ?? 45) * Math.PI) / 180;
                 ctx.rotate(clashAngle);
@@ -2478,12 +1940,7 @@ class StudioEngine {
           const growthFactor = 0.75 + (i / rings) * 0.45;
           const radScaleMul = isMultiCenter ? 0.7 : 1.0;
           const normScale = scaleUnit * sectorRatio * growthFactor * radScaleMul * cellScaleMul * concScaleMul;
-          const isAlt = (i + j) % 2 === 1;
-          if (targetMod) {
-            this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA);
-          } else {
-            this.renderModule(ctx, normScale, cellFg, cellBg, null, null, cellShapeA, cellWireframe, isAlt);
-          }
+          this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA);
           ctx.restore();
         }
       }
@@ -2568,10 +2025,7 @@ class StudioEngine {
     if (Array.isArray(this.state.layers) && this.state.layers.length > 0) {
       return this.state.layers;
     }
-    const list = [];
-    if (this.state.formA) list.push(this.state.formA);
-    if (this.state.formB && this.state.formB.enabled !== false) list.push(this.state.formB);
-    return list;
+    return [];
   }
 
   // Master render method
@@ -2916,18 +2370,30 @@ class StudioEngine {
  * MODULE STUDIO — Presets Gallery
  * Curated parametric compositions across Bauhaus, Swiss, Op-Art, and Kinetic aesthetics.
  */
+
+
+
+// Preset layer: shape, size (width = height), rotation, offsets and draw mode.
+const presetLayer = (id, shape, size, rotation, offsetX, offsetY, wireframe) => ({
+  ...createDefaultLayer(id, id === "layer-1" ? "Layer 1" : "Layer 2", shape, offsetX, offsetY, rotation),
+  scale: size,
+  width: size,
+  height: size,
+  wireframe
+});
 const STUDIO_PRESETS = [
   {
     id: "nautilus_spiral",
     name: "Nautilus Kinetic Spiral",
     category: "Radial & Polar",
-    description: "Centrifugal spiral radiation with logarithmic twist and crescent union.",
+    description: "Centrifugal spiral radiation with logarithmic twist and crescent layers.",
     state: {
       aspectRatio: "1:1",
       paletteId: "inverted",
-      formA: { shape: "circle", scale: 95, width: 95, height: 95, rotation: 0, offsetX: 0, offsetY: 0 },
-      formB: { enabled: true, shape: "crescent", scale: 75, width: 75, height: 75, rotation: 45, offsetX: 25, offsetY: 0 },
-      interrelation: "union",
+      layers: [
+        presetLayer("layer-1", "circle", 95, 0, 0, 0, false),
+        presetLayer("layer-2", "crescent", 75, 45, 25, 0, false)
+      ],
       invertFigureGround: false,
       wireframe: false,
       modifiers: {
@@ -2936,8 +2402,8 @@ const STUDIO_PRESETS = [
         similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
         gradation: { enabled: true, type: "scale", pathway: "concentric", range: 120, steps: 1, reverse: false },
         radiation: { enabled: true, scheme: "spiral", rays: 16, rings: 6, spiralTwist: 60, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
-        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle_eq", highlightColor: true, showReticle: false },
-        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "star4", scaleFactor: 2.2, angle: 45, highlightContrast: false },
+        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
+        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
         texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
@@ -2954,9 +2420,10 @@ const STUDIO_PRESETS = [
     state: {
       aspectRatio: "1:1",
       paletteId: "blueprint",
-      formA: { shape: "star4", scale: 70, width: 70, height: 70, rotation: 0, offsetX: 0, offsetY: 0 },
-      formB: { enabled: true, shape: "rhombus", scale: 65, width: 65, height: 65, rotation: 45, offsetX: 0, offsetY: 0 },
-      interrelation: "intersection",
+      layers: [
+        presetLayer("layer-1", "cross", 70, 0, 0, 0, true),
+        presetLayer("layer-2", "parallelogram", 65, 45, 0, 0, true)
+      ],
       invertFigureGround: false,
       wireframe: true,
       modifiers: {
@@ -2965,8 +2432,8 @@ const STUDIO_PRESETS = [
         similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
         gradation: { enabled: false, type: "rotation", pathway: "diagonal", range: 180, steps: 1, reverse: false },
         radiation: { enabled: true, scheme: "multi_center", rays: 24, rings: 7, spiralTwist: -35, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
-        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle_eq", highlightColor: true, showReticle: false },
-        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "star4", scaleFactor: 2.2, angle: 45, highlightContrast: false },
+        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
+        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
         texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
@@ -2979,13 +2446,14 @@ const STUDIO_PRESETS = [
     id: "bauhaus_subtraction",
     name: "Bauhaus Minimal Construct",
     category: "Cartesian Grid",
-    description: "Orthogonal structural tension with boolean circular bite and primary contrast.",
+    description: "Orthogonal structural tension with an overlapping circular layer and primary contrast.",
     state: {
       aspectRatio: "3:4",
       paletteId: "bauhaus",
-      formA: { shape: "square", scale: 115, width: 115, height: 115, rotation: 0, offsetX: 0, offsetY: 0 },
-      formB: { enabled: true, shape: "circle", scale: 90, width: 90, height: 90, rotation: 0, offsetX: 45, offsetY: 0 },
-      interrelation: "subtraction",
+      layers: [
+        presetLayer("layer-1", "square", 115, 0, 0, 0, false),
+        presetLayer("layer-2", "circle", 90, 0, 45, 0, false)
+      ],
       invertFigureGround: false,
       wireframe: false,
       modifiers: {
@@ -2994,8 +2462,8 @@ const STUDIO_PRESETS = [
         similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
         gradation: { enabled: true, type: "rotation", pathway: "diagonal", range: 90, steps: 1, reverse: false },
         radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
-        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle_eq", highlightColor: true, showReticle: false },
-        contrast: { enabled: true, dimension: "direction", dominanceRatio: 75, contrastShape: "star4", scaleFactor: 1.0, angle: 45, highlightContrast: true },
+        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
+        contrast: { enabled: true, dimension: "direction", dominanceRatio: 75, contrastShape: "cross", scaleFactor: 1.0, angle: 45, highlightContrast: true },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
         texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
@@ -3012,9 +2480,9 @@ const STUDIO_PRESETS = [
     state: {
       aspectRatio: "1:1",
       paletteId: "monochrome",
-      formA: { shape: "square", scale: 65, width: 65, height: 65, rotation: 0, offsetX: 0, offsetY: 0 },
-      formB: { enabled: false, shape: "circle", scale: 50, width: 50, height: 50, rotation: 0, offsetX: 20, offsetY: 0 },
-      interrelation: "overlapping",
+      layers: [
+        presetLayer("layer-1", "square", 65, 0, 0, 0, false)
+      ],
       invertFigureGround: true,
       wireframe: false,
       modifiers: {
@@ -3024,7 +2492,7 @@ const STUDIO_PRESETS = [
         gradation: { enabled: false, type: "rotation", pathway: "diagonal", range: 180, steps: 1, reverse: false },
         radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
         anomaly: { enabled: true, type: "fracture", epicenterX: 0.5, epicenterY: 0.5, radius: 220, intensity: 85, anomalousShape: "cross", highlightColor: true, showReticle: false },
-        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "star4", scaleFactor: 2.2, angle: 45, highlightContrast: false },
+        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
         texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
@@ -3041,9 +2509,9 @@ const STUDIO_PRESETS = [
     state: {
       aspectRatio: "9:16",
       paletteId: "inverted",
-      formA: { shape: "triangle", scale: 50, width: 50, height: 50, rotation: 0, offsetX: 0, offsetY: 0 },
-      formB: { enabled: false, shape: "circle", scale: 40, width: 40, height: 40, rotation: 0, offsetX: 0, offsetY: 0 },
-      interrelation: "overlapping",
+      layers: [
+        presetLayer("layer-1", "triangle", 50, 0, 0, 0, false)
+      ],
       invertFigureGround: false,
       wireframe: false,
       modifiers: {
@@ -3052,8 +2520,8 @@ const STUDIO_PRESETS = [
         similarity: { enabled: true, kinshipType: "rotation_wobble", intensity: 25, cellJitter: 0, seed: 88 },
         gradation: { enabled: false, type: "rotation", pathway: "diagonal", range: 180, steps: 1, reverse: false },
         radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
-        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle_eq", highlightColor: true, showReticle: false },
-        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "star4", scaleFactor: 2.2, angle: 45, highlightContrast: false },
+        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
+        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: true, mode: "point", attractorX: 0.5, attractorY: 0.45, power: 85, radius: 340, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
         texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
@@ -3070,9 +2538,10 @@ const STUDIO_PRESETS = [
     state: {
       aspectRatio: "4:3",
       paletteId: "sepia",
-      formA: { shape: "hexagon", scale: 110, width: 110, height: 110, rotation: 0, offsetX: 0, offsetY: 0 },
-      formB: { enabled: true, shape: "circle", scale: 80, width: 80, height: 80, rotation: 0, offsetX: 0, offsetY: 0 },
-      interrelation: "penetration",
+      layers: [
+        presetLayer("layer-1", "hexagon", 110, 0, 0, 0, false),
+        presetLayer("layer-2", "circle", 80, 0, 0, 0, false)
+      ],
       invertFigureGround: false,
       wireframe: false,
       modifiers: {
@@ -3081,8 +2550,8 @@ const STUDIO_PRESETS = [
         similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
         gradation: { enabled: false, type: "rotation", pathway: "diagonal", range: 180, steps: 1, reverse: false },
         radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
-        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle_eq", highlightColor: true, showReticle: false },
-        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "star4", scaleFactor: 2.2, angle: 45, highlightContrast: false },
+        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
+        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
         texture: { enabled: true, target: "both", mode: "grain", density: 60, scale: 16, contrast: 45 },
         space: { enabled: true, mode: "isometric", depth: 40, angle: 30, shading: 70, showIsoGuides: false }
@@ -3099,9 +2568,9 @@ const STUDIO_PRESETS = [
     state: {
       aspectRatio: "16:9",
       paletteId: "inverted",
-      formA: { shape: "cross", scale: 45, width: 45, height: 45, rotation: 0, offsetX: 0, offsetY: 0 },
-      formB: { enabled: false, shape: "circle", scale: 35, width: 35, height: 35, rotation: 0, offsetX: 0, offsetY: 0 },
-      interrelation: "overlapping",
+      layers: [
+        presetLayer("layer-1", "cross", 45, 0, 0, 0, false)
+      ],
       invertFigureGround: false,
       wireframe: false,
       modifiers: {
@@ -3110,8 +2579,8 @@ const STUDIO_PRESETS = [
         similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
         gradation: { enabled: true, type: "rotation", pathway: "diagonal", range: 180, steps: 2, reverse: false },
         radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
-        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle_eq", highlightColor: true, showReticle: false },
-        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "star4", scaleFactor: 2.2, angle: 45, highlightContrast: false },
+        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
+        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
         texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
@@ -3128,9 +2597,10 @@ const STUDIO_PRESETS = [
     state: {
       aspectRatio: "3:4",
       paletteId: "monochrome",
-      formA: { shape: "rhombus", scale: 80, width: 80, height: 80, rotation: 0, offsetX: 0, offsetY: 0 },
-      formB: { enabled: true, shape: "circle", scale: 50, width: 50, height: 50, rotation: 0, offsetX: 0, offsetY: 0 },
-      interrelation: "detachment",
+      layers: [
+        presetLayer("layer-1", "parallelogram", 80, 0, 0, 0, false),
+        presetLayer("layer-2", "circle", 50, 0, 0, 0, false)
+      ],
       invertFigureGround: false,
       wireframe: false,
       modifiers: {
@@ -3139,8 +2609,8 @@ const STUDIO_PRESETS = [
         similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
         gradation: { enabled: false, type: "rotation", pathway: "diagonal", range: 180, steps: 1, reverse: false },
         radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
-        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle_eq", highlightColor: true, showReticle: false },
-        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "star4", scaleFactor: 2.2, angle: 45, highlightContrast: false },
+        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
+        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
         texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
@@ -3315,6 +2785,7 @@ class StudioProApp {
     this.setupLayoutStructure();
     this.setupFormalStructure();
     this.setupSimilarity();
+    this.setupGradation();
     this.setupShapeInspector();
     this.setupInteractiveHandles();
     this.setupModifierCards();
@@ -3360,12 +2831,7 @@ class StudioProApp {
 
   getLayers() {
     if (!Array.isArray(this.state.layers) || this.state.layers.length === 0) {
-      this.state.layers = [];
-      if (this.state.formA) this.state.layers.push(this.state.formA);
-      if (this.state.formB && this.state.formB.enabled !== false) this.state.layers.push(this.state.formB);
-      if (this.state.layers.length === 0) {
-        this.state.layers.push(createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5));
-      }
+      this.state.layers = [createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5)];
     }
     return this.state.layers;
   }
@@ -3374,13 +2840,7 @@ class StudioProApp {
     const layers = this.getLayers();
     const active = layers.find(l => l.id === this.activeLayerId);
     if (active) return active;
-    return layers[0] || this.state.formA;
-  }
-
-  syncLegacyLayerRefs() {
-    const layers = this.getLayers();
-    this.state.formA = layers[0] || null;
-    this.state.formB = layers[1] || null;
+    return layers[0] || null;
   }
 
   getActiveLayerStructure() {
@@ -3398,6 +2858,9 @@ class StudioProApp {
         seed: 42
       };
     }
+    if (!mod.structure.gradation) {
+      mod.structure.gradation = createDefaultLayerStructure().gradation;
+    }
     return mod.structure;
   }
 
@@ -3406,6 +2869,7 @@ class StudioProApp {
     this.syncStructureInspectorWithActiveLayer();
     this.syncFormalStructureInspectorWithActiveLayer();
     this.syncSimilarityInspectorWithActiveLayer();
+    this.syncGradationInspectorWithActiveLayer();
     this.updateRailIndicatorDots();
   }
 
@@ -3654,7 +3118,7 @@ class StudioProApp {
     const newId = `layer-${nextNum}`;
     const newName = `Layer ${nextNum}`;
 
-    const shapesPool = ["circle", "square", "triangle_eq", "rhombus", "hexagon", "star4"];
+    const shapesPool = ["circle", "square", "triangle", "hexagon", "parallelogram", "cross"];
     const newShape = shapesPool[layers.length % shapesPool.length];
     const newLayer = createDefaultLayer(newId, newName, newShape, 0, 0, 0);
 
@@ -3665,7 +3129,6 @@ class StudioProApp {
     this.state.layerOrder.unshift(newId);
     this.activeLayerId = newId;
 
-    this.syncLegacyLayerRefs();
     this.updateLayerCardsUI();
     this.syncAllInspectorsWithActiveLayer();
     this.render();
@@ -3683,7 +3146,6 @@ class StudioProApp {
       this.activeLayerId = this.state.layers[0]?.id || "layer-1";
     }
 
-    this.syncLegacyLayerRefs();
     this.updateLayerCardsUI();
     this.syncAllInspectorsWithActiveLayer();
     this.render();
@@ -3696,7 +3158,6 @@ class StudioProApp {
     if (!layer) return;
 
     layer.visible = layer.visible === false ? true : false;
-    this.syncLegacyLayerRefs();
     this.updateLayerCardsUI();
     this.render();
     this.pushHistory(`Toggled Visibility: ${layer.name || layerId}`);
@@ -3737,6 +3198,8 @@ class StudioProApp {
     if (badgeStructure) badgeStructure.textContent = activeName;
     const badgeSimilarity = document.getElementById("badge-similarity-layer");
     if (badgeSimilarity) badgeSimilarity.textContent = activeName;
+    const badgeGradation = document.getElementById("badge-gradation-layer");
+    if (badgeGradation) badgeGradation.textContent = activeName;
 
     if (!container) return;
 
@@ -3759,7 +3222,7 @@ class StudioProApp {
       const isActive = l.id === this.activeLayerId;
       const isVis = l.visible !== false;
       const shapeDef = Shapes[l.shape] || Shapes.circle;
-      const icon = shapeDef?.iconSvg || '<svg viewBox="-20 -20 40 40" class="w-4 h-4"><circle cx="0" cy="0" r="14" fill="currentColor"/></svg>';
+      const icon = `<i class="ph-fill ph-${shapeDef?.phIcon || "circle"} text-[16px]"></i>`;
       const mode = l.wireframe !== false ? "stroke" : "fill";
       const s = l.structure;
       const structText = s?.enabled ? (s.mode === "radiation" ? " • radiation" : " • grid") : "";
@@ -3777,22 +3240,19 @@ class StudioProApp {
           </div>
           <div class="flex items-center gap-1">
             <button type="button" class="layer-action-btn btn-layer-eye" data-layer="${l.id}" title="Toggle Visibility">
-              ${isVis ? '<i data-lucide="eye" class="w-3.5 h-3.5"></i>' : '<i data-lucide="eye-off" class="w-3.5 h-3.5 opacity-40"></i>'}
+              ${isVis ? '<i class="ph ph-eye text-[14px]"></i>' : '<i class="ph ph-eye-slash text-[14px] opacity-40"></i>'}
             </button>
             <button type="button" class="layer-action-btn btn-layer-delete ${!canDelete ? 'opacity-25 cursor-not-allowed' : ''}" data-layer="${l.id}" title="${canDelete ? 'Delete Layer' : 'Cannot delete the only layer'}" ${!canDelete ? 'disabled' : ''}>
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              <i class="ph ph-trash text-[14px]"></i>
             </button>
             <span class="layer-action-btn layer-drag-handle cursor-grab active:cursor-grabbing text-zinc-400" title="Drag to reorder">
-              <i data-lucide="grip-vertical" class="w-3.5 h-3.5"></i>
+              <i class="ph ph-dots-six-vertical text-[14px]"></i>
             </span>
           </div>
         </div>
       `;
     }).join("");
 
-    if (window.lucide) {
-      window.lucide.createIcons();
-    }
   }
 
   /* =========================================================================
@@ -3846,9 +3306,6 @@ class StudioProApp {
       tabEl.classList.toggle("hidden", !match);
     });
 
-    if (window.lucide) {
-      window.lucide.createIcons();
-    }
   }
 
   updateRailIndicatorDots() {
@@ -3865,6 +3322,8 @@ class StudioProApp {
         isActive = !!mod?.structure?.formalStructure?.enabled;
       } else if (tab === "similarity") {
         isActive = !!mod?.structure?.similarity?.enabled;
+      } else if (tab === "gradation") {
+        isActive = !!mod?.structure?.gradation?.enabled;
       } else if (this.state.modifiers && this.state.modifiers[tab]) {
         isActive = !!this.state.modifiers[tab].enabled;
       }
@@ -4408,11 +3867,136 @@ class StudioProApp {
   }
 
   /* =========================================================================
+     GRADATION INSPECTOR & CONTROLLER (Per Active Layer)
+     Attribute (Rotate, Scale, Depth, Drift), Range, Cycles,
+     Pathway direction, Reverse
+     ========================================================================= */
+
+  getActiveGradation() {
+    const struct = this.getActiveLayerStructure();
+    return struct ? struct.gradation : null;
+  }
+
+  syncGradationInspectorWithActiveLayer() {
+    const mod = this.getActiveModule();
+    const grad = this.getActiveGradation();
+    if (!mod || !grad) return;
+
+    const badge = document.getElementById("badge-gradation-layer");
+    if (badge) badge.textContent = mod.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
+
+    const hasGrid = !!mod.structure.enabled;
+    const warnBox = document.getElementById("warning-gradation-grid");
+    if (warnBox) warnBox.classList.toggle("hidden", !(grad.enabled && !hasGrid));
+
+    const toggle = document.getElementById("toggle-gradation-active");
+    if (toggle) toggle.checked = !!grad.enabled;
+
+    document.querySelectorAll("#card-gradation [data-grad-type]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.gradType === grad.type);
+    });
+    document.querySelectorAll("#card-gradation [data-grad-pathway]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.gradPathway === grad.pathway);
+    });
+
+    const range = grad.range ?? 180;
+    this.syncControlValue("input-grad-range", range);
+    const numRange = document.getElementById("num-grad-range");
+    if (numRange) numRange.value = `${range}º`;
+
+    const steps = grad.steps ?? 1;
+    this.syncControlValue("input-grad-steps", steps);
+    this.syncControlValue("num-grad-steps", steps);
+
+    const reverse = document.getElementById("toggle-grad-reverse");
+    if (reverse) reverse.checked = !!grad.reverse;
+
+    this.updateRailIndicatorDots();
+  }
+
+  setupGradation() {
+    const toggle = document.getElementById("toggle-gradation-active");
+
+    // Any edit enables Gradation on the active layer, then refreshes everything.
+    const commit = (mutate, historyLabel, { resync = true } = {}) => {
+      const grad = this.getActiveGradation();
+      if (!grad) return;
+      mutate(grad);
+      grad.enabled = true;
+      if (toggle) toggle.checked = true;
+      if (resync) this.syncGradationInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      if (historyLabel) this.pushHistory(`Layer ${this.activeLayerId} ${historyLabel}`);
+    };
+
+    toggle?.addEventListener("change", (e) => {
+      const grad = this.getActiveGradation();
+      if (!grad) return;
+      grad.enabled = e.target.checked;
+      this.syncGradationInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      this.pushHistory(`Layer ${this.activeLayerId} Gradation: ${grad.enabled ? "ON" : "OFF"}`);
+    });
+
+    document.querySelectorAll("#card-gradation [data-grad-type]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(g => { g.type = btn.dataset.gradType; }, `Gradation Attribute: ${btn.dataset.gradType}`);
+      });
+    });
+    document.querySelectorAll("#card-gradation [data-grad-pathway]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(g => { g.pathway = btn.dataset.gradPathway; }, `Gradation Pathway: ${btn.dataset.gradPathway}`);
+      });
+    });
+
+    // Range (15º to 360º)
+    const inputRange = document.getElementById("input-grad-range");
+    const numRange = document.getElementById("num-grad-range");
+    inputRange?.addEventListener("input", (e) => {
+      const val = parseInt(e.target.value, 10);
+      commit(g => { g.range = val; }, null, { resync: false });
+      if (numRange) numRange.value = `${val}º`;
+    });
+    inputRange?.addEventListener("change", (e) => {
+      this.pushHistory(`Layer ${this.activeLayerId} Gradation Range: ${e.target.value}º`);
+    });
+    numRange?.addEventListener("change", (e) => {
+      const raw = parseInt(e.target.value.replace(/[^0-9-]/g, ""), 10);
+      const val = isNaN(raw) ? 180 : Math.max(15, Math.min(360, raw));
+      commit(g => { g.range = val; }, `Gradation Range: ${val}º`);
+    });
+
+    // Cycles (1 to 4)
+    const inputSteps = document.getElementById("input-grad-steps");
+    const numSteps = document.getElementById("num-grad-steps");
+    inputSteps?.addEventListener("input", (e) => {
+      const val = parseInt(e.target.value, 10);
+      commit(g => { g.steps = val; }, null, { resync: false });
+      if (numSteps) numSteps.value = val;
+    });
+    inputSteps?.addEventListener("change", (e) => {
+      this.pushHistory(`Layer ${this.activeLayerId} Gradation Cycles: ${e.target.value}`);
+    });
+    numSteps?.addEventListener("change", (e) => {
+      const raw = parseInt(e.target.value, 10);
+      const val = isNaN(raw) ? 1 : Math.max(1, Math.min(4, raw));
+      commit(g => { g.steps = val; }, `Gradation Cycles: ${val}`);
+    });
+
+    document.getElementById("toggle-grad-reverse")?.addEventListener("change", (e) => {
+      const checked = e.target.checked;
+      commit(g => { g.reverse = checked; }, `Gradation Reverse: ${checked ? "ON" : "OFF"}`);
+    });
+  }
+
+  /* =========================================================================
      CONTEXTUAL SHAPE & STYLE INSPECTOR (Applies to currently active layer)
      ========================================================================= */
 
   setupShapeInspector() {
-    // 1. Shape Glyph Selection Grid (13 Shapes)
+    // 1. Shape Glyph Selection Grid (15 Shapes)
     document.querySelectorAll("[data-shape]").forEach(btn => {
       btn.addEventListener("click", () => {
         const shape = btn.dataset.shape;
@@ -4513,20 +4097,6 @@ class StudioProApp {
         this.pushHistory(`Layer ${this.activeLayerId} Color: ${e.target.value.toUpperCase()}`);
       });
     }
-
-    // 7. Pathfinder Boolean Interrelation Buttons
-    document.querySelectorAll("[data-interrelation]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const op = btn.dataset.interrelation;
-        this.state.interrelation = op;
-        document.querySelectorAll("[data-interrelation]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        const badge = document.getElementById("badge-active-pathfinder");
-        if (badge) badge.textContent = op.toUpperCase();
-        this.render();
-        this.pushHistory(`Pathfinder Mode: ${op}`);
-      });
-    });
   }
 
   syncShapeInspectorWithActiveLayer() {
@@ -4574,8 +4144,6 @@ class StudioProApp {
     }
     if (swatch) swatch.style.backgroundColor = layerColor;
     if (hexText) hexText.textContent = layerColor.toUpperCase();
-    const badge = document.getElementById("badge-active-pathfinder");
-    if (badge) badge.textContent = this.state.interrelation.toUpperCase();
   }
 
   /* =========================================================================
@@ -4858,29 +4426,6 @@ class StudioProApp {
     this.bindSliderWithNumber("input-sim-intensity", "num-sim-intensity", (val) => { mods.similarity.intensity = val; this.render(); }, "Similarity Variance", "similarity");
     this.bindSliderWithNumber("input-sim-jitter", "num-sim-jitter", (val) => { mods.similarity.cellJitter = val; this.render(); }, "Cell Jitter", "similarity");
 
-    // 5. GRADATION
-    this.bindModifierMasterToggle("toggle-mod-gradation", "gradation");
-    document.querySelectorAll("[data-grad-type]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        this.ensureModifierActive("gradation");
-        mods.gradation.type = btn.dataset.gradType;
-        document.querySelectorAll("[data-grad-type]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        this.render();
-      });
-    });
-    document.querySelectorAll("[data-grad-pathway]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        this.ensureModifierActive("gradation");
-        mods.gradation.pathway = btn.dataset.gradPathway;
-        document.querySelectorAll("[data-grad-pathway]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        this.render();
-      });
-    });
-    this.bindSliderWithNumber("input-grad-range", "num-grad-range", (val) => { mods.gradation.range = val; this.render(); }, "Gradation Span", "gradation");
-    this.bindSliderWithNumber("input-grad-steps", "num-grad-steps", (val) => { mods.gradation.steps = val; this.render(); }, "Gradation Cycles", "gradation");
-
     // 6. ANOMALY
     this.bindModifierMasterToggle("toggle-mod-anomaly", "anomaly");
     document.querySelectorAll("[data-anom-type]").forEach(btn => {
@@ -5065,18 +4610,7 @@ class StudioProApp {
 
     // Normalize layers from preset
     if (!Array.isArray(this.state.layers) || this.state.layers.length === 0) {
-      this.state.layers = [];
-      if (this.state.formA) {
-        const l1 = Object.assign(createDefaultLayer("layer-1", "Layer 1", this.state.formA.shape || "circle"), this.state.formA, { id: "layer-1", name: "Layer 1" });
-        this.state.layers.push(l1);
-      }
-      if (this.state.formB && this.state.formB.enabled !== false) {
-        const l2 = Object.assign(createDefaultLayer("layer-2", "Layer 2", this.state.formB.shape || "square"), this.state.formB, { id: "layer-2", name: "Layer 2" });
-        this.state.layers.push(l2);
-      }
-      if (this.state.layers.length === 0) {
-        this.state.layers.push(createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5));
-      }
+      this.state.layers = [createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5)];
     }
 
     // Ensure all layers have valid structure and properties
@@ -5091,6 +4625,9 @@ class StudioProApp {
       }
       if (!layer.structure.similarity) {
         layer.structure.similarity = { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 };
+      }
+      if (!layer.structure.gradation) {
+        layer.structure.gradation = createDefaultLayerStructure().gradation;
       }
     });
 
@@ -5112,10 +4649,12 @@ class StudioProApp {
       if (this.state.modifiers?.similarity?.enabled) {
         Object.assign(firstLayer.structure.similarity, this.state.modifiers.similarity);
       }
+      if (this.state.modifiers?.gradation?.enabled) {
+        Object.assign(firstLayer.structure.gradation, this.state.modifiers.gradation);
+      }
     }
 
     this.state.layerOrder = this.state.layers.map(l => l.id);
-    this.syncLegacyLayerRefs();
 
     if (!this.state.layers.some(l => l.id === this.activeLayerId)) {
       this.activeLayerId = this.state.layers[0].id;
@@ -5148,8 +4687,7 @@ class StudioProApp {
     if (this.historyIndex > 0) {
       this.historyIndex--;
       this.state = JSON.parse(this.history[this.historyIndex]);
-      this.syncLegacyLayerRefs();
-      const layers = this.getLayers();
+        const layers = this.getLayers();
       if (!layers.some(l => l.id === this.activeLayerId)) {
         this.activeLayerId = layers[0]?.id || "layer-1";
       }
@@ -5163,8 +4701,7 @@ class StudioProApp {
     if (this.historyIndex < this.history.length - 1) {
       this.historyIndex++;
       this.state = JSON.parse(this.history[this.historyIndex]);
-      this.syncLegacyLayerRefs();
-      const layers = this.getLayers();
+        const layers = this.getLayers();
       if (!layers.some(l => l.id === this.activeLayerId)) {
         this.activeLayerId = layers[0]?.id || "layer-1";
       }
@@ -5178,7 +4715,6 @@ class StudioProApp {
 // Auto-boot upon DOM readiness
 document.addEventListener("DOMContentLoaded", () => {
   window.studioProApp = new StudioProApp();
-  if (window.lucide) window.lucide.createIcons();
 });
 
 

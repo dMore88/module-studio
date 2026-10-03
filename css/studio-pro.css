@@ -640,10 +640,16 @@ input[type="range"]:hover::-webkit-slider-thumb {
    REFERENCE 1 (MODULE) & REFERENCE 2 (LAYOUT STRUCTURE) WIDGET STYLES
    ========================================================================= */
 
+.shape-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .shape-circle-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  border-radius: 16px;
   border: 1px solid #18181f;
   background: #ffffff;
   color: #18181f;
@@ -788,3 +794,200 @@ input[type="range"]:hover::-webkit-slider-thumb {
 }
 
 
+
+/* =========================================================================
+   DS INSPECTOR CONTROLS (Figma: Web apps / Abstract studio)
+   Header, tags, slider + value box, toggle item. Reusable across cards.
+   ========================================================================= */
+
+/* Flyout geometry from the mockup (400 wide, 24 padding, 20 radius) */
+.inspector-flyout-card:has(.ds-card:not(.hidden)) {
+  width: 400px;
+  padding: 24px;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 10px 20px 0 rgba(15, 38, 72, 0.15), 0 3px 6px 0 rgba(15, 38, 72, 0.1);
+}
+
+.ds-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #282a36;
+}
+.ds-card.hidden { display: none !important; }
+
+.ds-card-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.ds-card-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ds-card-title-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #787b94;
+}
+.ds-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #e1e2eb;
+  color: #282a36;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.7;
+}
+
+/* Switch 40x24 */
+.ds-switch { position: relative; display: inline-flex; flex-shrink: 0; cursor: pointer; }
+.ds-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.ds-switch-track {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 40px;
+  height: 24px;
+  padding: 0 2px;
+  border-radius: 99999px;
+  background: #ffffff;
+  border: 1px solid #9ea1b8;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.ds-switch-track::before {
+  content: "";
+  width: 20px;
+  height: 20px;
+  border-radius: 100px;
+  background: #9ea1b8;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.ds-switch input:checked + .ds-switch-track { background: #282a36; border-color: #282a36; }
+.ds-switch input:checked + .ds-switch-track::before { background: #ffffff; transform: translateX(16px); }
+.ds-switch input:focus-visible + .ds-switch-track { outline: 2px solid #282a36; outline-offset: 2px; }
+
+/* Field + overline label */
+.ds-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1; }
+.ds-row { display: flex; gap: 13px; }
+.ds-label {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.24px;
+  text-transform: uppercase;
+  color: #63657b;
+}
+
+/* Tags */
+.ds-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.ds-tag {
+  box-sizing: border-box;
+  height: 24px;
+  padding: 0 12px;
+  border-radius: 99999px;
+  border: 1px solid #282a36;
+  background: #ffffff;
+  color: #282a36;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.ds-tag:hover { background: #f2f4f7; }
+.ds-tag.active { background: #282a36; color: #eeeef4; }
+
+/* Slider + value box */
+.ds-slider { display: flex; align-items: center; gap: 10px; }
+.ds-slider input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  height: 16px;
+  margin: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+.ds-slider input[type="range"]::-webkit-slider-runnable-track { height: 2px; background: #1d1d25; }
+.ds-slider input[type="range"]::-moz-range-track { height: 2px; background: #1d1d25; }
+.ds-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -7px;
+  border: none;
+  background: url("../assets/slider-thumb.svg") center / 16px 16px no-repeat;
+}
+.ds-slider input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: url("../assets/slider-thumb.svg") center / 16px 16px no-repeat;
+}
+.ds-value {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: 62px;
+  height: 31px;
+  border: 1px solid #292932;
+  border-radius: 7px;
+  background: #f0f0f2;
+  color: #292932;
+  font-family: 'Roboto Mono', var(--bs-font-mono, monospace);
+  font-size: 15px;
+  line-height: 1.2;
+  text-align: center;
+  outline: none;
+}
+.ds-value:focus { box-shadow: 0 0 0 2px rgba(40, 42, 54, 0.25); }
+
+/* Toggle item (checkbox row) */
+.ds-toggle-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 100px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+.ds-toggle-label { flex: 1; font-size: 16px; line-height: 1.5; color: #282a36; }
+.ds-checkbox {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  border: 1px solid #9ea1b8;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  display: grid;
+  place-content: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.ds-checkbox:checked { background: #282a36; border-color: #282a36; }
+.ds-checkbox:checked::after {
+  content: "";
+  width: 6px;
+  height: 11px;
+  margin-top: -2px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.ds-checkbox:focus-visible { outline: 2px solid #282a36; outline-offset: 2px; }

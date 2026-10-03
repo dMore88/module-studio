@@ -24,7 +24,7 @@ Para cumplir esto, el editor implementa 3 reglas mecánicas:
 2. **Independencia Pedagógica y Advertencias Asistidas (Opción B):**  
    Los modificadores cualitativos (*Similarity*, *Gradation*, *Anomaly*, *Contrast*, *Concentration*) pueden encenderse y calibrarse libremente en cualquier momento:
    - Si se activan estando en modo módulo único (sin *Repetition* ni *Radiation*), el sistema **no fuerza** el encendido de la retícula.
-   - En su lugar, despliega de forma no intrusiva un banner ámbar informativo (`#dep-warning-*`) dentro del acordeón y una etiqueta de estado en la *Study Card* izquierda: *"Requires Repetition or Radiation matrix to display across a population of units"*.
+   - En su lugar, despliega de forma no intrusiva un banner ámbar informativo (`#warning-*-grid`) dentro de la tarjeta del modificador: *"Requires Repetition or Radiation matrix to display across a population of units"*.
    - Cuando el usuario apaga la retícula para inspeccionar el módulo central, los modificadores cualitativos activos **no se apagan en cascada ni pierden sus parámetros**. Quedan listos para volver a manifestarse en cuanto se active cualquier retícula.
 
 3. **Preservación Integral de Módulos en el Canvas:**  
@@ -38,7 +38,7 @@ Para cumplir esto, el editor implementa 3 reglas mecánicas:
 
 | Modificador | Régimen / Dependencia | Razón según el libro de Wucius Wong | Comportamiento Mecánico en la Interfaz (Opción B) |
 | :--- | :--- | :--- | :--- |
-| **Form / Module** | **Autónomo (Base)** | Es la unidad visual fundamental e indivisible del diseño (figura-fondo y las 8 interrelaciones espaciales entre Form A y Form B). | **Siempre activo** en el canvas. Base matemática sobre la que operan todos los demás modificadores. |
+| **Layer / Module** | **Autónomo (Base)** | Es la unidad visual fundamental del diseño. Cada capa es un módulo independiente (hasta 5); lo que antes eran Form A y Form B son ahora capas. | **Siempre activo** en el canvas. Base sobre la que operan los modificadores de cada capa. |
 | **Repetition** | **Cartesiano (Incompatible con Radiation)** | Multiplica el módulo en una retícula ortogonal regular cartesiana ($X, Y$). | **Al activar:** Si *Radiation* estaba activo, lo apaga automáticamente. Notifica cambio a retícula cartesiana.<br>**Al desactivar:** Apaga *Structure*. Mantiene encendidos los modificadores cualitativos mostrando su banner pedagógico asistido. |
 | **Radiation** | **Polar (Incompatible con Repetition & Structure)** | Estructura el espacio mediante coordenadas polares (rayos y anillos concéntricos desde un foco). | **Al activar:** Apaga automáticamente *Repetition* y *Structure* (eliminando controles fantasma). Notifica cambio a esquema polar.<br>**Al desactivar:** Regresa al modo base sin apagar en cascada las calibraciones de modificadores cualitativos. |
 | **Structure** | **Requiere Repetition (Exclusivo Cartesiano)** | Regula las líneas estructurales y los intervalos rítmicos duales ($A : B$) que gobiernan las celdas ortogonales. No tiene sentido físico en rayos polares. | **Al activar:** Si *Radiation* estaba encendido, lo apaga y asegura *Repetition* activo.<br>**Al desactivar Repetition:** *Structure* se apaga automáticamente. |
@@ -52,23 +52,10 @@ Para cumplir esto, el editor implementa 3 reglas mecánicas:
 
 ---
 
-## 3. Mecánica de las Study Cards (Panel Izquierdo)
+## 3. Pipeline Gráfico de Renderizado (`StudioEngine.render`)
 
-1. **Sincronización Total con los Switches:**  
-   Hacer clic en el botón `[×]` de una Study Card en la columna izquierda desmarca el switch correspondiente de forma limpia, sincronizando el estado sin efectos secundarios destructivos.
-2. **Base Permanente:**  
-   La tarjeta `FORM & 8 INTERRELATIONS` permanece siempre en el tope del feed y no se puede cerrar.
-3. **Avisos de Dependencia en Tiempo Real:**  
-   Si un modificador colectivo está activo sin una retícula, la Study Card muestra un badge ámbar:
-   `[i] Requires Repetition or Radiation`
-4. **Acciones Contextuales:**  
-   Cada tarjeta cuenta con accesos directos:
-   - `[📖 Theory]`: Navega a la teoría correspondiente.
-   - `[💼 Real World]`: Muestra el caso de estudio profesional aplicado.
+> El pipeline se ejecuta **una vez por capa visible**, respetando el orden de capas.
 
----
-
-## 4. Pipeline Gráfico de Renderizado (`StudioEngine.render`)
 
 ```
 [1] Fondo (Color de papel según paleta activa e inversión Figura/Fondo)
@@ -82,12 +69,12 @@ Para cumplir esto, el editor implementa 3 reglas mecánicas:
 
 ---
 
-## 5. Indicador de Resolución y Lienzo
+## 4. Indicador de Resolución y Lienzo
  
- El pie del canvas (`#studio-resolution-text`) muestra la resolución activa del canvas y el soporte HiDPI/Retina (ej. `600 × 600 PX • RETINA HiDPI`, `600 × 800 PX • RETINA HiDPI`). Los principios de diseño aplicados se estudian de forma interactiva y detallada en la columna izquierda mediante las **Study Cards**.
+ El pie del canvas muestra la resolución activa, el número de capas y el soporte HiDPI/Retina (ej. `600 × 600 PX • 2 LAYERS • 100% ZOOM`).
 
 
-## 6. Proporciones de Canvas (Aspect Ratios)
+## 5. Proporciones de Canvas (Aspect Ratios)
 
 - **1:1 Square:** 600 × 600 px (Identidad, branding, logos)
 - **9:16 Story:** 450 × 800 px (Social media, vertical reels)
@@ -97,7 +84,7 @@ Para cumplir esto, el editor implementa 3 reglas mecánicas:
 
 ---
 
-## 7. Protocolo de Compilación Obligatorio (`build-pro.py`)
+## 6. Protocolo de Compilación Obligatorio (`build-pro.py`)
 
 Después de cualquier modificación en los archivos de la carpeta `js/`:
 ```bash
@@ -107,7 +94,7 @@ Esto genera `js/bundle-pro.js` manteniendo sincronizada la versión standalone d
 
 ---
 
-## 8. Protocolo de Calidad Obligatorio (Zero-Breakage)
+## 7. Protocolo de Calidad Obligatorio (Zero-Breakage)
 
 > **REGLA DE ORO DE DESARROLLO:**  
 > Ningún cambio, refactor o nuevo control puede entregarse sin cumplir estrictamente estos 6 mandamientos de calidad:

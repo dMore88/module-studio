@@ -74,6 +74,7 @@ export class StudioProApp {
     this.setupLayoutStructure();
     this.setupFormalStructure();
     this.setupSimilarity();
+    this.setupGradation();
     this.setupShapeInspector();
     this.setupInteractiveHandles();
     this.setupModifierCards();
@@ -119,12 +120,7 @@ export class StudioProApp {
 
   getLayers() {
     if (!Array.isArray(this.state.layers) || this.state.layers.length === 0) {
-      this.state.layers = [];
-      if (this.state.formA) this.state.layers.push(this.state.formA);
-      if (this.state.formB && this.state.formB.enabled !== false) this.state.layers.push(this.state.formB);
-      if (this.state.layers.length === 0) {
-        this.state.layers.push(createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5));
-      }
+      this.state.layers = [createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5)];
     }
     return this.state.layers;
   }
@@ -133,13 +129,7 @@ export class StudioProApp {
     const layers = this.getLayers();
     const active = layers.find(l => l.id === this.activeLayerId);
     if (active) return active;
-    return layers[0] || this.state.formA;
-  }
-
-  syncLegacyLayerRefs() {
-    const layers = this.getLayers();
-    this.state.formA = layers[0] || null;
-    this.state.formB = layers[1] || null;
+    return layers[0] || null;
   }
 
   getActiveLayerStructure() {
@@ -157,6 +147,9 @@ export class StudioProApp {
         seed: 42
       };
     }
+    if (!mod.structure.gradation) {
+      mod.structure.gradation = createDefaultLayerStructure().gradation;
+    }
     return mod.structure;
   }
 
@@ -165,6 +158,7 @@ export class StudioProApp {
     this.syncStructureInspectorWithActiveLayer();
     this.syncFormalStructureInspectorWithActiveLayer();
     this.syncSimilarityInspectorWithActiveLayer();
+    this.syncGradationInspectorWithActiveLayer();
     this.updateRailIndicatorDots();
   }
 
@@ -413,7 +407,7 @@ export class StudioProApp {
     const newId = `layer-${nextNum}`;
     const newName = `Layer ${nextNum}`;
 
-    const shapesPool = ["circle", "square", "triangle_eq", "rhombus", "hexagon", "star4"];
+    const shapesPool = ["circle", "square", "triangle", "hexagon", "parallelogram", "cross"];
     const newShape = shapesPool[layers.length % shapesPool.length];
     const newLayer = createDefaultLayer(newId, newName, newShape, 0, 0, 0);
 
@@ -424,7 +418,6 @@ export class StudioProApp {
     this.state.layerOrder.unshift(newId);
     this.activeLayerId = newId;
 
-    this.syncLegacyLayerRefs();
     this.updateLayerCardsUI();
     this.syncAllInspectorsWithActiveLayer();
     this.render();
@@ -442,7 +435,6 @@ export class StudioProApp {
       this.activeLayerId = this.state.layers[0]?.id || "layer-1";
     }
 
-    this.syncLegacyLayerRefs();
     this.updateLayerCardsUI();
     this.syncAllInspectorsWithActiveLayer();
     this.render();
@@ -455,7 +447,6 @@ export class StudioProApp {
     if (!layer) return;
 
     layer.visible = layer.visible === false ? true : false;
-    this.syncLegacyLayerRefs();
     this.updateLayerCardsUI();
     this.render();
     this.pushHistory(`Toggled Visibility: ${layer.name || layerId}`);
@@ -496,6 +487,8 @@ export class StudioProApp {
     if (badgeStructure) badgeStructure.textContent = activeName;
     const badgeSimilarity = document.getElementById("badge-similarity-layer");
     if (badgeSimilarity) badgeSimilarity.textContent = activeName;
+    const badgeGradation = document.getElementById("badge-gradation-layer");
+    if (badgeGradation) badgeGradation.textContent = activeName;
 
     if (!container) return;
 
@@ -518,7 +511,7 @@ export class StudioProApp {
       const isActive = l.id === this.activeLayerId;
       const isVis = l.visible !== false;
       const shapeDef = Shapes[l.shape] || Shapes.circle;
-      const icon = shapeDef?.iconSvg || '<svg viewBox="-20 -20 40 40" class="w-4 h-4"><circle cx="0" cy="0" r="14" fill="currentColor"/></svg>';
+      const icon = `<i class="ph-fill ph-${shapeDef?.phIcon || "circle"} text-[16px]"></i>`;
       const mode = l.wireframe !== false ? "stroke" : "fill";
       const s = l.structure;
       const structText = s?.enabled ? (s.mode === "radiation" ? " • radiation" : " • grid") : "";
@@ -536,22 +529,19 @@ export class StudioProApp {
           </div>
           <div class="flex items-center gap-1">
             <button type="button" class="layer-action-btn btn-layer-eye" data-layer="${l.id}" title="Toggle Visibility">
-              ${isVis ? '<i data-lucide="eye" class="w-3.5 h-3.5"></i>' : '<i data-lucide="eye-off" class="w-3.5 h-3.5 opacity-40"></i>'}
+              ${isVis ? '<i class="ph ph-eye text-[14px]"></i>' : '<i class="ph ph-eye-slash text-[14px] opacity-40"></i>'}
             </button>
             <button type="button" class="layer-action-btn btn-layer-delete ${!canDelete ? 'opacity-25 cursor-not-allowed' : ''}" data-layer="${l.id}" title="${canDelete ? 'Delete Layer' : 'Cannot delete the only layer'}" ${!canDelete ? 'disabled' : ''}>
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              <i class="ph ph-trash text-[14px]"></i>
             </button>
             <span class="layer-action-btn layer-drag-handle cursor-grab active:cursor-grabbing text-zinc-400" title="Drag to reorder">
-              <i data-lucide="grip-vertical" class="w-3.5 h-3.5"></i>
+              <i class="ph ph-dots-six-vertical text-[14px]"></i>
             </span>
           </div>
         </div>
       `;
     }).join("");
 
-    if (window.lucide) {
-      window.lucide.createIcons();
-    }
   }
 
   /* =========================================================================
@@ -605,9 +595,6 @@ export class StudioProApp {
       tabEl.classList.toggle("hidden", !match);
     });
 
-    if (window.lucide) {
-      window.lucide.createIcons();
-    }
   }
 
   updateRailIndicatorDots() {
@@ -624,6 +611,8 @@ export class StudioProApp {
         isActive = !!mod?.structure?.formalStructure?.enabled;
       } else if (tab === "similarity") {
         isActive = !!mod?.structure?.similarity?.enabled;
+      } else if (tab === "gradation") {
+        isActive = !!mod?.structure?.gradation?.enabled;
       } else if (this.state.modifiers && this.state.modifiers[tab]) {
         isActive = !!this.state.modifiers[tab].enabled;
       }
@@ -1167,11 +1156,136 @@ export class StudioProApp {
   }
 
   /* =========================================================================
+     GRADATION INSPECTOR & CONTROLLER (Per Active Layer)
+     Attribute (Rotate, Scale, Depth, Drift), Range, Cycles,
+     Pathway direction, Reverse
+     ========================================================================= */
+
+  getActiveGradation() {
+    const struct = this.getActiveLayerStructure();
+    return struct ? struct.gradation : null;
+  }
+
+  syncGradationInspectorWithActiveLayer() {
+    const mod = this.getActiveModule();
+    const grad = this.getActiveGradation();
+    if (!mod || !grad) return;
+
+    const badge = document.getElementById("badge-gradation-layer");
+    if (badge) badge.textContent = mod.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
+
+    const hasGrid = !!mod.structure.enabled;
+    const warnBox = document.getElementById("warning-gradation-grid");
+    if (warnBox) warnBox.classList.toggle("hidden", !(grad.enabled && !hasGrid));
+
+    const toggle = document.getElementById("toggle-gradation-active");
+    if (toggle) toggle.checked = !!grad.enabled;
+
+    document.querySelectorAll("#card-gradation [data-grad-type]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.gradType === grad.type);
+    });
+    document.querySelectorAll("#card-gradation [data-grad-pathway]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.gradPathway === grad.pathway);
+    });
+
+    const range = grad.range ?? 180;
+    this.syncControlValue("input-grad-range", range);
+    const numRange = document.getElementById("num-grad-range");
+    if (numRange) numRange.value = `${range}º`;
+
+    const steps = grad.steps ?? 1;
+    this.syncControlValue("input-grad-steps", steps);
+    this.syncControlValue("num-grad-steps", steps);
+
+    const reverse = document.getElementById("toggle-grad-reverse");
+    if (reverse) reverse.checked = !!grad.reverse;
+
+    this.updateRailIndicatorDots();
+  }
+
+  setupGradation() {
+    const toggle = document.getElementById("toggle-gradation-active");
+
+    // Any edit enables Gradation on the active layer, then refreshes everything.
+    const commit = (mutate, historyLabel, { resync = true } = {}) => {
+      const grad = this.getActiveGradation();
+      if (!grad) return;
+      mutate(grad);
+      grad.enabled = true;
+      if (toggle) toggle.checked = true;
+      if (resync) this.syncGradationInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      if (historyLabel) this.pushHistory(`Layer ${this.activeLayerId} ${historyLabel}`);
+    };
+
+    toggle?.addEventListener("change", (e) => {
+      const grad = this.getActiveGradation();
+      if (!grad) return;
+      grad.enabled = e.target.checked;
+      this.syncGradationInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      this.pushHistory(`Layer ${this.activeLayerId} Gradation: ${grad.enabled ? "ON" : "OFF"}`);
+    });
+
+    document.querySelectorAll("#card-gradation [data-grad-type]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(g => { g.type = btn.dataset.gradType; }, `Gradation Attribute: ${btn.dataset.gradType}`);
+      });
+    });
+    document.querySelectorAll("#card-gradation [data-grad-pathway]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(g => { g.pathway = btn.dataset.gradPathway; }, `Gradation Pathway: ${btn.dataset.gradPathway}`);
+      });
+    });
+
+    // Range (15º to 360º)
+    const inputRange = document.getElementById("input-grad-range");
+    const numRange = document.getElementById("num-grad-range");
+    inputRange?.addEventListener("input", (e) => {
+      const val = parseInt(e.target.value, 10);
+      commit(g => { g.range = val; }, null, { resync: false });
+      if (numRange) numRange.value = `${val}º`;
+    });
+    inputRange?.addEventListener("change", (e) => {
+      this.pushHistory(`Layer ${this.activeLayerId} Gradation Range: ${e.target.value}º`);
+    });
+    numRange?.addEventListener("change", (e) => {
+      const raw = parseInt(e.target.value.replace(/[^0-9-]/g, ""), 10);
+      const val = isNaN(raw) ? 180 : Math.max(15, Math.min(360, raw));
+      commit(g => { g.range = val; }, `Gradation Range: ${val}º`);
+    });
+
+    // Cycles (1 to 4)
+    const inputSteps = document.getElementById("input-grad-steps");
+    const numSteps = document.getElementById("num-grad-steps");
+    inputSteps?.addEventListener("input", (e) => {
+      const val = parseInt(e.target.value, 10);
+      commit(g => { g.steps = val; }, null, { resync: false });
+      if (numSteps) numSteps.value = val;
+    });
+    inputSteps?.addEventListener("change", (e) => {
+      this.pushHistory(`Layer ${this.activeLayerId} Gradation Cycles: ${e.target.value}`);
+    });
+    numSteps?.addEventListener("change", (e) => {
+      const raw = parseInt(e.target.value, 10);
+      const val = isNaN(raw) ? 1 : Math.max(1, Math.min(4, raw));
+      commit(g => { g.steps = val; }, `Gradation Cycles: ${val}`);
+    });
+
+    document.getElementById("toggle-grad-reverse")?.addEventListener("change", (e) => {
+      const checked = e.target.checked;
+      commit(g => { g.reverse = checked; }, `Gradation Reverse: ${checked ? "ON" : "OFF"}`);
+    });
+  }
+
+  /* =========================================================================
      CONTEXTUAL SHAPE & STYLE INSPECTOR (Applies to currently active layer)
      ========================================================================= */
 
   setupShapeInspector() {
-    // 1. Shape Glyph Selection Grid (13 Shapes)
+    // 1. Shape Glyph Selection Grid (15 Shapes)
     document.querySelectorAll("[data-shape]").forEach(btn => {
       btn.addEventListener("click", () => {
         const shape = btn.dataset.shape;
@@ -1272,20 +1386,6 @@ export class StudioProApp {
         this.pushHistory(`Layer ${this.activeLayerId} Color: ${e.target.value.toUpperCase()}`);
       });
     }
-
-    // 7. Pathfinder Boolean Interrelation Buttons
-    document.querySelectorAll("[data-interrelation]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const op = btn.dataset.interrelation;
-        this.state.interrelation = op;
-        document.querySelectorAll("[data-interrelation]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        const badge = document.getElementById("badge-active-pathfinder");
-        if (badge) badge.textContent = op.toUpperCase();
-        this.render();
-        this.pushHistory(`Pathfinder Mode: ${op}`);
-      });
-    });
   }
 
   syncShapeInspectorWithActiveLayer() {
@@ -1333,8 +1433,6 @@ export class StudioProApp {
     }
     if (swatch) swatch.style.backgroundColor = layerColor;
     if (hexText) hexText.textContent = layerColor.toUpperCase();
-    const badge = document.getElementById("badge-active-pathfinder");
-    if (badge) badge.textContent = this.state.interrelation.toUpperCase();
   }
 
   /* =========================================================================
@@ -1617,29 +1715,6 @@ export class StudioProApp {
     this.bindSliderWithNumber("input-sim-intensity", "num-sim-intensity", (val) => { mods.similarity.intensity = val; this.render(); }, "Similarity Variance", "similarity");
     this.bindSliderWithNumber("input-sim-jitter", "num-sim-jitter", (val) => { mods.similarity.cellJitter = val; this.render(); }, "Cell Jitter", "similarity");
 
-    // 5. GRADATION
-    this.bindModifierMasterToggle("toggle-mod-gradation", "gradation");
-    document.querySelectorAll("[data-grad-type]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        this.ensureModifierActive("gradation");
-        mods.gradation.type = btn.dataset.gradType;
-        document.querySelectorAll("[data-grad-type]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        this.render();
-      });
-    });
-    document.querySelectorAll("[data-grad-pathway]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        this.ensureModifierActive("gradation");
-        mods.gradation.pathway = btn.dataset.gradPathway;
-        document.querySelectorAll("[data-grad-pathway]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        this.render();
-      });
-    });
-    this.bindSliderWithNumber("input-grad-range", "num-grad-range", (val) => { mods.gradation.range = val; this.render(); }, "Gradation Span", "gradation");
-    this.bindSliderWithNumber("input-grad-steps", "num-grad-steps", (val) => { mods.gradation.steps = val; this.render(); }, "Gradation Cycles", "gradation");
-
     // 6. ANOMALY
     this.bindModifierMasterToggle("toggle-mod-anomaly", "anomaly");
     document.querySelectorAll("[data-anom-type]").forEach(btn => {
@@ -1824,18 +1899,7 @@ export class StudioProApp {
 
     // Normalize layers from preset
     if (!Array.isArray(this.state.layers) || this.state.layers.length === 0) {
-      this.state.layers = [];
-      if (this.state.formA) {
-        const l1 = Object.assign(createDefaultLayer("layer-1", "Layer 1", this.state.formA.shape || "circle"), this.state.formA, { id: "layer-1", name: "Layer 1" });
-        this.state.layers.push(l1);
-      }
-      if (this.state.formB && this.state.formB.enabled !== false) {
-        const l2 = Object.assign(createDefaultLayer("layer-2", "Layer 2", this.state.formB.shape || "square"), this.state.formB, { id: "layer-2", name: "Layer 2" });
-        this.state.layers.push(l2);
-      }
-      if (this.state.layers.length === 0) {
-        this.state.layers.push(createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5));
-      }
+      this.state.layers = [createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5)];
     }
 
     // Ensure all layers have valid structure and properties
@@ -1850,6 +1914,9 @@ export class StudioProApp {
       }
       if (!layer.structure.similarity) {
         layer.structure.similarity = { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 };
+      }
+      if (!layer.structure.gradation) {
+        layer.structure.gradation = createDefaultLayerStructure().gradation;
       }
     });
 
@@ -1871,10 +1938,12 @@ export class StudioProApp {
       if (this.state.modifiers?.similarity?.enabled) {
         Object.assign(firstLayer.structure.similarity, this.state.modifiers.similarity);
       }
+      if (this.state.modifiers?.gradation?.enabled) {
+        Object.assign(firstLayer.structure.gradation, this.state.modifiers.gradation);
+      }
     }
 
     this.state.layerOrder = this.state.layers.map(l => l.id);
-    this.syncLegacyLayerRefs();
 
     if (!this.state.layers.some(l => l.id === this.activeLayerId)) {
       this.activeLayerId = this.state.layers[0].id;
@@ -1907,8 +1976,7 @@ export class StudioProApp {
     if (this.historyIndex > 0) {
       this.historyIndex--;
       this.state = JSON.parse(this.history[this.historyIndex]);
-      this.syncLegacyLayerRefs();
-      const layers = this.getLayers();
+        const layers = this.getLayers();
       if (!layers.some(l => l.id === this.activeLayerId)) {
         this.activeLayerId = layers[0]?.id || "layer-1";
       }
@@ -1922,8 +1990,7 @@ export class StudioProApp {
     if (this.historyIndex < this.history.length - 1) {
       this.historyIndex++;
       this.state = JSON.parse(this.history[this.historyIndex]);
-      this.syncLegacyLayerRefs();
-      const layers = this.getLayers();
+        const layers = this.getLayers();
       if (!layers.some(l => l.id === this.activeLayerId)) {
         this.activeLayerId = layers[0]?.id || "layer-1";
       }
@@ -1937,5 +2004,4 @@ export class StudioProApp {
 // Auto-boot upon DOM readiness
 document.addEventListener("DOMContentLoaded", () => {
   window.studioProApp = new StudioProApp();
-  if (window.lucide) window.lucide.createIcons();
 });
