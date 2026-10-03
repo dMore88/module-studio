@@ -1008,3 +1008,39 @@ input[type="range"]:hover::-webkit-slider-thumb {
 }
 
 .ds-field.hidden { display: none !important; }
+
+/* Accent color row (swatch + hex) under a highlight toggle */
+.ds-color-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 0 8px;
+  transition: opacity 0.15s ease;
+}
+.ds-color-row.is-dimmed { opacity: 0.45; }
+.ds-color-label { flex: 1; font-size: 14px; line-height: 1.5; color: #787b94; }
+.ds-color-hex {
+  font-family: 'Roboto Mono', var(--bs-font-mono, monospace);
+  font-size: 15px;
+  color: #292932;
+}
+.ds-swatch {
+  position: relative;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 1px solid #9ea1b8;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.ds-swatch input[type="color"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.ds-swatch-fill { display: block; width: 100%; height: 100%; }

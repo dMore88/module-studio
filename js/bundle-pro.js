@@ -534,6 +534,7 @@ const createDefaultLayerStructure = () => ({
     intensity: 65, // severity, 10 to 100
     anomalousShape: "triangle",
     highlightColor: false,
+    accentColor: "#f43f5e", // color applied to anomalous modules when highlighted
     showReticle: false
   },
   contrast: {
@@ -543,7 +544,8 @@ const createDefaultLayerStructure = () => ({
     contrastShape: "cross", // shape for shape contrast
     scaleFactor: 2.2, // scale multiplier for scale contrast (0.2 to 3.0)
     angle: 45, // clash angle for direction contrast
-    highlightContrast: false // accentuate minority elements
+    highlightContrast: false, // accentuate minority elements
+    accentColor: "#f43f5e" // color applied to the minority when accentuated
   },
   concentration: {
     enabled: false,
@@ -1059,7 +1061,7 @@ class StudioEngine {
   }
 
   // Draw a single shape module for an individual layer
-  drawSingleLayerShape(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false) {
+  drawSingleLayerShape(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false, colorOverride = null) {
     if (!mod) return;
     const shape = shapeOverride || mod.shape || "circle";
     const baseW = mod.width !== undefined ? mod.width : (mod.scale || 50);
@@ -1078,7 +1080,8 @@ class StudioEngine {
     targetCtx.translate(ox, oy);
     targetCtx.rotate(((mod.rotation || 0) * Math.PI) / 180);
     targetCtx.scale(sx, sy);
-    const layerColor = mod.color || fgColor;
+    // An explicit override (anomaly / contrast accent) wins over the layer color.
+    const layerColor = colorOverride || mod.color || fgColor;
     this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, false, isCutout);
     targetCtx.restore();
   }
@@ -1446,7 +1449,7 @@ class StudioEngine {
               cellShapeA = anom.anomalousShape || "triangle";
               ctx.rotate((Math.PI / 4) * severity * factor);
               cellScaleMul *= (1 + 0.35 * severity);
-              if (anom.highlightColor) cellFg = palette.accent;
+              if (anom.highlightColor) cellFg = anom.accentColor || palette.accent;
             }
           } else if (anom.type === "fracture") {
             const corridor = anom.radius * 0.45;
@@ -1456,7 +1459,7 @@ class StudioEngine {
               const shearX = (cx > epiX ? 1 : -1) * (10 * severity);
               ctx.translate(shearX, shearY);
               ctx.rotate((factor * severity * Math.PI) / 3.2);
-              if (factor > 0.4 && anom.highlightColor) cellFg = palette.accent;
+              if (factor > 0.4 && anom.highlightColor) cellFg = anom.accentColor || palette.accent;
             }
           } else if (anom.type === "swell") {
             if (inZone) {
@@ -1465,7 +1468,7 @@ class StudioEngine {
               ctx.translate(Math.cos(angle) * push, Math.sin(angle) * push);
               const sFactor = 1 + factor * 0.55 * severity;
               ctx.scale(sFactor, sFactor);
-              if (factor > 0.65 && anom.highlightColor) cellFg = palette.accent;
+              if (factor > 0.65 && anom.highlightColor) cellFg = anom.accentColor || palette.accent;
             }
           } else if (anom.type === "tear") {
             if (factor > 0.6) {
@@ -1478,7 +1481,7 @@ class StudioEngine {
               ctx.rotate(pRand(53) * Math.PI * severity);
               const shrink = Math.max(0.15, 1 - factor * 0.85);
               ctx.scale(shrink, shrink);
-              if (anom.highlightColor && factor > 0.3) cellFg = palette.accent;
+              if (anom.highlightColor && factor > 0.3) cellFg = anom.accentColor || palette.accent;
             }
           }
         }
@@ -1500,7 +1503,7 @@ class StudioEngine {
               cellWireframe = true;
             }
             if (contrast.highlightContrast) {
-              cellFg = palette.accent;
+              cellFg = contrast.accentColor || palette.accent;
             }
           }
         }
@@ -1508,7 +1511,7 @@ class StudioEngine {
         const scaleUnit = 1.25 * Math.min(1.0, Math.min(width, height) / 600);
         const cellRatio = Math.min(cW / usableW, cH / usableH);
         const normScale = scaleUnit * cellRatio * cellScaleMul * concScaleMul;
-        this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA);
+        this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor ? cellFg : null);
         ctx.restore();
       };
 
@@ -1905,7 +1908,7 @@ class StudioEngine {
                 cellShapeA = anom.anomalousShape || "triangle";
                 ctx.rotate((Math.PI / 4) * severity * factor);
                 cellScaleMul *= (1 + 0.35 * severity);
-                if (anom.highlightColor) cellFg = palette.accent;
+                if (anom.highlightColor) cellFg = anom.accentColor || palette.accent;
               }
             } else if (anom.type === "fracture") {
               const corridor = anom.radius * 0.45;
@@ -1915,7 +1918,7 @@ class StudioEngine {
                 const shearX = (x > epiX ? 1 : -1) * (10 * severity);
                 ctx.translate(shearX, shearY);
                 ctx.rotate((factor * severity * Math.PI) / 3.2);
-                if (factor > 0.4 && anom.highlightColor) cellFg = palette.accent;
+                if (factor > 0.4 && anom.highlightColor) cellFg = anom.accentColor || palette.accent;
               }
             } else if (anom.type === "swell") {
               if (inZone) {
@@ -1924,7 +1927,7 @@ class StudioEngine {
                 ctx.translate(Math.cos(angleToEpi) * push, Math.sin(angleToEpi) * push);
                 const sFactor = 1 + factor * 0.55 * severity;
                 ctx.scale(sFactor, sFactor);
-                if (factor > 0.65 && anom.highlightColor) cellFg = palette.accent;
+                if (factor > 0.65 && anom.highlightColor) cellFg = anom.accentColor || palette.accent;
               }
             } else if (anom.type === "tear") {
               if (factor > 0.6) {
@@ -1936,7 +1939,7 @@ class StudioEngine {
                 ctx.rotate(rRand * Math.PI * severity);
                 const shrink = Math.max(0.15, 1 - factor * 0.85);
                 ctx.scale(shrink, shrink);
-                if (anom.highlightColor && factor > 0.3) cellFg = palette.accent;
+                if (anom.highlightColor && factor > 0.3) cellFg = anom.accentColor || palette.accent;
               }
             }
           }
@@ -1958,7 +1961,7 @@ class StudioEngine {
                 cellWireframe = true;
               }
               if (contrast.highlightContrast) {
-                cellFg = palette.accent;
+                cellFg = contrast.accentColor || palette.accent;
               }
             }
           }
@@ -1972,7 +1975,7 @@ class StudioEngine {
           const growthFactor = 0.75 + (i / rings) * 0.45;
           const radScaleMul = isMultiCenter ? 0.7 : 1.0;
           const normScale = scaleUnit * sectorRatio * growthFactor * radScaleMul * cellScaleMul * concScaleMul;
-          this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA);
+          this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== palette.fg ? cellFg : null);
           ctx.restore();
         }
       }
@@ -4046,6 +4049,18 @@ class StudioProApp {
     });
   }
 
+  // Accent color row (swatch + hex) shared by modifiers that can highlight elements.
+  syncAccentColorRow(prefix, color, active) {
+    const hex = (color || "#f43f5e").toUpperCase();
+    const input = document.getElementById(`${prefix}-accent-color`);
+    if (input) input.value = hex.toLowerCase();
+    const swatch = document.getElementById(`${prefix}-accent-swatch`);
+    if (swatch) swatch.style.backgroundColor = hex;
+    const label = document.getElementById(`${prefix}-accent-hex`);
+    if (label) label.textContent = hex;
+    document.getElementById(`${prefix}-accent-row`)?.classList.toggle("is-dimmed", !active);
+  }
+
   /* =========================================================================
      ANOMALY INSPECTOR & CONTROLLER (Per Active Layer)
      Type (Focal, Rupture, Swell, Void), Focal intruder shape, X/Y position,
@@ -4091,6 +4106,7 @@ class StudioProApp {
     setPair("input-anom-intensity", "num-anom-intensity", anom.intensity ?? 65, "%");
 
     this.syncCheckbox("toggle-anom-highlight", !!anom.highlightColor);
+    this.syncAccentColorRow("anom", anom.accentColor, !!anom.highlightColor);
     this.syncCheckbox("toggle-anom-reticle", !!anom.showReticle);
 
     this.updateRailIndicatorDots();
@@ -4159,6 +4175,14 @@ class StudioProApp {
     document.getElementById("toggle-anom-highlight")?.addEventListener("change", (e) => {
       const checked = e.target.checked;
       commit(a => { a.highlightColor = checked; }, `Anomaly Highlight: ${checked ? "ON" : "OFF"}`);
+    });
+    // Picking an accent color also turns the highlight on.
+    const anomColor = document.getElementById("anom-accent-color");
+    anomColor?.addEventListener("input", (e) => {
+      commit(a => { a.accentColor = e.target.value; a.highlightColor = true; }, null);
+    });
+    anomColor?.addEventListener("change", (e) => {
+      this.pushHistory(`Layer ${this.activeLayerId} Anomaly Accent: ${e.target.value.toUpperCase()}`);
     });
     document.getElementById("toggle-anom-reticle")?.addEventListener("change", (e) => {
       const checked = e.target.checked;
@@ -4230,6 +4254,7 @@ class StudioProApp {
     document.getElementById("contrast-angle-block")?.classList.toggle("hidden", con.dimension !== "direction");
 
     this.syncCheckbox("toggle-contrast-highlight", !!con.highlightContrast);
+    this.syncAccentColorRow("contrast", con.accentColor, !!con.highlightContrast);
 
     this.updateRailIndicatorDots();
   }
@@ -4296,6 +4321,14 @@ class StudioProApp {
     document.getElementById("toggle-contrast-highlight")?.addEventListener("change", (e) => {
       const checked = e.target.checked;
       commit(c => { c.highlightContrast = checked; }, `Contrast Accentuate Minority: ${checked ? "ON" : "OFF"}`);
+    });
+    // Picking an accent color also turns the accentuation on.
+    const contrastColor = document.getElementById("contrast-accent-color");
+    contrastColor?.addEventListener("input", (e) => {
+      commit(c => { c.accentColor = e.target.value; c.highlightContrast = true; }, null);
+    });
+    contrastColor?.addEventListener("change", (e) => {
+      this.pushHistory(`Layer ${this.activeLayerId} Contrast Accent: ${e.target.value.toUpperCase()}`);
     });
   }
 

@@ -178,7 +178,8 @@ Introduce una zona de irregularidad donde prevalece una estructura regular previ
 * **`epicenterX / epicenterY`** (*X / Y position*, 10% a 90%, por defecto 50%): Coordenadas normalizadas del epicentro. También se fijan haciendo clic en el canvas con la pestaña Anomaly abierta.
 * **`radius`** (*Radius*, 50 a 350 px, por defecto 160): Radio espacial de influencia del evento anómalo.
 * **`intensity`** (*Severity*, 10% a 100%, por defecto 65%): Nivel de mutación aplicada a los módulos intervenidos.
-* **`highlightColor`** (*Highlight with accent color*, por defecto apagado): Aplica el color de acento de la paleta a los módulos anómalos.
+* **`highlightColor`** (*Highlight with accent color*, por defecto apagado): Aplica un color de acento a los módulos anómalos.
+* **`accentColor`** (*Accent color*, selector de color, por defecto `#f43f5e`): Color usado por el resaltado. Elegir un color enciende el resaltado.
 * **`showReticle`** (*Show Epicenter Reticle*, por defecto apagado): Dibuja el radio de influencia y la mira del epicentro.
 
 **UI (Figma, nodo `5779:2565`).** Requiere retícula (Repetition o Radiation) en la capa para manifestarse; sin ella se muestra el banner ámbar del contrato Opción B.
@@ -195,9 +196,10 @@ Establece disparidad formal estructurada en una relación matemática de **mayor
   * `tone` (*Tone*): Mayoría en línea/tinta vs. minoría en masa rellena o invertida.
 * **`dominanceRatio`** (*Dominance ratio*, 50% a 95%, por defecto 80%): Proporción que ocupa la mayoría regular. El techo del 95% garantiza que siempre exista una minoría.
 * **`scaleFactor`** (*Contrast Scale Multiplier*, 0.2x a 3.0x, por defecto 2.2x): Multiplicador de la minoría en la dimensión `scale`.
-* **`highlightContrast`** (*Accentuate Minority Elements*, por defecto apagado): Destaca tonalmente la minoría discordante.
+* **`highlightContrast`** (*Accentuate Minority Elements*, por defecto apagado): Destaca la minoría discordante con un color de acento.
+* **`accentColor`** (*Accent color*, selector de color, por defecto `#f43f5e`): Color de la minoría resaltada. Elegir un color enciende el resaltado.
 
-**UI (Figma, nodo `5779:2773`).** Cada dimensión muestra solo los controles que la gobiernan: *Scale* → multiplicador de escala, *Shape* → selector de forma, *Angle* → ángulo de choque, *Tone* → ninguno (*Dominance ratio* y *Accentuate Minority Elements* siempre visibles). Los controles de forma y ángulo se añadieron a lo que muestra el mockup. A diferencia de Anomaly, Contrast no tiene puntero en el canvas: la minoría se reparte por distribución, no por posición. Requiere retícula (Repetition o Radiation) en la capa; sin ella se muestra el banner ámbar del contrato Opción B.
+**UI (Figma, nodo `5779:2773`).** Cada dimensión muestra solo los controles que la gobiernan: *Scale* → multiplicador de escala, *Shape* → selector de forma, *Angle* → ángulo de choque, *Tone* → ninguno (*Dominance ratio* y *Accentuate Minority Elements* siempre visibles). El selector de color de acento, los controles de forma y los de ángulo se añadieron a lo que muestra el mockup. A diferencia de Anomaly, Contrast no tiene puntero en el canvas: la minoría se reparte por distribución, no por posición. Requiere retícula (Repetition o Radiation) en la capa; sin ella se muestra el banner ámbar del contrato Opción B.
 
 ---
 

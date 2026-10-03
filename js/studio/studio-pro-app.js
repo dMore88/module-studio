@@ -1303,6 +1303,18 @@ export class StudioProApp {
     });
   }
 
+  // Accent color row (swatch + hex) shared by modifiers that can highlight elements.
+  syncAccentColorRow(prefix, color, active) {
+    const hex = (color || "#f43f5e").toUpperCase();
+    const input = document.getElementById(`${prefix}-accent-color`);
+    if (input) input.value = hex.toLowerCase();
+    const swatch = document.getElementById(`${prefix}-accent-swatch`);
+    if (swatch) swatch.style.backgroundColor = hex;
+    const label = document.getElementById(`${prefix}-accent-hex`);
+    if (label) label.textContent = hex;
+    document.getElementById(`${prefix}-accent-row`)?.classList.toggle("is-dimmed", !active);
+  }
+
   /* =========================================================================
      ANOMALY INSPECTOR & CONTROLLER (Per Active Layer)
      Type (Focal, Rupture, Swell, Void), Focal intruder shape, X/Y position,
@@ -1348,6 +1360,7 @@ export class StudioProApp {
     setPair("input-anom-intensity", "num-anom-intensity", anom.intensity ?? 65, "%");
 
     this.syncCheckbox("toggle-anom-highlight", !!anom.highlightColor);
+    this.syncAccentColorRow("anom", anom.accentColor, !!anom.highlightColor);
     this.syncCheckbox("toggle-anom-reticle", !!anom.showReticle);
 
     this.updateRailIndicatorDots();
@@ -1416,6 +1429,14 @@ export class StudioProApp {
     document.getElementById("toggle-anom-highlight")?.addEventListener("change", (e) => {
       const checked = e.target.checked;
       commit(a => { a.highlightColor = checked; }, `Anomaly Highlight: ${checked ? "ON" : "OFF"}`);
+    });
+    // Picking an accent color also turns the highlight on.
+    const anomColor = document.getElementById("anom-accent-color");
+    anomColor?.addEventListener("input", (e) => {
+      commit(a => { a.accentColor = e.target.value; a.highlightColor = true; }, null);
+    });
+    anomColor?.addEventListener("change", (e) => {
+      this.pushHistory(`Layer ${this.activeLayerId} Anomaly Accent: ${e.target.value.toUpperCase()}`);
     });
     document.getElementById("toggle-anom-reticle")?.addEventListener("change", (e) => {
       const checked = e.target.checked;
@@ -1487,6 +1508,7 @@ export class StudioProApp {
     document.getElementById("contrast-angle-block")?.classList.toggle("hidden", con.dimension !== "direction");
 
     this.syncCheckbox("toggle-contrast-highlight", !!con.highlightContrast);
+    this.syncAccentColorRow("contrast", con.accentColor, !!con.highlightContrast);
 
     this.updateRailIndicatorDots();
   }
@@ -1553,6 +1575,14 @@ export class StudioProApp {
     document.getElementById("toggle-contrast-highlight")?.addEventListener("change", (e) => {
       const checked = e.target.checked;
       commit(c => { c.highlightContrast = checked; }, `Contrast Accentuate Minority: ${checked ? "ON" : "OFF"}`);
+    });
+    // Picking an accent color also turns the accentuation on.
+    const contrastColor = document.getElementById("contrast-accent-color");
+    contrastColor?.addEventListener("input", (e) => {
+      commit(c => { c.accentColor = e.target.value; c.highlightContrast = true; }, null);
+    });
+    contrastColor?.addEventListener("change", (e) => {
+      this.pushHistory(`Layer ${this.activeLayerId} Contrast Accent: ${e.target.value.toUpperCase()}`);
     });
   }
 
