@@ -535,6 +535,15 @@ const createDefaultLayerStructure = () => ({
     anomalousShape: "triangle",
     highlightColor: false,
     showReticle: false
+  },
+  contrast: {
+    enabled: false,
+    dimension: "scale", // scale, shape, direction, tone
+    dominanceRatio: 80, // % majority regular (50 to 95)
+    contrastShape: "cross", // shape for shape contrast
+    scaleFactor: 2.2, // scale multiplier for scale contrast (0.2 to 3.0)
+    angle: 45, // clash angle for direction contrast
+    highlightContrast: false // accentuate minority elements
   }
 });
 const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "circle", offsetX = 0, offsetY = 0, rotation = 0) => ({
@@ -1124,7 +1133,7 @@ class StudioEngine {
     const sim = (targetMod?.structure?.similarity) || this.state.modifiers.similarity;
     const grad = (targetMod?.structure?.gradation) || this.state.modifiers.gradation;
     const anom = (targetMod?.structure?.anomaly) || this.state.modifiers.anomaly;
-    const contrast = this.state.modifiers.contrast;
+    const contrast = (targetMod?.structure?.contrast) || this.state.modifiers.contrast;
     const conc = this.state.modifiers.concentration;
 
     const cols = Math.max(1, rep.cols);
@@ -1635,7 +1644,7 @@ class StudioEngine {
     const grad = (targetMod?.structure?.gradation) || this.state.modifiers.gradation;
     const sim = (targetMod?.structure?.similarity) || this.state.modifiers.similarity;
     const anom = (targetMod?.structure?.anomaly) || this.state.modifiers.anomaly;
-    const contrast = this.state.modifiers.contrast;
+    const contrast = (targetMod?.structure?.contrast) || this.state.modifiers.contrast;
     const conc = this.state.modifiers.concentration;
 
     const margin = marginParam !== undefined ? marginParam : Math.round(Math.max(20, Math.min(width, height) * 0.05));
@@ -2798,6 +2807,7 @@ class StudioProApp {
     this.setupSimilarity();
     this.setupGradation();
     this.setupAnomaly();
+    this.setupContrast();
     this.setupShapeInspector();
     this.setupInteractiveHandles();
     this.setupModifierCards();
@@ -2876,6 +2886,9 @@ class StudioProApp {
     if (!mod.structure.anomaly) {
       mod.structure.anomaly = createDefaultLayerStructure().anomaly;
     }
+    if (!mod.structure.contrast) {
+      mod.structure.contrast = createDefaultLayerStructure().contrast;
+    }
     return mod.structure;
   }
 
@@ -2886,6 +2899,7 @@ class StudioProApp {
     this.syncSimilarityInspectorWithActiveLayer();
     this.syncGradationInspectorWithActiveLayer();
     this.syncAnomalyInspectorWithActiveLayer();
+    this.syncContrastInspectorWithActiveLayer();
     this.updateRailIndicatorDots();
   }
 
@@ -3218,6 +3232,8 @@ class StudioProApp {
     if (badgeGradation) badgeGradation.textContent = activeName;
     const badgeAnomaly = document.getElementById("badge-anomaly-layer");
     if (badgeAnomaly) badgeAnomaly.textContent = activeName;
+    const badgeContrast = document.getElementById("badge-contrast-layer");
+    if (badgeContrast) badgeContrast.textContent = activeName;
 
     if (!container) return;
 
@@ -3344,6 +3360,8 @@ class StudioProApp {
         isActive = !!mod?.structure?.gradation?.enabled;
       } else if (tab === "anomaly") {
         isActive = !!mod?.structure?.anomaly?.enabled;
+      } else if (tab === "contrast") {
+        isActive = !!mod?.structure?.contrast?.enabled;
       } else if (this.state.modifiers && this.state.modifiers[tab]) {
         isActive = !!this.state.modifiers[tab].enabled;
       }
@@ -4141,6 +4159,109 @@ class StudioProApp {
   }
 
   /* =========================================================================
+     CONTRAST INSPECTOR & CONTROLLER (Per Active Layer)
+     Dimension (Scale, Shape, Angle, Tone), Dominance ratio,
+     Contrast scale multiplier, Accentuate minority elements.
+     ========================================================================= */
+
+  getActiveContrast() {
+    const struct = this.getActiveLayerStructure();
+    return struct ? struct.contrast : null;
+  }
+
+  syncContrastInspectorWithActiveLayer() {
+    const mod = this.getActiveModule();
+    const con = this.getActiveContrast();
+    if (!mod || !con) return;
+
+    const badge = document.getElementById("badge-contrast-layer");
+    if (badge) badge.textContent = mod.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
+
+    const hasGrid = !!mod.structure.enabled;
+    const warnBox = document.getElementById("warning-contrast-grid");
+    if (warnBox) warnBox.classList.toggle("hidden", !(con.enabled && !hasGrid));
+
+    const toggle = document.getElementById("toggle-contrast-active");
+    if (toggle) toggle.checked = !!con.enabled;
+
+    document.querySelectorAll("#card-contrast [data-contrast-dimension]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.contrastDimension === con.dimension);
+    });
+
+    const dominance = con.dominanceRatio ?? 80;
+    this.syncControlValue("input-contrast-dominance", dominance);
+    const numDominance = document.getElementById("num-contrast-dominance");
+    if (numDominance) numDominance.value = `${dominance}%`;
+
+    const scale = con.scaleFactor ?? 2.2;
+    this.syncControlValue("input-contrast-scale", scale);
+    const numScale = document.getElementById("num-contrast-scale");
+    if (numScale) numScale.value = `${scale}x`;
+
+    this.syncCheckbox("toggle-contrast-highlight", !!con.highlightContrast);
+
+    this.updateRailIndicatorDots();
+  }
+
+  setupContrast() {
+    const toggle = document.getElementById("toggle-contrast-active");
+
+    // Any edit enables Contrast on the active layer, then refreshes everything.
+    const commit = (mutate, historyLabel, { resync = true } = {}) => {
+      const con = this.getActiveContrast();
+      if (!con) return;
+      mutate(con);
+      con.enabled = true;
+      if (toggle) toggle.checked = true;
+      if (resync) this.syncContrastInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      if (historyLabel) this.pushHistory(`Layer ${this.activeLayerId} ${historyLabel}`);
+    };
+
+    toggle?.addEventListener("change", (e) => {
+      const con = this.getActiveContrast();
+      if (!con) return;
+      con.enabled = e.target.checked;
+      this.syncContrastInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      this.pushHistory(`Layer ${this.activeLayerId} Contrast: ${con.enabled ? "ON" : "OFF"}`);
+    });
+
+    document.querySelectorAll("#card-contrast [data-contrast-dimension]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(c => { c.dimension = btn.dataset.contrastDimension; }, `Contrast Dimension: ${btn.dataset.contrastDimension}`);
+      });
+    });
+
+    const bindPair = (sliderId, numId, { min, max, suffix, label, key }) => {
+      const slider = document.getElementById(sliderId);
+      const num = document.getElementById(numId);
+      slider?.addEventListener("input", (e) => {
+        const val = parseFloat(e.target.value);
+        commit(c => { c[key] = val; }, null, { resync: false });
+        if (num) num.value = `${val}${suffix}`;
+      });
+      slider?.addEventListener("change", (e) => {
+        this.pushHistory(`Layer ${this.activeLayerId} Contrast ${label}: ${e.target.value}${suffix}`);
+      });
+      num?.addEventListener("change", (e) => {
+        const raw = parseFloat(e.target.value.replace(/[^0-9.]/g, ""));
+        const val = isNaN(raw) ? min : Math.round(Math.max(min, Math.min(max, raw)) * 10) / 10;
+        commit(c => { c[key] = val; }, `Contrast ${label}: ${val}${suffix}`);
+      });
+    };
+    bindPair("input-contrast-dominance", "num-contrast-dominance", { min: 50, max: 95, suffix: "%", label: "Dominance", key: "dominanceRatio" });
+    bindPair("input-contrast-scale", "num-contrast-scale", { min: 0.2, max: 3, suffix: "x", label: "Scale", key: "scaleFactor" });
+
+    document.getElementById("toggle-contrast-highlight")?.addEventListener("change", (e) => {
+      const checked = e.target.checked;
+      commit(c => { c.highlightContrast = checked; }, `Contrast Accentuate Minority: ${checked ? "ON" : "OFF"}`);
+    });
+  }
+
+  /* =========================================================================
      CONTEXTUAL SHAPE & STYLE INSPECTOR (Applies to currently active layer)
      ========================================================================= */
 
@@ -4557,20 +4678,6 @@ class StudioProApp {
     this.bindSliderWithNumber("input-sim-jitter", "num-sim-jitter", (val) => { mods.similarity.cellJitter = val; this.render(); }, "Cell Jitter", "similarity");
 
 
-    // 7. CONTRAST
-    this.bindModifierMasterToggle("toggle-mod-contrast", "contrast");
-    document.querySelectorAll("[data-contrast-dimension]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        this.ensureModifierActive("contrast");
-        mods.contrast.dimension = btn.dataset.contrastDimension;
-        document.querySelectorAll("[data-contrast-dimension]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        this.render();
-      });
-    });
-    this.bindSliderWithNumber("input-contrast-dominance", "num-contrast-dominance", (val) => { mods.contrast.dominanceRatio = val; this.render(); }, "Dominance Ratio", "contrast");
-    this.bindSliderWithNumber("input-contrast-scale", "num-contrast-scale", (val) => { mods.contrast.scaleFactor = val; this.render(); }, "Contrast Scale", "contrast");
-
     // 8. CONCENTRATION
     this.bindModifierMasterToggle("toggle-mod-concentration", "concentration");
     document.querySelectorAll("[data-conc-mode]").forEach(btn => {
@@ -4747,6 +4854,9 @@ class StudioProApp {
       if (!layer.structure.anomaly) {
         layer.structure.anomaly = createDefaultLayerStructure().anomaly;
       }
+      if (!layer.structure.contrast) {
+        layer.structure.contrast = createDefaultLayerStructure().contrast;
+      }
     });
 
     // If global repetition or radiation is enabled in preset modifiers, propagate to layer 1 structure
@@ -4772,6 +4882,9 @@ class StudioProApp {
       }
       if (this.state.modifiers?.anomaly?.enabled) {
         Object.assign(firstLayer.structure.anomaly, this.state.modifiers.anomaly);
+      }
+      if (this.state.modifiers?.contrast?.enabled) {
+        Object.assign(firstLayer.structure.contrast, this.state.modifiers.contrast);
       }
     }
 

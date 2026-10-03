@@ -61,6 +61,15 @@ export const createDefaultLayerStructure = () => ({
     anomalousShape: "triangle",
     highlightColor: false,
     showReticle: false
+  },
+  contrast: {
+    enabled: false,
+    dimension: "scale", // scale, shape, direction, tone
+    dominanceRatio: 80, // % majority regular (50 to 95)
+    contrastShape: "cross", // shape for shape contrast
+    scaleFactor: 2.2, // scale multiplier for scale contrast (0.2 to 3.0)
+    angle: 45, // clash angle for direction contrast
+    highlightContrast: false // accentuate minority elements
   }
 });
 
@@ -653,7 +662,7 @@ export class StudioEngine {
     const sim = (targetMod?.structure?.similarity) || this.state.modifiers.similarity;
     const grad = (targetMod?.structure?.gradation) || this.state.modifiers.gradation;
     const anom = (targetMod?.structure?.anomaly) || this.state.modifiers.anomaly;
-    const contrast = this.state.modifiers.contrast;
+    const contrast = (targetMod?.structure?.contrast) || this.state.modifiers.contrast;
     const conc = this.state.modifiers.concentration;
 
     const cols = Math.max(1, rep.cols);
@@ -1164,7 +1173,7 @@ export class StudioEngine {
     const grad = (targetMod?.structure?.gradation) || this.state.modifiers.gradation;
     const sim = (targetMod?.structure?.similarity) || this.state.modifiers.similarity;
     const anom = (targetMod?.structure?.anomaly) || this.state.modifiers.anomaly;
-    const contrast = this.state.modifiers.contrast;
+    const contrast = (targetMod?.structure?.contrast) || this.state.modifiers.contrast;
     const conc = this.state.modifiers.concentration;
 
     const margin = marginParam !== undefined ? marginParam : Math.round(Math.max(20, Math.min(width, height) * 0.05));

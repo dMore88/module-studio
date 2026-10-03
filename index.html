@@ -692,51 +692,67 @@
       </div>
 
       <!-- ===================================================================
-           TAB 5: CONTRAST
+           TAB 7: CONTRAST (Figma: Web apps / Abstract studio, node 5779:2773)
+           Dimension, Dominance ratio, Contrast scale multiplier, Accentuate minority
            =================================================================== -->
-      <div id="card-contrast" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="contrast">
-        <div class="modifier-header">
-          <div class="flex items-center gap-2">
-            <i class="ph ph-circle-half text-[14px] text-zinc-600"></i>
-            <span class="font-semibold text-xs text-[#121317]">Contrast</span>
+      <div id="card-contrast" class="flyout-tab-content ds-card hidden" data-flyout-tab="contrast">
+        <div class="ds-card-header">
+          <div class="ds-card-title">
+            <span class="ds-card-title-text">Contrast</span>
+            <span id="badge-contrast-layer" class="ds-badge">Layer 1</span>
           </div>
-          <div class="flex items-center gap-2">
-            <label class="switch">
-              <input type="checkbox" id="toggle-mod-contrast">
-              <span class="switch-slider"></span>
-            </label>
-            <button type="button" class="close-flyout-btn" title="Close Panel">
-              <i class="ph ph-x text-[14px]"></i>
-            </button>
+          <label class="ds-switch" title="Enable / Disable Contrast">
+            <input type="checkbox" id="toggle-contrast-active">
+            <span class="ds-switch-track"></span>
+          </label>
+          <button type="button" class="close-flyout-btn" title="Close Panel">
+            <i class="ph ph-x text-[14px]"></i>
+          </button>
+        </div>
+
+        <!-- Dependency banner: Contrast ON but no Repetition / Radiation in this layer -->
+        <div id="warning-contrast-grid" class="warning-alert-box hidden">
+          <i class="ph ph-warning text-[16px] text-[#d97706] shrink-0 mt-0.5"></i>
+          <span>Requires Repetition or Radiation in Layout structure to display across a population of units.</span>
+        </div>
+
+        <div class="ds-field">
+          <div class="ds-label">Dimension</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-contrast-dimension="scale">Scale</button>
+            <button type="button" class="ds-tag" data-contrast-dimension="shape">Shape</button>
+            <button type="button" class="ds-tag" data-contrast-dimension="direction">Angle</button>
+            <button type="button" class="ds-tag" data-contrast-dimension="tone">Tone</button>
           </div>
         </div>
-        <div class="modifier-body space-y-2">
-          <div class="grid grid-cols-3 gap-1">
-            <button type="button" class="tool-btn active text-[10px]" data-contrast-type="scale">Scale</button>
-            <button type="button" class="tool-btn text-[10px]" data-contrast-type="tone">Tone</button>
-            <button type="button" class="tool-btn text-[10px]" data-contrast-type="orientation">Angle</button>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
-                <span>Dominance (%)</span>
-                <input type="number" id="num-contrast-dominance" class="scrub-input w-10" value="80" min="60" max="95">
-              </div>
-              <input type="range" id="input-contrast-dominance" min="60" max="95" value="80">
-            </div>
-            <div>
-              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
-                <span>Scale Factor</span>
-                <input type="number" id="num-contrast-scale" class="scrub-input w-12" value="2.2" min="0.2" max="3.0" step="0.2">
-              </div>
-              <input type="range" id="input-contrast-scale" min="0.2" max="3.0" step="0.1" value="2.2">
+
+        <div class="ds-row">
+          <div class="ds-field">
+            <div class="ds-label ds-label-clip">Dominance ratio</div>
+            <div class="ds-slider">
+              <input type="range" id="input-contrast-dominance" min="50" max="95" step="1" value="80">
+              <input type="text" id="num-contrast-dominance" class="ds-value" value="80%" inputmode="decimal">
             </div>
           </div>
+          <div class="ds-field">
+            <div class="ds-label ds-label-clip">Contrast Scale Multiplier</div>
+            <div class="ds-slider">
+              <input type="range" id="input-contrast-scale" min="0.2" max="3" step="0.1" value="2.2">
+              <input type="text" id="num-contrast-scale" class="ds-value" value="2.2x" inputmode="decimal">
+            </div>
+          </div>
+        </div>
+
+        <div class="ds-toggles">
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Accentuate Minority Elements</span>
+            <input type="checkbox" id="toggle-contrast-highlight" class="ds-checkbox">
+          </label>
         </div>
       </div>
 
       <!-- ===================================================================
-           TAB 6: CONCENTRATION
+           TAB 8: CONCENTRATION
            =================================================================== -->
       <div id="card-concentration" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="concentration">
         <div class="modifier-header">
@@ -781,7 +797,7 @@
       </div>
 
       <!-- ===================================================================
-           TAB 7: TEXTURE
+           TAB 9: TEXTURE
            =================================================================== -->
       <div id="card-texture" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="texture">
         <div class="modifier-header">
@@ -826,7 +842,7 @@
       </div>
 
       <!-- ===================================================================
-           TAB 8: SPACE & DEPTH
+           TAB 10: SPACE & DEPTH
            =================================================================== -->
       <div id="card-space" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="space">
         <div class="modifier-header">

@@ -999,3 +999,10 @@ input[type="range"]:hover::-webkit-slider-thumb {
   color: #63657b;
 }
 .ds-toggles { display: flex; flex-direction: column; }
+
+/* Long labels truncate with an ellipsis (as in the mockup) */
+.ds-label-clip {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -186,18 +186,18 @@ Introduce una zona de irregularidad donde prevalece una estructura regular previ
 ---
 
 ### 4.7 Contrast (Tensión y Dominancia de Minorías)
-Establece disparidad formal estructurada en una relación matemática de **mayoría dominante vs. minoría discordante**.
+Establece disparidad formal estructurada en una relación matemática de **mayoría dominante vs. minoría discordante**. Estado por capa en `layer.structure.contrast`.
 
-* **`dimension`**:
-  * `scale`: Mayoría regular reducida vs. minoría monumental.
-  * `shape`: Mayoría regular vs. minoría con glifo completamente discordante.
-  * `direction`: Mayoría alineada vs. minoría rotada en un ángulo de choque.
-  * `tone`: Mayoría en línea/tinta vs. minoría en masa rellena o invertida.
-* **`dominanceRatio`** (60% a 95%): Proporción que ocupa la mayoría regular (garantiza que la minoría nunca supere el umbral de dominancia).
-* **`scaleFactor`** (0.2 a 3.0): Factor multiplicador para el contraste de escala.
-* **`contrastShape`**: Forma asignada exclusivamente a la minoría.
-* **`angle`** (15° a 90°): Ángulo de choque para el contraste de dirección.
-* **`highlightContrast`** (`boolean`): Destaca tonalmente la minoría discordante.
+* **`dimension`** (tags *Dimension*):
+  * `scale` (*Scale*): Mayoría regular reducida vs. minoría monumental.
+  * `shape` (*Shape*): Mayoría regular vs. minoría con glifo completamente discordante (`contrastShape`, por defecto `cross`).
+  * `direction` (*Angle*): Mayoría alineada vs. minoría rotada en un ángulo de choque (`angle`, por defecto 45°).
+  * `tone` (*Tone*): Mayoría en línea/tinta vs. minoría en masa rellena o invertida.
+* **`dominanceRatio`** (*Dominance ratio*, 50% a 95%, por defecto 80%): Proporción que ocupa la mayoría regular. El techo del 95% garantiza que siempre exista una minoría.
+* **`scaleFactor`** (*Contrast Scale Multiplier*, 0.2x a 3.0x, por defecto 2.2x): Multiplicador de la minoría en la dimensión `scale`.
+* **`highlightContrast`** (*Accentuate Minority Elements*, por defecto apagado): Destaca tonalmente la minoría discordante.
+
+**UI (Figma, nodo `5779:2773`).** El mockup no incluye selector de forma ni slider de ángulo, así que `contrastShape` y `angle` quedan en sus valores por defecto. Requiere retícula (Repetition o Radiation) en la capa; sin ella se muestra el banner ámbar del contrato Opción B.
 
 ---
 
