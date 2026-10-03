@@ -70,8 +70,8 @@ Controla el soporte físico y los límites del plano gráfico.
 Cada capa es un módulo independiente. Se pueden tener hasta 5 capas con visibilidad, orden (drag & drop), forma, color y pipeline de modificadores propios.
 
 ### 3.1 Controles de capa
-* **`shape`**: una de las 15 formas del selector (lista canónica del mockup de Figma, `STUDIO_SHAPE_KEYS` en `js/studio/shapes.js`): `circle`, `square`, `triangle`, `wave`, `horseshoe`, `hexagon`, `line`, `parallelogram`, `hatch`, `crescent`, `teardrop`, `cross`, `digit1`, `digit5`, `digit9`. Los botones y las tarjetas de capa usan iconos Phosphor en peso *fill* (campo `phIcon` de cada forma).
-* **`width / height`**: dimensiones del módulo (base 50).
+* **`shape`**: una de las 15 formas del selector (lista canónica del mockup de Figma, `STUDIO_SHAPE_KEYS` en `js/studio/shapes.js`): `circle`, `square`, `triangle`, `wave`, `horseshoe`, `hexagon`, `line`, `parallelogram`, `hatch`, `crescent`, `teardrop`, `cross`, `digit1`, `digit5`, `digit9`. Los botones y las tarjetas de capa usan iconos Phosphor en peso *fill* (campo `phIcon` de cada forma). Los dígitos son vectoriales (ya no son texto) y `line` es una línea real.
+* **`width / height`**: dimensiones del módulo (base 50; el ancho llega a 400 para permitir líneas largas).
 * **`rotation`**: ángulo de orientación.
 * **`strokeWidth`**: grosor del trazo.
 * **`offsetX / offsetY`**: desplazamiento relativo al centro.
@@ -91,7 +91,7 @@ Multiplica el módulo en una retícula ortogonal sobre el plano cartesiano $X, Y
   * `curved`: Deformación armónica sinusoidal sobre las líneas guía.
   * `zigzag`: Deformación angular triangular sobre los ejes.
   * `triangular / alternating`: Retícula triangular isomorfa o hexagonal.
-* **`cols / rows`** (1 a 12): Número de divisiones en los ejes horizontal y vertical.
+* **`cols / rows`** (1 a 50): Número de divisiones en los ejes horizontal y vertical.
 * **`spacing`** (px): Separación o canaleta (*gutter*) entre celdas contiguas.
 * **`slideOffset`** (0.0 a 1.0): Proporción de desplazamiento en filas impares (modo `sliding`).
 * **`shearAngle`** (0° a 45°): Ángulo de inclinación oblicua (modo `sheared`).
@@ -223,21 +223,19 @@ Agrupa o dispersa los módulos según campos de fuerza invisibles, simulando gra
 
 ---
 
-### 4.9 Texture (Materia Táctil y Tratamiento Superficial)
-Aplica grano físico y micro-patrones ópticos que despojan a la composición del acabado vectorial plano.
+### 4.9 Texture (Deformación de Geometría como Efecto de Textura)
+No es una textura de píxeles: son deformaciones de la geometría de cada módulo que producen un efecto de textura artesanal (trazo a mano, deshilachado, ruptura de línea). Cada forma se convierte en una polilínea y se alteran sus vértices con un ruido determinista (estable por capa y celda, sin parpadeo). Estado por capa en `layer.structure.texture`. Es un modificador autónomo: funciona en módulo único y sobre cualquier retícula, sin banner de dependencia. Se aplica antes de Space, así que las extrusiones usan la geometría deformada.
 
-* **`target`**:
-  * `shapes`: Aplica la textura únicamente dentro de la silueta de los módulos.
-  * `canvas`: Aplica la textura únicamente sobre el papel o fondo.
-  * `both`: Aplica textura a la totalidad de la pieza gráfica.
-* **`mode`**:
-  * `grain`: Ruido litográfico de micropartículas analógicas.
-  * `halftone`: Trama de semitono con puntos tramados en matriz offset.
-  * `ribbing`: Estriado lineal o micro-corrugado táctil.
-  * `typography`: Matriz de microglifos tipográficos abstractos.
-* **`density`** (20% a 90%): Frecuencia o cantidad de partículas en la unidad de área.
-* **`scale`** (6 a 36px): Tamaño del grano o periodo de la trama.
-* **`contrast`** (15% a 80%): Opacidad de mezcla sobre la tinta o el papel.
+* **`jitter`** (*Jitter*, 0 a 8 px, por defecto 1): Temblor de cada vértice, como un trazo a mano.
+* **`skipChance`** (*Line skipping*, 0% a 60%, por defecto 10%): Omite vértices y rompe el trazo en tramos. Solo se ve en modo trazo; se ignora en relleno.
+* **`crossing`** (*Strand crossing*, 0% a 60%, por defecto 10%): Intercambia vértices cercanos y deshilacha el trazo. Solo se ve en modo trazo; se ignora en relleno.
+* **`undulation`** (*Perimeter undulation*, 0 a 30 px, por defecto 10): Onda senoidal sobre la normal del contorno.
+
+**Unidades relativas.** Los px de `jitter` y `undulation` están expresados para un módulo de 100 px y se escalan al tamaño real del módulo. La forma `line` es un módulo largo y usa 450 px como referencia (`textureRef`).
+
+**Formas de trazo.** `line`, `wave`, `horseshoe`, `hatch` y los dígitos `digit1`, `digit5` y `digit9` son rutas abiertas (`skeleton: true`): en modo trazo se ven como una línea fina y en modo relleno como un trazo grueso. No se escalan de forma anisotrópica (el trazo se aplanaría) y no usan extrusión de Space. En una retícula, una `line` abarca el ancho de su celda, de modo que una columna y varias filas reproducen una trama de líneas largas.
+
+**UI (Figma, mockup de Texture).** Reemplaza las antiguas texturas de píxeles (grano, semitono, estriado y tipografía, con destino lienzo o formas), que se eliminaron.
 
 ---
 

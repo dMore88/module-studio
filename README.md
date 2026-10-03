@@ -42,7 +42,7 @@ The application is built on a clean, zero-dependency stack with high-performance
 | **Anomaly** | Focal Disruption | Per-layer focal, rupture, swell and void anomalies with intruder shape, epicenter (click on canvas), radius, severity, accent highlight and reticle. |
 | **Contrast** | Tension & Dominance | Per-layer minority clash across scale, shape, angle and tone, with dominance ratio, scale multiplier and minority accent. |
 | **Concentration** | Gravitational Fields | Per-layer density kinematics towards attractor points, axes, voids and hotspots, with pull, field radius, flow orientation, density scale and attractor guide. |
-| **Texture** | Surface Treatment | Halftone, lithographic grain, linear hatching, and typographic glyph stamping. *(In progress)* |
+| **Texture** | Geometry Deformation | Per-layer jitter, line skipping, strand crossing and perimeter undulation that deform shape geometry into a hand-made texture effect. |
 | **Space** | 3D Illusion | Per-layer isometric extrusion, 3D tilt, fluctuating and paradox planes, with depth, projection angle, facet shading and isometric grid lines. |
 
 ---

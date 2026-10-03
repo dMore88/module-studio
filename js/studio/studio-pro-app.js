@@ -77,6 +77,7 @@ export class StudioProApp {
     this.setupContrast();
     this.setupConcentration();
     this.setupSpace();
+    this.setupTexture();
     this.setupShapeInspector();
     this.setupModifierCards();
 
@@ -163,6 +164,9 @@ export class StudioProApp {
     if (!mod.structure.space) {
       mod.structure.space = createDefaultLayerStructure().space;
     }
+    if (!mod.structure.texture) {
+      mod.structure.texture = createDefaultLayerStructure().texture;
+    }
     return mod.structure;
   }
 
@@ -176,6 +180,7 @@ export class StudioProApp {
     this.syncContrastInspectorWithActiveLayer();
     this.syncConcentrationInspectorWithActiveLayer();
     this.syncSpaceInspectorWithActiveLayer();
+    this.syncTextureInspectorWithActiveLayer();
     this.updateRailIndicatorDots();
   }
 
@@ -513,6 +518,8 @@ export class StudioProApp {
     if (badgeConcentration) badgeConcentration.textContent = activeName;
     const badgeSpace = document.getElementById("badge-space-layer");
     if (badgeSpace) badgeSpace.textContent = activeName;
+    const badgeTexture = document.getElementById("badge-texture-layer");
+    if (badgeTexture) badgeTexture.textContent = activeName;
 
     if (!container) return;
 
@@ -645,6 +652,8 @@ export class StudioProApp {
         isActive = !!mod?.structure?.concentration?.enabled;
       } else if (tab === "space") {
         isActive = !!mod?.structure?.space?.enabled;
+      } else if (tab === "texture") {
+        isActive = !!mod?.structure?.texture?.enabled;
       } else if (this.state.modifiers && this.state.modifiers[tab]) {
         isActive = !!this.state.modifiers[tab].enabled;
       }
@@ -1828,6 +1837,92 @@ export class StudioProApp {
   }
 
   /* =========================================================================
+     TEXTURE INSPECTOR & CONTROLLER (Per Active Layer)
+     Geometry deformations that read as texture: Jitter, Line skipping,
+     Strand crossing, Perimeter undulation. Autonomous modifier.
+     Jitter and undulation are px for a 100px module (scaled to the real size).
+     Skipping and crossing only read on strokes.
+     ========================================================================= */
+
+  getActiveTexture() {
+    const struct = this.getActiveLayerStructure();
+    return struct ? struct.texture : null;
+  }
+
+  syncTextureInspectorWithActiveLayer() {
+    const mod = this.getActiveModule();
+    const tex = this.getActiveTexture();
+    if (!mod || !tex) return;
+
+    const badge = document.getElementById("badge-texture-layer");
+    if (badge) badge.textContent = mod.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
+
+    const toggle = document.getElementById("toggle-texture-active");
+    if (toggle) toggle.checked = !!tex.enabled;
+
+    const setPair = (sliderId, numId, value, suffix) => {
+      this.syncControlValue(sliderId, value);
+      const num = document.getElementById(numId);
+      if (num) num.value = `${value}${suffix}`;
+    };
+    setPair("input-texture-jitter", "num-texture-jitter", tex.jitter ?? 1, "px");
+    setPair("input-texture-skip", "num-texture-skip", tex.skipChance ?? 10, "%");
+    setPair("input-texture-crossing", "num-texture-crossing", tex.crossing ?? 10, "%");
+    setPair("input-texture-undulation", "num-texture-undulation", tex.undulation ?? 10, "px");
+
+    this.updateRailIndicatorDots();
+  }
+
+  setupTexture() {
+    const toggle = document.getElementById("toggle-texture-active");
+
+    // Any edit enables Texture on the active layer, then refreshes everything.
+    const commit = (mutate, historyLabel, { resync = true } = {}) => {
+      const tex = this.getActiveTexture();
+      if (!tex) return;
+      mutate(tex);
+      tex.enabled = true;
+      if (toggle) toggle.checked = true;
+      if (resync) this.syncTextureInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      if (historyLabel) this.pushHistory(`Layer ${this.activeLayerId} ${historyLabel}`);
+    };
+
+    toggle?.addEventListener("change", (e) => {
+      const tex = this.getActiveTexture();
+      if (!tex) return;
+      tex.enabled = e.target.checked;
+      this.syncTextureInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      this.pushHistory(`Layer ${this.activeLayerId} Texture: ${tex.enabled ? "ON" : "OFF"}`);
+    });
+
+    const bindPair = (sliderId, numId, { min, max, suffix, label, key }) => {
+      const slider = document.getElementById(sliderId);
+      const num = document.getElementById(numId);
+      slider?.addEventListener("input", (e) => {
+        const val = parseInt(e.target.value, 10);
+        commit(t => { t[key] = val; }, null, { resync: false });
+        if (num) num.value = `${val}${suffix}`;
+      });
+      slider?.addEventListener("change", (e) => {
+        this.pushHistory(`Layer ${this.activeLayerId} Texture ${label}: ${e.target.value}${suffix}`);
+      });
+      num?.addEventListener("change", (e) => {
+        const raw = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10);
+        const val = isNaN(raw) ? min : Math.max(min, Math.min(max, raw));
+        commit(t => { t[key] = val; }, `Texture ${label}: ${val}${suffix}`);
+      });
+    };
+    bindPair("input-texture-jitter", "num-texture-jitter", { min: 0, max: 8, suffix: "px", label: "Jitter", key: "jitter" });
+    bindPair("input-texture-skip", "num-texture-skip", { min: 0, max: 60, suffix: "%", label: "Line Skipping", key: "skipChance" });
+    bindPair("input-texture-crossing", "num-texture-crossing", { min: 0, max: 60, suffix: "%", label: "Strand Crossing", key: "crossing" });
+    bindPair("input-texture-undulation", "num-texture-undulation", { min: 0, max: 30, suffix: "px", label: "Undulation", key: "undulation" });
+  }
+
+  /* =========================================================================
      CONTEXTUAL SHAPE & STYLE INSPECTOR (Applies to currently active layer)
      ========================================================================= */
 
@@ -2186,22 +2281,6 @@ export class StudioProApp {
     });
     this.bindSliderWithNumber("input-sim-intensity", "num-sim-intensity", (val) => { mods.similarity.intensity = val; this.render(); }, "Similarity Variance", "similarity");
     this.bindSliderWithNumber("input-sim-jitter", "num-sim-jitter", (val) => { mods.similarity.cellJitter = val; this.render(); }, "Cell Jitter", "similarity");
-
-
-    // 9. TEXTURE
-    this.bindModifierMasterToggle("toggle-mod-texture", "texture");
-    document.querySelectorAll("[data-texture-mode]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        this.ensureModifierActive("texture");
-        mods.texture.mode = btn.dataset.textureMode;
-        document.querySelectorAll("[data-texture-mode]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        this.render();
-      });
-    });
-    this.bindSliderWithNumber("input-texture-density", "num-texture-density", (val) => { mods.texture.density = val; this.render(); }, "Texture Density", "texture");
-    this.bindSliderWithNumber("input-texture-scale", "num-texture-scale", (val) => { mods.texture.scale = val; this.render(); }, "Texture Scale", "texture");
-    this.bindSliderWithNumber("input-texture-contrast", "num-texture-contrast", (val) => { mods.texture.contrast = val; this.render(); }, "Texture Contrast", "texture");
   }
 
   ensureModifierActive(modifierKey) {
@@ -2343,6 +2422,9 @@ export class StudioProApp {
       if (!layer.structure.space) {
         layer.structure.space = createDefaultLayerStructure().space;
       }
+      if (!layer.structure.texture) {
+        layer.structure.texture = createDefaultLayerStructure().texture;
+      }
     });
 
     // If global repetition or radiation is enabled in preset modifiers, propagate to layer 1 structure
@@ -2377,6 +2459,9 @@ export class StudioProApp {
       }
       if (this.state.modifiers?.space?.enabled) {
         Object.assign(firstLayer.structure.space, this.state.modifiers.space);
+      }
+      if (this.state.modifiers?.texture?.enabled) {
+        Object.assign(firstLayer.structure.texture, this.state.modifiers.texture);
       }
     }
 

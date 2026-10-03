@@ -1,5 +1,5 @@
 // Studio Composition Engine: Unified Grammar Pipeline for Wucius Wong 2D Design
-import { Shapes } from './shapes.js';
+import { Shapes, texturedShape } from './shapes.js';
 import { CanvasUtils } from '../canvas-utils.js';
 
 export const createDefaultLayerStructure = () => ({
@@ -84,6 +84,13 @@ export const createDefaultLayerStructure = () => ({
     alignToField: false,
     densityScale: false,
     showAttractor: false
+  },
+  texture: {
+    enabled: false,
+    jitter: 1, // px for a 100px module, 0 to 8
+    skipChance: 10, // line skipping %, 0 to 60 (strokes only)
+    crossing: 10, // strand crossing %, 0 to 60 (strokes only)
+    undulation: 10 // perimeter undulation, px for a 100px module, 0 to 30
   },
   space: {
     enabled: false,
@@ -209,11 +216,10 @@ export const defaultStudioState = {
     },
     texture: {
       enabled: false,
-      target: "shapes", // shapes, both, canvas
-      mode: "grain", // grain, halftone, ribbing, typography
-      density: 50, // 20 to 90
-      scale: 14, // 6 to 36
-      contrast: 40 // opacity 15 to 80
+      jitter: 1,
+      skipChance: 10,
+      crossing: 10,
+      undulation: 10
     },
     space: {
       enabled: false,
@@ -267,12 +273,19 @@ export class StudioEngine {
     return `USED ON THIS DESIGN: ${this.getActivePrinciples().join(" / ")}`;
   }
 
-  // Draw a single shape helper with in-figure texture and illusory 3D space support
-  drawShape(ctx, shapeId, size, fgColor, strokeOnly = false, lineWidth = 2, bgColor = null, isAlternating = false, skipSpace = false, spaceConfig = null) {
-    const shapeDef = Shapes[shapeId] || Shapes.circle;
+  // Draw a single shape: texture deformation, then flat or illusory 3D space.
+  drawShape(ctx, shapeId, size, fgColor, strokeOnly = false, lineWidth = 2, bgColor = null, isAlternating = false, skipSpace = false, spaceConfig = null, textureConfig = null, seed = 0) {
+    let shapeDef = Shapes[shapeId] || Shapes.circle;
     const space = spaceConfig || this.state.modifiers.space;
+    const texture = textureConfig || this.state.modifiers.texture;
 
-    if (!space || !space.enabled || skipSpace) {
+    // Texture deforms the geometry itself, so it applies before any space mode.
+    if (texture && texture.enabled) {
+      shapeDef = texturedShape(shapeDef, texture, seed, strokeOnly);
+    }
+
+    // Open-path shapes (lines, digits...) are strokes: they stay flat.
+    if (!space || !space.enabled || skipSpace || shapeDef.skeleton) {
       this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
       return;
     }
@@ -280,7 +293,7 @@ export class StudioEngine {
     this.drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space);
   }
 
-  // Draw flat shape with optional in-figure tactile texture
+  // Draw flat shape. Open-path shapes are strokes: thin in stroke mode, thick in fill mode.
   drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly = false, lineWidth = 2, bgColor = null) {
     ctx.save();
     ctx.fillStyle = fgColor;
@@ -289,21 +302,15 @@ export class StudioEngine {
 
     shapeDef.draw(ctx, size);
 
-    if (strokeOnly) {
+    if (shapeDef.skeleton) {
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = strokeOnly ? lineWidth : Math.max(size * 0.14, 2);
+      ctx.stroke();
+    } else if (strokeOnly) {
       ctx.stroke();
     } else {
       ctx.fill();
-
-      // In-shape tactile texture (Texture)
-      const text = this.state.modifiers.texture;
-      if (text && text.enabled && (text.target === "shapes" || text.target === "both")) {
-        ctx.save();
-        shapeDef.draw(ctx, size);
-        ctx.clip();
-        const etchColor = bgColor || (this.state.invertFigureGround ? "#18181f" : "#FAFAFA");
-        this.fillShapeTexture(ctx, size, fgColor, etchColor, text);
-        ctx.restore();
-      }
     }
     ctx.restore();
   }
@@ -509,7 +516,7 @@ export class StudioEngine {
         ctx.stroke();
         ctx.restore();
 
-        // Front face (with texture if active)
+        // Front face
         ctx.save();
         ctx.translate(totalDx, totalDy);
         this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
@@ -518,96 +525,21 @@ export class StudioEngine {
     }
   }
 
-  // Draw tactile texture strictly within the clipped silhouette of a shape (Texture)
-  fillShapeTexture(ctx, size, fgColor, etchColor, text) {
-    const alpha = (text.contrast ?? 40) / 100;
-    const density = (text.density ?? 50) / 100;
-    const scale = text.scale ?? 14;
-
-    ctx.save();
-
-    if (text.mode === "grain") {
-      // Lithographic tooth / stipple grain carved into the shape
-      ctx.fillStyle = etchColor;
-      ctx.globalAlpha = Math.min(0.85, alpha * 1.1);
-      const dotSize = Math.max(1, scale * 0.12);
-      const count = Math.floor(size * size * 0.08 * (0.5 + density));
-      let s = 98765;
-      const rng = () => {
-        s = (s * 1664525 + 1013904223) % 4294967296;
-        return (s / 4294967296) * 2 - 1; // -1 to 1
-      };
-      for (let i = 0; i < count; i++) {
-        const gx = rng() * size;
-        const gy = rng() * size;
-        ctx.fillRect(gx, gy, dotSize, dotSize);
-      }
-    } else if (text.mode === "halftone") {
-      // Mechanical dot screen eroding the shape into a dot raster (Fig. 67c)
-      ctx.fillStyle = etchColor;
-      ctx.globalAlpha = Math.min(0.9, alpha * 1.25);
-      const step = Math.max(4, Math.round(18 - density * 10));
-      const maxDot = (step * 0.42) * (scale / 14);
-      for (let y = -size; y <= size; y += step) {
-        for (let x = -size; x <= size; x += step) {
-          const dist = Math.hypot(x, y);
-          const factor = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(dist * 0.08));
-          const r = Math.max(0.6, maxDot * factor);
-          ctx.beginPath();
-          ctx.arc(x, y, r, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    } else if (text.mode === "ribbing") {
-      // Parallel linear ribbing / hatching carved across the shape (Fig. 68a)
-      ctx.strokeStyle = etchColor;
-      ctx.lineWidth = Math.max(1, scale * 0.09);
-      ctx.globalAlpha = Math.min(0.9, alpha * 1.2);
-      const step = Math.max(3, Math.round(15 - density * 9));
-      ctx.beginPath();
-      for (let y = -size; y <= size; y += step) {
-        ctx.moveTo(-size, y);
-        ctx.lineTo(size, y);
-      }
-      ctx.stroke();
-    } else if (text.mode === "typography") {
-      // Typographic glyphs stamped inside the shape (Fig. 71)
-      const letters = ["A", "B", "R", "X", "M", "Q", "S", "8", "■", "┼", "╱", "╲"];
-      const step = Math.max(10, Math.round(24 - density * 12));
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.font = `bold ${Math.round(scale * 0.85)}px "Space Grotesk", monospace, sans-serif`;
-      ctx.fillStyle = etchColor;
-      ctx.globalAlpha = Math.min(0.85, alpha * 1.15);
-
-      for (let y = -size + step / 2; y <= size; y += step) {
-        for (let x = -size + step / 2; x <= size; x += step) {
-          const hash = Math.sin(y * 31.7 + x * 73.1) * 43758.5453;
-          const rand = hash - Math.floor(hash);
-          const char = letters[Math.floor(rand * letters.length)];
-          ctx.save();
-          ctx.translate(x, y);
-          ctx.rotate((rand - 0.5) * 0.5);
-          ctx.fillText(char, 0, 0);
-          ctx.restore();
-        }
-      }
-    }
-
-    ctx.restore();
-  }
-
   // Draw a single shape module for an individual layer
-  drawSingleLayerShape(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false, colorOverride = null) {
+  drawSingleLayerShape(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false, colorOverride = null, widthMultiplier = null) {
     if (!mod) return;
     const shape = shapeOverride || mod.shape || "circle";
     const baseW = mod.width !== undefined ? mod.width : (mod.scale || 50);
     const baseH = mod.height !== undefined ? mod.height : (mod.scale || 50);
-    const w = baseW * sizeMultiplier;
+    // A line spans its cell width (widthMultiplier) instead of shrinking to the cell's short side.
+    const w = baseW * (widthMultiplier ?? sizeMultiplier);
     const h = baseH * sizeMultiplier;
-    const r = Math.max(w, h);
-    const sx = r > 0 ? w / r : 1;
-    const sy = r > 0 ? h / r : 1;
+    // Open-path shapes (lines, digits...) are strokes: a non-uniform scale would flatten their
+    // thickness and deformation, so they keep a uniform scale. A line's length is its width.
+    const isSkeleton = !!(Shapes[shape] && Shapes[shape].skeleton);
+    const r = shape === "line" ? w : Math.max(w, h);
+    const sx = !isSkeleton && r > 0 ? w / r : 1;
+    const sy = !isSkeleton && r > 0 ? h / r : 1;
     const ox = (mod.offsetX || 0) * sizeMultiplier;
     const oy = (mod.offsetY || 0) * sizeMultiplier;
     const wire = wireframeOverride !== null ? wireframeOverride : (mod.wireframe !== false);
@@ -619,7 +551,9 @@ export class StudioEngine {
     targetCtx.scale(sx, sy);
     // An explicit override (anomaly / contrast accent) wins over the layer color.
     const layerColor = colorOverride || mod.color || fgColor;
-    this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, false, isCutout, mod.structure?.space || null);
+    const layerNum = parseInt(String(mod.id || "").replace(/\D/g, ""), 10) || 1;
+    const seed = (this.cellSeed || 0) * 7.13 + layerNum * 53.7;
+    this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, false, isCutout, mod.structure?.space || null, mod.structure?.texture || null, seed);
     targetCtx.restore();
   }
 
@@ -629,6 +563,7 @@ export class StudioEngine {
     ctx.save();
     ctx.translate(width / 2, height / 2);
     const aspectScale = Math.min(1.0, Math.min(width, height) / 600);
+    this.cellSeed = 0;
     this.drawSingleLayerShape(ctx, mod, 1.25 * aspectScale, palette.fg, palette.bg);
     ctx.restore();
   }
@@ -1048,7 +983,9 @@ export class StudioEngine {
         const scaleUnit = 1.25 * Math.min(1.0, Math.min(width, height) / 600);
         const cellRatio = Math.min(cW / usableW, cH / usableH);
         const normScale = scaleUnit * cellRatio * cellScaleMul * concScaleMul;
-        this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor ? cellFg : null);
+        this.cellSeed = r * cols + c + 1;
+        const lineWidthMul = (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * cellScaleMul * concScaleMul : null;
+        this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor ? cellFg : null, lineWidthMul);
         ctx.restore();
       };
 
@@ -1512,6 +1449,7 @@ export class StudioEngine {
           const growthFactor = 0.75 + (i / rings) * 0.45;
           const radScaleMul = isMultiCenter ? 0.7 : 1.0;
           const normScale = scaleUnit * sectorRatio * growthFactor * radScaleMul * cellScaleMul * concScaleMul;
+          this.cellSeed = i * rays + j + 1;
           this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== palette.fg ? cellFg : null);
           ctx.restore();
         }
@@ -1728,10 +1666,6 @@ export class StudioEngine {
       ctx.restore();
     }
 
-    // 5. Tactile Texture Rendering (Texture)
-    if (this.state.modifiers.texture.enabled) {
-      this.renderTexture(ctx, width, height, palette);
-    }
   }
 
   // Concentration Attractor Field Guide (Concentration)
@@ -1849,92 +1783,5 @@ export class StudioEngine {
 
     ctx.restore();
   }
-
-  // Tactile Texture Engine (Texture) - Canvas-wide surface plate
-  renderTexture(ctx, width, height, palette) {
-    const text = this.state.modifiers.texture;
-    if (!text || !text.enabled) return;
-    // Only apply canvas overlay if target is "canvas" or "both"
-    if (text.target === "shapes") return;
-
-    ctx.save();
-    const fgColor = this.state.invertFigureGround ? palette.bg : palette.fg;
-    const alpha = (text.contrast ?? 40) / 100;
-    const density = (text.density ?? 50) / 100;
-    const scale = text.scale ?? 14;
-
-    if (text.mode === "grain") {
-      // Fig. 69b: Lithographic tooth & stipple paper grain
-      ctx.fillStyle = fgColor;
-      const count = Math.floor(width * height * 0.00035 * (0.5 + density));
-      let s = 1234567;
-      const rng = () => {
-        s = (s * 1664525 + 1013904223) % 4294967296;
-        return s / 4294967296;
-      };
-      ctx.globalAlpha = Math.min(0.5, alpha * 0.45);
-      const dotSize = Math.max(1, scale * 0.12);
-      for (let i = 0; i < count; i++) {
-        const gx = rng() * width;
-        const gy = rng() * height;
-        ctx.fillRect(gx, gy, dotSize, dotSize);
-      }
-    } else if (text.mode === "halftone") {
-      // Fig. 67c: Mechanical dot raster screen
-      ctx.fillStyle = fgColor;
-      ctx.globalAlpha = Math.min(0.55, alpha * 0.5);
-      const step = Math.max(8, Math.round(34 - density * 18));
-      const maxDot = (step * 0.38) * (scale / 14);
-      for (let y = step / 2; y < height; y += step) {
-        for (let x = step / 2; x < width; x += step) {
-          const dist = Math.hypot(x - width / 2, y - height / 2);
-          const factor = 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(dist * 0.012));
-          const r = Math.max(0.6, maxDot * factor);
-          ctx.beginPath();
-          ctx.arc(x, y, r, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    } else if (text.mode === "ribbing") {
-      // Fig. 68a: Woven linear ribbing / parallel hatching
-      ctx.strokeStyle = fgColor;
-      ctx.lineWidth = Math.max(0.8, scale * 0.08);
-      ctx.globalAlpha = Math.min(0.45, alpha * 0.4);
-      const step = Math.max(4, Math.round(24 - density * 16));
-      ctx.beginPath();
-      for (let y = 0; y < height; y += step) {
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-      }
-      ctx.stroke();
-    } else if (text.mode === "typography") {
-      // Fig. 71: Typography as Visual Texture (Wong Exercise)
-      const letters = ["A", "B", "R", "X", "M", "Q", "S", "8", "■", "┼", "╱", "╲"];
-      const step = Math.max(14, Math.round(48 - density * 24));
-      const cols = Math.floor(width / step);
-      const rows = Math.floor(height / step);
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.font = `bold ${Math.round(scale)}px "Space Grotesk", monospace, sans-serif`;
-      ctx.fillStyle = fgColor;
-      ctx.globalAlpha = Math.min(0.45, alpha * 0.4);
-
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const x = (c + 0.5) * step;
-          const y = (r + 0.5) * step;
-          const hash = Math.sin(r * 37.1 + c * 73.9) * 43758.5453;
-          const rand = hash - Math.floor(hash);
-          const char = letters[Math.floor(rand * letters.length)];
-          ctx.save();
-          ctx.translate(x, y);
-          ctx.rotate((rand - 0.5) * 0.6);
-          ctx.fillText(char, 0, 0);
-          ctx.restore();
-        }
-      }
-    }
-
-    ctx.restore();
-  }
 }
+

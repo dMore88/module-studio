@@ -192,7 +192,7 @@
           <div>
             <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">WIDTH</div>
             <div class="flex items-center gap-2">
-              <input type="range" id="input-active-width" min="5" max="250" value="50" class="flex-1">
+              <input type="range" id="input-active-width" min="5" max="400" value="50" class="flex-1">
               <input type="text" id="num-active-width" class="val-box-input" value="50">
             </div>
           </div>
@@ -311,14 +311,14 @@
             <div>
               <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">COLUMNS</div>
               <div class="flex items-center gap-2">
-                <input type="range" id="input-layout-cols" min="1" max="12" value="4" class="flex-1">
+                <input type="range" id="input-layout-cols" min="1" max="50" value="4" class="flex-1">
                 <input type="text" id="num-layout-cols" class="val-box-input" value="4">
               </div>
             </div>
             <div>
               <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">ROWS</div>
               <div class="flex items-center gap-2">
-                <input type="range" id="input-layout-rows" min="1" max="12" value="4" class="flex-1">
+                <input type="range" id="input-layout-rows" min="1" max="50" value="4" class="flex-1">
                 <input type="text" id="num-layout-rows" class="val-box-input" value="4">
               </div>
             </div>
@@ -892,46 +892,51 @@
       </div>
 
       <!-- ===================================================================
-           TAB 9: TEXTURE
+           TAB 9: TEXTURE (Figma: Web apps / Abstract studio)
+           Geometry deformations that read as texture: Jitter, Line skipping,
+           Strand crossing, Perimeter undulation. Autonomous modifier.
            =================================================================== -->
-      <div id="card-texture" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="texture">
-        <div class="modifier-header">
-          <div class="flex items-center gap-2">
-            <i class="ph ph-hash text-[14px] text-zinc-600"></i>
-            <span class="font-semibold text-xs text-[#121317]">Texture</span>
+      <div id="card-texture" class="flyout-tab-content ds-card hidden" data-flyout-tab="texture">
+        <div class="ds-card-header">
+          <div class="ds-card-title">
+            <span class="ds-card-title-text">Texture</span>
+            <span id="badge-texture-layer" class="ds-badge">Layer 1</span>
           </div>
-          <div class="flex items-center gap-2">
-            <label class="switch">
-              <input type="checkbox" id="toggle-mod-texture">
-              <span class="switch-slider"></span>
-            </label>
-            <button type="button" class="close-flyout-btn" title="Close Panel">
-              <i class="ph ph-x text-[14px]"></i>
-            </button>
+          <label class="ds-switch" title="Enable / Disable Texture">
+            <input type="checkbox" id="toggle-texture-active">
+            <span class="ds-switch-track"></span>
+          </label>
+          <button type="button" class="close-flyout-btn" title="Close Panel">
+            <i class="ph ph-x text-[14px]"></i>
+          </button>
+        </div>
+
+        <div class="ds-field">
+          <div class="ds-label">Jitter</div>
+          <div class="ds-slider">
+            <input type="range" id="input-texture-jitter" min="0" max="8" step="1" value="1">
+            <input type="text" id="num-texture-jitter" class="ds-value" value="1px" inputmode="numeric">
           </div>
         </div>
-        <div class="modifier-body space-y-2">
-          <div class="grid grid-cols-4 gap-1">
-            <button type="button" class="tool-btn active text-[10px]" data-texture-mode="grain">Grain</button>
-            <button type="button" class="tool-btn text-[10px]" data-texture-mode="halftone">Halftone</button>
-            <button type="button" class="tool-btn text-[10px]" data-texture-mode="ribbing">Ribbing</button>
-            <button type="button" class="tool-btn text-[10px]" data-texture-mode="typography">Type</button>
+        <div class="ds-field">
+          <div class="ds-label">Line skipping</div>
+          <div class="ds-slider">
+            <input type="range" id="input-texture-skip" min="0" max="60" step="1" value="10">
+            <input type="text" id="num-texture-skip" class="ds-value" value="10%" inputmode="numeric">
           </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
-                <span>Density</span>
-                <input type="number" id="num-texture-density" class="scrub-input w-9" value="50" min="20" max="90">
-              </div>
-              <input type="range" id="input-texture-density" min="20" max="90" value="50">
-            </div>
-            <div>
-              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
-                <span>Scale</span>
-                <input type="number" id="num-texture-scale" class="scrub-input w-9" value="14" min="6" max="36">
-              </div>
-              <input type="range" id="input-texture-scale" min="6" max="36" value="14">
-            </div>
+        </div>
+        <div class="ds-field">
+          <div class="ds-label">Strand crossing</div>
+          <div class="ds-slider">
+            <input type="range" id="input-texture-crossing" min="0" max="60" step="1" value="10">
+            <input type="text" id="num-texture-crossing" class="ds-value" value="10%" inputmode="numeric">
+          </div>
+        </div>
+        <div class="ds-field">
+          <div class="ds-label">Perimeter undulation</div>
+          <div class="ds-slider">
+            <input type="range" id="input-texture-undulation" min="0" max="30" step="1" value="10">
+            <input type="text" id="num-texture-undulation" class="ds-value" value="10px" inputmode="numeric">
           </div>
         </div>
       </div>

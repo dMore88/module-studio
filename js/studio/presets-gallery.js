@@ -38,7 +38,7 @@ export const STUDIO_PRESETS = [
         anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
         contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
       },
       showSafeBounds: false,
@@ -68,7 +68,7 @@ export const STUDIO_PRESETS = [
         anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
         contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
       },
       showSafeBounds: false,
@@ -98,7 +98,7 @@ export const STUDIO_PRESETS = [
         anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
         contrast: { enabled: true, dimension: "direction", dominanceRatio: 75, contrastShape: "cross", scaleFactor: 1.0, angle: 45, highlightContrast: true },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
       },
       showSafeBounds: true,
@@ -127,7 +127,7 @@ export const STUDIO_PRESETS = [
         anomaly: { enabled: true, type: "fracture", epicenterX: 0.5, epicenterY: 0.5, radius: 220, intensity: 85, anomalousShape: "cross", highlightColor: true, showReticle: false },
         contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
       },
       showSafeBounds: false,
@@ -156,7 +156,7 @@ export const STUDIO_PRESETS = [
         anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
         contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: true, mode: "point", attractorX: 0.5, attractorY: 0.45, power: 85, radius: 340, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
       },
       showSafeBounds: false,
@@ -186,7 +186,7 @@ export const STUDIO_PRESETS = [
         anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
         contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: true, target: "both", mode: "grain", density: 60, scale: 16, contrast: 45 },
+        texture: { enabled: true, jitter: 2, skipChance: 0, crossing: 0, undulation: 4 },
         space: { enabled: true, mode: "isometric", depth: 40, angle: 30, shading: 70, showIsoGuides: false }
       },
       showSafeBounds: false,
@@ -215,7 +215,7 @@ export const STUDIO_PRESETS = [
         anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
         contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
       },
       showSafeBounds: false,
@@ -245,7 +245,7 @@ export const STUDIO_PRESETS = [
         anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
         contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
       },
       showSafeBounds: true,

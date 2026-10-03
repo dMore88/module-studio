@@ -228,6 +228,7 @@ const Shapes = {
 
   wave: {
     id: "wave",
+    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Sine Wave",
     category: "curved",
     draw(ctx, size) {
@@ -248,6 +249,7 @@ const Shapes = {
 
   horseshoe: {
     id: "horseshoe",
+    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Horseshoe",
     category: "curved",
     draw(ctx, size) {
@@ -297,19 +299,19 @@ const Shapes = {
 
   line: {
     id: "line",
+    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
+    textureRef: 450, // a line is a long module: texture px are calibrated for ~450px
     name: "Straight Line",
     category: "linear",
     draw(ctx, size) {
       const len = size * 0.9;
-      const th = Math.max(size * 0.14, 4);
       ctx.beginPath();
-      ctx.rect(-len / 2, -th / 2, len, th);
-      ctx.closePath();
+      ctx.moveTo(-len / 2, 0);
+      ctx.lineTo(len / 2, 0);
     },
     svgPath(size) {
       const len = size * 0.9;
-      const th = Math.max(size * 0.14, 4);
-      return `<rect x="${-len/2}" y="${-th/2}" width="${len}" height="${th}" />`;
+      return `<line x1="${-len/2}" y1="0" x2="${len/2}" y2="0" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" />`;
     },
     phIcon: "minus"
   },
@@ -340,6 +342,7 @@ const Shapes = {
 
   hatch: {
     id: "hatch",
+    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Diagonal Hatch",
     category: "linear",
     draw(ctx, size) {
@@ -427,52 +430,267 @@ const Shapes = {
 
   digit1: {
     id: "digit1",
+    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Digit 1",
     category: "symbolic",
     draw(ctx, size) {
-      ctx.font = `bold ${Math.round(size * 0.75)}px "Space Grotesk", sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("1", 0, 0);
+      const s = size;
+      ctx.beginPath();
+      ctx.moveTo(-0.17 * s, -0.2 * s);
+      ctx.lineTo(0.03 * s, -0.4 * s);
+      ctx.lineTo(0.03 * s, 0.4 * s);
     },
     svgPath(size) {
-      return `<text x="0" y="0" font-family="Space Grotesk, sans-serif" font-size="${size*0.75}" font-weight="bold" text-anchor="middle" dominant-baseline="central">1</text>`;
+      const s = size;
+      return `<path d="M ${-0.17*s} ${-0.2*s} L ${0.03*s} ${-0.4*s} L ${0.03*s} ${0.4*s}" fill="none" stroke="currentColor" stroke-width="${s*0.14}" stroke-linecap="round" stroke-linejoin="round" />`;
     },
     phIcon: "number-one"
   },
 
   digit5: {
     id: "digit5",
+    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Digit 5",
     category: "symbolic",
     draw(ctx, size) {
-      ctx.font = `bold ${Math.round(size * 0.75)}px "Space Grotesk", sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("5", 0, 0);
+      const s = size;
+      ctx.beginPath();
+      ctx.moveTo(0.2 * s, -0.4 * s);
+      ctx.lineTo(-0.17 * s, -0.4 * s);
+      ctx.lineTo(-0.21 * s, -0.02 * s);
+      ctx.bezierCurveTo(0.0 * s, -0.14 * s, 0.3 * s, -0.04 * s, 0.3 * s, 0.17 * s);
+      ctx.bezierCurveTo(0.3 * s, 0.4 * s, 0.0 * s, 0.46 * s, -0.24 * s, 0.3 * s);
     },
     svgPath(size) {
-      return `<text x="0" y="0" font-family="Space Grotesk, sans-serif" font-size="${size*0.75}" font-weight="bold" text-anchor="middle" dominant-baseline="central">5</text>`;
+      const s = size;
+      return `<path d="M ${0.2*s} ${-0.4*s} L ${-0.17*s} ${-0.4*s} L ${-0.21*s} ${-0.02*s} C ${0} ${-0.14*s} ${0.3*s} ${-0.04*s} ${0.3*s} ${0.17*s} C ${0.3*s} ${0.4*s} ${0} ${0.46*s} ${-0.24*s} ${0.3*s}" fill="none" stroke="currentColor" stroke-width="${s*0.14}" stroke-linecap="round" stroke-linejoin="round" />`;
     },
     phIcon: "number-five"
   },
 
   digit9: {
     id: "digit9",
+    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Digit 9",
     category: "symbolic",
     draw(ctx, size) {
-      ctx.font = `bold ${Math.round(size * 0.75)}px "Space Grotesk", sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("9", 0, 0);
+      const s = size;
+      ctx.beginPath();
+      ctx.arc(0, -0.15 * s, 0.22 * s, 0, Math.PI * 2);
+      ctx.moveTo(0.22 * s, -0.15 * s);
+      ctx.bezierCurveTo(0.22 * s, 0.2 * s, 0.1 * s, 0.4 * s, -0.2 * s, 0.4 * s);
     },
     svgPath(size) {
-      return `<text x="0" y="0" font-family="Space Grotesk, sans-serif" font-size="${size*0.75}" font-weight="bold" text-anchor="middle" dominant-baseline="central">9</text>`;
+      const s = size;
+      return `<path d="M ${0.22*s} ${-0.15*s} A ${0.22*s} ${0.22*s} 0 1 1 ${-0.22*s} ${-0.15*s} A ${0.22*s} ${0.22*s} 0 1 1 ${0.22*s} ${-0.15*s} M ${0.22*s} ${-0.15*s} C ${0.22*s} ${0.2*s} ${0.1*s} ${0.4*s} ${-0.2*s} ${0.4*s}" fill="none" stroke="currentColor" stroke-width="${s*0.14}" stroke-linecap="round" stroke-linejoin="round" />`;
     },
     phIcon: "number-nine"
   }
 };
+
+// ============================================================================
+// TEXTURE GEOMETRY
+// Texture is a set of geometry deformations (not a pixel pattern): every shape is
+// flattened into a polyline once, then jitter, undulation, strand crossing and
+// line skipping are applied to its vertices. Deterministic per seed.
+// ============================================================================
+
+const FLAT_REF_SIZE = 100;
+const FLAT_SPACING = 1.5; // dense sampling step at the reference size
+
+const flatCache = {};
+
+// Records a shape's draw() commands into dense polylines at the reference size.
+function flattenShape(shapeDef) {
+  if (flatCache[shapeDef.id]) return flatCache[shapeDef.id];
+
+  const subpaths = [];
+  let cur = null;
+  let last = null;
+  let first = null;
+
+  const startSub = (x, y) => {
+    cur = { pts: [{ x, y, c: true }], closed: false };
+    subpaths.push(cur);
+    last = { x, y };
+    first = { x, y };
+  };
+  const lineTo = (x, y) => {
+    if (!cur) { startSub(x, y); return; }
+    const dx = x - last.x, dy = y - last.y;
+    const len = Math.hypot(dx, dy);
+    const n = Math.max(1, Math.ceil(len / FLAT_SPACING));
+    for (let i = 1; i <= n; i++) {
+      const t = i / n;
+      cur.pts.push({ x: last.x + dx * t, y: last.y + dy * t, c: i === n });
+    }
+    last = { x, y };
+  };
+  const bezier = (c1x, c1y, c2x, c2y, x, y) => {
+    if (!cur) startSub(c1x, c1y);
+    const x0 = last.x, y0 = last.y;
+    const steps = 28;
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps, m = 1 - t;
+      cur.pts.push({
+        x: m * m * m * x0 + 3 * m * m * t * c1x + 3 * m * t * t * c2x + t * t * t * x,
+        y: m * m * m * y0 + 3 * m * m * t * c1y + 3 * m * t * t * c2y + t * t * t * y,
+        c: i === steps
+      });
+    }
+    last = { x, y };
+  };
+
+  const rec = {
+    beginPath() { cur = null; },
+    moveTo(x, y) { startSub(x, y); },
+    lineTo,
+    closePath() { if (cur) { cur.closed = true; last = { x: first.x, y: first.y }; cur = null; } },
+    bezierCurveTo: bezier,
+    quadraticCurveTo(cx, cy, x, y) {
+      const x0 = last ? last.x : cx, y0 = last ? last.y : cy;
+      bezier(x0 + (2 / 3) * (cx - x0), y0 + (2 / 3) * (cy - y0), x + (2 / 3) * (cx - x), y + (2 / 3) * (cy - y), x, y);
+    },
+    arc(cx, cy, r, a0, a1, ccw = false) {
+      let sweep = a1 - a0;
+      if (!ccw && sweep < 0) sweep += Math.PI * 2 * Math.ceil(-sweep / (Math.PI * 2));
+      if (ccw && sweep > 0) sweep -= Math.PI * 2 * Math.ceil(sweep / (Math.PI * 2));
+      if (Math.abs(sweep) > Math.PI * 2) sweep = Math.sign(sweep) * Math.PI * 2;
+      const sx = cx + Math.cos(a0) * r, sy = cy + Math.sin(a0) * r;
+      if (cur) lineTo(sx, sy); else startSub(sx, sy);
+      const steps = Math.max(8, Math.ceil((Math.abs(sweep) * r) / FLAT_SPACING));
+      for (let i = 1; i <= steps; i++) {
+        const a = a0 + (sweep * i) / steps;
+        cur.pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r, c: i === steps });
+      }
+      last = { x: cx + Math.cos(a0 + sweep) * r, y: cy + Math.sin(a0 + sweep) * r };
+    },
+    rect(x, y, w, h) {
+      startSub(x, y);
+      lineTo(x + w, y); lineTo(x + w, y + h); lineTo(x, y + h);
+      cur.closed = true;
+      cur = null;
+    }
+  };
+
+  shapeDef.draw(rec, FLAT_REF_SIZE);
+
+  // Normalise: arc-length parameter u (0..1) per subpath, drop a duplicated closing point
+  for (const sp of subpaths) {
+    const pts = sp.pts;
+    if (pts.length > 2) {
+      const a = pts[0], b = pts[pts.length - 1];
+      if (Math.hypot(a.x - b.x, a.y - b.y) < 1e-6) {
+        pts.pop();
+        sp.closed = true; // a full-circle arc closes on itself
+      }
+    }
+    let total = 0;
+    pts[0].u = 0;
+    for (let i = 1; i < pts.length; i++) {
+      total += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+      pts[i].u = total;
+    }
+    const closeLen = sp.closed ? Math.hypot(pts[0].x - pts[pts.length - 1].x, pts[0].y - pts[pts.length - 1].y) : 0;
+    const len = (total + closeLen) || 1;
+    for (const pt of pts) pt.u /= len;
+  }
+
+  flatCache[shapeDef.id] = subpaths;
+  return subpaths;
+}
+
+// Deforms a shape's polylines. Returns [{ segments: [[{x,y}...]], closed }] in local px at `size`.
+function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
+  const base = flattenShape(shapeDef);
+  const f = size / FLAT_REF_SIZE; // geometry scale
+  const k = size / (shapeDef.textureRef || FLAT_REF_SIZE); // texture px are relative to the module size
+  const jitter = (tex.jitter || 0) * k;
+  const undulation = (tex.undulation || 0) * k * 0.7;
+  // Skipping and crossing only read on strokes; they are ignored on filled shapes.
+  const skipChance = strokeOnly ? (tex.skipChance || 0) / 100 : 0;
+  const crossing = strokeOnly ? (tex.crossing || 0) / 100 : 0;
+  const stride = Math.max(1, Math.round(Math.max(2, size * 0.04) / (FLAT_SPACING * f)));
+
+  const out = [];
+  base.forEach((sp, spIdx) => {
+    const s = seed + spIdx * 7.31;
+    // Keep corners, thin the dense samples between them
+    const picked = [];
+    let run = 0;
+    for (const pt of sp.pts) {
+      if (pt.c) { picked.push(pt); run = 0; }
+      else if (++run % stride === 0) picked.push(pt);
+    }
+    const n = picked.length;
+    let pts = picked.map(pt => ({ x: pt.x * f, y: pt.y * f, u: pt.u }));
+
+    // Perimeter undulation: sine displacement along the outline normal
+    if (undulation > 0 && n > 2) {
+      const periods = sp.closed ? 3 : 2;
+      const phase = s * 0.37;
+      pts = pts.map((pt, i) => {
+        const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)];
+        let nx = -(b.y - a.y), ny = b.x - a.x;
+        const nl = Math.hypot(nx, ny) || 1;
+        nx /= nl; ny /= nl;
+        const off = Math.sin(pt.u * Math.PI * 2 * periods + phase) * undulation;
+        return { x: pt.x + nx * off, y: pt.y + ny * off, u: pt.u };
+      });
+    }
+
+    // Jitter: per-vertex hand tremor
+    if (jitter > 0) {
+      pts.forEach((pt, p) => {
+        pt.x += Math.sin(s * 13.1 + p * 37.3) * 0.5 * jitter;
+        pt.y += Math.cos(s * 29.7 + p * 19.1) * 0.5 * jitter;
+      });
+    }
+
+    // Strand crossing: swap nearby vertices to fray the stroke
+    if (crossing > 0 && n > 6) {
+      const swaps = Math.floor(n * crossing * 0.15);
+      for (let k = 0; k < swaps; k++) {
+        const a = Math.floor(Math.abs(Math.sin(s * 9.1 + k * 3.7)) * n) % n;
+        const b = (a + 2 + Math.floor(Math.abs(Math.cos(s * 5.3 + k * 7.1)) * 4)) % n;
+        const tmp = pts[a]; pts[a] = pts[b]; pts[b] = tmp;
+      }
+    }
+
+    // Line skipping: drop vertices so the stroke breaks into segments
+    const segments = [];
+    if (skipChance > 0) {
+      let seg = [];
+      pts.forEach((pt, p) => {
+        const skip = Math.abs(Math.sin(s * 43.1 + p * 97.7)) < skipChance;
+        if (skip) { if (seg.length > 1) segments.push(seg); seg = []; }
+        else seg.push(pt);
+      });
+      if (seg.length > 1) segments.push(seg);
+    } else {
+      segments.push(pts);
+    }
+    out.push({ segments, closed: sp.closed && skipChance === 0 });
+  });
+  return out;
+}
+
+// Wraps a shape so every draw() emits the deformed geometry (works with every Space mode).
+function texturedShape(shapeDef, tex, seed, strokeOnly) {
+  return {
+    ...shapeDef,
+    draw(ctx, size) {
+      const geo = buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly);
+      ctx.beginPath();
+      for (const sp of geo) {
+        for (const seg of sp.segments) {
+          seg.forEach((pt, i) => (i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y)));
+          if (sp.closed) ctx.closePath();
+        }
+      }
+    }
+  };
+}
 
 
   // Studio Composition Engine: Unified Grammar Pipeline for Wucius Wong 2D Design
@@ -558,6 +776,13 @@ const createDefaultLayerStructure = () => ({
     alignToField: false,
     densityScale: false,
     showAttractor: false
+  },
+  texture: {
+    enabled: false,
+    jitter: 1, // px for a 100px module, 0 to 8
+    skipChance: 10, // line skipping %, 0 to 60 (strokes only)
+    crossing: 10, // strand crossing %, 0 to 60 (strokes only)
+    undulation: 10 // perimeter undulation, px for a 100px module, 0 to 30
   },
   space: {
     enabled: false,
@@ -681,11 +906,10 @@ const defaultStudioState = {
     },
     texture: {
       enabled: false,
-      target: "shapes", // shapes, both, canvas
-      mode: "grain", // grain, halftone, ribbing, typography
-      density: 50, // 20 to 90
-      scale: 14, // 6 to 36
-      contrast: 40 // opacity 15 to 80
+      jitter: 1,
+      skipChance: 10,
+      crossing: 10,
+      undulation: 10
     },
     space: {
       enabled: false,
@@ -738,12 +962,19 @@ class StudioEngine {
     return `USED ON THIS DESIGN: ${this.getActivePrinciples().join(" / ")}`;
   }
 
-  // Draw a single shape helper with in-figure texture and illusory 3D space support
-  drawShape(ctx, shapeId, size, fgColor, strokeOnly = false, lineWidth = 2, bgColor = null, isAlternating = false, skipSpace = false, spaceConfig = null) {
-    const shapeDef = Shapes[shapeId] || Shapes.circle;
+  // Draw a single shape: texture deformation, then flat or illusory 3D space.
+  drawShape(ctx, shapeId, size, fgColor, strokeOnly = false, lineWidth = 2, bgColor = null, isAlternating = false, skipSpace = false, spaceConfig = null, textureConfig = null, seed = 0) {
+    let shapeDef = Shapes[shapeId] || Shapes.circle;
     const space = spaceConfig || this.state.modifiers.space;
+    const texture = textureConfig || this.state.modifiers.texture;
 
-    if (!space || !space.enabled || skipSpace) {
+    // Texture deforms the geometry itself, so it applies before any space mode.
+    if (texture && texture.enabled) {
+      shapeDef = texturedShape(shapeDef, texture, seed, strokeOnly);
+    }
+
+    // Open-path shapes (lines, digits...) are strokes: they stay flat.
+    if (!space || !space.enabled || skipSpace || shapeDef.skeleton) {
       this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
       return;
     }
@@ -751,7 +982,7 @@ class StudioEngine {
     this.drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space);
   }
 
-  // Draw flat shape with optional in-figure tactile texture
+  // Draw flat shape. Open-path shapes are strokes: thin in stroke mode, thick in fill mode.
   drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly = false, lineWidth = 2, bgColor = null) {
     ctx.save();
     ctx.fillStyle = fgColor;
@@ -760,21 +991,15 @@ class StudioEngine {
 
     shapeDef.draw(ctx, size);
 
-    if (strokeOnly) {
+    if (shapeDef.skeleton) {
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = strokeOnly ? lineWidth : Math.max(size * 0.14, 2);
+      ctx.stroke();
+    } else if (strokeOnly) {
       ctx.stroke();
     } else {
       ctx.fill();
-
-      // In-shape tactile texture (Texture)
-      const text = this.state.modifiers.texture;
-      if (text && text.enabled && (text.target === "shapes" || text.target === "both")) {
-        ctx.save();
-        shapeDef.draw(ctx, size);
-        ctx.clip();
-        const etchColor = bgColor || (this.state.invertFigureGround ? "#18181f" : "#FAFAFA");
-        this.fillShapeTexture(ctx, size, fgColor, etchColor, text);
-        ctx.restore();
-      }
     }
     ctx.restore();
   }
@@ -980,7 +1205,7 @@ class StudioEngine {
         ctx.stroke();
         ctx.restore();
 
-        // Front face (with texture if active)
+        // Front face
         ctx.save();
         ctx.translate(totalDx, totalDy);
         this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
@@ -989,96 +1214,21 @@ class StudioEngine {
     }
   }
 
-  // Draw tactile texture strictly within the clipped silhouette of a shape (Texture)
-  fillShapeTexture(ctx, size, fgColor, etchColor, text) {
-    const alpha = (text.contrast ?? 40) / 100;
-    const density = (text.density ?? 50) / 100;
-    const scale = text.scale ?? 14;
-
-    ctx.save();
-
-    if (text.mode === "grain") {
-      // Lithographic tooth / stipple grain carved into the shape
-      ctx.fillStyle = etchColor;
-      ctx.globalAlpha = Math.min(0.85, alpha * 1.1);
-      const dotSize = Math.max(1, scale * 0.12);
-      const count = Math.floor(size * size * 0.08 * (0.5 + density));
-      let s = 98765;
-      const rng = () => {
-        s = (s * 1664525 + 1013904223) % 4294967296;
-        return (s / 4294967296) * 2 - 1; // -1 to 1
-      };
-      for (let i = 0; i < count; i++) {
-        const gx = rng() * size;
-        const gy = rng() * size;
-        ctx.fillRect(gx, gy, dotSize, dotSize);
-      }
-    } else if (text.mode === "halftone") {
-      // Mechanical dot screen eroding the shape into a dot raster (Fig. 67c)
-      ctx.fillStyle = etchColor;
-      ctx.globalAlpha = Math.min(0.9, alpha * 1.25);
-      const step = Math.max(4, Math.round(18 - density * 10));
-      const maxDot = (step * 0.42) * (scale / 14);
-      for (let y = -size; y <= size; y += step) {
-        for (let x = -size; x <= size; x += step) {
-          const dist = Math.hypot(x, y);
-          const factor = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(dist * 0.08));
-          const r = Math.max(0.6, maxDot * factor);
-          ctx.beginPath();
-          ctx.arc(x, y, r, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    } else if (text.mode === "ribbing") {
-      // Parallel linear ribbing / hatching carved across the shape (Fig. 68a)
-      ctx.strokeStyle = etchColor;
-      ctx.lineWidth = Math.max(1, scale * 0.09);
-      ctx.globalAlpha = Math.min(0.9, alpha * 1.2);
-      const step = Math.max(3, Math.round(15 - density * 9));
-      ctx.beginPath();
-      for (let y = -size; y <= size; y += step) {
-        ctx.moveTo(-size, y);
-        ctx.lineTo(size, y);
-      }
-      ctx.stroke();
-    } else if (text.mode === "typography") {
-      // Typographic glyphs stamped inside the shape (Fig. 71)
-      const letters = ["A", "B", "R", "X", "M", "Q", "S", "8", "■", "┼", "╱", "╲"];
-      const step = Math.max(10, Math.round(24 - density * 12));
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.font = `bold ${Math.round(scale * 0.85)}px "Space Grotesk", monospace, sans-serif`;
-      ctx.fillStyle = etchColor;
-      ctx.globalAlpha = Math.min(0.85, alpha * 1.15);
-
-      for (let y = -size + step / 2; y <= size; y += step) {
-        for (let x = -size + step / 2; x <= size; x += step) {
-          const hash = Math.sin(y * 31.7 + x * 73.1) * 43758.5453;
-          const rand = hash - Math.floor(hash);
-          const char = letters[Math.floor(rand * letters.length)];
-          ctx.save();
-          ctx.translate(x, y);
-          ctx.rotate((rand - 0.5) * 0.5);
-          ctx.fillText(char, 0, 0);
-          ctx.restore();
-        }
-      }
-    }
-
-    ctx.restore();
-  }
-
   // Draw a single shape module for an individual layer
-  drawSingleLayerShape(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false, colorOverride = null) {
+  drawSingleLayerShape(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false, colorOverride = null, widthMultiplier = null) {
     if (!mod) return;
     const shape = shapeOverride || mod.shape || "circle";
     const baseW = mod.width !== undefined ? mod.width : (mod.scale || 50);
     const baseH = mod.height !== undefined ? mod.height : (mod.scale || 50);
-    const w = baseW * sizeMultiplier;
+    // A line spans its cell width (widthMultiplier) instead of shrinking to the cell's short side.
+    const w = baseW * (widthMultiplier ?? sizeMultiplier);
     const h = baseH * sizeMultiplier;
-    const r = Math.max(w, h);
-    const sx = r > 0 ? w / r : 1;
-    const sy = r > 0 ? h / r : 1;
+    // Open-path shapes (lines, digits...) are strokes: a non-uniform scale would flatten their
+    // thickness and deformation, so they keep a uniform scale. A line's length is its width.
+    const isSkeleton = !!(Shapes[shape] && Shapes[shape].skeleton);
+    const r = shape === "line" ? w : Math.max(w, h);
+    const sx = !isSkeleton && r > 0 ? w / r : 1;
+    const sy = !isSkeleton && r > 0 ? h / r : 1;
     const ox = (mod.offsetX || 0) * sizeMultiplier;
     const oy = (mod.offsetY || 0) * sizeMultiplier;
     const wire = wireframeOverride !== null ? wireframeOverride : (mod.wireframe !== false);
@@ -1090,7 +1240,9 @@ class StudioEngine {
     targetCtx.scale(sx, sy);
     // An explicit override (anomaly / contrast accent) wins over the layer color.
     const layerColor = colorOverride || mod.color || fgColor;
-    this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, false, isCutout, mod.structure?.space || null);
+    const layerNum = parseInt(String(mod.id || "").replace(/\D/g, ""), 10) || 1;
+    const seed = (this.cellSeed || 0) * 7.13 + layerNum * 53.7;
+    this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, false, isCutout, mod.structure?.space || null, mod.structure?.texture || null, seed);
     targetCtx.restore();
   }
 
@@ -1100,6 +1252,7 @@ class StudioEngine {
     ctx.save();
     ctx.translate(width / 2, height / 2);
     const aspectScale = Math.min(1.0, Math.min(width, height) / 600);
+    this.cellSeed = 0;
     this.drawSingleLayerShape(ctx, mod, 1.25 * aspectScale, palette.fg, palette.bg);
     ctx.restore();
   }
@@ -1519,7 +1672,9 @@ class StudioEngine {
         const scaleUnit = 1.25 * Math.min(1.0, Math.min(width, height) / 600);
         const cellRatio = Math.min(cW / usableW, cH / usableH);
         const normScale = scaleUnit * cellRatio * cellScaleMul * concScaleMul;
-        this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor ? cellFg : null);
+        this.cellSeed = r * cols + c + 1;
+        const lineWidthMul = (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * cellScaleMul * concScaleMul : null;
+        this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor ? cellFg : null, lineWidthMul);
         ctx.restore();
       };
 
@@ -1983,6 +2138,7 @@ class StudioEngine {
           const growthFactor = 0.75 + (i / rings) * 0.45;
           const radScaleMul = isMultiCenter ? 0.7 : 1.0;
           const normScale = scaleUnit * sectorRatio * growthFactor * radScaleMul * cellScaleMul * concScaleMul;
+          this.cellSeed = i * rays + j + 1;
           this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== palette.fg ? cellFg : null);
           ctx.restore();
         }
@@ -2199,10 +2355,6 @@ class StudioEngine {
       ctx.restore();
     }
 
-    // 5. Tactile Texture Rendering (Texture)
-    if (this.state.modifiers.texture.enabled) {
-      this.renderTexture(ctx, width, height, palette);
-    }
   }
 
   // Concentration Attractor Field Guide (Concentration)
@@ -2320,95 +2472,8 @@ class StudioEngine {
 
     ctx.restore();
   }
-
-  // Tactile Texture Engine (Texture) - Canvas-wide surface plate
-  renderTexture(ctx, width, height, palette) {
-    const text = this.state.modifiers.texture;
-    if (!text || !text.enabled) return;
-    // Only apply canvas overlay if target is "canvas" or "both"
-    if (text.target === "shapes") return;
-
-    ctx.save();
-    const fgColor = this.state.invertFigureGround ? palette.bg : palette.fg;
-    const alpha = (text.contrast ?? 40) / 100;
-    const density = (text.density ?? 50) / 100;
-    const scale = text.scale ?? 14;
-
-    if (text.mode === "grain") {
-      // Fig. 69b: Lithographic tooth & stipple paper grain
-      ctx.fillStyle = fgColor;
-      const count = Math.floor(width * height * 0.00035 * (0.5 + density));
-      let s = 1234567;
-      const rng = () => {
-        s = (s * 1664525 + 1013904223) % 4294967296;
-        return s / 4294967296;
-      };
-      ctx.globalAlpha = Math.min(0.5, alpha * 0.45);
-      const dotSize = Math.max(1, scale * 0.12);
-      for (let i = 0; i < count; i++) {
-        const gx = rng() * width;
-        const gy = rng() * height;
-        ctx.fillRect(gx, gy, dotSize, dotSize);
-      }
-    } else if (text.mode === "halftone") {
-      // Fig. 67c: Mechanical dot raster screen
-      ctx.fillStyle = fgColor;
-      ctx.globalAlpha = Math.min(0.55, alpha * 0.5);
-      const step = Math.max(8, Math.round(34 - density * 18));
-      const maxDot = (step * 0.38) * (scale / 14);
-      for (let y = step / 2; y < height; y += step) {
-        for (let x = step / 2; x < width; x += step) {
-          const dist = Math.hypot(x - width / 2, y - height / 2);
-          const factor = 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(dist * 0.012));
-          const r = Math.max(0.6, maxDot * factor);
-          ctx.beginPath();
-          ctx.arc(x, y, r, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    } else if (text.mode === "ribbing") {
-      // Fig. 68a: Woven linear ribbing / parallel hatching
-      ctx.strokeStyle = fgColor;
-      ctx.lineWidth = Math.max(0.8, scale * 0.08);
-      ctx.globalAlpha = Math.min(0.45, alpha * 0.4);
-      const step = Math.max(4, Math.round(24 - density * 16));
-      ctx.beginPath();
-      for (let y = 0; y < height; y += step) {
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-      }
-      ctx.stroke();
-    } else if (text.mode === "typography") {
-      // Fig. 71: Typography as Visual Texture (Wong Exercise)
-      const letters = ["A", "B", "R", "X", "M", "Q", "S", "8", "■", "┼", "╱", "╲"];
-      const step = Math.max(14, Math.round(48 - density * 24));
-      const cols = Math.floor(width / step);
-      const rows = Math.floor(height / step);
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.font = `bold ${Math.round(scale)}px "Space Grotesk", monospace, sans-serif`;
-      ctx.fillStyle = fgColor;
-      ctx.globalAlpha = Math.min(0.45, alpha * 0.4);
-
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const x = (c + 0.5) * step;
-          const y = (r + 0.5) * step;
-          const hash = Math.sin(r * 37.1 + c * 73.9) * 43758.5453;
-          const rand = hash - Math.floor(hash);
-          const char = letters[Math.floor(rand * letters.length)];
-          ctx.save();
-          ctx.translate(x, y);
-          ctx.rotate((rand - 0.5) * 0.6);
-          ctx.fillText(char, 0, 0);
-          ctx.restore();
-        }
-      }
-    }
-
-    ctx.restore();
-  }
 }
+
 
 
   /**
@@ -2450,7 +2515,7 @@ const STUDIO_PRESETS = [
         anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
         contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
       },
       showSafeBounds: false,
@@ -2480,7 +2545,7 @@ const STUDIO_PRESETS = [
         anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
         contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
       },
       showSafeBounds: false,
@@ -2510,7 +2575,7 @@ const STUDIO_PRESETS = [
         anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
         contrast: { enabled: true, dimension: "direction", dominanceRatio: 75, contrastShape: "cross", scaleFactor: 1.0, angle: 45, highlightContrast: true },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
       },
       showSafeBounds: true,
@@ -2539,7 +2604,7 @@ const STUDIO_PRESETS = [
         anomaly: { enabled: true, type: "fracture", epicenterX: 0.5, epicenterY: 0.5, radius: 220, intensity: 85, anomalousShape: "cross", highlightColor: true, showReticle: false },
         contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
       },
       showSafeBounds: false,
@@ -2568,7 +2633,7 @@ const STUDIO_PRESETS = [
         anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
         contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: true, mode: "point", attractorX: 0.5, attractorY: 0.45, power: 85, radius: 340, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
       },
       showSafeBounds: false,
@@ -2598,7 +2663,7 @@ const STUDIO_PRESETS = [
         anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
         contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: true, target: "both", mode: "grain", density: 60, scale: 16, contrast: 45 },
+        texture: { enabled: true, jitter: 2, skipChance: 0, crossing: 0, undulation: 4 },
         space: { enabled: true, mode: "isometric", depth: 40, angle: 30, shading: 70, showIsoGuides: false }
       },
       showSafeBounds: false,
@@ -2627,7 +2692,7 @@ const STUDIO_PRESETS = [
         anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
         contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
       },
       showSafeBounds: false,
@@ -2657,7 +2722,7 @@ const STUDIO_PRESETS = [
         anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
         contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
         concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
         space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
       },
       showSafeBounds: true,
@@ -2833,6 +2898,7 @@ class StudioProApp {
     this.setupContrast();
     this.setupConcentration();
     this.setupSpace();
+    this.setupTexture();
     this.setupShapeInspector();
     this.setupModifierCards();
 
@@ -2919,6 +2985,9 @@ class StudioProApp {
     if (!mod.structure.space) {
       mod.structure.space = createDefaultLayerStructure().space;
     }
+    if (!mod.structure.texture) {
+      mod.structure.texture = createDefaultLayerStructure().texture;
+    }
     return mod.structure;
   }
 
@@ -2932,6 +3001,7 @@ class StudioProApp {
     this.syncContrastInspectorWithActiveLayer();
     this.syncConcentrationInspectorWithActiveLayer();
     this.syncSpaceInspectorWithActiveLayer();
+    this.syncTextureInspectorWithActiveLayer();
     this.updateRailIndicatorDots();
   }
 
@@ -3269,6 +3339,8 @@ class StudioProApp {
     if (badgeConcentration) badgeConcentration.textContent = activeName;
     const badgeSpace = document.getElementById("badge-space-layer");
     if (badgeSpace) badgeSpace.textContent = activeName;
+    const badgeTexture = document.getElementById("badge-texture-layer");
+    if (badgeTexture) badgeTexture.textContent = activeName;
 
     if (!container) return;
 
@@ -3401,6 +3473,8 @@ class StudioProApp {
         isActive = !!mod?.structure?.concentration?.enabled;
       } else if (tab === "space") {
         isActive = !!mod?.structure?.space?.enabled;
+      } else if (tab === "texture") {
+        isActive = !!mod?.structure?.texture?.enabled;
       } else if (this.state.modifiers && this.state.modifiers[tab]) {
         isActive = !!this.state.modifiers[tab].enabled;
       }
@@ -4584,6 +4658,92 @@ class StudioProApp {
   }
 
   /* =========================================================================
+     TEXTURE INSPECTOR & CONTROLLER (Per Active Layer)
+     Geometry deformations that read as texture: Jitter, Line skipping,
+     Strand crossing, Perimeter undulation. Autonomous modifier.
+     Jitter and undulation are px for a 100px module (scaled to the real size).
+     Skipping and crossing only read on strokes.
+     ========================================================================= */
+
+  getActiveTexture() {
+    const struct = this.getActiveLayerStructure();
+    return struct ? struct.texture : null;
+  }
+
+  syncTextureInspectorWithActiveLayer() {
+    const mod = this.getActiveModule();
+    const tex = this.getActiveTexture();
+    if (!mod || !tex) return;
+
+    const badge = document.getElementById("badge-texture-layer");
+    if (badge) badge.textContent = mod.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
+
+    const toggle = document.getElementById("toggle-texture-active");
+    if (toggle) toggle.checked = !!tex.enabled;
+
+    const setPair = (sliderId, numId, value, suffix) => {
+      this.syncControlValue(sliderId, value);
+      const num = document.getElementById(numId);
+      if (num) num.value = `${value}${suffix}`;
+    };
+    setPair("input-texture-jitter", "num-texture-jitter", tex.jitter ?? 1, "px");
+    setPair("input-texture-skip", "num-texture-skip", tex.skipChance ?? 10, "%");
+    setPair("input-texture-crossing", "num-texture-crossing", tex.crossing ?? 10, "%");
+    setPair("input-texture-undulation", "num-texture-undulation", tex.undulation ?? 10, "px");
+
+    this.updateRailIndicatorDots();
+  }
+
+  setupTexture() {
+    const toggle = document.getElementById("toggle-texture-active");
+
+    // Any edit enables Texture on the active layer, then refreshes everything.
+    const commit = (mutate, historyLabel, { resync = true } = {}) => {
+      const tex = this.getActiveTexture();
+      if (!tex) return;
+      mutate(tex);
+      tex.enabled = true;
+      if (toggle) toggle.checked = true;
+      if (resync) this.syncTextureInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      if (historyLabel) this.pushHistory(`Layer ${this.activeLayerId} ${historyLabel}`);
+    };
+
+    toggle?.addEventListener("change", (e) => {
+      const tex = this.getActiveTexture();
+      if (!tex) return;
+      tex.enabled = e.target.checked;
+      this.syncTextureInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      this.pushHistory(`Layer ${this.activeLayerId} Texture: ${tex.enabled ? "ON" : "OFF"}`);
+    });
+
+    const bindPair = (sliderId, numId, { min, max, suffix, label, key }) => {
+      const slider = document.getElementById(sliderId);
+      const num = document.getElementById(numId);
+      slider?.addEventListener("input", (e) => {
+        const val = parseInt(e.target.value, 10);
+        commit(t => { t[key] = val; }, null, { resync: false });
+        if (num) num.value = `${val}${suffix}`;
+      });
+      slider?.addEventListener("change", (e) => {
+        this.pushHistory(`Layer ${this.activeLayerId} Texture ${label}: ${e.target.value}${suffix}`);
+      });
+      num?.addEventListener("change", (e) => {
+        const raw = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10);
+        const val = isNaN(raw) ? min : Math.max(min, Math.min(max, raw));
+        commit(t => { t[key] = val; }, `Texture ${label}: ${val}${suffix}`);
+      });
+    };
+    bindPair("input-texture-jitter", "num-texture-jitter", { min: 0, max: 8, suffix: "px", label: "Jitter", key: "jitter" });
+    bindPair("input-texture-skip", "num-texture-skip", { min: 0, max: 60, suffix: "%", label: "Line Skipping", key: "skipChance" });
+    bindPair("input-texture-crossing", "num-texture-crossing", { min: 0, max: 60, suffix: "%", label: "Strand Crossing", key: "crossing" });
+    bindPair("input-texture-undulation", "num-texture-undulation", { min: 0, max: 30, suffix: "px", label: "Undulation", key: "undulation" });
+  }
+
+  /* =========================================================================
      CONTEXTUAL SHAPE & STYLE INSPECTOR (Applies to currently active layer)
      ========================================================================= */
 
@@ -4942,22 +5102,6 @@ class StudioProApp {
     });
     this.bindSliderWithNumber("input-sim-intensity", "num-sim-intensity", (val) => { mods.similarity.intensity = val; this.render(); }, "Similarity Variance", "similarity");
     this.bindSliderWithNumber("input-sim-jitter", "num-sim-jitter", (val) => { mods.similarity.cellJitter = val; this.render(); }, "Cell Jitter", "similarity");
-
-
-    // 9. TEXTURE
-    this.bindModifierMasterToggle("toggle-mod-texture", "texture");
-    document.querySelectorAll("[data-texture-mode]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        this.ensureModifierActive("texture");
-        mods.texture.mode = btn.dataset.textureMode;
-        document.querySelectorAll("[data-texture-mode]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        this.render();
-      });
-    });
-    this.bindSliderWithNumber("input-texture-density", "num-texture-density", (val) => { mods.texture.density = val; this.render(); }, "Texture Density", "texture");
-    this.bindSliderWithNumber("input-texture-scale", "num-texture-scale", (val) => { mods.texture.scale = val; this.render(); }, "Texture Scale", "texture");
-    this.bindSliderWithNumber("input-texture-contrast", "num-texture-contrast", (val) => { mods.texture.contrast = val; this.render(); }, "Texture Contrast", "texture");
   }
 
   ensureModifierActive(modifierKey) {
@@ -5099,6 +5243,9 @@ class StudioProApp {
       if (!layer.structure.space) {
         layer.structure.space = createDefaultLayerStructure().space;
       }
+      if (!layer.structure.texture) {
+        layer.structure.texture = createDefaultLayerStructure().texture;
+      }
     });
 
     // If global repetition or radiation is enabled in preset modifiers, propagate to layer 1 structure
@@ -5133,6 +5280,9 @@ class StudioProApp {
       }
       if (this.state.modifiers?.space?.enabled) {
         Object.assign(firstLayer.structure.space, this.state.modifiers.space);
+      }
+      if (this.state.modifiers?.texture?.enabled) {
+        Object.assign(firstLayer.structure.texture, this.state.modifiers.texture);
       }
     }
 

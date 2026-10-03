@@ -60,6 +60,7 @@ export const Shapes = {
 
   wave: {
     id: "wave",
+    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Sine Wave",
     category: "curved",
     draw(ctx, size) {
@@ -80,6 +81,7 @@ export const Shapes = {
 
   horseshoe: {
     id: "horseshoe",
+    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Horseshoe",
     category: "curved",
     draw(ctx, size) {
@@ -129,19 +131,19 @@ export const Shapes = {
 
   line: {
     id: "line",
+    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
+    textureRef: 450, // a line is a long module: texture px are calibrated for ~450px
     name: "Straight Line",
     category: "linear",
     draw(ctx, size) {
       const len = size * 0.9;
-      const th = Math.max(size * 0.14, 4);
       ctx.beginPath();
-      ctx.rect(-len / 2, -th / 2, len, th);
-      ctx.closePath();
+      ctx.moveTo(-len / 2, 0);
+      ctx.lineTo(len / 2, 0);
     },
     svgPath(size) {
       const len = size * 0.9;
-      const th = Math.max(size * 0.14, 4);
-      return `<rect x="${-len/2}" y="${-th/2}" width="${len}" height="${th}" />`;
+      return `<line x1="${-len/2}" y1="0" x2="${len/2}" y2="0" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" />`;
     },
     phIcon: "minus"
   },
@@ -172,6 +174,7 @@ export const Shapes = {
 
   hatch: {
     id: "hatch",
+    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Diagonal Hatch",
     category: "linear",
     draw(ctx, size) {
@@ -259,49 +262,264 @@ export const Shapes = {
 
   digit1: {
     id: "digit1",
+    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Digit 1",
     category: "symbolic",
     draw(ctx, size) {
-      ctx.font = `bold ${Math.round(size * 0.75)}px "Space Grotesk", sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("1", 0, 0);
+      const s = size;
+      ctx.beginPath();
+      ctx.moveTo(-0.17 * s, -0.2 * s);
+      ctx.lineTo(0.03 * s, -0.4 * s);
+      ctx.lineTo(0.03 * s, 0.4 * s);
     },
     svgPath(size) {
-      return `<text x="0" y="0" font-family="Space Grotesk, sans-serif" font-size="${size*0.75}" font-weight="bold" text-anchor="middle" dominant-baseline="central">1</text>`;
+      const s = size;
+      return `<path d="M ${-0.17*s} ${-0.2*s} L ${0.03*s} ${-0.4*s} L ${0.03*s} ${0.4*s}" fill="none" stroke="currentColor" stroke-width="${s*0.14}" stroke-linecap="round" stroke-linejoin="round" />`;
     },
     phIcon: "number-one"
   },
 
   digit5: {
     id: "digit5",
+    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Digit 5",
     category: "symbolic",
     draw(ctx, size) {
-      ctx.font = `bold ${Math.round(size * 0.75)}px "Space Grotesk", sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("5", 0, 0);
+      const s = size;
+      ctx.beginPath();
+      ctx.moveTo(0.2 * s, -0.4 * s);
+      ctx.lineTo(-0.17 * s, -0.4 * s);
+      ctx.lineTo(-0.21 * s, -0.02 * s);
+      ctx.bezierCurveTo(0.0 * s, -0.14 * s, 0.3 * s, -0.04 * s, 0.3 * s, 0.17 * s);
+      ctx.bezierCurveTo(0.3 * s, 0.4 * s, 0.0 * s, 0.46 * s, -0.24 * s, 0.3 * s);
     },
     svgPath(size) {
-      return `<text x="0" y="0" font-family="Space Grotesk, sans-serif" font-size="${size*0.75}" font-weight="bold" text-anchor="middle" dominant-baseline="central">5</text>`;
+      const s = size;
+      return `<path d="M ${0.2*s} ${-0.4*s} L ${-0.17*s} ${-0.4*s} L ${-0.21*s} ${-0.02*s} C ${0} ${-0.14*s} ${0.3*s} ${-0.04*s} ${0.3*s} ${0.17*s} C ${0.3*s} ${0.4*s} ${0} ${0.46*s} ${-0.24*s} ${0.3*s}" fill="none" stroke="currentColor" stroke-width="${s*0.14}" stroke-linecap="round" stroke-linejoin="round" />`;
     },
     phIcon: "number-five"
   },
 
   digit9: {
     id: "digit9",
+    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Digit 9",
     category: "symbolic",
     draw(ctx, size) {
-      ctx.font = `bold ${Math.round(size * 0.75)}px "Space Grotesk", sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("9", 0, 0);
+      const s = size;
+      ctx.beginPath();
+      ctx.arc(0, -0.15 * s, 0.22 * s, 0, Math.PI * 2);
+      ctx.moveTo(0.22 * s, -0.15 * s);
+      ctx.bezierCurveTo(0.22 * s, 0.2 * s, 0.1 * s, 0.4 * s, -0.2 * s, 0.4 * s);
     },
     svgPath(size) {
-      return `<text x="0" y="0" font-family="Space Grotesk, sans-serif" font-size="${size*0.75}" font-weight="bold" text-anchor="middle" dominant-baseline="central">9</text>`;
+      const s = size;
+      return `<path d="M ${0.22*s} ${-0.15*s} A ${0.22*s} ${0.22*s} 0 1 1 ${-0.22*s} ${-0.15*s} A ${0.22*s} ${0.22*s} 0 1 1 ${0.22*s} ${-0.15*s} M ${0.22*s} ${-0.15*s} C ${0.22*s} ${0.2*s} ${0.1*s} ${0.4*s} ${-0.2*s} ${0.4*s}" fill="none" stroke="currentColor" stroke-width="${s*0.14}" stroke-linecap="round" stroke-linejoin="round" />`;
     },
     phIcon: "number-nine"
   }
 };
+
+// ============================================================================
+// TEXTURE GEOMETRY
+// Texture is a set of geometry deformations (not a pixel pattern): every shape is
+// flattened into a polyline once, then jitter, undulation, strand crossing and
+// line skipping are applied to its vertices. Deterministic per seed.
+// ============================================================================
+
+const FLAT_REF_SIZE = 100;
+const FLAT_SPACING = 1.5; // dense sampling step at the reference size
+
+const flatCache = {};
+
+// Records a shape's draw() commands into dense polylines at the reference size.
+export function flattenShape(shapeDef) {
+  if (flatCache[shapeDef.id]) return flatCache[shapeDef.id];
+
+  const subpaths = [];
+  let cur = null;
+  let last = null;
+  let first = null;
+
+  const startSub = (x, y) => {
+    cur = { pts: [{ x, y, c: true }], closed: false };
+    subpaths.push(cur);
+    last = { x, y };
+    first = { x, y };
+  };
+  const lineTo = (x, y) => {
+    if (!cur) { startSub(x, y); return; }
+    const dx = x - last.x, dy = y - last.y;
+    const len = Math.hypot(dx, dy);
+    const n = Math.max(1, Math.ceil(len / FLAT_SPACING));
+    for (let i = 1; i <= n; i++) {
+      const t = i / n;
+      cur.pts.push({ x: last.x + dx * t, y: last.y + dy * t, c: i === n });
+    }
+    last = { x, y };
+  };
+  const bezier = (c1x, c1y, c2x, c2y, x, y) => {
+    if (!cur) startSub(c1x, c1y);
+    const x0 = last.x, y0 = last.y;
+    const steps = 28;
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps, m = 1 - t;
+      cur.pts.push({
+        x: m * m * m * x0 + 3 * m * m * t * c1x + 3 * m * t * t * c2x + t * t * t * x,
+        y: m * m * m * y0 + 3 * m * m * t * c1y + 3 * m * t * t * c2y + t * t * t * y,
+        c: i === steps
+      });
+    }
+    last = { x, y };
+  };
+
+  const rec = {
+    beginPath() { cur = null; },
+    moveTo(x, y) { startSub(x, y); },
+    lineTo,
+    closePath() { if (cur) { cur.closed = true; last = { x: first.x, y: first.y }; cur = null; } },
+    bezierCurveTo: bezier,
+    quadraticCurveTo(cx, cy, x, y) {
+      const x0 = last ? last.x : cx, y0 = last ? last.y : cy;
+      bezier(x0 + (2 / 3) * (cx - x0), y0 + (2 / 3) * (cy - y0), x + (2 / 3) * (cx - x), y + (2 / 3) * (cy - y), x, y);
+    },
+    arc(cx, cy, r, a0, a1, ccw = false) {
+      let sweep = a1 - a0;
+      if (!ccw && sweep < 0) sweep += Math.PI * 2 * Math.ceil(-sweep / (Math.PI * 2));
+      if (ccw && sweep > 0) sweep -= Math.PI * 2 * Math.ceil(sweep / (Math.PI * 2));
+      if (Math.abs(sweep) > Math.PI * 2) sweep = Math.sign(sweep) * Math.PI * 2;
+      const sx = cx + Math.cos(a0) * r, sy = cy + Math.sin(a0) * r;
+      if (cur) lineTo(sx, sy); else startSub(sx, sy);
+      const steps = Math.max(8, Math.ceil((Math.abs(sweep) * r) / FLAT_SPACING));
+      for (let i = 1; i <= steps; i++) {
+        const a = a0 + (sweep * i) / steps;
+        cur.pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r, c: i === steps });
+      }
+      last = { x: cx + Math.cos(a0 + sweep) * r, y: cy + Math.sin(a0 + sweep) * r };
+    },
+    rect(x, y, w, h) {
+      startSub(x, y);
+      lineTo(x + w, y); lineTo(x + w, y + h); lineTo(x, y + h);
+      cur.closed = true;
+      cur = null;
+    }
+  };
+
+  shapeDef.draw(rec, FLAT_REF_SIZE);
+
+  // Normalise: arc-length parameter u (0..1) per subpath, drop a duplicated closing point
+  for (const sp of subpaths) {
+    const pts = sp.pts;
+    if (pts.length > 2) {
+      const a = pts[0], b = pts[pts.length - 1];
+      if (Math.hypot(a.x - b.x, a.y - b.y) < 1e-6) {
+        pts.pop();
+        sp.closed = true; // a full-circle arc closes on itself
+      }
+    }
+    let total = 0;
+    pts[0].u = 0;
+    for (let i = 1; i < pts.length; i++) {
+      total += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+      pts[i].u = total;
+    }
+    const closeLen = sp.closed ? Math.hypot(pts[0].x - pts[pts.length - 1].x, pts[0].y - pts[pts.length - 1].y) : 0;
+    const len = (total + closeLen) || 1;
+    for (const pt of pts) pt.u /= len;
+  }
+
+  flatCache[shapeDef.id] = subpaths;
+  return subpaths;
+}
+
+// Deforms a shape's polylines. Returns [{ segments: [[{x,y}...]], closed }] in local px at `size`.
+export function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
+  const base = flattenShape(shapeDef);
+  const f = size / FLAT_REF_SIZE; // geometry scale
+  const k = size / (shapeDef.textureRef || FLAT_REF_SIZE); // texture px are relative to the module size
+  const jitter = (tex.jitter || 0) * k;
+  const undulation = (tex.undulation || 0) * k * 0.7;
+  // Skipping and crossing only read on strokes; they are ignored on filled shapes.
+  const skipChance = strokeOnly ? (tex.skipChance || 0) / 100 : 0;
+  const crossing = strokeOnly ? (tex.crossing || 0) / 100 : 0;
+  const stride = Math.max(1, Math.round(Math.max(2, size * 0.04) / (FLAT_SPACING * f)));
+
+  const out = [];
+  base.forEach((sp, spIdx) => {
+    const s = seed + spIdx * 7.31;
+    // Keep corners, thin the dense samples between them
+    const picked = [];
+    let run = 0;
+    for (const pt of sp.pts) {
+      if (pt.c) { picked.push(pt); run = 0; }
+      else if (++run % stride === 0) picked.push(pt);
+    }
+    const n = picked.length;
+    let pts = picked.map(pt => ({ x: pt.x * f, y: pt.y * f, u: pt.u }));
+
+    // Perimeter undulation: sine displacement along the outline normal
+    if (undulation > 0 && n > 2) {
+      const periods = sp.closed ? 3 : 2;
+      const phase = s * 0.37;
+      pts = pts.map((pt, i) => {
+        const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)];
+        let nx = -(b.y - a.y), ny = b.x - a.x;
+        const nl = Math.hypot(nx, ny) || 1;
+        nx /= nl; ny /= nl;
+        const off = Math.sin(pt.u * Math.PI * 2 * periods + phase) * undulation;
+        return { x: pt.x + nx * off, y: pt.y + ny * off, u: pt.u };
+      });
+    }
+
+    // Jitter: per-vertex hand tremor
+    if (jitter > 0) {
+      pts.forEach((pt, p) => {
+        pt.x += Math.sin(s * 13.1 + p * 37.3) * 0.5 * jitter;
+        pt.y += Math.cos(s * 29.7 + p * 19.1) * 0.5 * jitter;
+      });
+    }
+
+    // Strand crossing: swap nearby vertices to fray the stroke
+    if (crossing > 0 && n > 6) {
+      const swaps = Math.floor(n * crossing * 0.15);
+      for (let k = 0; k < swaps; k++) {
+        const a = Math.floor(Math.abs(Math.sin(s * 9.1 + k * 3.7)) * n) % n;
+        const b = (a + 2 + Math.floor(Math.abs(Math.cos(s * 5.3 + k * 7.1)) * 4)) % n;
+        const tmp = pts[a]; pts[a] = pts[b]; pts[b] = tmp;
+      }
+    }
+
+    // Line skipping: drop vertices so the stroke breaks into segments
+    const segments = [];
+    if (skipChance > 0) {
+      let seg = [];
+      pts.forEach((pt, p) => {
+        const skip = Math.abs(Math.sin(s * 43.1 + p * 97.7)) < skipChance;
+        if (skip) { if (seg.length > 1) segments.push(seg); seg = []; }
+        else seg.push(pt);
+      });
+      if (seg.length > 1) segments.push(seg);
+    } else {
+      segments.push(pts);
+    }
+    out.push({ segments, closed: sp.closed && skipChance === 0 });
+  });
+  return out;
+}
+
+// Wraps a shape so every draw() emits the deformed geometry (works with every Space mode).
+export function texturedShape(shapeDef, tex, seed, strokeOnly) {
+  return {
+    ...shapeDef,
+    draw(ctx, size) {
+      const geo = buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly);
+      ctx.beginPath();
+      for (const sp of geo) {
+        for (const seg of sp.segments) {
+          seg.forEach((pt, i) => (i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y)));
+          if (sp.closed) ctx.closePath();
+        }
+      }
+    }
+  };
+}
