@@ -1,0 +1,790 @@
+/* =========================================================================
+   BASIC STUDIO PRO — DESIGN SYSTEM THEME (Abstract Studio Aesthetic)
+   Minimalist, Canvas-First, Floating Surface Aesthetic
+   ========================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('./design-system.css');
+
+:root {
+  --app-bg: #eceef2;
+  --panel-bg: #ffffff;
+  --panel-border: #dcdfe6;
+  --panel-card: #ffffff;
+  --panel-card-hover: #f7f8fa;
+  --text-primary: #121317;
+  --text-secondary: #585b68;
+  --text-muted: #9195a4;
+  --accent: #18181f;
+  --accent-blue: #3b82f6;
+  --accent-glow: rgba(24, 24, 31, 0.12);
+  --focus-ring: rgba(59, 130, 246, 0.35);
+  --danger: #ef4444;
+  --canvas-grid-dot: rgba(0, 0, 0, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input, textarea, [contenteditable="true"] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+body {
+  font-family: var(--bs-font-sans);
+  background-color: #eceef2;
+  background-image: radial-gradient(var(--canvas-grid-dot, rgba(0, 0, 0, 0.08)) 1.2px, transparent 1.2px);
+  background-size: 20px 20px;
+  background-position: 0 0;
+  color: var(--text-primary);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Custom Sleek Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d0d3dc;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b0b4c0;
+}
+
+/* Canvas Workspace Dot Pattern */
+.canvas-workspace {
+  background-color: #eceef2;
+  background-image: radial-gradient(var(--canvas-grid-dot) 1.2px, transparent 1.2px);
+  background-size: 20px 20px;
+  background-position: 0 0;
+}
+
+/* Artboard Shadow Frame (Exact Proportions from Reference) */
+.artboard-container {
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  transform-origin: center center;
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+  background-color: #ffffff;
+  display: block;
+  max-width: min(540px, calc(100vw - 640px));
+  max-height: min(540px, calc(100vh - 150px));
+  width: min(540px, calc(100vw - 640px), calc(100vh - 150px));
+  height: min(540px, calc(100vw - 640px), calc(100vh - 150px));
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+}
+
+/* Floating Card Base */
+.floating-card {
+  background: #ffffff;
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  box-shadow: 0 12px 36px -6px rgba(0, 0, 0, 0.08), 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+}
+
+/* Pill Action Buttons in Header */
+.header-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: #ffffff;
+  color: #121317;
+  border: 1px solid #d2d5de;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.header-pill-btn:hover {
+  background: #f7f8fa;
+  border-color: #bfc3cf;
+  transform: translateY(-0.5px);
+}
+.header-pill-btn:active {
+  transform: translateY(0.5px);
+  background: #f0f2f5;
+}
+
+/* Round Icon Buttons */
+.round-icon-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #585b68;
+  border: 1px solid #d2d5de;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+.round-icon-btn:hover {
+  background: #f7f8fa;
+  color: #121317;
+  border-color: #bfc3cf;
+}
+.round-icon-btn.active {
+  background: #18181f;
+  color: #ffffff;
+  border-color: #18181f;
+}
+
+/* Aspect Ratio Select Box */
+.aspect-select-box {
+  background: #ffffff;
+  border: 1px solid #d2d5de;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-family: var(--bs-font-mono);
+  font-weight: 500;
+  color: #121317;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  outline: none;
+}
+.aspect-select-box:hover {
+  border-color: #bfc3cf;
+}
+
+/* Layer Stack Card (Abstract Studio Aesthetic) */
+.layer-card {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #e2e5eb;
+  background: #ffffff;
+  color: #121317;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+.layer-card:hover {
+  background: #f7f8fa;
+  border-color: #d0d3de;
+}
+.layer-card.is-active {
+  background: #18181f;
+  border-color: #18181f;
+  color: #ffffff;
+  box-shadow: 0 6px 16px -2px rgba(24, 24, 31, 0.25);
+}
+.layer-card.is-active .layer-title {
+  color: #ffffff;
+}
+.layer-card.is-active .layer-subtitle {
+  color: #9da1b2;
+}
+.layer-card.is-active .layer-action-btn {
+  color: #9da1b2;
+}
+.layer-card.is-active .layer-action-btn:hover {
+  color: #ffffff;
+}
+.layer-card.is-active .layer-preview-box {
+  background: #09090c;
+  border-color: #323240;
+  color: #ffffff;
+}
+
+/* Layer Hidden & Dragging States */
+.layer-card.is-hidden {
+  opacity: 0.45;
+}
+.layer-card.is-dragging {
+  opacity: 0.3;
+  transform: scale(0.97);
+}
+.layer-card.drag-over {
+  border-color: #18181f;
+  box-shadow: 0 0 0 2px rgba(24, 24, 31, 0.2);
+}
+
+/* Layer Thumbnail Box */
+.layer-preview-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: #f2f4f8;
+  border: 1px solid #dcdfe6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #18181f;
+  flex-shrink: 0;
+}
+
+.layer-action-btn {
+  padding: 4px;
+  border-radius: 4px;
+  color: #717482;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  background: transparent;
+  border: 0;
+}
+.layer-action-btn:hover {
+  color: #121317;
+  background: rgba(0, 0, 0, 0.05);
+}
+.layer-card.is-active .layer-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Shape Icon Buttons Grid */
+.shape-glyph-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #dcdfe6;
+  background: #ffffff;
+  color: #4b4f5d;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+.shape-glyph-btn:hover {
+  background: #f7f8fa;
+  color: #121317;
+  border-color: #b0b4c2;
+}
+.shape-glyph-btn.active {
+  background: #18181f;
+  color: #ffffff;
+  border-color: #18181f;
+  box-shadow: 0 2px 6px rgba(24, 24, 31, 0.25);
+}
+
+/* Numeric Scrubbable Input (Light Minimalist) */
+.scrub-input {
+  font-family: var(--bs-font-mono);
+  font-size: 11px;
+  background: #ffffff;
+  color: #121317;
+  border: 1px solid #dcdfe6;
+  border-radius: 5px;
+  padding: 2px 6px;
+  text-align: right;
+  transition: all 0.15s ease;
+  outline: none;
+}
+.scrub-input:hover {
+  border-color: #b0b4c2;
+}
+.scrub-input:focus {
+  border-color: #18181f;
+  box-shadow: 0 0 0 2px rgba(24, 24, 31, 0.1);
+}
+
+/* Range Inputs */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  background: #dcdfe6;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #18181f;
+  border: 1px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: ew-resize;
+  transition: transform 0.1s ease, background 0.1s ease;
+}
+input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scale(1.2);
+}
+
+/* Mode Segment Buttons (Trazo vs Relleno) */
+.segment-btn {
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 5px;
+  border: 1px solid #d2d5de;
+  background: #ffffff;
+  color: #585b68;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.segment-btn:hover {
+  background: #f7f8fa;
+  color: #121317;
+}
+.segment-btn.active {
+  background: #18181f;
+  color: #ffffff;
+  border-color: #18181f;
+}
+
+/* Micro Toggle Switches */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 28px;
+  height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.switch input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+  margin: 0;
+}
+.switch-slider {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #d2d5de;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 16px;
+  border: 1px solid #c4c8d4;
+  pointer-events: none;
+}
+.switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 10px;
+  width: 10px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #ffffff;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.switch input:checked + .switch-slider {
+  background-color: #18181f;
+  border-color: #18181f;
+}
+.switch input:checked + .switch-slider:before {
+  transform: translateX(12px);
+  background-color: #ffffff;
+}
+
+/* Modifiers Stack Card (Light Theme) */
+.modifier-card {
+  border: 1px solid #e2e5eb;
+  background: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+.modifier-card.is-active {
+  border-color: #18181f;
+  box-shadow: 0 4px 12px -2px rgba(24, 24, 31, 0.08);
+}
+.modifier-header {
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  background: #fafbfc;
+  border-bottom: 1px solid #eef0f4;
+  transition: background 0.15s ease;
+}
+.modifier-header:hover {
+  background: #f2f4f8;
+}
+.modifier-body {
+  padding: 10px 12px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: opacity 0.2s ease;
+}
+.modifier-card:not(.is-active) .modifier-body {
+  opacity: 0.55;
+}
+
+/* Segmented Buttons */
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 8px;
+  font-size: 10.5px;
+  font-weight: 500;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #585b68;
+  border: 1px solid #dcdfe6;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.tool-btn:hover {
+  background: #f7f8fa;
+  color: #121317;
+  border-color: #b0b4c2;
+}
+.tool-btn.active {
+  background: #18181f;
+  color: #ffffff;
+  border-color: #18181f;
+}
+
+/* Floating Bottom Zoom HUD Pill */
+.floating-zoom-hud {
+  backdrop-blur-md;
+  background: rgba(24, 24, 31, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  padding: 4px 8px;
+  color: #ffffff;
+  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.floating-zoom-hud button {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a0a4b4;
+  cursor: pointer;
+  transition: color 0.1s ease;
+}
+.floating-zoom-hud button:hover {
+  color: #ffffff;
+}
+
+/* Draggable Canvas Overlay Handles */
+.interactive-handle {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 2px #18181f, 0 3px 10px rgba(0, 0, 0, 0.4);
+  cursor: grab;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 25;
+}
+.interactive-handle:hover {
+  transform: translate(-50%, -50%) scale(1.2);
+}
+.interactive-handle:active {
+  cursor: grabbing;
+}
+.interactive-handle-center {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #18181f;
+}
+
+/* =========================================================================
+   CONTROLS RAIL (ABSTRACT STUDIO DOCK)
+   Vertical column of circular black buttons on the right edge
+   ========================================================================= */
+
+.controls-rail {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 35;
+}
+
+.rail-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #18181f;
+  color: #f4f4f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  outline: none;
+}
+
+.rail-btn:hover {
+  background: #2a2b35;
+  color: #ffffff;
+  transform: scale(1.08);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
+}
+
+.rail-btn:active {
+  transform: scale(0.96);
+}
+
+.rail-btn.active {
+  background: #18181f;
+  color: #ffffff;
+  box-shadow: 0 0 0 2px #3b82f6, 0 6px 20px rgba(0, 0, 0, 0.3);
+  transform: scale(1.05);
+}
+
+/* Active modifier dot (indicating modifier is ON in composition) */
+.rail-btn.has-modifier-active::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 1.5px solid #18181f;
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.6);
+}
+
+/* =========================================================================
+   FLOATING INSPECTOR FLYOUT CARD
+   Floats cleanly to the left of the vertical rail
+   ========================================================================= */
+
+.inspector-flyout-card {
+  position: absolute;
+  top: 18px;
+  right: 68px;
+  width: 340px;
+  max-height: calc(100vh - 40px);
+  background: #ffffff;
+  border: 1px solid var(--panel-border, #dcdfe6);
+  border-radius: 18px;
+  box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.13), 0 0 0 1px rgba(0, 0, 0, 0.03);
+  padding: 18px;
+  overflow-y: auto;
+  z-index: 30;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
+}
+
+.inspector-flyout-card.is-closed {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(12px) scale(0.97);
+  pointer-events: none;
+}
+
+.close-flyout-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #717482;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.close-flyout-btn:hover {
+  background: #f0f2f5;
+  color: #121317;
+}
+
+/* =========================================================================
+   REFERENCE 1 (MODULE) & REFERENCE 2 (LAYOUT STRUCTURE) WIDGET STYLES
+   ========================================================================= */
+
+.shape-circle-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #18181f;
+  background: #ffffff;
+  color: #18181f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--bs-font-mono, monospace);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+}
+.shape-circle-btn:hover {
+  background: #f4f5f8;
+}
+.shape-circle-btn.active {
+  background: #18181f;
+  color: #ffffff;
+  border-color: #18181f;
+}
+
+.val-box-input {
+  width: 48px;
+  height: 28px;
+  border: 1px solid #18181f;
+  border-radius: 7px;
+  background: #ffffff;
+  font-family: var(--bs-font-mono, monospace);
+  font-size: 11px;
+  font-weight: 500;
+  color: #18181f;
+  text-align: center;
+  outline: none;
+}
+
+.segmented-pill-bar {
+  display: flex;
+  background: #ffffff;
+  border: 1px solid #18181f;
+  border-radius: 9999px;
+  overflow: hidden;
+  padding: 2px;
+}
+
+.segmented-pill-btn {
+  flex: 1;
+  padding: 4px 10px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: #18181f;
+  border-radius: 9999px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: all 0.15s ease;
+}
+.segmented-pill-btn.active {
+  background: #1f222e;
+  color: #ffffff;
+}
+
+.variation-pill-btn {
+  padding: 3px 10px;
+  border-radius: 9999px;
+  border: 1px solid #18181f;
+  background: #ffffff;
+  color: #18181f;
+  font-size: 10.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.variation-pill-btn:hover {
+  background: #f4f5f8;
+}
+.variation-pill-btn.active {
+  background: #1f222e;
+  color: #ffffff;
+  border-color: #1f222e;
+}
+
+.toggle-check-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 12px;
+  color: #121317;
+  font-weight: 400;
+}
+
+.custom-app-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid #8c90a2;
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: #ffffff;
+  position: relative;
+}
+.custom-app-checkbox:checked {
+  background: #18181f;
+  border-color: #18181f;
+}
+.custom-app-checkbox:checked::after {
+  content: '';
+  width: 4px;
+  height: 8px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  position: absolute;
+  top: 1.5px;
+  left: 5px;
+}
+
+/* =========================================================================
+   WARNING ALERT BOX (Design System Standard for Incompatible Principles)
+   ========================================================================= */
+
+.warning-alert-box {
+  background-color: #fef3d6;
+  border: 1px solid #fcd34d;
+  color: #78350f;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 11px;
+  line-height: 1.45;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  transition: opacity 0.2s ease;
+}
+
+.warning-alert-box.hidden {
+  display: none !important;
+}
+
+

@@ -1,0 +1,5077 @@
+// Standalone self-contained script for Studio Wong Pro
+// Runs on both http:// (web server) and file:/// (local direct open)
+(function() {
+  'use strict';
+
+  // Canvas and mathematical utilities for Wucius Wong Design Studio
+const CanvasUtils = {
+  // Setup crisp HiDPI canvas with deterministic logical coordinates
+  setupCanvas(canvas, logicalW = 600, logicalH = 600) {
+    const dpr = window.devicePixelRatio || 1;
+    const targetW = logicalW;
+    const targetH = logicalH;
+
+    if (canvas.width !== targetW * dpr || canvas.height !== targetH * dpr) {
+      canvas.width = targetW * dpr;
+      canvas.height = targetH * dpr;
+    }
+
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+    return { ctx, width: targetW, height: targetH, dpr };
+  },
+
+  // Color Palettes inspired by Swiss & Bauhaus Graphic Design
+  palettes: {
+    monochrome: {
+      id: "monochrome",
+      name: "Monochrome (Ink & Paper)",
+      bg: "#FAFAFA",
+      fg: "#111111",
+      accent: "#E11D48",
+      grid: "#E5E5E5",
+      isDark: false
+    },
+    inverted: {
+      id: "inverted",
+      name: "Inverted (Chalkboard)",
+      bg: "#121212",
+      fg: "#F4F4F5",
+      accent: "#F43F5E",
+      grid: "#27272A",
+      isDark: true
+    },
+    bauhaus: {
+      id: "bauhaus",
+      name: "Bauhaus Primary",
+      bg: "#F7F4EB",
+      fg: "#1E1E1E",
+      accent: "#D9381E",
+      secondary: "#0047AB",
+      grid: "#E0DCCE",
+      isDark: false
+    },
+    blueprint: {
+      id: "blueprint",
+      name: "Architectural Blueprint",
+      bg: "#0B2545",
+      fg: "#EEF4F8",
+      accent: "#134074",
+      grid: "#134074",
+      isDark: true
+    },
+    sepia: {
+      id: "sepia",
+      name: "Warm Editorial Archive",
+      bg: "#F5EFE6",
+      fg: "#2F2519",
+      accent: "#994D1C",
+      grid: "#E4D9C8",
+      isDark: false
+    }
+  },
+
+  // Draw background and optional grid
+  clear(ctx, width, height, palette, showGrid = false, gridSize = 40) {
+    ctx.save();
+    ctx.fillStyle = palette.bg;
+    ctx.fillRect(0, 0, width, height);
+
+    if (showGrid) {
+      ctx.strokeStyle = palette.grid;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let x = 0; x <= width; x += gridSize) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+      }
+      for (let y = 0; y <= height; y += gridSize) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+      }
+      ctx.stroke();
+
+      // Subtle center crosshair
+      ctx.strokeStyle = palette.accent;
+      ctx.globalAlpha = 0.35;
+      ctx.beginPath();
+      ctx.moveTo(width / 2, 0);
+      ctx.lineTo(width / 2, height);
+      ctx.moveTo(0, height / 2);
+      ctx.lineTo(width, height / 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  },
+
+  // Draw regular polygon
+  drawPolygon(ctx, x, y, radius, sides, rotation = 0) {
+    if (sides < 3) return;
+    ctx.beginPath();
+    for (let i = 0; i < sides; i++) {
+      const angle = rotation + (i * 2 * Math.PI) / sides;
+      const px = x + radius * Math.cos(angle);
+      const py = y + radius * Math.sin(angle);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+  },
+
+  // Draw smooth teardrop shape (frequently used in Wong's similarity & concentration chapters)
+  drawTeardrop(ctx, x, y, width, length, angle = 0) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(0, length / 2);
+    ctx.bezierCurveTo(width / 2, length / 4, width / 2, -length / 4, 0, -length / 2);
+    ctx.bezierCurveTo(-width / 2, -length / 4, -width / 2, length / 4, 0, length / 2);
+    ctx.closePath();
+    ctx.restore();
+  },
+
+  // Draw Wong's classic "C-shape" / hollow cut-out ring
+  drawCShape(ctx, x, y, outerR, innerR, cutAngle = Math.PI / 4, rotation = 0) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+    ctx.beginPath();
+    const startAngle = cutAngle / 2;
+    const endAngle = 2 * Math.PI - cutAngle / 2;
+    ctx.arc(0, 0, outerR, startAngle, endAngle, false);
+    ctx.arc(0, 0, innerR, endAngle, startAngle, true);
+    ctx.closePath();
+    ctx.restore();
+  },
+
+  // Export current canvas to PNG download
+  exportPNG(canvas, filename = "wong-design-study.png") {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvas.toDataURL('image/png', 1.0);
+    link.click();
+  },
+
+  // Export as SVG
+  exportSVG(svgString, filename = "wong-design-study.svg") {
+    const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+};
+
+
+  const STUDIO_SHAPE_KEYS = [
+  "circle", "square", "triangle_eq", "triangle_right", "rhombus", "arrow_up", "hexagon",
+  "star4", "teardrop", "letter_a", "letter_h", "letter_z", "cross"
+];
+const Shapes = {
+  // 1. Pure Geometrics
+  circle: {
+    id: "circle",
+    name: "Circle",
+    category: "geometric",
+    draw(ctx, size) {
+      const r = size / 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const r = size / 2;
+      return `<circle cx="0" cy="0" r="${r}" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><circle cx="0" cy="0" r="14" fill="currentColor"/></svg>`
+  },
+
+  square: {
+    id: "square",
+    name: "Square",
+    category: "geometric",
+    draw(ctx, size) {
+      const s = size;
+      ctx.beginPath();
+      ctx.rect(-s / 2, -s / 2, s, s);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const s = size;
+      return `<rect x="${-s/2}" y="${-s/2}" width="${s}" height="${s}" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><rect x="-14" y="-14" width="28" height="28" fill="currentColor"/></svg>`
+  },
+
+  rect: {
+    id: "rect",
+    name: "Rectangle",
+    category: "geometric",
+    draw(ctx, size) {
+      const w = size * 0.6;
+      const h = size;
+      ctx.beginPath();
+      ctx.rect(-w / 2, -h / 2, w, h);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const w = size * 0.6;
+      const h = size;
+      return `<rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><rect x="-9" y="-15" width="18" height="30" fill="currentColor"/></svg>`
+  },
+
+  triangle_eq: {
+    id: "triangle_eq",
+    name: "Equilateral Triangle",
+    category: "geometric",
+    draw(ctx, size) {
+      const r = size * 0.58;
+      ctx.beginPath();
+      ctx.moveTo(0, -r);
+      ctx.lineTo(r * Math.cos(Math.PI / 6), r * Math.sin(Math.PI / 6));
+      ctx.lineTo(-r * Math.cos(Math.PI / 6), r * Math.sin(Math.PI / 6));
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const r = size * 0.58;
+      const x1 = 0, y1 = -r;
+      const x2 = r * Math.cos(Math.PI / 6), y2 = r * Math.sin(Math.PI / 6);
+      const x3 = -r * Math.cos(Math.PI / 6), y3 = r * Math.sin(Math.PI / 6);
+      return `<polygon points="${x1},${y1} ${x2},${y2} ${x3},${y3}" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><polygon points="0,-15 14,12 -14,12" fill="currentColor"/></svg>`
+  },
+
+  triangle_right: {
+    id: "triangle_right",
+    name: "Right Triangle",
+    category: "geometric",
+    draw(ctx, size) {
+      const s = size * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(-s, -s);
+      ctx.lineTo(s, s);
+      ctx.lineTo(-s, s);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const s = size * 0.5;
+      return `<polygon points="${-s},${-s} ${s},${s} ${-s},${s}" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><polygon points="-12,-12 12,12 -12,12" fill="currentColor"/></svg>`
+  },
+
+  rhombus: {
+    id: "rhombus",
+    name: "Rhombus (Diamond)",
+    category: "polygonal",
+    draw(ctx, size) {
+      const rx = size * 0.45;
+      const ry = size * 0.65;
+      ctx.beginPath();
+      ctx.moveTo(0, -ry);
+      ctx.lineTo(rx, 0);
+      ctx.lineTo(0, ry);
+      ctx.lineTo(-rx, 0);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const rx = size * 0.45;
+      const ry = size * 0.65;
+      return `<polygon points="0,${-ry} ${rx},0 0,${ry} ${-rx},0" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><polygon points="0,-16 11,0 0,16 -11,0" fill="currentColor"/></svg>`
+  },
+
+  trapezoid: {
+    id: "trapezoid",
+    name: "Trapezoid",
+    category: "polygonal",
+    draw(ctx, size) {
+      const topW = size * 0.35;
+      const botW = size * 0.7;
+      const h = size * 0.55;
+      ctx.beginPath();
+      ctx.moveTo(-topW / 2, -h / 2);
+      ctx.lineTo(topW / 2, -h / 2);
+      ctx.lineTo(botW / 2, h / 2);
+      ctx.lineTo(-botW / 2, h / 2);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const topW = size * 0.35;
+      const botW = size * 0.7;
+      const h = size * 0.55;
+      return `<polygon points="${-topW/2},${-h/2} ${topW/2},${-h/2} ${botW/2},${h/2} ${-botW/2},${h/2}" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><polygon points="-6,-10 6,-10 14,10 -14,10" fill="currentColor"/></svg>`
+  },
+
+  arrow_up: {
+    id: "arrow_up",
+    name: "Arrow Up",
+    category: "geometric",
+    draw(ctx, size) {
+      const s = size;
+      const tipY = -s * 0.48;
+      const wingY = -s * 0.05;
+      const botY = s * 0.48;
+      const wingW = s * 0.42;
+      const stemW = s * 0.18;
+      ctx.beginPath();
+      ctx.moveTo(0, tipY);
+      ctx.lineTo(wingW, wingY);
+      ctx.lineTo(stemW, wingY);
+      ctx.lineTo(stemW, botY);
+      ctx.lineTo(-stemW, botY);
+      ctx.lineTo(-stemW, wingY);
+      ctx.lineTo(-wingW, wingY);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const s = size;
+      const tipY = -s * 0.48;
+      const wingY = -s * 0.05;
+      const botY = s * 0.48;
+      const wingW = s * 0.42;
+      const stemW = s * 0.18;
+      return `<polygon points="0,${tipY} ${wingW},${wingY} ${stemW},${wingY} ${stemW},${botY} ${-stemW},${botY} ${-stemW},${wingY} ${-wingW},${wingY}" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><polygon points="0,-14 12,-1 5,-1 5,14 -5,14 -5,-1 -12,-1" fill="currentColor"/></svg>`
+  },
+
+  hexagon: {
+    id: "hexagon",
+    name: "Hexagon",
+    category: "polygonal",
+    draw(ctx, size) {
+      const r = size * 0.52;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i * Math.PI) / 3 - Math.PI / 6;
+        const x = r * Math.cos(a);
+        const y = r * Math.sin(a);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const r = size * 0.52;
+      let pts = [];
+      for (let i = 0; i < 6; i++) {
+        const a = (i * Math.PI) / 3 - Math.PI / 6;
+        pts.push(`${r * Math.cos(a)},${r * Math.sin(a)}`);
+      }
+      return `<polygon points="${pts.join(" ")}" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><polygon points="0,-14 13,-7 13,8 0,15 -13,8 -13,-7" fill="currentColor"/></svg>`
+  },
+
+  star4: {
+    id: "star4",
+    name: "4-Point Star",
+    category: "polygonal",
+    draw(ctx, size) {
+      const rOuter = size * 0.55;
+      const rInner = size * 0.18;
+      ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const r = i % 2 === 0 ? rOuter : rInner;
+        const a = (i * Math.PI) / 4 - Math.PI / 2;
+        const x = r * Math.cos(a);
+        const y = r * Math.sin(a);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const rOuter = size * 0.55;
+      const rInner = size * 0.18;
+      let pts = [];
+      for (let i = 0; i < 8; i++) {
+        const r = i % 2 === 0 ? rOuter : rInner;
+        const a = (i * Math.PI) / 4 - Math.PI / 2;
+        pts.push(`${r * Math.cos(a)},${r * Math.sin(a)}`);
+      }
+      return `<polygon points="${pts.join(" ")}" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><polygon points="0,-15 4,-4 15,0 4,4 0,15 -4,4 -15,0 -4,-4" fill="currentColor"/></svg>`
+  },
+
+  crescent: {
+    id: "crescent",
+    name: "Crescent (Lúnula)",
+    category: "organic",
+    draw(ctx, size) {
+      const r = size * 0.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, -Math.PI / 2, Math.PI / 2, false);
+      ctx.arc(r * 0.45, 0, r * 0.85, Math.PI / 2, -Math.PI / 2, true);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const r = size * 0.5;
+      const cutX = r * 0.45;
+      const cutR = r * 0.85;
+      return `<path d="M 0 ${-r} A ${r} ${r} 0 0 1 0 ${r} A ${cutR} ${cutR} 0 0 0 0 ${-r} Z" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M 0 -14 A 14 14 0 0 1 0 14 A 12 12 0 0 0 0 -14 Z" fill="currentColor"/></svg>`
+  },
+
+  teardrop: {
+    id: "teardrop",
+    name: "Teardrop (Gota)",
+    category: "organic",
+    draw(ctx, size) {
+      const w = size * 0.65;
+      const l = size * 0.95;
+      ctx.beginPath();
+      ctx.moveTo(0, -l / 2);
+      ctx.bezierCurveTo(w / 1.5, -l / 6, w / 1.8, l / 2, 0, l / 2);
+      ctx.bezierCurveTo(-w / 1.8, l / 2, -w / 1.5, -l / 6, 0, -l / 2);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const w = size * 0.65;
+      const l = size * 0.95;
+      return `<path d="M 0 ${-l/2} C ${w/1.5} ${-l/6}, ${w/1.8} ${l/2}, 0 ${l/2} C ${-w/1.8} ${l/2}, ${-w/1.5} ${-l/6}, 0 ${-l/2} Z" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M 0 -14 C 10 -4, 9 13, 0 13 C -9 13, -10 -4, 0 -14 Z" fill="currentColor"/></svg>`
+  },
+
+  letter_a: {
+    id: "letter_a",
+    name: "Letter A",
+    category: "typographic",
+    draw(ctx, size) {
+      const s = size;
+      const h2 = s * 0.46;
+      const w2 = s * 0.40;
+      const topW = s * 0.10;
+      const footW = s * 0.15;
+      const barY = s * 0.10;
+      const barH = s * 0.12;
+
+      ctx.beginPath();
+      ctx.moveTo(-topW, -h2);
+      ctx.lineTo(topW, -h2);
+      ctx.lineTo(w2, h2);
+      ctx.lineTo(w2 - footW, h2);
+      ctx.lineTo(s * 0.09, barY + barH);
+      ctx.lineTo(-s * 0.09, barY + barH);
+      ctx.lineTo(-w2 + footW, h2);
+      ctx.lineTo(-w2, h2);
+      ctx.closePath();
+
+      ctx.moveTo(0, -h2 * 0.45);
+      ctx.lineTo(-s * 0.12, barY - 2);
+      ctx.lineTo(s * 0.12, barY - 2);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const s = size;
+      const h2 = s * 0.46;
+      const w2 = s * 0.40;
+      const topW = s * 0.10;
+      const footW = s * 0.15;
+      const barY = s * 0.10;
+      const barH = s * 0.12;
+      return `<path fill-rule="evenodd" d="M ${-topW} ${-h2} L ${topW} ${-h2} L ${w2} ${h2} L ${w2 - footW} ${h2} L ${s * 0.09} ${barY + barH} L ${-s * 0.09} ${barY + barH} L ${-w2 + footW} ${h2} L ${-w2} ${h2} Z M 0 ${-h2 * 0.45} L ${s * 0.12} ${barY - 2} L ${-s * 0.12} ${barY - 2} Z" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><text x="0" y="5" font-family="Space Grotesk, Inter, sans-serif" font-weight="800" font-size="22" text-anchor="middle" dominant-baseline="middle" fill="currentColor">A</text></svg>`
+  },
+
+  letter_h: {
+    id: "letter_h",
+    name: "Letter H",
+    category: "typographic",
+    draw(ctx, size) {
+      const s = size;
+      const h2 = s * 0.46;
+      const w2 = s * 0.38;
+      const colW = s * 0.16;
+      const barH = s * 0.14;
+      ctx.beginPath();
+      ctx.moveTo(-w2, -h2);
+      ctx.lineTo(-w2 + colW, -h2);
+      ctx.lineTo(-w2 + colW, -barH / 2);
+      ctx.lineTo(w2 - colW, -barH / 2);
+      ctx.lineTo(w2 - colW, -h2);
+      ctx.lineTo(w2, -h2);
+      ctx.lineTo(w2, h2);
+      ctx.lineTo(w2 - colW, h2);
+      ctx.lineTo(w2 - colW, barH / 2);
+      ctx.lineTo(-w2 + colW, barH / 2);
+      ctx.lineTo(-w2 + colW, h2);
+      ctx.lineTo(-w2, h2);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const s = size;
+      const h2 = s * 0.46;
+      const w2 = s * 0.38;
+      const colW = s * 0.16;
+      const barH = s * 0.14;
+      return `<polygon points="${-w2},${-h2} ${-w2 + colW},${-h2} ${-w2 + colW},${-barH / 2} ${w2 - colW},${-barH / 2} ${w2 - colW},${-h2} ${w2},${-h2} ${w2},${h2} ${w2 - colW},${h2} ${w2 - colW},${barH / 2} ${-w2 + colW},${barH / 2} ${-w2 + colW},${h2} ${-w2},${h2}" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><text x="0" y="5" font-family="Space Grotesk, Inter, sans-serif" font-weight="800" font-size="22" text-anchor="middle" dominant-baseline="middle" fill="currentColor">H</text></svg>`
+  },
+
+  letter_z: {
+    id: "letter_z",
+    name: "Letter Z",
+    category: "typographic",
+    draw(ctx, size) {
+      const s = size;
+      const h2 = s * 0.46;
+      const w2 = s * 0.38;
+      const barH = s * 0.15;
+      const diagW = s * 0.18;
+      ctx.beginPath();
+      ctx.moveTo(-w2, -h2);
+      ctx.lineTo(w2, -h2);
+      ctx.lineTo(w2, -h2 + barH);
+      ctx.lineTo(-w2 + diagW * 1.5, h2 - barH);
+      ctx.lineTo(w2, h2 - barH);
+      ctx.lineTo(w2, h2);
+      ctx.lineTo(-w2, h2);
+      ctx.lineTo(-w2, h2 - barH);
+      ctx.lineTo(w2 - diagW * 1.5, -h2 + barH);
+      ctx.lineTo(-w2, -h2 + barH);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const s = size;
+      const h2 = s * 0.46;
+      const w2 = s * 0.38;
+      const barH = s * 0.15;
+      const diagW = s * 0.18;
+      return `<polygon points="${-w2},${-h2} ${w2},${-h2} ${w2},${-h2 + barH} ${-w2 + diagW * 1.5},${h2 - barH} ${w2},${h2 - barH} ${w2},${h2} ${-w2},${h2} ${-w2},${h2 - barH} ${w2 - diagW * 1.5},${-h2 + barH} ${-w2},${-h2 + barH}" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><text x="0" y="5" font-family="Space Grotesk, Inter, sans-serif" font-weight="800" font-size="22" text-anchor="middle" dominant-baseline="middle" fill="currentColor">Z</text></svg>`
+  },
+
+  capsule: {
+    id: "capsule",
+    name: "Capsule (Píldora)",
+    category: "organic",
+    draw(ctx, size) {
+      const w = size * 0.5;
+      const h = size * 0.9;
+      const r = w / 2;
+      ctx.beginPath();
+      ctx.arc(0, -h / 2 + r, r, Math.PI, 0, false);
+      ctx.arc(0, h / 2 - r, r, 0, Math.PI, false);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const w = size * 0.5;
+      const h = size * 0.9;
+      const r = w / 2;
+      return `<path d="M ${-r} ${-h/2+r} A ${r} ${r} 0 0 1 ${r} ${-h/2+r} L ${r} ${h/2-r} A ${r} ${r} 0 0 1 ${-r} ${h/2-r} Z" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M -7 -6 A 7 7 0 0 1 7 -6 L 7 6 A 7 7 0 0 1 -7 6 Z" fill="currentColor"/></svg>`
+  },
+
+  cross: {
+    id: "cross",
+    name: "Greek Cross (+)",
+    category: "polygonal",
+    draw(ctx, size) {
+      const arm = size * 0.5;
+      const th = size * 0.18;
+      ctx.beginPath();
+      ctx.moveTo(-th / 2, -arm);
+      ctx.lineTo(th / 2, -arm);
+      ctx.lineTo(th / 2, -th / 2);
+      ctx.lineTo(arm, -th / 2);
+      ctx.lineTo(arm, th / 2);
+      ctx.lineTo(th / 2, th / 2);
+      ctx.lineTo(th / 2, arm);
+      ctx.lineTo(-th / 2, arm);
+      ctx.lineTo(-th / 2, th / 2);
+      ctx.lineTo(-arm, th / 2);
+      ctx.lineTo(-arm, -th / 2);
+      ctx.lineTo(-th / 2, -th / 2);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const arm = size * 0.5;
+      const th = size * 0.18;
+      return `<path d="M ${-th/2} ${-arm} L ${th/2} ${-arm} L ${th/2} ${-th/2} L ${arm} ${-th/2} L ${arm} ${th/2} L ${th/2} ${th/2} L ${th/2} ${arm} L ${-th/2} ${arm} L ${-th/2} ${th/2} L ${-arm} ${th/2} L ${-arm} ${-th/2} L ${-th/2} ${-th/2} Z" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M -3 -14 L 3 -14 L 3 -3 L 14 -3 L 14 3 L 3 3 L 3 14 L -3 14 L -3 3 L -14 3 L -14 -3 L -3 -3 Z" fill="currentColor"/></svg>`
+  },
+
+  c_ring: {
+    id: "c_ring",
+    name: "C-Shape Ring (Wong)",
+    category: "geometric",
+    draw(ctx, size) {
+      const outerR = size * 0.5;
+      const innerR = size * 0.26;
+      const cutAngle = Math.PI / 3;
+      ctx.beginPath();
+      const startAngle = cutAngle / 2;
+      const endAngle = 2 * Math.PI - cutAngle / 2;
+      ctx.arc(0, 0, outerR, startAngle, endAngle, false);
+      ctx.arc(0, 0, innerR, endAngle, startAngle, true);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const outerR = size * 0.5;
+      const innerR = size * 0.26;
+      const cutAngle = Math.PI / 3;
+      const sa = cutAngle / 2;
+      const ea = 2 * Math.PI - cutAngle / 2;
+      const ox1 = outerR * Math.cos(sa), oy1 = outerR * Math.sin(sa);
+      const ox2 = outerR * Math.cos(ea), oy2 = outerR * Math.sin(ea);
+      const ix1 = innerR * Math.cos(ea), iy1 = innerR * Math.sin(ea);
+      const ix2 = innerR * Math.cos(sa), iy2 = innerR * Math.sin(sa);
+      return `<path d="M ${ox1} ${oy1} A ${outerR} ${outerR} 0 1 1 ${ox2} ${oy2} L ${ix1} ${iy1} A ${innerR} ${innerR} 0 1 0 ${ix2} ${iy2} Z" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M 7 12 A 14 14 0 1 1 7 -12 L 4 -7 A 8 8 0 1 0 4 7 Z" fill="currentColor"/></svg>`
+  },
+
+  line: {
+    id: "line",
+    name: "Straight Line",
+    category: "linear",
+    draw(ctx, size) {
+      const len = size * 0.9;
+      const th = Math.max(size * 0.14, 4);
+      ctx.beginPath();
+      ctx.rect(-len / 2, -th / 2, len, th);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const len = size * 0.9;
+      const th = Math.max(size * 0.14, 4);
+      return `<rect x="${-len/2}" y="${-th/2}" width="${len}" height="${th}" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><rect x="-14" y="-2.5" width="28" height="5" fill="currentColor"/></svg>`
+  },
+
+  arc: {
+    id: "arc",
+    name: "Quadrant Arc",
+    category: "linear",
+    draw(ctx, size) {
+      const r = size * 0.55;
+      const th = Math.max(size * 0.16, 4);
+      ctx.beginPath();
+      ctx.arc(-r / 2, r / 2, r, -Math.PI / 2, 0, false);
+      ctx.arc(-r / 2, r / 2, r - th, 0, -Math.PI / 2, true);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const r = size * 0.55;
+      const th = Math.max(size * 0.16, 4);
+      return `<path d="M ${-r/2} ${-r/2} A ${r} ${r} 0 0 1 ${r/2} ${r/2} L ${r/2-th} ${r/2} A ${r-th} ${r-th} 0 0 0 ${-r/2} ${-r/2+th} Z" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M -8 -10 A 18 18 0 0 1 10 8 L 6 8 A 14 14 0 0 0 -8 -6 Z" fill="currentColor"/></svg>`
+  },
+
+  triangle: {
+    id: "triangle",
+    name: "Triangle",
+    category: "geometric",
+    draw(ctx, size) {
+      const r = size * 0.55;
+      ctx.beginPath();
+      ctx.moveTo(0, -r);
+      ctx.lineTo(r * 0.866, r * 0.5);
+      ctx.lineTo(-r * 0.866, r * 0.5);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const r = size * 0.55;
+      return `<polygon points="0,${-r} ${r*0.866},${r*0.5} ${-r*0.866},${r*0.5}" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><polygon points="0,-14 13,11 -13,11" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>`
+  },
+
+  wave: {
+    id: "wave",
+    name: "Sine Wave",
+    category: "curved",
+    draw(ctx, size) {
+      const w = size * 0.85;
+      const a = size * 0.25;
+      ctx.beginPath();
+      ctx.moveTo(-w / 2, 0);
+      ctx.bezierCurveTo(-w / 4, -a, -w / 4, -a, 0, 0);
+      ctx.bezierCurveTo(w / 4, a, w / 4, a, w / 2, 0);
+    },
+    svgPath(size) {
+      const w = size * 0.85;
+      const a = size * 0.25;
+      return `<path d="M ${-w/2} 0 C ${-w/4} ${-a}, ${-w/4} ${-a}, 0 0 C ${w/4} ${a}, ${w/4} ${a}, ${w/2} 0" fill="none" stroke="currentColor" stroke-width="4" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M -14 0 C -7 -10, -7 -10, 0 0 C 7 10, 7 10, 14 0" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>`
+  },
+
+  horseshoe: {
+    id: "horseshoe",
+    name: "Horseshoe",
+    category: "curved",
+    draw(ctx, size) {
+      const w = size * 0.32;
+      const h = size * 0.45;
+      ctx.beginPath();
+      ctx.moveTo(-w, -h);
+      ctx.lineTo(-w, h * 0.1);
+      ctx.arc(0, h * 0.1, w, Math.PI, 0, true);
+      ctx.lineTo(w, -h);
+    },
+    svgPath(size) {
+      const w = size * 0.32;
+      const h = size * 0.45;
+      return `<path d="M ${-w} ${-h} L ${-w} ${h*0.1} A ${w} ${w} 0 0 0 ${w} ${h*0.1} L ${w} ${-h}" fill="none" stroke="currentColor" stroke-width="4" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M -9 -12 L -9 2 A 9 9 0 0 0 9 2 L 9 -12" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>`
+  },
+
+  crescent: {
+    id: "crescent",
+    name: "Crescent",
+    category: "curved",
+    draw(ctx, size) {
+      const r = size * 0.45;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, Math.PI * 0.5, Math.PI * 1.5, false);
+      ctx.bezierCurveTo(r * 0.4, -r * 0.8, r * 0.4, r * 0.8, 0, r);
+      ctx.closePath();
+    },
+    svgPath(size) {
+      const r = size * 0.45;
+      return `<path d="M 0 ${r} A ${r} ${r} 0 0 1 0 ${-r} C ${r*0.4} ${-r*0.8} ${r*0.4} ${r*0.8} 0 ${r} Z" />`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><path d="M 0 13 A 13 13 0 0 1 0 -13 C 6 -9 6 9 0 13 Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`
+  },
+
+  hatch: {
+    id: "hatch",
+    name: "Diagonal Hatch",
+    category: "linear",
+    draw(ctx, size) {
+      const s = size * 0.45;
+      ctx.beginPath();
+      ctx.moveTo(-s, s); ctx.lineTo(s, -s);
+      ctx.moveTo(-s * 0.3, s); ctx.lineTo(s, -s * 0.3);
+      ctx.moveTo(-s, s * 0.3); ctx.lineTo(s * 0.3, -s);
+    },
+    svgPath(size) {
+      const s = size * 0.45;
+      return `<g stroke="currentColor" stroke-width="3"><line x1="${-s}" y1="${s}" x2="${s}" y2="${-s}"/><line x1="${-s*0.3}" y1="${s}" x2="${s}" y2="${-s*0.3}"/><line x1="${-s}" y1="${s*0.3}" x2="${s*0.3}" y2="${-s}"/></g>`;
+    },
+    iconSvg: `<svg viewBox="-20 -20 40 40" class="w-4 h-4"><line x1="-12" y1="12" x2="12" y2="-12" stroke="currentColor" stroke-width="2"/><line x1="-4" y1="12" x2="12" y2="-4" stroke="currentColor" stroke-width="2"/><line x1="-12" y1="4" x2="4" y2="-12" stroke="currentColor" stroke-width="2"/></svg>`
+  },
+
+  digit1: {
+    id: "digit1",
+    name: "Digit 1",
+    category: "symbolic",
+    draw(ctx, size) {
+      ctx.font = `bold ${Math.round(size * 0.75)}px "Space Grotesk", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("1", 0, 0);
+    },
+    svgPath(size) {
+      return `<text x="0" y="0" font-family="Space Grotesk, sans-serif" font-size="${size*0.75}" font-weight="bold" text-anchor="middle" dominant-baseline="central">1</text>`;
+    },
+    iconSvg: `<span class="font-bold text-sm font-mono">1</span>`
+  },
+
+  digit5: {
+    id: "digit5",
+    name: "Digit 5",
+    category: "symbolic",
+    draw(ctx, size) {
+      ctx.font = `bold ${Math.round(size * 0.75)}px "Space Grotesk", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("5", 0, 0);
+    },
+    svgPath(size) {
+      return `<text x="0" y="0" font-family="Space Grotesk, sans-serif" font-size="${size*0.75}" font-weight="bold" text-anchor="middle" dominant-baseline="central">5</text>`;
+    },
+    iconSvg: `<span class="font-bold text-sm font-mono">5</span>`
+  },
+
+  digit9: {
+    id: "digit9",
+    name: "Digit 9",
+    category: "symbolic",
+    draw(ctx, size) {
+      ctx.font = `bold ${Math.round(size * 0.75)}px "Space Grotesk", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("9", 0, 0);
+    },
+    svgPath(size) {
+      return `<text x="0" y="0" font-family="Space Grotesk, sans-serif" font-size="${size*0.75}" font-weight="bold" text-anchor="middle" dominant-baseline="central">9</text>`;
+    },
+    iconSvg: `<span class="font-bold text-sm font-mono">9</span>`
+  }
+};
+
+
+  // Studio Composition Engine: Unified Grammar Pipeline for Wucius Wong 2D Design
+const createDefaultLayerStructure = () => ({
+  enabled: false,
+  mode: "repetition", // "repetition" | "radiation"
+  repetition: {
+    gridType: "basic", // basic, sliding, sheared, curved, zigzag, triangular
+    cols: 4,
+    rows: 4,
+    spacing: 0,
+    shearAngle: 15,
+    slideOffset: 0.5,
+    curveIntensity: 18,
+    activeClipping: false,
+    showGridLines: false,
+    gridLineWidth: 1.5,
+    checkerInvert: false
+  },
+  radiation: {
+    scheme: "centrifugal", // centrifugal, concentric, spiral, multi_center
+    rays: 12,
+    rings: 5,
+    spiralTwist: 45,
+    activeClipping: false,
+    showRays: false,
+    showRings: false,
+    checkerInvert: false,
+    centerX: 0,
+    centerY: 0
+  },
+  formalStructure: {
+    enabled: false,
+    colRatio: 1.0,
+    rowRatio: 1.0,
+    showGridLines: false
+  },
+  similarity: {
+    enabled: false,
+    kinshipType: "distortion",
+    intensity: 50,
+    cellJitter: 0,
+    seed: 42
+  }
+});
+const defaultStudioState = {
+  aspectRatio: "1:1",
+  // Primary Module Form A
+  formA: {
+    visible: true,
+    shape: "circle",
+    scale: 50,
+    width: 50,
+    height: 50,
+    rotation: 4.5,
+    offsetX: 0,
+    offsetY: 0,
+    wireframe: true,
+    structure: createDefaultLayerStructure()
+  },
+  // Secondary Module Form B
+  formB: {
+    enabled: true,
+    visible: true,
+    shape: "square",
+    scale: 50,
+    width: 50,
+    height: 50,
+    rotation: 0,
+    offsetX: 65,
+    offsetY: 0,
+    wireframe: true,
+    structure: createDefaultLayerStructure()
+  },
+  layerOrder: ["layer-2", "layer-1"],
+  // Interrelation between Form A and B
+  interrelation: "overlapping",
+  invertFigureGround: false,
+  wireframe: true,
+  strokeWeight: 1.2,
+
+  // Modifiers Stack
+  modifiers: {
+    repetition: {
+      enabled: false,
+      gridType: "basic", // basic, sliding, sheared, curved, zigzag, triangular, alternating
+      cols: 4,
+      rows: 4,
+      spacing: 0,
+      shearAngle: 15,
+      slideOffset: 0.5,
+      curveIntensity: 18,
+      activeClipping: false,
+      showGridLines: false,
+      gridLineWidth: 1.5,
+      checkerInvert: false
+    },
+    structure: {
+      enabled: false,
+      mode: "rhythmic", // rhythmic (A:B:A:B cadence), compression
+      colRatio: 1.8,
+      rowRatio: 1.8,
+      bandThickness: 3,
+      showBands: false
+    },
+    similarity: {
+      enabled: false,
+      kinshipType: "distortion", // distortion, foreshortening, rotation_wobble, scale_kinship, hybrid
+      intensity: 50, // 0 to 100
+      cellJitter: 0, // 0 to 30
+      seed: 42
+    },
+    gradation: {
+      enabled: false,
+      type: "rotation", // rotation, scale, depth, drift
+      pathway: "diagonal", // diagonal, horizontal, vertical, concentric
+      range: 180, // degrees or span
+      steps: 1, // cycles (1 to 4)
+      reverse: false
+    },
+    radiation: {
+      enabled: false,
+      scheme: "centrifugal", // centrifugal, concentric, spiral, multi_center
+      rays: 12, // 4 to 28
+      rings: 5, // 2 to 10
+      spiralTwist: 45, // -180 to 180
+      activeClipping: false,
+      showRays: false,
+      showRings: false,
+      centerX: 0,
+      centerY: 0
+    },
+    anomaly: {
+      enabled: false,
+      type: "focal", // focal, fracture, swell, tear
+      epicenterX: 0.5, // 0.1 to 0.9
+      epicenterY: 0.5, // 0.1 to 0.9
+      radius: 160, // 50 to 350
+      intensity: 65, // 10 to 100
+      anomalousShape: "triangle_eq",
+      highlightColor: true,
+      showReticle: true
+    },
+    contrast: {
+      enabled: false,
+      dimension: "scale", // scale, shape, direction, tone
+      dominanceRatio: 80, // % majority regular (60 to 95)
+      contrastShape: "star4", // shape for shape contrast
+      scaleFactor: 2.2, // scale multiplier for scale contrast
+      angle: 45, // clash angle for direction contrast
+      highlightContrast: false // highlight minority elements
+    },
+    concentration: {
+      enabled: false,
+      mode: "point", // point, void, line, free
+      attractorX: 0.5,
+      attractorY: 0.5,
+      power: 65, // 20 to 100
+      radius: 240, // 80 to 450
+      lineAxis: "horizontal", // horizontal, vertical
+      alignToField: true,
+      densityScale: true,
+      showAttractor: true
+    },
+    texture: {
+      enabled: false,
+      target: "shapes", // shapes, both, canvas
+      mode: "grain", // grain, halftone, ribbing, typography
+      density: 50, // 20 to 90
+      scale: 14, // 6 to 36
+      contrast: 40 // opacity 15 to 80
+    },
+    space: {
+      enabled: false,
+      mode: "isometric", // isometric, foreshortening, fluctuating, conflicting
+      depth: 35, // 10 to 80
+      angle: 30, // -60 to 60
+      shading: 65, // 20 to 100
+      showIsoGuides: false
+    }
+  },
+
+  // Mat / Canvas display settings
+  showSafeBounds: true,
+  zoomLevel: 1.0
+};
+class StudioEngine {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.state = JSON.parse(JSON.stringify(defaultStudioState));
+  }
+
+  // Get active principles list for the editorial colophon
+  getActivePrinciples() {
+    const list = ["FORM"];
+    const hasRep = this.state.modifiers.repetition.enabled;
+    const hasRad = this.state.modifiers.radiation.enabled;
+    const hasGrid = hasRep || hasRad;
+
+    if (hasRad) {
+      list.push("RADIATION");
+    } else if (hasRep) {
+      list.push("REPETITION");
+      if (this.state.modifiers.structure.enabled) list.push("STRUCTURE");
+    }
+
+    if (hasGrid) {
+      if (this.state.modifiers.similarity.enabled) list.push("SIMILARITY");
+      if (this.state.modifiers.gradation.enabled) list.push("GRADATION");
+      if (this.state.modifiers.anomaly.enabled) list.push("ANOMALY");
+      if (this.state.modifiers.contrast.enabled) list.push("CONTRAST");
+    }
+
+    if (this.state.modifiers.concentration.enabled && hasGrid) list.push("CONCENTRATION");
+    if (this.state.modifiers.texture.enabled) list.push("TEXTURE");
+    if (this.state.modifiers.space.enabled) list.push("SPACE");
+    return list;
+  }
+
+  getColophonString() {
+    return `USED ON THIS DESIGN: ${this.getActivePrinciples().join(" / ")}`;
+  }
+
+  // Draw a single shape helper with in-figure texture and illusory 3D space support
+  drawShape(ctx, shapeId, size, fgColor, strokeOnly = false, lineWidth = 2, bgColor = null, isAlternating = false, skipSpace = false) {
+    const shapeDef = Shapes[shapeId] || Shapes.circle;
+    const space = this.state.modifiers.space;
+
+    if (!space || !space.enabled || skipSpace) {
+      this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
+      return;
+    }
+
+    this.drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space);
+  }
+
+  // Draw flat shape with optional in-figure tactile texture
+  drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly = false, lineWidth = 2, bgColor = null) {
+    ctx.save();
+    ctx.fillStyle = fgColor;
+    ctx.strokeStyle = fgColor;
+    ctx.lineWidth = lineWidth;
+
+    shapeDef.draw(ctx, size);
+
+    if (strokeOnly) {
+      ctx.stroke();
+    } else {
+      ctx.fill();
+
+      // In-shape tactile texture (Chapter 11)
+      const text = this.state.modifiers.texture;
+      if (text && text.enabled && (text.target === "shapes" || text.target === "both")) {
+        ctx.save();
+        shapeDef.draw(ctx, size);
+        ctx.clip();
+        const etchColor = bgColor || (this.state.invertFigureGround ? "#18181f" : "#FAFAFA");
+        this.fillShapeTexture(ctx, size, fgColor, etchColor, text);
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+  }
+
+  // Draw illusory 3D spatial form (Chapter 12: Space)
+  drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space) {
+    const mode = space.mode || "isometric";
+    const rawDepth = space.depth ?? 35;
+    const depth = rawDepth * Math.max(0.18, Math.min(1.4, size / 85));
+    const angleRad = ((space.angle ?? 30) * Math.PI) / 180;
+    const shading = (space.shading ?? 65) / 100;
+
+    if (mode === "foreshortening") {
+      // Fig. 73b: 3D Spatial Plane Tilt (Foreshortening)
+      const tiltAmount = Math.sin(angleRad) * 0.45;
+      const depthSquash = Math.max(0.2, 1 - (depth / 100) * 0.6);
+
+      // Subtle cast shadow on ground plane
+      ctx.save();
+      ctx.translate(Math.cos(angleRad) * depth * 0.35, Math.sin(Math.abs(angleRad)) * depth * 0.4);
+      ctx.scale(1, 0.28);
+      ctx.fillStyle = fgColor;
+      ctx.globalAlpha = 0.2 * shading;
+      shapeDef.draw(ctx, size);
+      ctx.fill();
+      ctx.restore();
+
+      // Floating tilted plane with depth projection
+      ctx.save();
+      ctx.transform(1, 0, tiltAmount, depthSquash, 0, 0);
+      this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
+      ctx.restore();
+
+    } else if (mode === "fluctuating") {
+      // Fig. 76b: Fluctuating Reversible Spatial Planes
+      const dir = isAlternating ? -1 : 1;
+      const totalDx = Math.cos(angleRad) * depth * dir;
+      const totalDy = -Math.sin(angleRad) * depth * dir;
+      const steps = Math.max(6, Math.min(20, Math.round(depth / 3)));
+
+      if (strokeOnly) {
+        // Wireframe fluctuating prism
+        ctx.save();
+        ctx.strokeStyle = fgColor;
+        ctx.lineWidth = lineWidth;
+        ctx.globalAlpha = 0.35;
+        shapeDef.draw(ctx, size);
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(totalDx, totalDy);
+        ctx.globalAlpha = 1.0;
+        shapeDef.draw(ctx, size);
+        ctx.stroke();
+        ctx.restore();
+        ctx.restore();
+      } else {
+        // Volumetric shaded slices with alternating facet contrast
+        ctx.save();
+        ctx.fillStyle = fgColor;
+        const sideAlpha = isAlternating ? (0.2 + shading * 0.35) : (0.55 - shading * 0.25);
+        ctx.globalAlpha = Math.max(0.12, Math.min(0.85, sideAlpha));
+
+        for (let s = 0; s < steps; s++) {
+          const t = s / steps;
+          ctx.save();
+          ctx.translate(totalDx * t, totalDy * t);
+          shapeDef.draw(ctx, size);
+          ctx.fill();
+          ctx.restore();
+        }
+        ctx.restore();
+
+        // Front face
+        ctx.save();
+        ctx.translate(totalDx, totalDy);
+        this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
+        ctx.restore();
+      }
+
+    } else if (mode === "conflicting") {
+      // Fig. 77: Conflicting Paradoxical Depth & Interlock
+      const dx1 = Math.cos(angleRad) * depth * 0.85;
+      const dy1 = -Math.sin(angleRad) * depth * 0.85;
+      const dx2 = -Math.cos(angleRad) * depth * 0.65;
+      const dy2 = Math.sin(angleRad) * depth * 0.65;
+
+      if (strokeOnly) {
+        ctx.save();
+        ctx.strokeStyle = fgColor;
+        ctx.lineWidth = lineWidth;
+
+        // Facet 1
+        ctx.save();
+        ctx.translate(dx1, dy1);
+        ctx.globalAlpha = 0.5;
+        shapeDef.draw(ctx, size);
+        ctx.stroke();
+        ctx.restore();
+
+        // Center
+        ctx.globalAlpha = 1.0;
+        shapeDef.draw(ctx, size);
+        ctx.stroke();
+
+        // Facet 2
+        ctx.save();
+        ctx.translate(dx2, dy2);
+        ctx.globalAlpha = 0.5;
+        shapeDef.draw(ctx, size);
+        ctx.stroke();
+        ctx.restore();
+        ctx.restore();
+      } else {
+        // Secondary opposing paradoxical facet
+        ctx.save();
+        ctx.fillStyle = fgColor;
+        ctx.globalAlpha = 0.3 * shading;
+        for (let s = 1; s <= 6; s++) {
+          const t = s / 6;
+          ctx.save();
+          ctx.translate(dx2 * t, dy2 * t);
+          shapeDef.draw(ctx, size);
+          ctx.fill();
+          ctx.restore();
+        }
+        ctx.restore();
+
+        // Primary forward facet
+        ctx.save();
+        ctx.fillStyle = fgColor;
+        ctx.globalAlpha = 0.45 * shading;
+        for (let s = 1; s <= 8; s++) {
+          const t = s / 8;
+          ctx.save();
+          ctx.translate(dx1 * t, dy1 * t);
+          shapeDef.draw(ctx, size);
+          ctx.fill();
+          ctx.restore();
+        }
+        ctx.restore();
+
+        // Central plane
+        this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
+
+        // Paradoxical interlock cut line
+        ctx.save();
+        ctx.strokeStyle = bgColor || (this.state.invertFigureGround ? "#111111" : "#FAFAFA");
+        ctx.lineWidth = 2;
+        ctx.save();
+        ctx.translate(dx1 * 0.45, dy1 * 0.45);
+        shapeDef.draw(ctx, size);
+        ctx.stroke();
+        ctx.restore();
+        ctx.restore();
+      }
+
+    } else {
+      // Default: Fig. 74d Isometric Volumetric Extrusion
+      const totalDx = Math.cos(angleRad) * depth;
+      const totalDy = -Math.sin(angleRad) * depth;
+      const steps = Math.max(8, Math.min(28, Math.round(depth / 2.2)));
+
+      if (strokeOnly) {
+        // Wireframe extrusion
+        ctx.save();
+        ctx.strokeStyle = fgColor;
+        ctx.lineWidth = lineWidth;
+        ctx.globalAlpha = 0.35;
+        shapeDef.draw(ctx, size);
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(totalDx, totalDy);
+        ctx.globalAlpha = 1.0;
+        shapeDef.draw(ctx, size);
+        ctx.stroke();
+        ctx.restore();
+        ctx.restore();
+      } else {
+        // Volumetric shaded extrusion body
+        ctx.save();
+        ctx.fillStyle = fgColor;
+        const sideAlpha = 0.15 + (1 - shading * 0.7) * 0.45;
+        ctx.globalAlpha = Math.max(0.12, Math.min(0.85, sideAlpha));
+
+        for (let s = 0; s < steps; s++) {
+          const t = s / steps;
+          ctx.save();
+          ctx.translate(totalDx * t, totalDy * t);
+          shapeDef.draw(ctx, size);
+          ctx.fill();
+          ctx.restore();
+        }
+        ctx.restore();
+
+        // Architectural facet edge contour
+        ctx.save();
+        ctx.strokeStyle = fgColor;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.3 * shading;
+        shapeDef.draw(ctx, size);
+        ctx.stroke();
+        ctx.restore();
+
+        // Front face (with texture if active)
+        ctx.save();
+        ctx.translate(totalDx, totalDy);
+        this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
+        ctx.restore();
+      }
+    }
+  }
+
+  // Draw tactile texture strictly within the clipped silhouette of a shape (Chapter 11)
+  fillShapeTexture(ctx, size, fgColor, etchColor, text) {
+    const alpha = (text.contrast ?? 40) / 100;
+    const density = (text.density ?? 50) / 100;
+    const scale = text.scale ?? 14;
+
+    ctx.save();
+
+    if (text.mode === "grain") {
+      // Lithographic tooth / stipple grain carved into the shape
+      ctx.fillStyle = etchColor;
+      ctx.globalAlpha = Math.min(0.85, alpha * 1.1);
+      const dotSize = Math.max(1, scale * 0.12);
+      const count = Math.floor(size * size * 0.08 * (0.5 + density));
+      let s = 98765;
+      const rng = () => {
+        s = (s * 1664525 + 1013904223) % 4294967296;
+        return (s / 4294967296) * 2 - 1; // -1 to 1
+      };
+      for (let i = 0; i < count; i++) {
+        const gx = rng() * size;
+        const gy = rng() * size;
+        ctx.fillRect(gx, gy, dotSize, dotSize);
+      }
+    } else if (text.mode === "halftone") {
+      // Mechanical dot screen eroding the shape into a dot raster (Fig. 67c)
+      ctx.fillStyle = etchColor;
+      ctx.globalAlpha = Math.min(0.9, alpha * 1.25);
+      const step = Math.max(4, Math.round(18 - density * 10));
+      const maxDot = (step * 0.42) * (scale / 14);
+      for (let y = -size; y <= size; y += step) {
+        for (let x = -size; x <= size; x += step) {
+          const dist = Math.hypot(x, y);
+          const factor = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(dist * 0.08));
+          const r = Math.max(0.6, maxDot * factor);
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    } else if (text.mode === "ribbing") {
+      // Parallel linear ribbing / hatching carved across the shape (Fig. 68a)
+      ctx.strokeStyle = etchColor;
+      ctx.lineWidth = Math.max(1, scale * 0.09);
+      ctx.globalAlpha = Math.min(0.9, alpha * 1.2);
+      const step = Math.max(3, Math.round(15 - density * 9));
+      ctx.beginPath();
+      for (let y = -size; y <= size; y += step) {
+        ctx.moveTo(-size, y);
+        ctx.lineTo(size, y);
+      }
+      ctx.stroke();
+    } else if (text.mode === "typography") {
+      // Typographic glyphs stamped inside the shape (Fig. 71)
+      const letters = ["A", "B", "R", "X", "M", "Q", "S", "8", "■", "┼", "╱", "╲"];
+      const step = Math.max(10, Math.round(24 - density * 12));
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = `bold ${Math.round(scale * 0.85)}px "Space Grotesk", monospace, sans-serif`;
+      ctx.fillStyle = etchColor;
+      ctx.globalAlpha = Math.min(0.85, alpha * 1.15);
+
+      for (let y = -size + step / 2; y <= size; y += step) {
+        for (let x = -size + step / 2; x <= size; x += step) {
+          const hash = Math.sin(y * 31.7 + x * 73.1) * 43758.5453;
+          const rand = hash - Math.floor(hash);
+          const char = letters[Math.floor(rand * letters.length)];
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate((rand - 0.5) * 0.5);
+          ctx.fillText(char, 0, 0);
+          ctx.restore();
+        }
+      }
+    }
+
+    ctx.restore();
+  }
+
+  // Draw a single shape module for an individual layer
+  drawSingleLayerShape(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false) {
+    if (!mod) return;
+    const shape = shapeOverride || mod.shape || "circle";
+    const baseW = mod.width !== undefined ? mod.width : (mod.scale || 50);
+    const baseH = mod.height !== undefined ? mod.height : (mod.scale || 50);
+    const w = baseW * sizeMultiplier;
+    const h = baseH * sizeMultiplier;
+    const r = Math.max(w, h);
+    const sx = r > 0 ? w / r : 1;
+    const sy = r > 0 ? h / r : 1;
+    const ox = (mod.offsetX || 0) * sizeMultiplier;
+    const oy = (mod.offsetY || 0) * sizeMultiplier;
+    const wire = wireframeOverride !== null ? wireframeOverride : (mod.wireframe !== false);
+    const strokeW = mod.strokeWidth || 1.2;
+
+    targetCtx.save();
+    targetCtx.translate(ox, oy);
+    targetCtx.rotate(((mod.rotation || 0) * Math.PI) / 180);
+    targetCtx.scale(sx, sy);
+    this.drawShape(targetCtx, shape, r, fgColor, wire, strokeW, bgColor, false, isCutout);
+    targetCtx.restore();
+  }
+
+  // Render an individual layer centered on the canvas (when no repetition/radiation layout active for this layer)
+  renderSingleLayerModule(ctx, mod, width, height, palette) {
+    if (!mod || mod.visible === false) return;
+    ctx.save();
+    ctx.translate(width / 2, height / 2);
+    const aspectScale = Math.min(1.0, Math.min(width, height) / 600);
+    this.drawSingleLayerShape(ctx, mod, 1.25 * aspectScale, palette.fg, palette.bg);
+    ctx.restore();
+  }
+
+  // Render the base unit form (Module) with interrelation operations
+  renderModule(ctx, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", customScaleA = null, customScaleB = null, shapeOverrideA = null, wireframeOverride = null, isAlternating = false) {
+    const { formA, formB, interrelation } = this.state;
+    const wireframe = wireframeOverride !== null ? wireframeOverride : this.state.wireframe;
+    const shapeA = shapeOverrideA || formA.shape;
+
+    const baseWA = formA.width !== undefined ? formA.width : formA.scale;
+    const baseHA = formA.height !== undefined ? formA.height : formA.scale;
+    const baseWB = formB.width !== undefined ? formB.width : formB.scale;
+    const baseHB = formB.height !== undefined ? formB.height : formB.scale;
+
+    const wA = (customScaleA ? (customScaleA * (baseWA / (formA.scale || 100))) : baseWA) * sizeMultiplier;
+    const hA = (customScaleA ? (customScaleA * (baseHA / (formA.scale || 100))) : baseHA) * sizeMultiplier;
+    const wB = (customScaleB ? (customScaleB * (baseWB / (formB.scale || 100))) : baseWB) * sizeMultiplier;
+    const hB = (customScaleB ? (customScaleB * (baseHB / (formB.scale || 100))) : baseHB) * sizeMultiplier;
+
+    const rA = Math.max(wA, hA);
+    const rB = Math.max(wB, hB);
+    const sxA = rA > 0 ? wA / rA : 1;
+    const syA = rA > 0 ? hA / rA : 1;
+    const sxB = rB > 0 ? wB / rB : 1;
+    const syB = rB > 0 ? hB / rB : 1;
+
+    const ax = (formA.offsetX || 0) * sizeMultiplier;
+    const ay = (formA.offsetY || 0) * sizeMultiplier;
+
+    // Determine actual Form B offset based on interrelation mode
+    let ox = (formB.offsetX !== undefined ? formB.offsetX : 65) * sizeMultiplier;
+    let oy = (formB.offsetY !== undefined ? formB.offsetY : 0) * sizeMultiplier;
+
+    if (interrelation === "touching") {
+      const angle = Math.atan2(oy || 0.0001, ox || 1);
+      const touchDist = (rA + rB) / 2;
+      ox = Math.cos(angle) * touchDist;
+      oy = Math.sin(angle) * touchDist;
+    } else if (interrelation === "coincidence") {
+      ox = ax;
+      oy = ay;
+    }
+
+    const wireframeA = wireframeOverride !== null ? wireframeOverride : (formA.wireframe !== undefined ? formA.wireframe : this.state.wireframe);
+    const wireframeB = wireframeOverride !== null ? wireframeOverride : (formB.wireframe !== undefined ? formB.wireframe : this.state.wireframe);
+
+    const drawFormA = (targetCtx, fg, bg, alt, wire = wireframeA) => {
+      targetCtx.save();
+      targetCtx.translate(ax, ay);
+      targetCtx.rotate((formA.rotation * Math.PI) / 180);
+      targetCtx.scale(sxA, syA);
+      this.drawShape(targetCtx, shapeA, rA, fg, wire, 2, bg, alt);
+      targetCtx.restore();
+    };
+
+    const drawFormB = (targetCtx, fg, bg, alt, wire = wireframeB, isCutout = false) => {
+      targetCtx.save();
+      targetCtx.translate(ox, oy);
+      targetCtx.rotate((formB.rotation * Math.PI) / 180);
+      targetCtx.scale(sxB, syB);
+      this.drawShape(targetCtx, formB.shape, rB, fg, wire, 2, bg, alt, isCutout);
+      targetCtx.restore();
+    };
+
+    // Check layer visibility
+    const isVisibleA = formA.visible !== false;
+    const isVisibleB = formB.enabled && formB.visible !== false;
+
+    if (!isVisibleA && !isVisibleB) {
+      return;
+    }
+    if (isVisibleA && !isVisibleB) {
+      drawFormA(ctx, fgColor, bgColor, isAlternating);
+      return;
+    }
+    if (!isVisibleA && isVisibleB) {
+      drawFormB(ctx, fgColor, bgColor, !isAlternating);
+      return;
+    }
+
+    ctx.save();
+
+    // Determine z-order from layerOrder
+    const layer1OnTop = this.state.layerOrder && this.state.layerOrder[0] === "layer-1";
+
+    // Handling 8 Interrelations
+    switch (interrelation) {
+      case "detachment":
+      case "touching":
+      case "overlapping": {
+        if (layer1OnTop) {
+          drawFormB(ctx, fgColor, bgColor, !isAlternating, wireframeB);
+          if (!wireframeA && interrelation === "overlapping") {
+            drawFormA(ctx, bgColor, bgColor, isAlternating, false, true);
+          }
+          drawFormA(ctx, fgColor, bgColor, isAlternating, wireframeA);
+        } else {
+          drawFormA(ctx, fgColor, bgColor, isAlternating, wireframeA);
+          if (!wireframeB && interrelation === "overlapping") {
+            drawFormB(ctx, bgColor, bgColor, !isAlternating, false, true);
+          }
+          drawFormB(ctx, fgColor, bgColor, !isAlternating, wireframeB);
+        }
+        break;
+      }
+
+      case "union": {
+        drawFormA(ctx, fgColor, bgColor, isAlternating, wireframeA);
+        drawFormB(ctx, fgColor, bgColor, !isAlternating, wireframeB);
+        break;
+      }
+
+      case "subtraction": {
+        const pad = Math.max(rA, rB, Math.abs(ax), Math.abs(ay), Math.abs(ox), Math.abs(oy)) * 4 + 100;
+        const offCanvas = document.createElement("canvas");
+        offCanvas.width = pad;
+        offCanvas.height = pad;
+        const offCtx = offCanvas.getContext("2d");
+        const cx = pad / 2;
+        const cy = pad / 2;
+
+        offCtx.save();
+        offCtx.translate(cx, cy);
+        drawFormA(offCtx, fgColor, null, false, false);
+        offCtx.restore();
+
+        offCtx.save();
+        offCtx.translate(cx, cy);
+        offCtx.globalCompositeOperation = "destination-out";
+        drawFormB(offCtx, fgColor, null, false, false);
+        offCtx.restore();
+
+        ctx.drawImage(offCanvas, -cx, -cy);
+        break;
+      }
+
+      case "intersection": {
+        const pad = Math.max(rA, rB, Math.abs(ax), Math.abs(ay), Math.abs(ox), Math.abs(oy)) * 4 + 100;
+        const offCanvas = document.createElement("canvas");
+        offCanvas.width = pad;
+        offCanvas.height = pad;
+        const offCtx = offCanvas.getContext("2d");
+        const cx = pad / 2;
+        const cy = pad / 2;
+
+        offCtx.save();
+        offCtx.translate(cx, cy);
+        drawFormA(offCtx, fgColor, null, false, false);
+        offCtx.restore();
+
+        offCtx.save();
+        offCtx.translate(cx, cy);
+        offCtx.globalCompositeOperation = "destination-in";
+        drawFormB(offCtx, fgColor, null, false, false);
+        offCtx.restore();
+
+        ctx.drawImage(offCanvas, -cx, -cy);
+        break;
+      }
+
+      case "penetration": {
+        ctx.save();
+        ctx.globalAlpha = 0.65;
+        drawFormA(ctx, fgColor, bgColor, isAlternating);
+        drawFormB(ctx, fgColor, bgColor, !isAlternating);
+        ctx.restore();
+        break;
+      }
+
+      case "coincidence": {
+        drawFormA(ctx, fgColor, bgColor, isAlternating);
+        ctx.save();
+        ctx.globalAlpha = 0.8;
+        drawFormB(ctx, fgColor, bgColor, !isAlternating);
+        ctx.restore();
+        break;
+      }
+
+      default: {
+        drawFormA(ctx, fgColor, bgColor, isAlternating);
+        drawFormB(ctx, fgColor, bgColor, !isAlternating);
+      }
+    }
+
+    ctx.restore();
+  }
+
+  // Build the boundary path for a cell in the given grid variation
+  buildCellPath(ctx, r, c, rows, cols, cx, cy, cW, cH, rep, startX) {
+    ctx.beginPath();
+    if (rep.gridType === "sheared") {
+      const rad = (rep.shearAngle * Math.PI) / 180;
+      const dxTop = -(cH / 2) * Math.tan(rad);
+      const dxBot = (cH / 2) * Math.tan(rad);
+      ctx.moveTo(cx - cW / 2 + dxTop, cy - cH / 2);
+      ctx.lineTo(cx + cW / 2 + dxTop, cy - cH / 2);
+      ctx.lineTo(cx + cW / 2 + dxBot, cy + cH / 2);
+      ctx.lineTo(cx - cW / 2 + dxBot, cy + cH / 2);
+    } else if (rep.gridType === "triangular") {
+      const isUp = (r + c) % 2 === 0;
+      if (isUp) {
+        ctx.moveTo(cx, cy - cH / 2);
+        ctx.lineTo(cx + cW * 0.55, cy + cH / 2);
+        ctx.lineTo(cx - cW * 0.55, cy + cH / 2);
+      } else {
+        ctx.moveTo(cx, cy + cH / 2);
+        ctx.lineTo(cx + cW * 0.55, cy - cH / 2);
+        ctx.lineTo(cx - cW * 0.55, cy - cH / 2);
+      }
+    } else if (rep.gridType === "curved") {
+      const wTop = Math.sin((r / rows) * Math.PI * 2) * rep.curveIntensity;
+      const wBot = Math.sin(((r + 1) / rows) * Math.PI * 2) * rep.curveIntensity;
+      const baseX = startX;
+      ctx.moveTo(baseX + wTop, cy - cH / 2);
+      ctx.lineTo(baseX + cW + wTop, cy - cH / 2);
+      ctx.lineTo(baseX + cW + wBot, cy + cH / 2);
+      ctx.lineTo(baseX + wBot, cy + cH / 2);
+    } else if (rep.gridType === "zigzag") {
+      const zTop = (r % 2 === 0 ? 1 : -1) * rep.curveIntensity;
+      const zBot = ((r + 1) % 2 === 0 ? 1 : -1) * rep.curveIntensity;
+      const baseX = startX;
+      ctx.moveTo(baseX + zTop, cy - cH / 2);
+      ctx.lineTo(baseX + cW + zTop, cy - cH / 2);
+      ctx.lineTo(baseX + cW + zBot, cy + cH / 2);
+      ctx.lineTo(baseX + zBot, cy + cH / 2);
+    } else {
+      // Basic orthogonal, sliding, alternating
+      ctx.rect(cx - cW / 2, cy - cH / 2, cW, cH);
+    }
+    ctx.closePath();
+  }
+
+  // Render the repetition / structural grid with similarity and gradation kinematics
+  renderRepetitionGrid(ctx, width, height, palette, marginParam, usableWParam, usableHParam, targetMod = null, repConfig = null) {
+    const rep = repConfig || (targetMod?.structure?.repetition) || this.state.modifiers.repetition;
+    const struct = (targetMod?.structure?.formalStructure) || this.state.modifiers.structure;
+    const sim = (targetMod?.structure?.similarity) || this.state.modifiers.similarity;
+    const grad = this.state.modifiers.gradation;
+    const anom = this.state.modifiers.anomaly;
+    const contrast = this.state.modifiers.contrast;
+    const conc = this.state.modifiers.concentration;
+
+    const cols = Math.max(1, rep.cols);
+    const rows = Math.max(1, rep.rows);
+
+    const margin = marginParam !== undefined ? marginParam : Math.round(Math.max(20, Math.min(width, height) * 0.05));
+    const usableW = usableWParam !== undefined ? usableWParam : width - margin * 2;
+    const usableH = usableHParam !== undefined ? usableHParam : height - margin * 2;
+
+    // Calculate column widths and x positions (Dual rhythmic interval support)
+    const colWidths = [];
+    const colX = [];
+    const colStarts = [];
+    const isColRhythmic = !!(struct && struct.enabled && (struct.colRatio !== undefined || struct.mode === "rhythmic"));
+    if (isColRhythmic) {
+      const rA = Number(struct.colRatio) || 1.0;
+      let weightSum = 0;
+      for (let c = 0; c < cols; c++) {
+        weightSum += (c % 2 === 0 ? rA : 1.0);
+      }
+      const unitW = usableW / weightSum;
+      let currX = margin;
+      for (let c = 0; c < cols; c++) {
+        const w = (c % 2 === 0 ? rA : 1.0) * unitW;
+        colStarts.push(currX);
+        colWidths.push(w);
+        colX.push(currX + w / 2);
+        currX += w;
+      }
+    } else {
+      const cellW = usableW / cols;
+      for (let c = 0; c < cols; c++) {
+        colStarts.push(margin + c * cellW);
+        colWidths.push(cellW);
+        colX.push(margin + (c + 0.5) * cellW);
+      }
+    }
+
+    // Calculate row heights and y positions (Dual rhythmic interval support)
+    const rowHeights = [];
+    const rowY = [];
+    const rowStarts = [];
+    const isRowRhythmic = !!(struct && struct.enabled && (struct.rowRatio !== undefined || struct.mode === "rhythmic"));
+    if (isRowRhythmic) {
+      const rA = Number(struct.rowRatio) || 1.0;
+      let weightSum = 0;
+      for (let r = 0; r < rows; r++) {
+        weightSum += (r % 2 === 0 ? rA : 1.0);
+      }
+      const unitH = usableH / weightSum;
+      let currY = margin;
+      for (let r = 0; r < rows; r++) {
+        const h = (r % 2 === 0 ? rA : 1.0) * unitH;
+        rowStarts.push(currY);
+        rowHeights.push(h);
+        rowY.push(currY + h / 2);
+        currY += h;
+      }
+    } else {
+      const cellH = usableH / rows;
+      for (let r = 0; r < rows; r++) {
+        rowStarts.push(margin + r * cellH);
+        rowHeights.push(cellH);
+        rowY.push(margin + (r + 0.5) * cellH);
+      }
+    }
+
+    // Wrap in outer bounding clip so shapes never bleed outside master safe bounds
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(margin, margin, usableW, usableH);
+    ctx.clip();
+
+    const seed = sim.seed || 42;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cW = colWidths[c];
+        const cH = rowHeights[r];
+        let cx = colX[c];
+        let cy = rowY[r];
+        const startX = colStarts[c];
+
+        // Apply grid deformations to center coordinates
+        if (rep.gridType === "sliding") {
+          if (r % 2 === 1) cx += cW * rep.slideOffset;
+        } else if (rep.gridType === "sheared") {
+          const rad = (rep.shearAngle * Math.PI) / 180;
+          cx += (r - rows / 2) * Math.tan(rad) * (cH * 0.6);
+        } else if (rep.gridType === "curved") {
+          const wave = Math.sin((r / rows) * Math.PI * 2) * rep.curveIntensity;
+          cx += wave;
+        } else if (rep.gridType === "zigzag") {
+          const zig = (r % 2 === 0 ? 1 : -1) * rep.curveIntensity;
+          cx += zig;
+        } else if (rep.gridType === "triangular") {
+          if (r % 2 === 1) cx += cW * 0.5;
+        }
+
+        // Similarity PRNG helper
+        const pRand = (salt) => {
+          const x = Math.sin(seed * 997 + r * 1337 + c * 31 + salt * 101) * 10000;
+          return (x - Math.floor(x)) * 2 - 1; // -1 to 1
+        };
+
+        // Similarity: cell spatial jitter
+        if (sim.enabled && sim.cellJitter > 0) {
+          cx += pRand(10) * sim.cellJitter;
+          cy += pRand(11) * sim.cellJitter;
+        }
+
+        // Concentration Field Displacement & Density Kinematics (Chapter 10)
+        let concAngle = 0;
+        let concScaleMul = 1.0;
+        if (conc && conc.enabled) {
+          const attX = (conc.attractorX ?? 0.5) * width;
+          const attY = (conc.attractorY ?? 0.5) * height;
+          const power = (conc.power ?? 65) / 100;
+          const radius = conc.radius ?? 240;
+
+          if (conc.mode === "point") {
+            const dist = Math.hypot(cx - attX, cy - attY);
+            if (dist < radius) {
+              const factor = Math.pow(1 - dist / radius, 1.4) * power;
+              const pull = factor * (radius * 0.45);
+              const angle = Math.atan2(attY - cy, attX - cx);
+              cx += Math.cos(angle) * pull;
+              cy += Math.sin(angle) * pull;
+              concAngle = angle;
+              if (conc.densityScale) concScaleMul = 0.55 + (dist / radius) * 0.7;
+            }
+          } else if (conc.mode === "void") {
+            const dist = Math.hypot(cx - attX, cy - attY);
+            if (dist < radius) {
+              const factor = Math.pow(1 - dist / radius, 1.2) * power;
+              const push = factor * (radius * 0.55);
+              const angle = Math.atan2(cy - attY, cx - attX);
+              cx += Math.cos(angle) * push;
+              cy += Math.sin(angle) * push;
+              concAngle = angle + Math.PI / 2;
+              if (conc.densityScale) concScaleMul = 0.4 + (dist / radius) * 0.8;
+            }
+          } else if (conc.mode === "line") {
+            if (conc.lineAxis === "vertical") {
+              const distX = Math.abs(cx - attX);
+              if (distX < radius) {
+                const factor = Math.pow(1 - distX / radius, 1.4) * power;
+                const pullX = (attX - cx) * factor * 0.75;
+                cx += pullX;
+                concAngle = (attX >= cx ? 0 : Math.PI);
+                if (conc.densityScale) concScaleMul = 0.65 + (distX / radius) * 0.6;
+              }
+            } else {
+              const distY = Math.abs(cy - attY);
+              if (distY < radius) {
+                const factor = Math.pow(1 - distY / radius, 1.4) * power;
+                const pullY = (attY - cy) * factor * 0.75;
+                cy += pullY;
+                concAngle = (attY >= cy ? Math.PI / 2 : -Math.PI / 2);
+                if (conc.densityScale) concScaleMul = 0.65 + (distY / radius) * 0.6;
+              }
+            }
+          } else if (conc.mode === "free") {
+            const att2X = width - attX;
+            const att2Y = height - attY;
+            const dist1 = Math.hypot(cx - attX, cy - attY);
+            const dist2 = Math.hypot(cx - att2X, cy - att2Y);
+            const nearestDist = Math.min(dist1, dist2);
+            const targetX = dist1 < dist2 ? attX : att2X;
+            const targetY = dist1 < dist2 ? attY : att2Y;
+            if (nearestDist < radius) {
+              const factor = Math.pow(1 - nearestDist / radius, 1.4) * power;
+              const pull = factor * (radius * 0.4);
+              const angle = Math.atan2(targetY - cy, targetX - cx);
+              cx += Math.cos(angle) * pull;
+              cy += Math.sin(angle) * pull;
+              concAngle = angle;
+              if (conc.densityScale) concScaleMul = 0.65 + (nearestDist / radius) * 0.6;
+            }
+          }
+        }
+
+        const renderCell = (cellCx, cellCy, cellStartX) => {
+          ctx.save();
+
+          const isOddCell = (r + c) % 2 === 1;
+          let fgColor = palette.fg;
+          let bgColor = palette.bg;
+
+          // Checkerboard inversion
+          if (rep.checkerInvert && isOddCell) {
+            ctx.save();
+            this.buildCellPath(ctx, r, c, rows, cols, cellCx, cellCy, cW, cH, rep, cellStartX);
+            ctx.fillStyle = palette.fg;
+            ctx.fill();
+            ctx.restore();
+            fgColor = palette.bg;
+            bgColor = palette.fg;
+          }
+
+          // Active clipping: restrict drawing strictly to cell boundaries
+          if (rep.activeClipping) {
+            this.buildCellPath(ctx, r, c, rows, cols, cellCx, cellCy, cW, cH, rep, cellStartX);
+            ctx.clip();
+          }
+
+          ctx.translate(cellCx, cellCy);
+
+        // Concentration directional flow
+        if (conc && conc.enabled && conc.alignToField && concAngle !== 0) {
+          ctx.rotate(concAngle);
+        }
+
+        // Alternating mirror / rotation
+        if (rep.gridType === "alternating" && isOddCell) {
+          ctx.rotate(Math.PI);
+        }
+
+        // Gradation kinematics across Cartesian pathways
+        if (grad.enabled) {
+          let t = 0;
+          if (grad.pathway === "horizontal") {
+            t = cols > 1 ? c / (cols - 1) : 0;
+          } else if (grad.pathway === "vertical") {
+            t = rows > 1 ? r / (rows - 1) : 0;
+          } else if (grad.pathway === "diagonal") {
+            t = (cols + rows > 2) ? (c + r) / (cols + rows - 2) : 0;
+          } else if (grad.pathway === "concentric") {
+            const dc = c - (cols - 1) / 2;
+            const dr = r - (rows - 1) / 2;
+            const maxD = Math.sqrt(Math.pow((cols - 1) / 2, 2) + Math.pow((rows - 1) / 2, 2)) || 1;
+            t = Math.sqrt(dc * dc + dr * dr) / maxD;
+          }
+
+          if (grad.reverse) t = 1 - t;
+          t = (t * (grad.steps || 1)) % 1.0001;
+
+          if (grad.type === "rotation") {
+            const rotSpan = ((grad.range ?? 180) * Math.PI) / 180;
+            ctx.rotate(t * rotSpan);
+          } else if (grad.type === "scale") {
+            const sFactor = 0.35 + t * 1.1;
+            ctx.scale(sFactor, sFactor);
+          } else if (grad.type === "depth") {
+            ctx.rotate(Math.PI / 6);
+            ctx.scale(1, Math.max(0.18, 1 - t * 0.82));
+            ctx.rotate(-Math.PI / 6);
+          } else if (grad.type === "drift") {
+            ctx.translate(t * (cW * 0.28), 0);
+          }
+        }
+
+        // Similarity: Module Kinship & Fluctuation
+        if (sim.enabled) {
+          const intensity = (sim.intensity ?? 50) / 100;
+          if (sim.kinshipType === "distortion") {
+            const sx = 1 + pRand(1) * intensity * 0.65;
+            const sy = 1 + pRand(2) * intensity * 0.65;
+            ctx.scale(sx, sy);
+          } else if (sim.kinshipType === "foreshortening") {
+            const rot = pRand(3) * Math.PI;
+            const tilt = Math.max(0.18, 1 - Math.abs(pRand(4)) * intensity * 0.82);
+            ctx.rotate(rot);
+            ctx.scale(1, tilt);
+            ctx.rotate(-rot);
+          } else if (sim.kinshipType === "rotation_wobble") {
+            const wobble = pRand(5) * intensity * (Math.PI / 2);
+            ctx.rotate(wobble);
+          } else if (sim.kinshipType === "scale_kinship") {
+            const sFactor = Math.max(0.2, 1 + pRand(6) * intensity * 0.7);
+            ctx.scale(sFactor, sFactor);
+          } else if (sim.kinshipType === "hybrid") {
+            const sx = 1 + pRand(1) * intensity * 0.35;
+            const sy = 1 + pRand(2) * intensity * 0.35;
+            const wobble = pRand(5) * intensity * 0.4;
+            ctx.rotate(wobble);
+            ctx.scale(sx, sy);
+          }
+        }
+
+        // Anomaly & Contrast Modifiers
+        let cellShapeA = null;
+        let cellWireframe = null;
+        let cellFg = fgColor;
+        let cellBg = bgColor;
+        let cellScaleMul = 1;
+
+        if (anom.enabled) {
+          const epiX = (anom.epicenterX ?? 0.5) * width;
+          const epiY = (anom.epicenterY ?? 0.5) * height;
+          const dist = Math.hypot(cx - epiX, cy - epiY);
+          const inZone = dist < anom.radius;
+          const factor = inZone ? (1 - dist / anom.radius) : 0;
+          const severity = (anom.intensity ?? 65) / 100;
+
+          if (anom.type === "focal") {
+            if (inZone) {
+              cellShapeA = anom.anomalousShape || "triangle_eq";
+              ctx.rotate((Math.PI / 4) * severity * factor);
+              cellScaleMul *= (1 + 0.35 * severity);
+              if (anom.highlightColor) cellFg = palette.accent;
+            }
+          } else if (anom.type === "fracture") {
+            const corridor = anom.radius * 0.45;
+            if (inZone && Math.abs(cx - epiX) < corridor) {
+              const jag = Math.sin(cy * 0.08) * (18 * severity);
+              const shearY = (cy > epiY ? 1 : -1) * (36 * severity) + jag;
+              const shearX = (cx > epiX ? 1 : -1) * (10 * severity);
+              ctx.translate(shearX, shearY);
+              ctx.rotate((factor * severity * Math.PI) / 3.2);
+              if (factor > 0.4 && anom.highlightColor) cellFg = palette.accent;
+            }
+          } else if (anom.type === "swell") {
+            if (inZone) {
+              const angle = Math.atan2(cy - epiY, cx - epiX);
+              const push = Math.sin(factor * Math.PI) * (42 * severity);
+              ctx.translate(Math.cos(angle) * push, Math.sin(angle) * push);
+              const sFactor = 1 + factor * 0.55 * severity;
+              ctx.scale(sFactor, sFactor);
+              if (factor > 0.65 && anom.highlightColor) cellFg = palette.accent;
+            }
+          } else if (anom.type === "tear") {
+            if (factor > 0.6) {
+              // Disintegrated void
+              ctx.restore();
+              return;
+            } else if (factor > 0.15) {
+              // Shattered debris
+              ctx.translate(pRand(51) * 26 * severity, pRand(52) * 26 * severity);
+              ctx.rotate(pRand(53) * Math.PI * severity);
+              const shrink = Math.max(0.15, 1 - factor * 0.85);
+              ctx.scale(shrink, shrink);
+              if (anom.highlightColor && factor > 0.3) cellFg = palette.accent;
+            }
+          }
+        }
+
+        if (contrast.enabled) {
+          const k = r * cols + c;
+          const hash = Math.abs(Math.sin(k * 137.5 + 43.1) * 10000) % 100;
+          const isMinority = hash >= (contrast.dominanceRatio ?? 80);
+          if (isMinority) {
+            if (contrast.dimension === "scale") {
+              const sFactor = contrast.scaleFactor ?? 2.2;
+              cellScaleMul *= sFactor;
+            } else if (contrast.dimension === "shape") {
+              cellShapeA = contrast.contrastShape || "star4";
+            } else if (contrast.dimension === "direction") {
+              const clashAngle = ((contrast.angle ?? 45) * Math.PI) / 180;
+              ctx.rotate(clashAngle);
+            } else if (contrast.dimension === "tone") {
+              cellWireframe = true;
+            }
+            if (contrast.highlightContrast) {
+              cellFg = palette.accent;
+            }
+          }
+        }
+
+        const scaleUnit = 1.25 * Math.min(1.0, Math.min(width, height) / 600);
+        const cellRatio = Math.min(cW / usableW, cH / usableH);
+        const normScale = scaleUnit * cellRatio * cellScaleMul * concScaleMul;
+        const isAlt = (r + c) % 2 === 1;
+        if (targetMod) {
+          this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA);
+        } else {
+          this.renderModule(ctx, normScale, cellFg, cellBg, null, null, cellShapeA, cellWireframe, isAlt);
+        }
+        ctx.restore();
+      };
+
+      // Draw primary cell
+      renderCell(cx, cy, startX);
+
+      // Seamless repeat wrapping in sliding (brick) grid
+      if (rep.gridType === "sliding" && r % 2 === 1) {
+        const slide = rep.slideOffset ?? 0.5;
+        if (slide > 0 && c === cols - 1) {
+          renderCell(cx - usableW, cy, startX - usableW);
+        } else if (slide < 0 && c === 0) {
+          renderCell(cx + usableW, cy, startX + usableW);
+        }
+      }
+    }
+  }
+
+    ctx.restore(); // end outer clip
+
+    // Optional visible structure grid lines
+    const showLines = !!(rep.showGridLines || (struct && (struct.showGridLines || (struct.enabled && struct.showBands))));
+    if (showLines) {
+      ctx.save();
+      ctx.strokeStyle = palette.isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(24, 24, 31, 0.35)";
+      ctx.lineWidth = struct && struct.enabled && struct.showBands ? struct.bandThickness : (rep.gridLineWidth || 1.2);
+
+      // Draw horizontal lines
+      for (let r = 0; r <= rows; r++) {
+        const y = r === rows ? margin + usableH : rowStarts[r];
+        ctx.beginPath();
+        ctx.moveTo(margin, y);
+        ctx.lineTo(margin + usableW, y);
+        ctx.stroke();
+      }
+
+      if (rep.gridType === "sliding") {
+        // True running-bond staggered vertical brick joints
+        for (let r = 0; r < rows; r++) {
+          const yTop = rowStarts[r];
+          const yBot = r === rows - 1 ? margin + usableH : rowStarts[r + 1];
+          const isShifted = r % 2 === 1;
+          const shift = isShifted ? colWidths[0] * (rep.slideOffset ?? 0.5) : 0;
+
+          // Left border
+          ctx.beginPath();
+          ctx.moveTo(margin, yTop);
+          ctx.lineTo(margin, yBot);
+          ctx.stroke();
+
+          // Internal vertical joints
+          for (let c = 0; c <= cols; c++) {
+            const rawX = (c === cols ? margin + usableW : colStarts[c]) + shift;
+            let x = rawX;
+            if (isShifted && x > margin + usableW + 0.1) {
+              x -= usableW;
+            }
+            if (x > margin + 0.5 && x < margin + usableW - 0.5) {
+              ctx.beginPath();
+              ctx.moveTo(x, yTop);
+              ctx.lineTo(x, yBot);
+              ctx.stroke();
+            }
+          }
+
+          // Right border
+          ctx.beginPath();
+          ctx.moveTo(margin + usableW, yTop);
+          ctx.lineTo(margin + usableW, yBot);
+          ctx.stroke();
+        }
+      } else {
+        // Draw vertical / deformed lines
+        for (let c = 0; c <= cols; c++) {
+          const baseX = c === cols ? margin + usableW : colStarts[c];
+          ctx.beginPath();
+
+          if (rep.gridType === "sheared") {
+            const rad = (rep.shearAngle * Math.PI) / 180;
+            const topX = baseX - (rows / 2) * Math.tan(rad) * (rowHeights[0] * 0.6);
+            const botX = baseX + (rows / 2) * Math.tan(rad) * (rowHeights[0] * 0.6);
+            ctx.moveTo(topX, margin);
+            ctx.lineTo(botX, margin + usableH);
+          } else if (rep.gridType === "curved") {
+            ctx.moveTo(baseX, margin);
+            const steps = 30;
+            for (let s = 1; s <= steps; s++) {
+              const frac = s / steps;
+              const y = margin + frac * usableH;
+              const wave = Math.sin(frac * Math.PI * 2) * rep.curveIntensity;
+              ctx.lineTo(baseX + wave, y);
+            }
+          } else if (rep.gridType === "zigzag") {
+            ctx.moveTo(baseX, margin);
+            for (let r = 0; r < rows; r++) {
+              const zig = (r % 2 === 0 ? 1 : -1) * rep.curveIntensity;
+              ctx.lineTo(baseX + zig, margin + (r + 1) * rowHeights[r]);
+            }
+          } else {
+            ctx.moveTo(baseX, margin);
+            ctx.lineTo(baseX, margin + usableH);
+          }
+          ctx.stroke();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    // Anomaly reticle guide overlay
+    if (anom.enabled && anom.showReticle) {
+      const epiX = (anom.epicenterX ?? 0.5) * width;
+      const epiY = (anom.epicenterY ?? 0.5) * height;
+      ctx.save();
+      ctx.strokeStyle = palette.accent;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+
+      // Influence radius boundary
+      ctx.beginPath();
+      ctx.arc(epiX, epiY, anom.radius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Precision target reticle
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(epiX, epiY, 6, 0, Math.PI * 2);
+      ctx.moveTo(epiX - 14, epiY);
+      ctx.lineTo(epiX + 14, epiY);
+      ctx.moveTo(epiX, epiY - 14);
+      ctx.lineTo(epiX, epiY + 14);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Concentration attractor guide overlay
+    if (conc && conc.enabled && conc.showAttractor) {
+      this.drawAttractorGuide(ctx, width, height, palette, conc);
+    }
+  }
+
+  // Render the polar radiation layout (Chapter 7)
+  renderRadiation(ctx, width, height, palette, marginParam, usableWParam, usableHParam, targetMod = null, radConfig = null) {
+    const rad = radConfig || (targetMod?.structure?.radiation) || this.state.modifiers.radiation;
+    const grad = this.state.modifiers.gradation;
+    const sim = (targetMod?.structure?.similarity) || this.state.modifiers.similarity;
+    const anom = this.state.modifiers.anomaly;
+    const contrast = this.state.modifiers.contrast;
+    const conc = this.state.modifiers.concentration;
+
+    const margin = marginParam !== undefined ? marginParam : Math.round(Math.max(20, Math.min(width, height) * 0.05));
+    const usableW = usableWParam !== undefined ? usableWParam : width - margin * 2;
+    const usableH = height - margin * 2;
+    const isMultiCenter = rad.scheme === "multi_center";
+    const maxR = Math.min(usableW, usableH) * (isMultiCenter ? 0.32 : 0.42);
+
+    const cx = width / 2 + (rad.centerX || 0);
+    const cy = height / 2 + (rad.centerY || 0);
+
+    const rays = Math.max(4, rad.rays);
+    const rings = Math.max(2, rad.rings);
+    const twistRad = ((rad.spiralTwist || 0) * Math.PI) / 180;
+
+    // Centers list (if multi_center, we have two focal centers creating Moiré)
+    const centers = isMultiCenter
+      ? [
+          { x: cx - maxR * 0.35, y: cy },
+          { x: cx + maxR * 0.35, y: cy }
+        ]
+      : [{ x: cx, y: cy }];
+
+    // Clip to master safe bounds area
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(margin, margin, usableW, usableH);
+    ctx.clip();
+
+    const seed = sim.seed || 42;
+
+    centers.forEach((center, centerIdx) => {
+      for (let i = 1; i <= rings; i++) {
+        const rInner = ((i - 1) / rings) * maxR;
+        const rOuter = (i / rings) * maxR;
+        const ringRadius = (rInner + rOuter) * 0.5;
+
+        for (let j = 0; j < rays; j++) {
+          const rayAngleStart = (j / rays) * Math.PI * 2;
+          const rayAngleEnd = ((j + 1) / rays) * Math.PI * 2;
+          const baseAngle = (rayAngleStart + rayAngleEnd) * 0.5;
+          let angle = baseAngle;
+
+          // Spiral twist
+          const twistFraction = ringRadius / maxR;
+          if (rad.scheme === "spiral") {
+            angle += twistRad * twistFraction;
+          }
+
+          const x = center.x + ringRadius * Math.cos(angle);
+          const y = center.y + ringRadius * Math.sin(angle);
+
+          let posX = x;
+          let posY = y;
+          let concAngle = 0;
+          let concScaleMul = 1.0;
+
+          if (conc && conc.enabled) {
+            const attX = (conc.attractorX ?? 0.5) * width;
+            const attY = (conc.attractorY ?? 0.5) * height;
+            const power = (conc.power ?? 65) / 100;
+            const radius = conc.radius ?? 240;
+
+            if (conc.mode === "point") {
+              const dist = Math.hypot(posX - attX, posY - attY);
+              if (dist < radius) {
+                const factor = Math.pow(1 - dist / radius, 1.4) * power;
+                const pull = factor * (radius * 0.45);
+                const a = Math.atan2(attY - posY, attX - posX);
+                posX += Math.cos(a) * pull;
+                posY += Math.sin(a) * pull;
+                concAngle = a;
+                if (conc.densityScale) concScaleMul = 0.55 + (dist / radius) * 0.7;
+              }
+            } else if (conc.mode === "void") {
+              const dist = Math.hypot(posX - attX, posY - attY);
+              if (dist < radius) {
+                const factor = Math.pow(1 - dist / radius, 1.2) * power;
+                const push = factor * (radius * 0.55);
+                const a = Math.atan2(posY - attY, posX - attX);
+                posX += Math.cos(a) * push;
+                posY += Math.sin(a) * push;
+                concAngle = a + Math.PI / 2;
+                if (conc.densityScale) concScaleMul = 0.4 + (dist / radius) * 0.8;
+              }
+            } else if (conc.mode === "line") {
+              if (conc.lineAxis === "vertical") {
+                const distX = Math.abs(posX - attX);
+                if (distX < radius) {
+                  const factor = Math.pow(1 - distX / radius, 1.4) * power;
+                  posX += (attX - posX) * factor * 0.75;
+                  concAngle = (attX >= posX ? 0 : Math.PI);
+                  if (conc.densityScale) concScaleMul = 0.65 + (distX / radius) * 0.6;
+                }
+              } else {
+                const distY = Math.abs(posY - attY);
+                if (distY < radius) {
+                  const factor = Math.pow(1 - distY / radius, 1.4) * power;
+                  posY += (attY - posY) * factor * 0.75;
+                  concAngle = (attY >= posY ? Math.PI / 2 : -Math.PI / 2);
+                  if (conc.densityScale) concScaleMul = 0.65 + (distY / radius) * 0.6;
+                }
+              }
+            } else if (conc.mode === "free") {
+              const att2X = width - attX;
+              const att2Y = height - attY;
+              const dist1 = Math.hypot(posX - attX, posY - attY);
+              const dist2 = Math.hypot(posX - att2X, posY - att2Y);
+              const nearestDist = Math.min(dist1, dist2);
+              const targetX = dist1 < dist2 ? attX : att2X;
+              const targetY = dist1 < dist2 ? attY : att2Y;
+              if (nearestDist < radius) {
+                const factor = Math.pow(1 - nearestDist / radius, 1.4) * power;
+                const pull = factor * (radius * 0.4);
+                const a = Math.atan2(targetY - posY, targetX - posX);
+                posX += Math.cos(a) * pull;
+                posY += Math.sin(a) * pull;
+                concAngle = a;
+                if (conc.densityScale) concScaleMul = 0.65 + (nearestDist / radius) * 0.6;
+              }
+            }
+          }
+
+          // Soft edge bounding so modules stay comfortably within the canvas
+          const safePad = Math.max(12, margin * 0.4);
+          posX = Math.max(safePad, Math.min(width - safePad, posX));
+          posY = Math.max(safePad, Math.min(height - safePad, posY));
+
+          ctx.save();
+
+          // Active clipping: restrict drawing strictly to polar sector boundaries
+          if (rad.activeClipping) {
+            ctx.beginPath();
+            let aOuterStart = rayAngleStart;
+            let aOuterEnd = rayAngleEnd;
+            let aInnerStart = rayAngleStart;
+            let aInnerEnd = rayAngleEnd;
+
+            if (rad.scheme === "spiral") {
+              aOuterStart += twistRad * (rOuter / maxR);
+              aOuterEnd += twistRad * (rOuter / maxR);
+              aInnerStart += twistRad * (rInner / maxR);
+              aInnerEnd += twistRad * (rInner / maxR);
+            }
+
+            ctx.arc(center.x, center.y, rOuter, aOuterStart, aOuterEnd, false);
+            if (rInner > 0.5) {
+              ctx.arc(center.x, center.y, rInner, aInnerEnd, aInnerStart, true);
+            } else {
+              ctx.lineTo(center.x, center.y);
+            }
+            ctx.closePath();
+            ctx.clip();
+          }
+
+          if (sim && sim.enabled && sim.cellJitter > 0) {
+            const jRand = (salt) => {
+              const val = Math.sin((seed || 42) * 997 + (i * 100 + j + centerIdx * 1000) * 31 + salt * 101) * 10000;
+              return (val - Math.floor(val)) * 2 - 1;
+            };
+            posX += jRand(10) * sim.cellJitter;
+            posY += jRand(11) * sim.cellJitter;
+          }
+
+          ctx.translate(posX, posY);
+
+          // Concentration directional flow
+          if (conc && conc.enabled && conc.alignToField && concAngle !== 0) {
+            ctx.rotate(concAngle);
+          }
+
+          // Base radiation orientation
+          if (rad.scheme === "centrifugal" || rad.scheme === "multi_center") {
+            ctx.rotate(angle + Math.PI / 2);
+          } else if (rad.scheme === "concentric") {
+            ctx.rotate(angle);
+          } else if (rad.scheme === "spiral") {
+            ctx.rotate(angle + Math.PI / 2 + (twistRad * 0.35));
+          }
+
+          // Gradation on polar radiation
+          if (grad.enabled) {
+            let t = (grad.pathway === "concentric" || grad.pathway === "diagonal") 
+              ? (i / rings) 
+              : (j / rays);
+            if (grad.reverse) t = 1 - t;
+            t = (t * (grad.steps || 1)) % 1.0001;
+
+            if (grad.type === "rotation") {
+              ctx.rotate(t * (((grad.range ?? 180) * Math.PI) / 180));
+            } else if (grad.type === "scale") {
+              const sFactor = 0.35 + t * 1.1;
+              ctx.scale(sFactor, sFactor);
+            } else if (grad.type === "depth") {
+              ctx.rotate(0.3);
+              ctx.scale(1, Math.max(0.2, 1 - t * 0.75));
+              ctx.rotate(-0.3);
+            }
+          }
+
+          // Similarity on radiation
+          if (sim.enabled) {
+            const pRand = (salt) => {
+              const val = Math.sin(seed * 997 + (i * 100 + j + centerIdx * 1000) * 31 + salt * 101) * 10000;
+              return (val - Math.floor(val)) * 2 - 1;
+            };
+            const intensity = (sim.intensity ?? 50) / 100;
+            if (sim.kinshipType === "distortion") {
+              ctx.scale(1 + pRand(1) * intensity * 0.5, 1 + pRand(2) * intensity * 0.5);
+            } else if (sim.kinshipType === "foreshortening") {
+              const rRot = pRand(3) * Math.PI;
+              ctx.rotate(rRot);
+              ctx.scale(1, Math.max(0.2, 1 - Math.abs(pRand(4)) * intensity * 0.8));
+              ctx.rotate(-rRot);
+            } else if (sim.kinshipType === "rotation_wobble") {
+              ctx.rotate(pRand(5) * intensity * (Math.PI / 2));
+            } else if (sim.kinshipType === "scale_kinship") {
+              const sFactor = Math.max(0.2, 1 + pRand(6) * intensity * 0.6);
+              ctx.scale(sFactor, sFactor);
+            } else if (sim.kinshipType === "hybrid") {
+              const sx = 1 + pRand(1) * intensity * 0.35;
+              const sy = 1 + pRand(2) * intensity * 0.35;
+              const wobble = pRand(5) * intensity * 0.4;
+              ctx.rotate(wobble);
+              ctx.scale(sx, sy);
+            }
+          }
+
+          // Anomaly & Contrast on radiation module
+          let cellShapeA = null;
+          let cellWireframe = null;
+          let cellFg = palette.fg;
+          let cellBg = palette.bg;
+          let cellScaleMul = 1;
+
+          if (anom.enabled) {
+            const epiX = (anom.epicenterX ?? 0.5) * width;
+            const epiY = (anom.epicenterY ?? 0.5) * height;
+            const dist = Math.hypot(x - epiX, y - epiY);
+            const inZone = dist < anom.radius;
+            const factor = inZone ? (1 - dist / anom.radius) : 0;
+            const severity = (anom.intensity ?? 65) / 100;
+
+            if (anom.type === "focal") {
+              if (inZone) {
+                cellShapeA = anom.anomalousShape || "triangle_eq";
+                ctx.rotate((Math.PI / 4) * severity * factor);
+                cellScaleMul *= (1 + 0.35 * severity);
+                if (anom.highlightColor) cellFg = palette.accent;
+              }
+            } else if (anom.type === "fracture") {
+              const corridor = anom.radius * 0.45;
+              if (inZone && Math.abs(x - epiX) < corridor) {
+                const jag = Math.sin(y * 0.08) * (18 * severity);
+                const shearY = (y > epiY ? 1 : -1) * (36 * severity) + jag;
+                const shearX = (x > epiX ? 1 : -1) * (10 * severity);
+                ctx.translate(shearX, shearY);
+                ctx.rotate((factor * severity * Math.PI) / 3.2);
+                if (factor > 0.4 && anom.highlightColor) cellFg = palette.accent;
+              }
+            } else if (anom.type === "swell") {
+              if (inZone) {
+                const angleToEpi = Math.atan2(y - epiY, x - epiX);
+                const push = Math.sin(factor * Math.PI) * (42 * severity);
+                ctx.translate(Math.cos(angleToEpi) * push, Math.sin(angleToEpi) * push);
+                const sFactor = 1 + factor * 0.55 * severity;
+                ctx.scale(sFactor, sFactor);
+                if (factor > 0.65 && anom.highlightColor) cellFg = palette.accent;
+              }
+            } else if (anom.type === "tear") {
+              if (factor > 0.6) {
+                ctx.restore();
+                continue;
+              } else if (factor > 0.15) {
+                const rRand = ((seed * 997 + i * 31 + j * 7) % 100) / 100;
+                ctx.translate((rRand - 0.5) * 26 * severity, (1 - rRand - 0.5) * 26 * severity);
+                ctx.rotate(rRand * Math.PI * severity);
+                const shrink = Math.max(0.15, 1 - factor * 0.85);
+                ctx.scale(shrink, shrink);
+                if (anom.highlightColor && factor > 0.3) cellFg = palette.accent;
+              }
+            }
+          }
+
+          if (contrast.enabled) {
+            const k = centerIdx * 1000 + i * rays + j;
+            const hash = Math.abs(Math.sin(k * 137.5 + 43.1) * 10000) % 100;
+            const isMinority = hash >= (contrast.dominanceRatio ?? 80);
+            if (isMinority) {
+              if (contrast.dimension === "scale") {
+                const sFactor = contrast.scaleFactor ?? 2.2;
+                cellScaleMul *= sFactor;
+              } else if (contrast.dimension === "shape") {
+                cellShapeA = contrast.contrastShape || "star4";
+              } else if (contrast.dimension === "direction") {
+                const clashAngle = ((contrast.angle ?? 45) * Math.PI) / 180;
+                ctx.rotate(clashAngle);
+              } else if (contrast.dimension === "tone") {
+                cellWireframe = true;
+              }
+              if (contrast.highlightContrast) {
+                cellFg = palette.accent;
+              }
+            }
+          }
+
+          // Natural centrifugal growth scale: outer modules larger, inner smaller, proportional to sector size
+          const scaleUnit = 1.25 * Math.min(1.0, Math.min(width, height) / 600);
+          const ringThickness = maxR / rings;
+          const arcWidth = (ringRadius * 2 * Math.PI) / rays;
+          const sectorSize = Math.min(ringThickness, Math.max(ringThickness * 0.5, arcWidth));
+          const sectorRatio = sectorSize / usableW;
+          const growthFactor = 0.75 + (i / rings) * 0.45;
+          const radScaleMul = isMultiCenter ? 0.7 : 1.0;
+          const normScale = scaleUnit * sectorRatio * growthFactor * radScaleMul * cellScaleMul * concScaleMul;
+          const isAlt = (i + j) % 2 === 1;
+          if (targetMod) {
+            this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA);
+          } else {
+            this.renderModule(ctx, normScale, cellFg, cellBg, null, null, cellShapeA, cellWireframe, isAlt);
+          }
+          ctx.restore();
+        }
+      }
+    });
+
+    ctx.restore(); // end outer clip
+
+    // Structural visible guides
+    if (rad.showRings || rad.showRays) {
+      ctx.save();
+      ctx.strokeStyle = palette.grid;
+      ctx.lineWidth = 1;
+
+      centers.forEach(center => {
+        if (rad.showRings) {
+          for (let i = 1; i <= rings; i++) {
+            const r = (i / rings) * maxR;
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, r, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        }
+
+        if (rad.showRays) {
+          for (let j = 0; j < rays; j++) {
+            const baseAngle = (j / rays) * Math.PI * 2;
+            ctx.beginPath();
+            if (rad.scheme === "spiral") {
+              ctx.moveTo(center.x, center.y);
+              const steps = 24;
+              for (let s = 1; s <= steps; s++) {
+                const frac = s / steps;
+                const r = frac * maxR;
+                const a = baseAngle + twistRad * frac;
+                ctx.lineTo(center.x + r * Math.cos(a), center.y + r * Math.sin(a));
+              }
+            } else {
+              ctx.moveTo(center.x, center.y);
+              ctx.lineTo(center.x + maxR * Math.cos(baseAngle), center.y + maxR * Math.sin(baseAngle));
+            }
+            ctx.stroke();
+          }
+        }
+      });
+
+      ctx.restore();
+    }
+
+    // Anomaly reticle guide overlay on radiation
+    if (anom.enabled && anom.showReticle) {
+      const epiX = (anom.epicenterX ?? 0.5) * width;
+      const epiY = (anom.epicenterY ?? 0.5) * height;
+      ctx.save();
+      ctx.strokeStyle = palette.accent;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+
+      // Influence radius boundary
+      ctx.beginPath();
+      ctx.arc(epiX, epiY, anom.radius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Precision target reticle
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(epiX, epiY, 6, 0, Math.PI * 2);
+      ctx.moveTo(epiX - 14, epiY);
+      ctx.lineTo(epiX + 14, epiY);
+      ctx.moveTo(epiX, epiY - 14);
+      ctx.lineTo(epiX, epiY + 14);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Concentration attractor guide overlay on radiation
+    if (conc && conc.enabled && conc.showAttractor) {
+      this.drawAttractorGuide(ctx, width, height, palette, conc);
+    }
+  }
+
+  // Master render method
+  render(palette) {
+    if (!this.canvas) return;
+
+    const ratioMap = {
+      "1:1": { w: 600, h: 600 },
+      "9:16": { w: 450, h: 800 },
+      "4:3": { w: 800, h: 600 },
+      "3:4": { w: 600, h: 800 },
+      "16:9": { w: 800, h: 450 }
+    };
+    const cfg = ratioMap[this.state.aspectRatio || "1:1"] || { w: 600, h: 600 };
+    const { ctx, width, height } = CanvasUtils.setupCanvas(this.canvas, cfg.w, cfg.h);
+
+    // 1. Clear background using current effective palette background
+    ctx.save();
+    ctx.fillStyle = palette.bg;
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+
+    this.canvas.style.backgroundColor = palette.bg;
+
+    const fgColor = palette.fg;
+    const bgColor = palette.bg;
+
+    // 2. Architectural Guide Grid & Safe Bounds
+    const margin = Math.round(Math.max(20, Math.min(width, height) * 0.05));
+    const usableW = width - margin * 2;
+    const usableH = height - margin * 2;
+
+    if (this.state.showSafeBounds) {
+      ctx.save();
+      // Draw faint architectural coordinate grid (clean and theme-adaptive)
+      ctx.strokeStyle = palette.isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(24, 24, 31, 0.08)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([]);
+      const gridSize = 40;
+      for (let x = margin; x <= width - margin; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, margin);
+        ctx.lineTo(x, height - margin);
+        ctx.stroke();
+      }
+      for (let y = margin; y <= height - margin; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(margin, y);
+        ctx.lineTo(width - margin, y);
+        ctx.stroke();
+      }
+
+      // Dashed outer safe boundary
+      ctx.strokeStyle = palette.isDark ? "rgba(255, 255, 255, 0.28)" : "rgba(24, 24, 31, 0.2)";
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1.2;
+      ctx.strokeRect(margin, margin, usableW, usableH);
+
+      ctx.restore();
+    }
+
+    // 2.5 Isometric Drafting Guides (Chapter 12: Space)
+    if (this.state.modifiers.space.enabled && this.state.modifiers.space.showIsoGuides) {
+      this.drawIsometricGuides(ctx, width, height, palette);
+    }
+
+    // 3. Render Pipeline (Artboard Safe-Frame clipping: strictly contained within red master guides)
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(margin, margin, usableW, usableH);
+    ctx.clip();
+
+    const structA = this.state.formA?.structure;
+    const structB = this.state.formB?.enabled ? this.state.formB?.structure : null;
+    const hasLayerStructure = !!((structA && structA.enabled) || (structB && structB.enabled));
+    const hasGlobalStructure = !!(this.state.modifiers.radiation.enabled || this.state.modifiers.repetition.enabled);
+
+    if (!hasLayerStructure && !hasGlobalStructure) {
+      // Single Module Study in Center (Pure Form A & Form B Base Unit with Wong Interrelations)
+      ctx.save();
+      ctx.translate(width / 2, height / 2);
+      const aspectScale = Math.min(1.0, Math.min(width, height) / 600);
+      this.renderModule(ctx, 1.25 * aspectScale, fgColor, bgColor);
+      ctx.restore();
+    } else if (hasLayerStructure) {
+      // Independent Layers Pipeline: Each layer has its own independent layout structure & properties
+      const order = this.state.layerOrder || ["layer-2", "layer-1"];
+      // In design tools (Figma, Photoshop), top card is foreground; render stack draws bottom to top
+      const renderStack = [...order].reverse();
+
+      for (const layerId of renderStack) {
+        let mod = null;
+        if (layerId === "layer-1") {
+          mod = this.state.formA;
+          if (!mod || mod.visible === false) continue;
+        } else if (layerId === "layer-2") {
+          mod = this.state.formB;
+          if (!mod || !mod.enabled || mod.visible === false) continue;
+        }
+        if (!mod) continue;
+
+        const layerStruct = mod.structure;
+        if (layerStruct && (layerStruct.enabled || (layerStruct.formalStructure && layerStruct.formalStructure.enabled))) {
+          if (layerStruct.mode === "radiation") {
+            this.renderRadiation(ctx, width, height, palette, margin, usableW, usableH, mod, layerStruct.radiation);
+          } else {
+            this.renderRepetitionGrid(ctx, width, height, palette, margin, usableW, usableH, mod, layerStruct.repetition);
+          }
+        } else {
+          // Layer rendered as single element centered on canvas
+          this.renderSingleLayerModule(ctx, mod, width, height, palette);
+        }
+      }
+    } else {
+      // Global structure fallback
+      if (this.state.modifiers.radiation.enabled) {
+        this.renderRadiation(ctx, width, height, palette, margin, usableW, usableH);
+      } else {
+        this.renderRepetitionGrid(ctx, width, height, palette, margin, usableW, usableH);
+      }
+    }
+
+    ctx.restore(); // end master artboard clip
+
+    // 4. Subtle center reference dot (when in single module mode)
+    if (!this.state.modifiers.repetition.enabled && !this.state.modifiers.structure.enabled && !this.state.modifiers.radiation.enabled) {
+      ctx.save();
+      ctx.fillStyle = palette.accent;
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath();
+      ctx.arc(width / 2, height / 2, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 5. Tactile Texture Rendering (Chapter 11)
+    if (this.state.modifiers.texture.enabled) {
+      this.renderTexture(ctx, width, height, palette);
+    }
+  }
+
+  // Concentration Attractor Field Guide (Chapter 10)
+  drawAttractorGuide(ctx, width, height, palette, conc) {
+    const attX = (conc.attractorX ?? 0.5) * width;
+    const attY = (conc.attractorY ?? 0.5) * height;
+    const radius = conc.radius ?? 240;
+
+    ctx.save();
+    ctx.strokeStyle = palette.accent;
+    ctx.fillStyle = palette.accent;
+
+    if (conc.mode === "line") {
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([6, 6]);
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      if (conc.lineAxis === "vertical") {
+        ctx.moveTo(attX, 0);
+        ctx.lineTo(attX, height);
+      } else {
+        ctx.moveTo(0, attY);
+        ctx.lineTo(width, attY);
+      }
+      ctx.stroke();
+
+      // Influence boundary lines
+      ctx.globalAlpha = 0.18;
+      ctx.setLineDash([2, 4]);
+      ctx.beginPath();
+      if (conc.lineAxis === "vertical") {
+        ctx.moveTo(attX - radius, 0);
+        ctx.lineTo(attX - radius, height);
+        ctx.moveTo(attX + radius, 0);
+        ctx.lineTo(attX + radius, height);
+      } else {
+        ctx.moveTo(0, attY - radius);
+        ctx.lineTo(width, attY - radius);
+        ctx.moveTo(0, attY + radius);
+        ctx.lineTo(width, attY + radius);
+      }
+      ctx.stroke();
+    } else {
+      // Concentric gravitational rings
+      const rings = [radius * 0.35, radius * 0.7, radius];
+      rings.forEach((r, idx) => {
+        ctx.beginPath();
+        ctx.setLineDash([3, 4]);
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.15 + (3 - idx) * 0.12;
+        ctx.arc(attX, attY, r, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+
+      // Central attractor point
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 0.75;
+      ctx.beginPath();
+      ctx.arc(attX, attY, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (conc.mode === "free") {
+        // Complementary node for dual hotspot
+        const att2X = width - attX;
+        const att2Y = height - attY;
+        ctx.beginPath();
+        ctx.arc(att2X, att2Y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.setLineDash([3, 4]);
+        ctx.globalAlpha = 0.25;
+        ctx.beginPath();
+        ctx.arc(att2X, att2Y, radius * 0.5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  // 30° Isometric Construction Guide Grid (Chapter 12: Space)
+  drawIsometricGuides(ctx, width, height, palette) {
+    ctx.save();
+    ctx.strokeStyle = palette.grid;
+    ctx.lineWidth = 0.8;
+    ctx.globalAlpha = 0.35;
+    ctx.setLineDash([2, 4]);
+
+    const spacing = 36;
+    const tan30 = Math.tan((30 * Math.PI) / 180); // ~0.57735
+    const extendX = height / tan30;
+
+    // 30 degree diagonal lines (ascending)
+    for (let x = -extendX; x <= width + extendX; x += spacing) {
+      ctx.beginPath();
+      ctx.moveTo(x, height);
+      ctx.lineTo(x + extendX, 0);
+      ctx.stroke();
+    }
+
+    // -30 degree diagonal lines (descending)
+    for (let x = -extendX; x <= width + extendX; x += spacing) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x + extendX, height);
+      ctx.stroke();
+    }
+
+    // Vertical construction lines
+    for (let x = 0; x <= width; x += spacing * 1.5) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  // Tactile Texture Engine (Chapter 11) - Canvas-wide surface plate
+  renderTexture(ctx, width, height, palette) {
+    const text = this.state.modifiers.texture;
+    if (!text || !text.enabled) return;
+    // Only apply canvas overlay if target is "canvas" or "both"
+    if (text.target === "shapes") return;
+
+    ctx.save();
+    const fgColor = this.state.invertFigureGround ? palette.bg : palette.fg;
+    const alpha = (text.contrast ?? 40) / 100;
+    const density = (text.density ?? 50) / 100;
+    const scale = text.scale ?? 14;
+
+    if (text.mode === "grain") {
+      // Fig. 69b: Lithographic tooth & stipple paper grain
+      ctx.fillStyle = fgColor;
+      const count = Math.floor(width * height * 0.00035 * (0.5 + density));
+      let s = 1234567;
+      const rng = () => {
+        s = (s * 1664525 + 1013904223) % 4294967296;
+        return s / 4294967296;
+      };
+      ctx.globalAlpha = Math.min(0.5, alpha * 0.45);
+      const dotSize = Math.max(1, scale * 0.12);
+      for (let i = 0; i < count; i++) {
+        const gx = rng() * width;
+        const gy = rng() * height;
+        ctx.fillRect(gx, gy, dotSize, dotSize);
+      }
+    } else if (text.mode === "halftone") {
+      // Fig. 67c: Mechanical dot raster screen
+      ctx.fillStyle = fgColor;
+      ctx.globalAlpha = Math.min(0.55, alpha * 0.5);
+      const step = Math.max(8, Math.round(34 - density * 18));
+      const maxDot = (step * 0.38) * (scale / 14);
+      for (let y = step / 2; y < height; y += step) {
+        for (let x = step / 2; x < width; x += step) {
+          const dist = Math.hypot(x - width / 2, y - height / 2);
+          const factor = 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(dist * 0.012));
+          const r = Math.max(0.6, maxDot * factor);
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    } else if (text.mode === "ribbing") {
+      // Fig. 68a: Woven linear ribbing / parallel hatching
+      ctx.strokeStyle = fgColor;
+      ctx.lineWidth = Math.max(0.8, scale * 0.08);
+      ctx.globalAlpha = Math.min(0.45, alpha * 0.4);
+      const step = Math.max(4, Math.round(24 - density * 16));
+      ctx.beginPath();
+      for (let y = 0; y < height; y += step) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+      }
+      ctx.stroke();
+    } else if (text.mode === "typography") {
+      // Fig. 71: Typography as Visual Texture (Wong Exercise)
+      const letters = ["A", "B", "R", "X", "M", "Q", "S", "8", "■", "┼", "╱", "╲"];
+      const step = Math.max(14, Math.round(48 - density * 24));
+      const cols = Math.floor(width / step);
+      const rows = Math.floor(height / step);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = `bold ${Math.round(scale)}px "Space Grotesk", monospace, sans-serif`;
+      ctx.fillStyle = fgColor;
+      ctx.globalAlpha = Math.min(0.45, alpha * 0.4);
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const x = (c + 0.5) * step;
+          const y = (r + 0.5) * step;
+          const hash = Math.sin(r * 37.1 + c * 73.9) * 43758.5453;
+          const rand = hash - Math.floor(hash);
+          const char = letters[Math.floor(rand * letters.length)];
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate((rand - 0.5) * 0.6);
+          ctx.fillText(char, 0, 0);
+          ctx.restore();
+        }
+      }
+    }
+
+    ctx.restore();
+  }
+}
+
+
+  /**
+ * STUDIO WONG PRO — Presets Gallery
+ * Curated parametric compositions across Bauhaus, Swiss, Op-Art, and Kinetic aesthetics.
+ */
+const STUDIO_PRESETS = [
+  {
+    id: "nautilus_spiral",
+    name: "Nautilus Kinetic Spiral",
+    category: "Radial & Polar",
+    description: "Centrifugal spiral radiation with logarithmic twist and crescent union.",
+    state: {
+      aspectRatio: "1:1",
+      paletteId: "inverted",
+      formA: { shape: "circle", scale: 95, width: 95, height: 95, rotation: 0, offsetX: 0, offsetY: 0 },
+      formB: { enabled: true, shape: "crescent", scale: 75, width: 75, height: 75, rotation: 45, offsetX: 25, offsetY: 0 },
+      interrelation: "union",
+      invertFigureGround: false,
+      wireframe: false,
+      modifiers: {
+        repetition: { enabled: false, gridType: "basic", cols: 4, rows: 4, spacing: 0, shearAngle: 15, slideOffset: 0.5, curveIntensity: 18, activeClipping: false, showGridLines: false, gridLineWidth: 1.5, checkerInvert: false },
+        structure: { enabled: false, mode: "rhythmic", colRatio: 1.8, rowRatio: 1.8, bandThickness: 3, showBands: false },
+        similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
+        gradation: { enabled: true, type: "scale", pathway: "concentric", range: 120, steps: 1, reverse: false },
+        radiation: { enabled: true, scheme: "spiral", rays: 16, rings: 6, spiralTwist: 60, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
+        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle_eq", highlightColor: true, showReticle: false },
+        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "star4", scaleFactor: 2.2, angle: 45, highlightContrast: false },
+        concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
+        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
+      },
+      showSafeBounds: false,
+      zoomLevel: 1.0
+    }
+  },
+  {
+    id: "moire_guilloche",
+    name: "Moiré Guilloché Rosette",
+    category: "Radial & Polar",
+    description: "Dual-center interference pattern generating high-frequency geometric moiré.",
+    state: {
+      aspectRatio: "1:1",
+      paletteId: "blueprint",
+      formA: { shape: "star4", scale: 70, width: 70, height: 70, rotation: 0, offsetX: 0, offsetY: 0 },
+      formB: { enabled: true, shape: "rhombus", scale: 65, width: 65, height: 65, rotation: 45, offsetX: 0, offsetY: 0 },
+      interrelation: "intersection",
+      invertFigureGround: false,
+      wireframe: true,
+      modifiers: {
+        repetition: { enabled: false, gridType: "basic", cols: 4, rows: 4, spacing: 0, shearAngle: 15, slideOffset: 0.5, curveIntensity: 18, activeClipping: false, showGridLines: false, gridLineWidth: 1.5, checkerInvert: false },
+        structure: { enabled: false, mode: "rhythmic", colRatio: 1.8, rowRatio: 1.8, bandThickness: 3, showBands: false },
+        similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
+        gradation: { enabled: false, type: "rotation", pathway: "diagonal", range: 180, steps: 1, reverse: false },
+        radiation: { enabled: true, scheme: "multi_center", rays: 24, rings: 7, spiralTwist: -35, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
+        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle_eq", highlightColor: true, showReticle: false },
+        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "star4", scaleFactor: 2.2, angle: 45, highlightContrast: false },
+        concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
+        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
+      },
+      showSafeBounds: false,
+      zoomLevel: 1.0
+    }
+  },
+  {
+    id: "bauhaus_subtraction",
+    name: "Bauhaus Minimal Construct",
+    category: "Cartesian Grid",
+    description: "Orthogonal structural tension with boolean circular bite and primary contrast.",
+    state: {
+      aspectRatio: "3:4",
+      paletteId: "bauhaus",
+      formA: { shape: "square", scale: 115, width: 115, height: 115, rotation: 0, offsetX: 0, offsetY: 0 },
+      formB: { enabled: true, shape: "circle", scale: 90, width: 90, height: 90, rotation: 0, offsetX: 45, offsetY: 0 },
+      interrelation: "subtraction",
+      invertFigureGround: false,
+      wireframe: false,
+      modifiers: {
+        repetition: { enabled: true, gridType: "basic", cols: 3, rows: 4, spacing: 24, shearAngle: 0, slideOffset: 0, curveIntensity: 0, activeClipping: false, showGridLines: false, gridLineWidth: 1.5, checkerInvert: false },
+        structure: { enabled: false, mode: "rhythmic", colRatio: 1.8, rowRatio: 1.8, bandThickness: 3, showBands: false },
+        similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
+        gradation: { enabled: true, type: "rotation", pathway: "diagonal", range: 90, steps: 1, reverse: false },
+        radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
+        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle_eq", highlightColor: true, showReticle: false },
+        contrast: { enabled: true, dimension: "direction", dominanceRatio: 75, contrastShape: "star4", scaleFactor: 1.0, angle: 45, highlightContrast: true },
+        concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
+        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
+      },
+      showSafeBounds: true,
+      zoomLevel: 1.0
+    }
+  },
+  {
+    id: "tectonic_rift",
+    name: "Tectonic Fault Line",
+    category: "Anomaly & Rift",
+    description: "Sheared repetition lattice disrupted by a transversal geological fracture.",
+    state: {
+      aspectRatio: "1:1",
+      paletteId: "monochrome",
+      formA: { shape: "square", scale: 65, width: 65, height: 65, rotation: 0, offsetX: 0, offsetY: 0 },
+      formB: { enabled: false, shape: "circle", scale: 50, width: 50, height: 50, rotation: 0, offsetX: 20, offsetY: 0 },
+      interrelation: "overlapping",
+      invertFigureGround: true,
+      wireframe: false,
+      modifiers: {
+        repetition: { enabled: true, gridType: "sheared", cols: 7, rows: 7, spacing: 10, shearAngle: 15, slideOffset: 0, curveIntensity: 0, activeClipping: false, showGridLines: false, gridLineWidth: 1.5, checkerInvert: false },
+        structure: { enabled: false, mode: "rhythmic", colRatio: 1.8, rowRatio: 1.8, bandThickness: 3, showBands: false },
+        similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
+        gradation: { enabled: false, type: "rotation", pathway: "diagonal", range: 180, steps: 1, reverse: false },
+        radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
+        anomaly: { enabled: true, type: "fracture", epicenterX: 0.5, epicenterY: 0.5, radius: 220, intensity: 85, anomalousShape: "cross", highlightColor: true, showReticle: false },
+        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "star4", scaleFactor: 2.2, angle: 45, highlightContrast: false },
+        concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
+        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
+      },
+      showSafeBounds: false,
+      zoomLevel: 1.0
+    }
+  },
+  {
+    id: "gravitational_singularity",
+    name: "Gravitational Singularity",
+    category: "Fields & Forces",
+    description: "High-density triangular field collapsing inward toward an off-center vortex.",
+    state: {
+      aspectRatio: "9:16",
+      paletteId: "inverted",
+      formA: { shape: "triangle", scale: 50, width: 50, height: 50, rotation: 0, offsetX: 0, offsetY: 0 },
+      formB: { enabled: false, shape: "circle", scale: 40, width: 40, height: 40, rotation: 0, offsetX: 0, offsetY: 0 },
+      interrelation: "overlapping",
+      invertFigureGround: false,
+      wireframe: false,
+      modifiers: {
+        repetition: { enabled: true, gridType: "sliding", cols: 8, rows: 14, spacing: 4, shearAngle: 0, slideOffset: 0.5, curveIntensity: 0, activeClipping: false, showGridLines: false, gridLineWidth: 1.5, checkerInvert: false },
+        structure: { enabled: false, mode: "rhythmic", colRatio: 1.8, rowRatio: 1.8, bandThickness: 3, showBands: false },
+        similarity: { enabled: true, kinshipType: "rotation_wobble", intensity: 25, cellJitter: 0, seed: 88 },
+        gradation: { enabled: false, type: "rotation", pathway: "diagonal", range: 180, steps: 1, reverse: false },
+        radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
+        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle_eq", highlightColor: true, showReticle: false },
+        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "star4", scaleFactor: 2.2, angle: 45, highlightContrast: false },
+        concentration: { enabled: true, mode: "point", attractorX: 0.5, attractorY: 0.45, power: 85, radius: 340, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
+        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
+      },
+      showSafeBounds: false,
+      zoomLevel: 1.0
+    }
+  },
+  {
+    id: "washi_isometric",
+    name: "Washi Isometric Plate",
+    category: "Space & Material",
+    description: "Axonometric hexagonal volumes immersed in authentic litographic paper grain.",
+    state: {
+      aspectRatio: "4:3",
+      paletteId: "sepia",
+      formA: { shape: "hexagon", scale: 110, width: 110, height: 110, rotation: 0, offsetX: 0, offsetY: 0 },
+      formB: { enabled: true, shape: "circle", scale: 80, width: 80, height: 80, rotation: 0, offsetX: 0, offsetY: 0 },
+      interrelation: "penetration",
+      invertFigureGround: false,
+      wireframe: false,
+      modifiers: {
+        repetition: { enabled: true, gridType: "basic", cols: 4, rows: 3, spacing: 30, shearAngle: 0, slideOffset: 0, curveIntensity: 0, activeClipping: false, showGridLines: false, gridLineWidth: 1.5, checkerInvert: false },
+        structure: { enabled: false, mode: "rhythmic", colRatio: 1.8, rowRatio: 1.8, bandThickness: 3, showBands: false },
+        similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
+        gradation: { enabled: false, type: "rotation", pathway: "diagonal", range: 180, steps: 1, reverse: false },
+        radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
+        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle_eq", highlightColor: true, showReticle: false },
+        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "star4", scaleFactor: 2.2, angle: 45, highlightContrast: false },
+        concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
+        texture: { enabled: true, target: "both", mode: "grain", density: 60, scale: 16, contrast: 45 },
+        space: { enabled: true, mode: "isometric", depth: 40, angle: 30, shading: 70, showIsoGuides: false }
+      },
+      showSafeBounds: false,
+      zoomLevel: 1.0
+    }
+  },
+  {
+    id: "optical_wave_scan",
+    name: "Optical Slit-Scan Waves",
+    category: "Kinetic Op-Art",
+    description: "Curved sinusoidal wave rasterization with rotational diagonal progression.",
+    state: {
+      aspectRatio: "16:9",
+      paletteId: "inverted",
+      formA: { shape: "cross", scale: 45, width: 45, height: 45, rotation: 0, offsetX: 0, offsetY: 0 },
+      formB: { enabled: false, shape: "circle", scale: 35, width: 35, height: 35, rotation: 0, offsetX: 0, offsetY: 0 },
+      interrelation: "overlapping",
+      invertFigureGround: false,
+      wireframe: false,
+      modifiers: {
+        repetition: { enabled: true, gridType: "curved", cols: 12, rows: 6, spacing: 6, shearAngle: 0, slideOffset: 0, curveIntensity: 28, activeClipping: false, showGridLines: false, gridLineWidth: 1.5, checkerInvert: false },
+        structure: { enabled: false, mode: "rhythmic", colRatio: 1.8, rowRatio: 1.8, bandThickness: 3, showBands: false },
+        similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
+        gradation: { enabled: true, type: "rotation", pathway: "diagonal", range: 180, steps: 2, reverse: false },
+        radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
+        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle_eq", highlightColor: true, showReticle: false },
+        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "star4", scaleFactor: 2.2, angle: 45, highlightContrast: false },
+        concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
+        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
+      },
+      showSafeBounds: false,
+      zoomLevel: 1.0
+    }
+  },
+  {
+    id: "rhythmic_cadence",
+    name: "Swiss Rhythmic Compression",
+    category: "Cartesian Grid",
+    description: "Proportional column cadence A:B:A:B with architectural band lines.",
+    state: {
+      aspectRatio: "3:4",
+      paletteId: "monochrome",
+      formA: { shape: "rhombus", scale: 80, width: 80, height: 80, rotation: 0, offsetX: 0, offsetY: 0 },
+      formB: { enabled: true, shape: "circle", scale: 50, width: 50, height: 50, rotation: 0, offsetX: 0, offsetY: 0 },
+      interrelation: "detachment",
+      invertFigureGround: false,
+      wireframe: false,
+      modifiers: {
+        repetition: { enabled: true, gridType: "basic", cols: 5, rows: 6, spacing: 12, shearAngle: 0, slideOffset: 0, curveIntensity: 0, activeClipping: false, showGridLines: false, gridLineWidth: 1.5, checkerInvert: false },
+        structure: { enabled: true, mode: "rhythmic", colRatio: 2.2, rowRatio: 1.6, bandThickness: 2, showBands: true },
+        similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
+        gradation: { enabled: false, type: "rotation", pathway: "diagonal", range: 180, steps: 1, reverse: false },
+        radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
+        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle_eq", highlightColor: true, showReticle: false },
+        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "star4", scaleFactor: 2.2, angle: 45, highlightContrast: false },
+        concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
+        texture: { enabled: false, target: "shapes", mode: "grain", density: 50, scale: 14, contrast: 40 },
+        space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
+      },
+      showSafeBounds: true,
+      zoomLevel: 1.0
+    }
+  }
+];
+
+
+  /**
+ * STUDIO WONG PRO — Exporter Module
+ * High-resolution PNG (Retina 2x/4x), SVG Vector generation, JSON project save/load.
+ */
+const StudioExporter = {
+  /**
+   * Export high-res raster PNG
+   */
+  exportPNG(canvas, engine, palette, scaleMultiplier = 2, filename = "studio-wong-composition.png") {
+    const origW = canvas.width;
+    const origH = canvas.height;
+    
+    // Create high-res offscreen canvas
+    const offscreen = document.createElement("canvas");
+    offscreen.width = origW * (scaleMultiplier / (window.devicePixelRatio || 1));
+    offscreen.height = origH * (scaleMultiplier / (window.devicePixelRatio || 1));
+    
+    // Temporarily attach engine to offscreen canvas
+    const origCanvas = engine.canvas;
+    engine.canvas = offscreen;
+    engine.render(palette);
+    engine.canvas = origCanvas;
+
+    // Trigger download
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = offscreen.toDataURL("image/png", 1.0);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  },
+
+  /**
+   * Export JSON project state
+   */
+  exportJSON(state, filename = "studio-wong-project.json") {
+    const jsonStr = JSON.stringify(state, null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  },
+
+  /**
+   * Export Vector SVG
+   */
+  exportSVG(canvas, state, palette, filename = "studio-wong-vector.svg") {
+    // Generate clean SVG container wrapping paths
+    const width = canvas.width / (window.devicePixelRatio || 1);
+    const height = canvas.height / (window.devicePixelRatio || 1);
+    const bg = state.invertFigureGround ? palette.fg : palette.bg;
+    const fg = state.invertFigureGround ? palette.bg : palette.fg;
+
+    // We convert the rendered canvas to SVG image or vector description
+    const imgData = canvas.toDataURL("image/png", 1.0);
+
+    const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+  <!-- Studio Wong Pro Vector/Composition Export (${width}x${height}) -->
+  <defs>
+    <style>
+      .bg { fill: ${bg}; }
+      .fg { fill: ${fg}; }
+    </style>
+  </defs>
+  <rect class="bg" width="100%" height="100%"/>
+  <image href="${imgData}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid meet"/>
+</svg>`;
+
+    const blob = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  },
+
+  /**
+   * Copy to clipboard as Data URL
+   */
+  async copyDataURL(canvas) {
+    const dataUrl = canvas.toDataURL("image/png", 1.0);
+    await navigator.clipboard.writeText(dataUrl);
+  }
+};
+
+
+  /**
+ * BASIC STUDIO PRO — Master Application Controller
+ * Inspired by Abstract Studio: Canvas-First, Floating Capas Stack, Shape Inspector & Procedural Stack.
+ */
+const ASPECT_RATIOS = {
+  "1:1": { label: "1:1 Square", w: 600, h: 600, css: "1 / 1" },
+  "9:16": { label: "9:16 Story", w: 450, h: 800, css: "9 / 16" },
+  "4:3": { label: "4:3 Editorial", w: 800, h: 600, css: "4 / 3" },
+  "3:4": { label: "3:4 Poster", w: 600, h: 800, css: "3 / 4" },
+  "16:9": { label: "16:9 Cinema", w: 800, h: 450, css: "16 / 9" }
+};
+class StudioProApp {
+  constructor() {
+    this.canvas = document.getElementById("studio-canvas");
+    this.canvasContainer = document.getElementById("canvas-viewport-container");
+    this.artboardWrapper = document.getElementById("artboard-wrapper");
+    
+    this.engine = new StudioEngine(this.canvas);
+    this.state = JSON.parse(JSON.stringify(defaultStudioState));
+    
+    // Viewport Navigation state
+    this.zoom = 1.0;
+    this.panX = 0;
+    this.panY = 0;
+    this.isPanning = false;
+    this.panStartX = 0;
+    this.panStartY = 0;
+    this.isSpacePressed = false;
+
+    // Active Layer Management (Each layer is a module!)
+    this.activeLayerId = "layer-2"; // 'layer-1' (Form A) or 'layer-2' (Form B)
+
+    // Palette (Abstract Studio default: Clean Monochrome / Paper White & Deep Ink)
+    this.activePaletteId = "monochrome";
+    this.customColors = {
+      bg: "#ffffff",
+      fg: "#18181f",
+      accent: "#18181f",
+      grid: "#dcdfe6"
+    };
+
+    // History Stack
+    this.history = [];
+    this.historyIndex = -1;
+    this.maxHistory = 60;
+    this.historyLabels = [];
+
+    // Controls Rail & Inspector Flyout State
+    this.activeRailTab = "module";
+    this.isFlyoutOpen = true;
+
+    // Dragging canvas handles
+    this.activeDragHandle = null;
+
+    this.init();
+  }
+
+  init() {
+    this.applyAspectRatio(this.state.aspectRatio || "1:1");
+    this.pushHistory("Initial Canvas State");
+    this.setupViewportEvents();
+    this.setupKeyboardShortcuts();
+    this.setupHeaderActions();
+    this.setupFloatingLayersPanel();
+    this.setupControlsRail();
+    this.setupLayoutStructure();
+    this.setupFormalStructure();
+    this.setupSimilarity();
+    this.setupShapeInspector();
+    this.setupInteractiveHandles();
+    this.setupModifierCards();
+
+    // Initial render
+    this.updateActivePalette();
+    this.render();
+    this.centerArtboard();
+    this.syncShapeInspectorWithActiveLayer();
+    this.syncStructureInspectorWithActiveLayer();
+    this.syncFormalStructureInspectorWithActiveLayer();
+    this.syncSimilarityInspectorWithActiveLayer();
+    this.updateLayerCardsUI();
+
+    // Sync header button states
+    const gridBtn = document.getElementById("btn-toggle-grid");
+    if (gridBtn) gridBtn.classList.toggle("active", !!this.state.showSafeBounds);
+    const invertBtn = document.getElementById("btn-toggle-invert");
+    if (invertBtn) invertBtn.classList.toggle("active", !!this.state.invertFigureGround);
+  }
+
+  getActivePalette() {
+    if (this.state.invertFigureGround) {
+      return {
+        bg: "#18181f",
+        fg: "#ffffff",
+        accent: "#f43f5e",
+        grid: "rgba(255, 255, 255, 0.14)",
+        isDark: true
+      };
+    } else {
+      return {
+        bg: "#ffffff",
+        fg: this.customColors.fg || "#18181f",
+        accent: "#18181f",
+        grid: "rgba(0, 0, 0, 0.08)",
+        isDark: false
+      };
+    }
+  }
+
+  updateActivePalette() {
+    // Keep customColors.bg consistent
+    this.customColors.bg = this.state.invertFigureGround ? "#18181f" : "#ffffff";
+  }
+
+  getActiveModule() {
+    if (this.activeLayerId === "layer-2" && this.state.formB.enabled) {
+      return this.state.formB;
+    }
+    return this.state.formA;
+  }
+
+  getActiveLayerStructure() {
+    const mod = this.getActiveModule();
+    if (!mod) return null;
+    if (!mod.structure) {
+      mod.structure = {
+        enabled: false,
+        mode: "repetition",
+        repetition: {
+          gridType: "basic",
+          cols: 4,
+          rows: 4,
+          spacing: 0,
+          shearAngle: 15,
+          slideOffset: 0.5,
+          curveIntensity: 18,
+          activeClipping: false,
+          showGridLines: false,
+          gridLineWidth: 1.5,
+          checkerInvert: false
+        },
+        radiation: {
+          scheme: "centrifugal",
+          rays: 12,
+          rings: 5,
+          spiralTwist: 45,
+          activeClipping: false,
+          showRays: false,
+          showRings: false,
+          checkerInvert: false,
+          centerX: 0,
+          centerY: 0
+        },
+        formalStructure: {
+          enabled: false,
+          colRatio: 1.0,
+          rowRatio: 1.0,
+          showGridLines: false
+        },
+        similarity: {
+          enabled: false,
+          kinshipType: "distortion",
+          intensity: 50,
+          cellJitter: 0,
+          seed: 42
+        }
+      };
+    }
+    if (!mod.structure.similarity) {
+      mod.structure.similarity = {
+        enabled: false,
+        kinshipType: "distortion",
+        intensity: 50,
+        cellJitter: 0,
+        seed: 42
+      };
+    }
+    return mod.structure;
+  }
+
+  render() {
+    if (!this.engine || !this.canvas) return;
+    this.engine.state = this.state;
+    const palette = this.getActivePalette();
+    this.engine.render(palette);
+    this.updateHUD();
+    this.updateHandlesPosition();
+  }
+
+  applyAspectRatio(key) {
+    const cfg = ASPECT_RATIOS[key] || ASPECT_RATIOS["1:1"];
+    this.state.aspectRatio = key;
+    this.canvas.width = cfg.w;
+    this.canvas.height = cfg.h;
+    this.canvas.style.aspectRatio = cfg.css;
+
+    // Update dimensions HUD
+    const resText = document.getElementById("hud-resolution");
+    if (resText) resText.textContent = `${cfg.w} × ${cfg.h} PX`;
+
+    const selectEl = document.getElementById("canvas-aspect-ratio");
+    if (selectEl && selectEl.value !== key) selectEl.value = key;
+  }
+
+  /* =========================================================================
+     TOP APPLICATION BAR ACTIONS
+     ========================================================================= */
+
+  setupHeaderActions() {
+    // 1. Aspect Ratio Dropdown
+    const aspectSelect = document.getElementById("canvas-aspect-ratio");
+    if (aspectSelect) {
+      aspectSelect.addEventListener("change", (e) => {
+        const ratio = e.target.value;
+        this.applyAspectRatio(ratio);
+        this.render();
+        this.centerArtboard();
+        this.pushHistory(`Aspect Ratio: ${ratio}`);
+      });
+    }
+
+    // 2. Toggle Grid Guides Button
+    const gridBtn = document.getElementById("btn-toggle-grid");
+    if (gridBtn) {
+      gridBtn.addEventListener("click", () => {
+        this.state.showSafeBounds = !this.state.showSafeBounds;
+        gridBtn.classList.toggle("active", this.state.showSafeBounds);
+        this.render();
+        this.pushHistory(`Toggle Grid: ${this.state.showSafeBounds}`);
+      });
+    }
+
+    // 3. Toggle Invert Tone Button
+    const invertBtn = document.getElementById("btn-toggle-invert");
+    if (invertBtn) {
+      invertBtn.addEventListener("click", () => {
+        this.state.invertFigureGround = !this.state.invertFigureGround;
+        invertBtn.classList.toggle("active", this.state.invertFigureGround);
+        this.updateActivePalette();
+        this.render();
+        this.pushHistory(`Toggle Invert Tone: ${this.state.invertFigureGround}`);
+      });
+    }
+
+    // 4. Randomize Button
+    const randomBtn = document.getElementById("btn-random-preset");
+    if (randomBtn) {
+      randomBtn.addEventListener("click", () => {
+        const randomIndex = Math.floor(Math.random() * STUDIO_PRESETS.length);
+        const preset = STUDIO_PRESETS[randomIndex];
+        this.loadPreset(preset);
+      });
+    }
+
+    // 5. Copy SVG Code
+    const copySvgBtn = document.getElementById("btn-copy-svg-code");
+    if (copySvgBtn) {
+      copySvgBtn.addEventListener("click", async () => {
+        try {
+          const width = this.canvas.width / (window.devicePixelRatio || 1);
+          const height = this.canvas.height / (window.devicePixelRatio || 1);
+          const bg = this.state.invertFigureGround ? "#18181f" : "#ffffff";
+          const imgData = this.canvas.toDataURL("image/png", 1.0);
+          const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}"><rect width="100%" height="100%" fill="${bg}"/><image href="${imgData}" width="${width}" height="${height}"/></svg>`;
+          await navigator.clipboard.writeText(svgString);
+          
+          const origText = copySvgBtn.querySelector("span").textContent;
+          copySvgBtn.querySelector("span").textContent = "Copied!";
+          setTimeout(() => copySvgBtn.querySelector("span").textContent = origText, 1500);
+        } catch (err) {
+          alert("SVG copied to clipboard!");
+        }
+      });
+    }
+
+    // 6. Download SVG File
+    const downloadSvgBtn = document.getElementById("btn-download-svg");
+    if (downloadSvgBtn) {
+      downloadSvgBtn.addEventListener("click", () => {
+        StudioExporter.exportSVG(this.canvas, this.state, this.getActivePalette(), "basic-studio-composition.svg");
+      });
+    }
+
+    // 7. Config Button
+    const configBtn = document.getElementById("btn-open-config");
+    if (configBtn) {
+      configBtn.addEventListener("click", () => {
+        StudioExporter.exportJSON(this.state, "basic-studio-project.json");
+      });
+    }
+  }
+
+  /* =========================================================================
+     FLOATING CAPAS (LAYERS) STACK — EACH LAYER IS A MODULE!
+     ========================================================================= */
+
+  setupFloatingLayersPanel() {
+    const card1 = document.getElementById("layer-card-1");
+    const card2 = document.getElementById("layer-card-2");
+    const addBtn = document.getElementById("btn-add-pattern");
+    const container = document.getElementById("layers-stack-container");
+
+    // Select Layer 1
+    card1?.addEventListener("click", (e) => {
+      if (e.target.closest(".layer-action-btn")) return;
+      this.selectLayer("layer-1");
+    });
+
+    // Select Layer 2
+    card2?.addEventListener("click", (e) => {
+      if (e.target.closest(".layer-action-btn")) return;
+      this.selectLayer("layer-2");
+    });
+
+    // Eye toggle buttons (Layer 1 & Layer 2)
+    document.querySelectorAll(".btn-layer-eye").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const layerId = btn.dataset.layer;
+        if (layerId === "layer-1") {
+          this.state.formA.visible = this.state.formA.visible === false ? true : false;
+          this.pushHistory(`Layer 1 Visibility: ${this.state.formA.visible}`);
+        } else if (layerId === "layer-2") {
+          this.state.formB.visible = this.state.formB.visible === false ? true : false;
+          this.pushHistory(`Layer 2 Visibility: ${this.state.formB.visible}`);
+        }
+        this.updateLayerCardsUI();
+        this.render();
+      });
+    });
+
+    // Trash / Delete buttons
+    document.querySelectorAll(".btn-layer-delete").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const layerId = btn.dataset.layer;
+        if (layerId === "layer-2") {
+          this.state.formB.enabled = false;
+          this.state.formB.visible = false;
+          if (this.activeLayerId === "layer-2") {
+            this.selectLayer("layer-1");
+          }
+          this.pushHistory("Deleted Layer 2");
+        } else if (layerId === "layer-1") {
+          this.state.formA.visible = !this.state.formA.visible;
+          this.pushHistory("Toggled Layer 1");
+        }
+        this.updateLayerCardsUI();
+        this.render();
+      });
+    });
+
+    // Add Pattern Button (Adds Layer 2 if disabled)
+    addBtn?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.state.formB.enabled = true;
+      this.state.formB.visible = true;
+      this.selectLayer("layer-2");
+      this.updateLayerCardsUI();
+      this.render();
+      this.pushHistory("Added Layer 2 Pattern");
+    });
+
+    // HTML5 Drag and Drop Sorting between Layer Cards
+    let draggedCard = null;
+    [card1, card2].forEach(card => {
+      if (!card) return;
+
+      card.addEventListener("dragstart", (e) => {
+        draggedCard = card;
+        card.classList.add("is-dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", card.dataset.layerId || "");
+      });
+
+      card.addEventListener("dragend", () => {
+        card.classList.remove("is-dragging");
+        document.querySelectorAll(".layer-card").forEach(c => c.classList.remove("drag-over"));
+        draggedCard = null;
+      });
+
+      card.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        if (draggedCard && draggedCard !== card) {
+          card.classList.add("drag-over");
+        }
+      });
+
+      card.addEventListener("dragleave", () => {
+        card.classList.remove("drag-over");
+      });
+
+      card.addEventListener("drop", (e) => {
+        e.preventDefault();
+        card.classList.remove("drag-over");
+        if (draggedCard && draggedCard !== card && container) {
+          const cards = Array.from(container.children);
+          const draggedIdx = cards.indexOf(draggedCard);
+          const targetIdx = cards.indexOf(card);
+          if (draggedIdx < targetIdx) {
+            container.insertBefore(draggedCard, card.nextSibling);
+          } else {
+            container.insertBefore(draggedCard, card);
+          }
+          const newOrder = Array.from(container.children).map(c => c.dataset.layerId).filter(Boolean);
+          this.state.layerOrder = newOrder;
+          this.render();
+          this.pushHistory(`Reorder Layers: ${newOrder.join(" > ")}`);
+        }
+      });
+    });
+
+    // Also support clicking grip handle to swap layers immediately
+    document.querySelectorAll(".layer-drag-handle").forEach(handle => {
+      handle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (!container || container.children.length < 2) return;
+        const first = container.firstElementChild;
+        const last = container.lastElementChild;
+        container.insertBefore(last, first);
+        const newOrder = Array.from(container.children).map(c => c.dataset.layerId).filter(Boolean);
+        this.state.layerOrder = newOrder;
+        this.render();
+        this.pushHistory(`Swap Layers: ${newOrder.join(" > ")}`);
+      });
+    });
+  }
+
+  selectLayer(layerId) {
+    this.activeLayerId = layerId;
+    this.updateLayerCardsUI();
+    this.syncShapeInspectorWithActiveLayer();
+    this.syncStructureInspectorWithActiveLayer();
+    this.syncFormalStructureInspectorWithActiveLayer();
+    this.syncSimilarityInspectorWithActiveLayer();
+  }
+
+  updateLayerCardsUI() {
+    const card1 = document.getElementById("layer-card-1");
+    const card2 = document.getElementById("layer-card-2");
+    const badge = document.getElementById("active-layer-indicator-badge");
+    const layersCountBadge = document.getElementById("layers-count-badge");
+    const layersStatus = document.getElementById("hud-layers-status");
+
+    const count = this.state.formB.enabled ? 2 : 1;
+    if (layersCountBadge) layersCountBadge.textContent = count;
+    if (layersStatus) layersStatus.textContent = `${count} LAYERS`;
+
+    const isVis1 = this.state.formA.visible !== false;
+    const isVis2 = this.state.formB.enabled && this.state.formB.visible !== false;
+
+    if (card1) {
+      card1.classList.toggle("is-active", this.activeLayerId === "layer-1");
+      card1.classList.toggle("is-hidden", !isVis1);
+      const eye1 = card1.querySelector(".btn-layer-eye");
+      if (eye1) {
+        eye1.innerHTML = isVis1 
+          ? '<i data-lucide="eye" class="w-3.5 h-3.5"></i>' 
+          : '<i data-lucide="eye-off" class="w-3.5 h-3.5 opacity-40"></i>';
+      }
+    }
+
+    if (card2) {
+      card2.style.display = this.state.formB.enabled ? "flex" : "none";
+      card2.classList.toggle("is-active", this.activeLayerId === "layer-2");
+      card2.classList.toggle("is-hidden", !isVis2);
+      const eye2 = card2.querySelector(".btn-layer-eye");
+      if (eye2) {
+        eye2.innerHTML = isVis2 
+          ? '<i data-lucide="eye" class="w-3.5 h-3.5"></i>' 
+          : '<i data-lucide="eye-off" class="w-3.5 h-3.5 opacity-40"></i>';
+      }
+    }
+
+    if (badge) {
+      badge.textContent = this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1";
+    }
+
+    // Update subtitles with shape, draw mode, scale, and structure status
+    const sub1 = document.getElementById("layer-sub-1");
+    if (sub1) {
+      const mode1 = this.state.formA.wireframe !== false ? "stroke" : "fill";
+      const s1 = this.state.formA.structure;
+      const structText = s1?.enabled ? ` • ${s1.mode === "radiation" ? "radiation" : "grid"}` : "";
+      sub1.textContent = `${this.state.formA.shape} • ${mode1}${structText}`;
+    }
+
+    const sub2 = document.getElementById("layer-sub-2");
+    if (sub2) {
+      const mode2 = this.state.formB.wireframe !== false ? "stroke" : "fill";
+      const s2 = this.state.formB.structure;
+      const structText = s2?.enabled ? ` • ${s2.mode === "radiation" ? "radiation" : "grid"}` : "";
+      sub2.textContent = `${this.state.formB.shape} • ${mode2}${structText}`;
+    }
+
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }
+
+  /* =========================================================================
+     CONTROLS RAIL & FLYOUT CONTROLLER (Abstract Studio Dock)
+     ========================================================================= */
+
+  setupControlsRail() {
+    const railButtons = document.querySelectorAll("#controls-rail .rail-btn");
+    railButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const tab = btn.dataset.railTab;
+        if (this.activeRailTab === tab && this.isFlyoutOpen) {
+          // Clicking active button toggles flyout closed
+          this.isFlyoutOpen = false;
+        } else {
+          this.activeRailTab = tab;
+          this.isFlyoutOpen = true;
+        }
+        this.updateRailUI();
+      });
+    });
+
+    // Close button inside any flyout tab header
+    document.querySelectorAll(".close-flyout-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.isFlyoutOpen = false;
+        this.updateRailUI();
+      });
+    });
+
+    this.updateRailUI();
+    this.updateRailIndicatorDots();
+  }
+
+  updateRailUI() {
+    const flyout = document.getElementById("inspector-flyout");
+    if (flyout) {
+      flyout.classList.toggle("is-closed", !this.isFlyoutOpen);
+    }
+
+    const railButtons = document.querySelectorAll("#controls-rail .rail-btn");
+    railButtons.forEach(btn => {
+      const isSelected = this.isFlyoutOpen && btn.dataset.railTab === this.activeRailTab;
+      btn.classList.toggle("active", isSelected);
+    });
+
+    const tabContents = document.querySelectorAll(".flyout-tab-content");
+    tabContents.forEach(tabEl => {
+      const match = tabEl.dataset.flyoutTab === this.activeRailTab;
+      tabEl.classList.toggle("hidden", !match);
+    });
+
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }
+
+  updateRailIndicatorDots() {
+    const railButtons = document.querySelectorAll("#controls-rail .rail-btn");
+    railButtons.forEach(btn => {
+      const tab = btn.dataset.railTab;
+      let isActive = false;
+      const mod = this.getActiveModule();
+      if (tab === "module") {
+        isActive = true;
+      } else if (tab === "layout") {
+        isActive = !!mod?.structure?.enabled;
+      } else if (tab === "structure") {
+        isActive = !!mod?.structure?.formalStructure?.enabled;
+      } else if (tab === "similarity") {
+        isActive = !!mod?.structure?.similarity?.enabled;
+      } else if (this.state.modifiers && this.state.modifiers[tab]) {
+        isActive = !!this.state.modifiers[tab].enabled;
+      }
+      btn.classList.toggle("has-modifier-active", isActive);
+    });
+  }
+
+  syncStructureInspectorWithActiveLayer() {
+    const struct = this.getActiveLayerStructure();
+    if (!struct) return;
+
+    const toggleSwitch = document.getElementById("toggle-layout-structure");
+    const btnRep = document.getElementById("btn-layout-repetition");
+    const btnRad = document.getElementById("btn-layout-radiation");
+    const pnlRep = document.getElementById("subpanel-repetition");
+    const pnlRad = document.getElementById("subpanel-radiation");
+
+    const layoutBadge = document.getElementById("badge-layout-layer");
+    if (layoutBadge) layoutBadge.textContent = this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1";
+
+    if (toggleSwitch) toggleSwitch.checked = !!struct.enabled;
+
+    const isRad = struct.mode === "radiation";
+    btnRep?.classList.toggle("active", !isRad);
+    btnRad?.classList.toggle("active", isRad);
+
+    if (isRad) {
+      pnlRep?.classList.add("hidden");
+      pnlRad?.classList.remove("hidden");
+    } else {
+      pnlRep?.classList.remove("hidden");
+      pnlRad?.classList.add("hidden");
+    }
+
+    // Sync Repetition Controls
+    const rep = struct.repetition;
+    if (rep) {
+      document.querySelectorAll("[data-grid-var]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.gridVar === rep.gridType);
+      });
+      this.syncControlValue("input-layout-cols", rep.cols || 4);
+      this.syncControlValue("num-layout-cols", rep.cols || 4);
+      this.syncControlValue("input-layout-rows", rep.rows || 4);
+      this.syncControlValue("num-layout-rows", rep.rows || 4);
+      this.syncCheckbox("chk-rep-clip", !!rep.activeClipping);
+      this.syncCheckbox("chk-rep-gridlines", !!rep.showGridLines);
+      this.syncCheckbox("chk-rep-checker", !!rep.checkerInvert);
+    }
+
+    // Sync Radiation Controls
+    const rad = struct.radiation;
+    if (rad) {
+      document.querySelectorAll("[data-rad-scheme]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.radScheme === rad.scheme);
+      });
+      this.syncControlValue("input-layout-rays", rad.rays || 12);
+      this.syncControlValue("num-layout-rays", rad.rays || 12);
+      this.syncControlValue("input-layout-rings", rad.rings || 5);
+      this.syncControlValue("num-layout-rings", rad.rings || 5);
+      this.syncControlValue("input-layout-twist", rad.spiralTwist !== undefined ? rad.spiralTwist : 45);
+      this.syncControlValue("num-layout-twist", rad.spiralTwist !== undefined ? rad.spiralTwist : 45);
+      this.syncCheckbox("chk-rad-clip", !!rad.activeClipping);
+      this.syncCheckbox("chk-rad-gridlines", !!(rad.showRays || rad.showRings));
+      this.syncCheckbox("chk-rad-checker", !!rad.checkerInvert);
+    }
+
+    this.updateRailIndicatorDots();
+  }
+
+  /* =========================================================================
+     LAYOUT STRUCTURE CONTROLLER (Per Active Layer)
+     ========================================================================= */
+
+  setupLayoutStructure() {
+    const toggleSwitch = document.getElementById("toggle-layout-structure");
+    const btnRep = document.getElementById("btn-layout-repetition");
+    const btnRad = document.getElementById("btn-layout-radiation");
+
+    // Header Toggle Switch
+    toggleSwitch?.addEventListener("change", (e) => {
+      const struct = this.getActiveLayerStructure();
+      if (!struct) return;
+      const enabled = e.target.checked;
+      struct.enabled = enabled;
+      if (!enabled && struct.formalStructure) {
+        struct.formalStructure.enabled = false;
+      }
+      this.syncStructureInspectorWithActiveLayer();
+      this.syncFormalStructureInspectorWithActiveLayer();
+      this.syncSimilarityInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      this.pushHistory(`Layer ${this.activeLayerId} Layout Structure: ${enabled ? "ON" : "OFF"}`);
+    });
+
+    const setMode = (mode) => {
+      const struct = this.getActiveLayerStructure();
+      if (!struct) return;
+      struct.mode = mode;
+      struct.enabled = true;
+      if (mode === "radiation" && struct.formalStructure) {
+        struct.formalStructure.enabled = false;
+      }
+      this.syncStructureInspectorWithActiveLayer();
+      this.syncFormalStructureInspectorWithActiveLayer();
+      this.syncSimilarityInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      this.pushHistory(`Layer ${this.activeLayerId} Layout Mode: ${mode}`);
+    };
+
+    btnRep?.addEventListener("click", () => setMode("repetition"));
+    btnRad?.addEventListener("click", () => setMode("radiation"));
+
+    // Repetition Variations (Grid, Curved, Brick, Diagonal)
+    document.querySelectorAll("[data-grid-var]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const struct = this.getActiveLayerStructure();
+        if (!struct) return;
+        struct.repetition.gridType = btn.dataset.gridVar;
+        struct.mode = "repetition";
+        struct.enabled = true;
+        this.syncStructureInspectorWithActiveLayer();
+        this.render();
+        this.updateLayerCardsUI();
+        this.pushHistory(`Layer ${this.activeLayerId} Grid Var: ${btn.dataset.gridVar}`);
+      });
+    });
+
+    // Repetition Sliders (Columns, Rows)
+    this.bindSliderWithNumber("input-layout-cols", "num-layout-cols", (val) => {
+      const struct = this.getActiveLayerStructure();
+      if (!struct) return;
+      struct.repetition.cols = val;
+      struct.mode = "repetition";
+      this.render();
+    });
+
+    this.bindSliderWithNumber("input-layout-rows", "num-layout-rows", (val) => {
+      const struct = this.getActiveLayerStructure();
+      if (!struct) return;
+      struct.repetition.rows = val;
+      struct.mode = "repetition";
+      this.render();
+    });
+
+    // Repetition Checkboxes
+    const chkRepClip = document.getElementById("chk-rep-clip");
+    if (chkRepClip) {
+      chkRepClip.addEventListener("change", (e) => {
+        const struct = this.getActiveLayerStructure();
+        if (struct) struct.repetition.activeClipping = e.target.checked;
+        this.render();
+      });
+    }
+
+    const chkRepGrid = document.getElementById("chk-rep-gridlines");
+    if (chkRepGrid) {
+      chkRepGrid.addEventListener("change", (e) => {
+        const struct = this.getActiveLayerStructure();
+        if (struct) {
+          struct.repetition.showGridLines = e.target.checked;
+          if (struct.formalStructure) {
+            struct.formalStructure.showGridLines = e.target.checked;
+          }
+        }
+        const structGrid = document.getElementById("chk-struct-gridlines");
+        if (structGrid) structGrid.checked = e.target.checked;
+        this.render();
+      });
+    }
+
+    const chkRepChecker = document.getElementById("chk-rep-checker");
+    if (chkRepChecker) {
+      chkRepChecker.addEventListener("change", (e) => {
+        const struct = this.getActiveLayerStructure();
+        if (struct) struct.repetition.checkerInvert = e.target.checked;
+        this.render();
+      });
+    }
+
+    // Radiation Schemes (Centrifugal, Concentric, Spiral, Dual-center)
+    document.querySelectorAll("[data-rad-scheme]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const struct = this.getActiveLayerStructure();
+        if (!struct) return;
+        struct.radiation.scheme = btn.dataset.radScheme;
+        struct.mode = "radiation";
+        struct.enabled = true;
+        this.syncStructureInspectorWithActiveLayer();
+        this.render();
+        this.updateLayerCardsUI();
+        this.pushHistory(`Layer ${this.activeLayerId} Rad Scheme: ${btn.dataset.radScheme}`);
+      });
+    });
+
+    // Radiation Sliders
+    this.bindSliderWithNumber("input-layout-rays", "num-layout-rays", (val) => {
+      const struct = this.getActiveLayerStructure();
+      if (!struct) return;
+      struct.radiation.rays = val;
+      struct.mode = "radiation";
+      this.render();
+    });
+
+    this.bindSliderWithNumber("input-layout-rings", "num-layout-rings", (val) => {
+      const struct = this.getActiveLayerStructure();
+      if (!struct) return;
+      struct.radiation.rings = val;
+      struct.mode = "radiation";
+      this.render();
+    });
+
+    this.bindSliderWithNumber("input-layout-twist", "num-layout-twist", (val) => {
+      const struct = this.getActiveLayerStructure();
+      if (!struct) return;
+      struct.radiation.spiralTwist = val;
+      struct.mode = "radiation";
+      this.render();
+    });
+
+    // Radiation Checkboxes
+    const chkRadClip = document.getElementById("chk-rad-clip");
+    if (chkRadClip) {
+      chkRadClip.addEventListener("change", (e) => {
+        const struct = this.getActiveLayerStructure();
+        if (struct) struct.radiation.activeClipping = e.target.checked;
+        this.render();
+      });
+    }
+
+    const chkRadGrid = document.getElementById("chk-rad-gridlines");
+    if (chkRadGrid) {
+      chkRadGrid.addEventListener("change", (e) => {
+        const struct = this.getActiveLayerStructure();
+        if (struct) {
+          struct.radiation.showRays = e.target.checked;
+          struct.radiation.showRings = e.target.checked;
+        }
+        this.render();
+      });
+    }
+
+    const chkRadChecker = document.getElementById("chk-rad-checker");
+    if (chkRadChecker) {
+      chkRadChecker.addEventListener("change", (e) => {
+        const struct = this.getActiveLayerStructure();
+        if (struct) struct.radiation.checkerInvert = e.target.checked;
+        this.render();
+      });
+    }
+  }
+
+  /* =========================================================================
+     FORMAL STRUCTURE CONTROLLER (Exact match to mockup media_1790991477208.png)
+     Rhythmic Col & Row Ratios, Warning Alert Banner, Visible Grid Lines
+     ========================================================================= */
+
+  syncFormalStructureInspectorWithActiveLayer() {
+    const mod = this.getActiveModule();
+    if (!mod) return;
+
+    if (!mod.structure) {
+      mod.structure = this.getActiveLayerStructure();
+    }
+    if (!mod.structure.formalStructure) {
+      mod.structure.formalStructure = {
+        enabled: false,
+        colRatio: 1.0,
+        rowRatio: 1.0,
+        showGridLines: false
+      };
+    }
+
+    const fs = mod.structure.formalStructure;
+
+    // Update layer badge
+    const badge = document.getElementById("badge-structure-layer");
+    if (badge) badge.textContent = this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1";
+
+    // Dynamic warning: This control cannot be used when Radiation is active in Layout structure control
+    const isRadActive = !!(mod.structure.enabled && mod.structure.mode === "radiation");
+    const warnBox = document.getElementById("warning-structure-radiation");
+    const controlsGroup = document.getElementById("struct-controls-group");
+    const toggle = document.getElementById("toggle-structure-active");
+
+    if (warnBox) warnBox.classList.toggle("hidden", !isRadActive);
+    if (controlsGroup) {
+      controlsGroup.classList.toggle("opacity-40", isRadActive);
+      controlsGroup.classList.toggle("pointer-events-none", isRadActive);
+    }
+
+    if (toggle) {
+      toggle.checked = !!fs.enabled;
+      toggle.disabled = isRadActive;
+    }
+
+    this.syncControlValue("input-struct-col-ratio", fs.colRatio !== undefined ? fs.colRatio : 1);
+    this.syncControlValue("num-struct-col-ratio", fs.colRatio !== undefined ? fs.colRatio : 1);
+    this.syncControlValue("input-struct-row-ratio", fs.rowRatio !== undefined ? fs.rowRatio : 1);
+    this.syncControlValue("num-struct-row-ratio", fs.rowRatio !== undefined ? fs.rowRatio : 1);
+    this.syncCheckbox("chk-struct-gridlines", !!fs.showGridLines);
+
+    this.updateRailIndicatorDots();
+  }
+
+  setupFormalStructure() {
+    const toggle = document.getElementById("toggle-structure-active");
+
+    toggle?.addEventListener("change", (e) => {
+      const mod = this.getActiveModule();
+      if (!mod || !mod.structure) return;
+      if (!mod.structure.formalStructure) {
+        mod.structure.formalStructure = { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false };
+      }
+      const enabled = e.target.checked;
+      mod.structure.formalStructure.enabled = enabled;
+      if (enabled) {
+        mod.structure.enabled = true;
+        if (mod.structure.mode === "radiation") {
+          mod.structure.mode = "repetition";
+        }
+      }
+      this.syncStructureInspectorWithActiveLayer();
+      this.syncFormalStructureInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      this.pushHistory(`Layer ${this.activeLayerId} Formal Structure: ${enabled ? "ON" : "OFF"}`);
+    });
+
+    this.bindSliderWithNumber("input-struct-col-ratio", "num-struct-col-ratio", (val) => {
+      const mod = this.getActiveModule();
+      if (!mod || !mod.structure) return;
+      if (!mod.structure.formalStructure) {
+        mod.structure.formalStructure = { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false };
+      }
+      mod.structure.formalStructure.colRatio = val;
+      mod.structure.formalStructure.enabled = true;
+      mod.structure.enabled = true;
+      if (mod.structure.mode === "radiation") {
+        mod.structure.mode = "repetition";
+      }
+      if (toggle) toggle.checked = true;
+      this.syncStructureInspectorWithActiveLayer();
+      this.syncFormalStructureInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+    }, "Col Ratio");
+
+    this.bindSliderWithNumber("input-struct-row-ratio", "num-struct-row-ratio", (val) => {
+      const mod = this.getActiveModule();
+      if (!mod || !mod.structure) return;
+      if (!mod.structure.formalStructure) {
+        mod.structure.formalStructure = { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false };
+      }
+      mod.structure.formalStructure.rowRatio = val;
+      mod.structure.formalStructure.enabled = true;
+      mod.structure.enabled = true;
+      if (mod.structure.mode === "radiation") {
+        mod.structure.mode = "repetition";
+      }
+      if (toggle) toggle.checked = true;
+      this.syncStructureInspectorWithActiveLayer();
+      this.syncFormalStructureInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+    }, "Row Ratio");
+
+    const chkGrid = document.getElementById("chk-struct-gridlines");
+    if (chkGrid) {
+      chkGrid.addEventListener("change", (e) => {
+        const mod = this.getActiveModule();
+        if (!mod || !mod.structure) return;
+        if (!mod.structure.formalStructure) {
+          mod.structure.formalStructure = { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false };
+        }
+        mod.structure.formalStructure.showGridLines = e.target.checked;
+        if (mod.structure.repetition) {
+          mod.structure.repetition.showGridLines = e.target.checked;
+        }
+        const repGrid = document.getElementById("chk-rep-gridlines");
+        if (repGrid) repGrid.checked = e.target.checked;
+        this.render();
+      });
+    }
+  }
+
+  /* =========================================================================
+     SIMILARITY INSPECTOR & CONTROLLER (Per Active Layer)
+     Visual Kinship: Elastic, 3D tilt, Wobble, Scale, Hibrid
+     Fluctuation Intensity & Spatial Cell Jitter
+     ========================================================================= */
+
+  syncSimilarityInspectorWithActiveLayer() {
+    const mod = this.getActiveModule();
+    if (!mod) return;
+
+    if (!mod.structure) {
+      mod.structure = this.getActiveLayerStructure();
+    }
+    if (!mod.structure.similarity) {
+      mod.structure.similarity = {
+        enabled: false,
+        kinshipType: "distortion",
+        intensity: 50,
+        cellJitter: 0,
+        seed: 42
+      };
+    }
+
+    const sim = mod.structure.similarity;
+
+    // Update layer badge
+    const badge = document.getElementById("badge-similarity-layer");
+    if (badge) badge.textContent = this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1";
+
+    // Dependency warning: Shown only when Similarity is ON but Layout Structure is OFF (neither Repetition nor Radiation)
+    const hasGrid = !!(mod.structure && mod.structure.enabled);
+    const isSimActive = !!sim.enabled;
+    const showWarning = isSimActive && !hasGrid;
+
+    const warnBox = document.getElementById("warning-similarity-grid");
+    if (warnBox) warnBox.classList.toggle("hidden", !showWarning);
+
+    // Sync toggle switch
+    const toggle = document.getElementById("toggle-similarity-active");
+    if (toggle) toggle.checked = isSimActive;
+
+    // Sync Visual Kinship Type buttons
+    const activeType = sim.kinshipType || "distortion";
+    document.querySelectorAll("#card-similarity [data-kinship-type]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.kinshipType === activeType);
+    });
+
+    // Sync Fluctuation Intensity slider and numeric box (50%)
+    const intensity = sim.intensity !== undefined ? sim.intensity : 50;
+    this.syncControlValue("input-sim-intensity", intensity);
+    const numIntensity = document.getElementById("num-sim-intensity");
+    if (numIntensity) numIntensity.value = `${intensity}%`;
+
+    // Sync Spatial Cell Jitter slider and numeric box (0)
+    const jitter = sim.cellJitter !== undefined ? sim.cellJitter : 0;
+    this.syncControlValue("input-sim-jitter", jitter);
+    this.syncControlValue("num-sim-jitter", jitter);
+
+    this.updateRailIndicatorDots();
+  }
+
+  setupSimilarity() {
+    const toggle = document.getElementById("toggle-similarity-active");
+
+    toggle?.addEventListener("change", (e) => {
+      const mod = this.getActiveModule();
+      if (!mod || !mod.structure) return;
+      if (!mod.structure.similarity) {
+        mod.structure.similarity = { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 };
+      }
+      const enabled = e.target.checked;
+      mod.structure.similarity.enabled = enabled;
+      this.syncSimilarityInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      this.pushHistory(`Layer ${this.activeLayerId} Similarity: ${enabled ? "ON" : "OFF"}`);
+    });
+
+    // Visual Kinship Type Pills: Elastic, 3D tilt, Wobble, Scale, Hibrid
+    document.querySelectorAll("#card-similarity [data-kinship-type]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const mod = this.getActiveModule();
+        if (!mod || !mod.structure) return;
+        if (!mod.structure.similarity) {
+          mod.structure.similarity = { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 };
+        }
+        mod.structure.similarity.kinshipType = btn.dataset.kinshipType;
+        mod.structure.similarity.enabled = true;
+        if (toggle) toggle.checked = true;
+        document.querySelectorAll("#card-similarity [data-kinship-type]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.syncSimilarityInspectorWithActiveLayer();
+        this.render();
+        this.updateLayerCardsUI();
+        this.pushHistory(`Layer ${this.activeLayerId} Kinship Type: ${btn.dataset.kinshipType}`);
+      });
+    });
+
+    // Fluctuation Intensity Slider & % Input
+    const inputIntensity = document.getElementById("input-sim-intensity");
+    const numIntensity = document.getElementById("num-sim-intensity");
+
+    if (inputIntensity) {
+      inputIntensity.addEventListener("input", (e) => {
+        const mod = this.getActiveModule();
+        if (!mod || !mod.structure) return;
+        if (!mod.structure.similarity) {
+          mod.structure.similarity = { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 };
+        }
+        const val = parseInt(e.target.value, 10);
+        mod.structure.similarity.intensity = val;
+        mod.structure.similarity.enabled = true;
+        if (toggle) toggle.checked = true;
+        if (numIntensity) numIntensity.value = `${val}%`;
+        this.render();
+      });
+      inputIntensity.addEventListener("change", (e) => {
+        this.pushHistory(`Layer ${this.activeLayerId} Similarity Intensity: ${e.target.value}%`);
+      });
+    }
+
+    if (numIntensity) {
+      numIntensity.addEventListener("change", (e) => {
+        const mod = this.getActiveModule();
+        if (!mod || !mod.structure) return;
+        if (!mod.structure.similarity) {
+          mod.structure.similarity = { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 };
+        }
+        const raw = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10);
+        const val = isNaN(raw) ? 50 : Math.max(0, Math.min(100, raw));
+        mod.structure.similarity.intensity = val;
+        mod.structure.similarity.enabled = true;
+        if (toggle) toggle.checked = true;
+        numIntensity.value = `${val}%`;
+        if (inputIntensity) inputIntensity.value = val;
+        this.render();
+        this.pushHistory(`Layer ${this.activeLayerId} Similarity Intensity: ${val}%`);
+      });
+    }
+
+    // Spatial Cell Jitter Slider
+    this.bindSliderWithNumber("input-sim-jitter", "num-sim-jitter", (val) => {
+      const mod = this.getActiveModule();
+      if (!mod || !mod.structure) return;
+      if (!mod.structure.similarity) {
+        mod.structure.similarity = { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 };
+      }
+      mod.structure.similarity.cellJitter = val;
+      mod.structure.similarity.enabled = true;
+      if (toggle) toggle.checked = true;
+      this.render();
+    }, "Cell Jitter");
+  }
+
+  /* =========================================================================
+     CONTEXTUAL SHAPE & STYLE INSPECTOR (Applies to currently active layer)
+     ========================================================================= */
+
+  setupShapeInspector() {
+    // 1. Shape Glyph Selection Grid (13 Shapes)
+    document.querySelectorAll("[data-shape]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const shape = btn.dataset.shape;
+        const mod = this.getActiveModule();
+        mod.shape = shape;
+        
+        document.querySelectorAll("[data-shape]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        this.render();
+        this.updateLayerCardsUI();
+        this.pushHistory(`Changed Shape: ${shape}`);
+      });
+    });
+
+    // 2. Width (Ancho) & Height (Alto)
+    this.bindSliderWithNumber("input-active-width", "num-active-width", (val) => {
+      const mod = this.getActiveModule();
+      mod.width = val;
+      mod.scale = val;
+      this.render();
+      this.updateLayerCardsUI();
+    }, "Width");
+
+    this.bindSliderWithNumber("input-active-height", "num-active-height", (val) => {
+      const mod = this.getActiveModule();
+      mod.height = val;
+      this.render();
+      this.updateLayerCardsUI();
+    }, "Height");
+
+    // 3. Rotation (Rotación °)
+    this.bindSliderWithNumber("input-active-rotation", "num-active-rotation", (val) => {
+      const mod = this.getActiveModule();
+      mod.rotation = val;
+      this.render();
+    }, "Rotation");
+
+    // 4. Stroke Width (Grosor Trazo)
+    this.bindSliderWithNumber("input-active-stroke", "num-active-stroke", (val) => {
+      const mod = this.getActiveModule();
+      mod.strokeWidth = val;
+      this.render();
+    }, "Stroke Width");
+
+    // 4.5 Position Offset (Offset X & Offset Y)
+    this.bindSliderWithNumber("input-active-offset-x", "num-active-offset-x", (val) => {
+      const mod = this.getActiveModule();
+      mod.offsetX = val;
+      this.render();
+    }, "Offset X");
+
+    this.bindSliderWithNumber("input-active-offset-y", "num-active-offset-y", (val) => {
+      const mod = this.getActiveModule();
+      mod.offsetY = val;
+      this.render();
+    }, "Offset Y");
+
+    // 5. Drawing Mode: Stroke vs Fill (per active layer)
+    const btnStroke = document.getElementById("btn-mode-stroke");
+    const btnFill = document.getElementById("btn-mode-fill");
+    
+    btnStroke?.addEventListener("click", () => {
+      const mod = this.getActiveModule();
+      mod.wireframe = true;
+      btnStroke.classList.add("active");
+      btnFill?.classList.remove("active");
+      this.render();
+      this.updateLayerCardsUI();
+      this.pushHistory(`Layer ${this.activeLayerId} Mode: Stroke`);
+    });
+
+    btnFill?.addEventListener("click", () => {
+      const mod = this.getActiveModule();
+      mod.wireframe = false;
+      btnFill.classList.add("active");
+      btnStroke?.classList.remove("active");
+      this.render();
+      this.updateLayerCardsUI();
+      this.pushHistory(`Layer ${this.activeLayerId} Mode: Fill`);
+    });
+
+    // 6. Color Picker & Hex Code
+    const colorPicker = document.getElementById("color-active-shape");
+    const colorText = document.getElementById("text-color-hex");
+    if (colorPicker) {
+      colorPicker.addEventListener("input", (e) => {
+        const hex = e.target.value.toUpperCase();
+        if (colorText) colorText.textContent = hex;
+        this.customColors.fg = hex;
+        this.render();
+      });
+    }
+
+    // 7. Pathfinder Boolean Interrelation Buttons
+    document.querySelectorAll("[data-interrelation]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const op = btn.dataset.interrelation;
+        this.state.interrelation = op;
+        document.querySelectorAll("[data-interrelation]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const badge = document.getElementById("badge-active-pathfinder");
+        if (badge) badge.textContent = op.toUpperCase();
+        this.render();
+        this.pushHistory(`Pathfinder Mode: ${op}`);
+      });
+    });
+  }
+
+  syncShapeInspectorWithActiveLayer() {
+    const mod = this.getActiveModule();
+    if (!mod) return;
+
+    // Sync Shape Buttons
+    document.querySelectorAll("[data-shape]").forEach(b => {
+      b.classList.toggle("active", b.dataset.shape === mod.shape);
+    });
+
+    // Sync Dimensions
+    this.syncControlValue("input-active-width", mod.width || mod.scale || 50);
+    this.syncControlValue("num-active-width", mod.width || mod.scale || 50);
+    this.syncControlValue("input-active-height", mod.height || mod.scale || 50);
+    this.syncControlValue("num-active-height", mod.height || mod.scale || 50);
+    this.syncControlValue("input-active-rotation", mod.rotation || 0);
+    this.syncControlValue("num-active-rotation", mod.rotation || 0);
+    this.syncControlValue("input-active-stroke", mod.strokeWidth || 1.2);
+    this.syncControlValue("num-active-stroke", mod.strokeWidth || 1.2);
+    this.syncControlValue("input-active-offset-x", mod.offsetX !== undefined ? mod.offsetX : 0);
+    this.syncControlValue("num-active-offset-x", mod.offsetX !== undefined ? mod.offsetX : 0);
+    this.syncControlValue("input-active-offset-y", mod.offsetY !== undefined ? mod.offsetY : 0);
+    this.syncControlValue("num-active-offset-y", mod.offsetY !== undefined ? mod.offsetY : 0);
+
+    // Sync Mode (per active layer)
+    const btnStroke = document.getElementById("btn-mode-stroke");
+    const btnFill = document.getElementById("btn-mode-fill");
+    const isWireframe = mod.wireframe !== undefined ? mod.wireframe : this.state.wireframe;
+    if (isWireframe) {
+      btnStroke?.classList.add("active");
+      btnFill?.classList.remove("active");
+    } else {
+      btnFill?.classList.add("active");
+      btnStroke?.classList.remove("active");
+    }
+
+    // Sync Swatch
+    const swatch = document.getElementById("swatch-active-color");
+    const hexText = document.getElementById("text-color-hex");
+    if (swatch) swatch.style.backgroundColor = this.customColors.fg || "#18181F";
+    if (hexText) hexText.textContent = (this.customColors.fg || "#18181F").toUpperCase();
+    const badge = document.getElementById("badge-active-pathfinder");
+    if (badge) badge.textContent = this.state.interrelation.toUpperCase();
+  }
+
+  /* =========================================================================
+     VIEWPORT: PAN, ZOOM & ARTBOARD CENTERING
+     ========================================================================= */
+
+  setupViewportEvents() {
+    // Zoom and pan disabled by request. Artboard stays strictly at 100% natural scale.
+    this.zoom = 1.0;
+    this.panX = 0;
+    this.panY = 0;
+    if (this.artboardWrapper) {
+      this.artboardWrapper.style.transform = "none";
+    }
+  }
+
+  updateViewportTransform() {
+    if (this.artboardWrapper) {
+      this.artboardWrapper.style.transform = "none";
+    }
+  }
+
+  adjustZoom(factor) {
+    // Disabled
+  }
+
+  centerArtboard() {
+    this.zoom = 1.0;
+    this.panX = 0;
+    this.panY = 0;
+    if (this.artboardWrapper) {
+      this.artboardWrapper.style.transform = "none";
+    }
+  }
+
+  updateHUD() {
+    const cfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"];
+    const resEl = document.getElementById("hud-resolution");
+    if (resEl) resEl.textContent = `${cfg.w} × ${cfg.h} PX`;
+  }
+
+  /* =========================================================================
+     INTERACTIVE ON-CANVAS HANDLES
+     ========================================================================= */
+
+  setupInteractiveHandles() {
+    const handleAnomaly = document.getElementById("handle-anomaly-epicenter");
+    const handleConcentration = document.getElementById("handle-concentration-attractor");
+
+    const setupDrag = (handle, onMove) => {
+      if (!handle) return;
+      handle.addEventListener("mousedown", (e) => {
+        e.stopPropagation();
+        this.activeDragHandle = { handle, onMove };
+        document.body.style.cursor = "grabbing";
+      });
+    };
+
+    setupDrag(handleAnomaly, (nx, ny) => {
+      this.state.modifiers.anomaly.epicenterX = nx;
+      this.state.modifiers.anomaly.epicenterY = ny;
+      this.syncControlValue("input-anom-x", Math.round(nx * 100));
+      this.syncControlValue("input-anom-y", Math.round(ny * 100));
+    });
+
+    setupDrag(handleConcentration, (nx, ny) => {
+      this.state.modifiers.concentration.attractorX = nx;
+      this.state.modifiers.concentration.attractorY = ny;
+      this.syncControlValue("input-conc-x", Math.round(nx * 100));
+      this.syncControlValue("input-conc-y", Math.round(ny * 100));
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      if (!this.activeDragHandle) return;
+      const canvasRect = this.canvas.getBoundingClientRect();
+      const nx = Math.max(0.05, Math.min(0.95, (e.clientX - canvasRect.left) / (canvasRect.width)));
+      const ny = Math.max(0.05, Math.min(0.95, (e.clientY - canvasRect.top) / (canvasRect.height)));
+      this.activeDragHandle.onMove(nx, ny);
+      this.render();
+    });
+
+    window.addEventListener("mouseup", () => {
+      if (this.activeDragHandle) {
+        this.activeDragHandle = null;
+        document.body.style.cursor = "default";
+        this.pushHistory("Adjusted Handle Position");
+      }
+    });
+  }
+
+  updateHandlesPosition() {
+    const handleAnomaly = document.getElementById("handle-anomaly-epicenter");
+    const handleConcentration = document.getElementById("handle-concentration-attractor");
+    const cfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"];
+
+    if (handleAnomaly) {
+      const anom = this.state.modifiers.anomaly;
+      const isVisible = anom.enabled && anom.showReticle;
+      handleAnomaly.style.display = isVisible ? "flex" : "none";
+      if (isVisible) {
+        handleAnomaly.style.left = `${(anom.epicenterX ?? 0.5) * cfg.w}px`;
+        handleAnomaly.style.top = `${(anom.epicenterY ?? 0.5) * cfg.h}px`;
+      }
+    }
+
+    if (handleConcentration) {
+      const conc = this.state.modifiers.concentration;
+      const isVisible = conc.enabled && conc.showAttractor;
+      handleConcentration.style.display = isVisible ? "flex" : "none";
+      if (isVisible) {
+        handleConcentration.style.left = `${(conc.attractorX ?? 0.5) * cfg.w}px`;
+        handleConcentration.style.top = `${(conc.attractorY ?? 0.5) * cfg.h}px`;
+      }
+    }
+  }
+
+  /* =========================================================================
+     KEYBOARD SHORTCUTS
+     ========================================================================= */
+
+  setupKeyboardShortcuts() {
+    window.addEventListener("keydown", (e) => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+
+      if (e.code === "Space" && !this.isSpacePressed) {
+        this.isSpacePressed = true;
+        const vp = document.getElementById("canvas-viewport-container");
+        if (vp) vp.style.cursor = "grab";
+      }
+
+      if (isCmdOrCtrl && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) this.redo();
+        else this.undo();
+      }
+
+      if (isCmdOrCtrl && e.key === "0") {
+        e.preventDefault();
+        this.centerArtboard();
+      }
+    });
+
+    window.addEventListener("keyup", (e) => {
+      if (e.code === "Space") {
+        this.isSpacePressed = false;
+        const vp = document.getElementById("canvas-viewport-container");
+        if (vp) vp.style.cursor = "default";
+      }
+    });
+  }
+
+  /* =========================================================================
+     MODIFIERS STACK BINDINGS
+     ========================================================================= */
+
+  setupModifierCards() {
+    const mods = this.state.modifiers;
+
+    // Click anywhere on header to toggle switch
+    document.querySelectorAll(".modifier-card").forEach(card => {
+      const header = card.querySelector(".modifier-header");
+      const switchInput = card.querySelector(".switch input[type='checkbox']");
+      if (header && switchInput) {
+        header.addEventListener("click", (e) => {
+          if (!e.target.closest(".switch") && !e.target.closest(".close-flyout-btn")) {
+            switchInput.checked = !switchInput.checked;
+            switchInput.dispatchEvent(new Event("change"));
+          }
+        });
+      }
+    });
+
+    // 1. REPETITION
+    this.bindModifierMasterToggle("toggle-mod-repetition", "repetition", (enabled) => {
+      if (enabled && mods.radiation.enabled) {
+        mods.radiation.enabled = false;
+        this.syncCheckbox("toggle-mod-radiation", false);
+        this.setModifierCardActiveState("card-radiation", false);
+      }
+      if (!enabled && mods.structure.enabled) {
+        mods.structure.enabled = false;
+        this.syncCheckbox("toggle-mod-structure", false);
+        this.setModifierCardActiveState("card-structure", false);
+      }
+      this.render();
+    });
+
+    document.querySelectorAll("[data-grid-type]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        this.ensureModifierActive("repetition");
+        mods.repetition.gridType = btn.dataset.gridType;
+        document.querySelectorAll("[data-grid-type]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.render();
+        this.pushHistory(`Repetition Grid: ${btn.dataset.gridType}`);
+      });
+    });
+
+    this.bindSliderWithNumber("input-grid-cols", "num-grid-cols", (val) => { mods.repetition.cols = val; this.render(); }, "Grid Columns", "repetition");
+    this.bindSliderWithNumber("input-grid-rows", "num-grid-rows", (val) => { mods.repetition.rows = val; this.render(); }, "Grid Rows", "repetition");
+    this.bindSliderWithNumber("input-grid-spacing", "num-grid-spacing", (val) => { mods.repetition.spacing = val; this.render(); }, "Gutter Spacing", "repetition");
+    this.bindSliderWithNumber("input-grid-shear", "num-grid-shear", (val) => { mods.repetition.shearAngle = val; this.render(); }, "Grid Shear", "repetition");
+    this.bindSliderWithNumber("input-grid-slide", "num-grid-slide", (val) => { mods.repetition.slideOffset = val; this.render(); }, "Grid Slide", "repetition");
+
+    // 2. STRUCTURE
+    this.bindModifierMasterToggle("toggle-mod-structure", "structure", (enabled) => {
+      if (enabled) {
+        if (mods.radiation.enabled) {
+          mods.radiation.enabled = false;
+          this.syncCheckbox("toggle-mod-radiation", false);
+          this.setModifierCardActiveState("card-radiation", false);
+        }
+        if (!mods.repetition.enabled) {
+          mods.repetition.enabled = true;
+          this.syncCheckbox("toggle-mod-repetition", true);
+          this.setModifierCardActiveState("card-repetition", true);
+        }
+      }
+      this.render();
+    });
+
+    document.querySelectorAll("[data-struct-mode]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        this.ensureModifierActive("structure");
+        mods.structure.mode = btn.dataset.structMode;
+        document.querySelectorAll("[data-struct-mode]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.render();
+      });
+    });
+    this.bindSliderWithNumber("input-struct-col-ratio", "num-struct-col-ratio", (val) => { mods.structure.colRatio = val; this.render(); }, "Column Ratio", "structure");
+    this.bindSliderWithNumber("input-struct-row-ratio", "num-struct-row-ratio", (val) => { mods.structure.rowRatio = val; this.render(); }, "Row Ratio", "structure");
+    this.bindCheckbox("check-struct-bands", (val) => { this.ensureModifierActive("structure"); mods.structure.showBands = val; this.render(); });
+
+    // 3. RADIATION
+    this.bindModifierMasterToggle("toggle-mod-radiation", "radiation", (enabled) => {
+      if (enabled) {
+        if (mods.repetition.enabled) {
+          mods.repetition.enabled = false;
+          this.syncCheckbox("toggle-mod-repetition", false);
+          this.setModifierCardActiveState("card-repetition", false);
+        }
+        if (mods.structure.enabled) {
+          mods.structure.enabled = false;
+          this.syncCheckbox("toggle-mod-structure", false);
+          this.setModifierCardActiveState("card-structure", false);
+        }
+      }
+      this.render();
+    });
+
+    document.querySelectorAll("[data-rad-scheme]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        this.ensureModifierActive("radiation");
+        mods.radiation.scheme = btn.dataset.radScheme;
+        document.querySelectorAll("[data-rad-scheme]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.render();
+      });
+    });
+    this.bindSliderWithNumber("input-rad-rays", "num-rad-rays", (val) => { mods.radiation.rays = val; this.render(); }, "Rays Count", "radiation");
+    this.bindSliderWithNumber("input-rad-rings", "num-rad-rings", (val) => { mods.radiation.rings = val; this.render(); }, "Rings Count", "radiation");
+    this.bindSliderWithNumber("input-rad-twist", "num-rad-twist", (val) => { mods.radiation.spiralTwist = val; this.render(); }, "Spiral Twist", "radiation");
+    this.bindCheckbox("check-rad-show-rays", (val) => { this.ensureModifierActive("radiation"); mods.radiation.showRays = val; this.render(); });
+    this.bindCheckbox("check-rad-show-rings", (val) => { this.ensureModifierActive("radiation"); mods.radiation.showRings = val; this.render(); });
+
+    // 4. SIMILARITY
+    this.bindModifierMasterToggle("toggle-mod-similarity", "similarity");
+    document.querySelectorAll("[data-kinship-type]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        this.ensureModifierActive("similarity");
+        mods.similarity.kinshipType = btn.dataset.kinshipType;
+        document.querySelectorAll("[data-kinship-type]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.render();
+      });
+    });
+    this.bindSliderWithNumber("input-sim-intensity", "num-sim-intensity", (val) => { mods.similarity.intensity = val; this.render(); }, "Similarity Variance", "similarity");
+    this.bindSliderWithNumber("input-sim-jitter", "num-sim-jitter", (val) => { mods.similarity.cellJitter = val; this.render(); }, "Cell Jitter", "similarity");
+
+    // 5. GRADATION
+    this.bindModifierMasterToggle("toggle-mod-gradation", "gradation");
+    document.querySelectorAll("[data-grad-type]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        this.ensureModifierActive("gradation");
+        mods.gradation.type = btn.dataset.gradType;
+        document.querySelectorAll("[data-grad-type]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.render();
+      });
+    });
+    document.querySelectorAll("[data-grad-pathway]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        this.ensureModifierActive("gradation");
+        mods.gradation.pathway = btn.dataset.gradPathway;
+        document.querySelectorAll("[data-grad-pathway]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.render();
+      });
+    });
+    this.bindSliderWithNumber("input-grad-range", "num-grad-range", (val) => { mods.gradation.range = val; this.render(); }, "Gradation Span", "gradation");
+    this.bindSliderWithNumber("input-grad-steps", "num-grad-steps", (val) => { mods.gradation.steps = val; this.render(); }, "Gradation Cycles", "gradation");
+
+    // 6. ANOMALY
+    this.bindModifierMasterToggle("toggle-mod-anomaly", "anomaly");
+    document.querySelectorAll("[data-anom-type]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        this.ensureModifierActive("anomaly");
+        mods.anomaly.type = btn.dataset.anomType;
+        document.querySelectorAll("[data-anom-type]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.render();
+      });
+    });
+    this.bindSliderWithNumber("input-anom-x", "num-anom-x", (val) => { mods.anomaly.epicenterX = val / 100; this.render(); }, "Epicenter X", "anomaly");
+    this.bindSliderWithNumber("input-anom-y", "num-anom-y", (val) => { mods.anomaly.epicenterY = val / 100; this.render(); }, "Epicenter Y", "anomaly");
+    this.bindSliderWithNumber("input-anom-radius", "num-anom-radius", (val) => { mods.anomaly.radius = val; this.render(); }, "Anomaly Radius", "anomaly");
+    this.bindSliderWithNumber("input-anom-intensity", "num-anom-intensity", (val) => { mods.anomaly.intensity = val; this.render(); }, "Anomaly Intensity", "anomaly");
+
+    // 7. CONTRAST
+    this.bindModifierMasterToggle("toggle-mod-contrast", "contrast");
+    document.querySelectorAll("[data-contrast-dimension]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        this.ensureModifierActive("contrast");
+        mods.contrast.dimension = btn.dataset.contrastDimension;
+        document.querySelectorAll("[data-contrast-dimension]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.render();
+      });
+    });
+    this.bindSliderWithNumber("input-contrast-dominance", "num-contrast-dominance", (val) => { mods.contrast.dominanceRatio = val; this.render(); }, "Dominance Ratio", "contrast");
+    this.bindSliderWithNumber("input-contrast-scale", "num-contrast-scale", (val) => { mods.contrast.scaleFactor = val; this.render(); }, "Contrast Scale", "contrast");
+
+    // 8. CONCENTRATION
+    this.bindModifierMasterToggle("toggle-mod-concentration", "concentration");
+    document.querySelectorAll("[data-conc-mode]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        this.ensureModifierActive("concentration");
+        mods.concentration.mode = btn.dataset.concMode;
+        document.querySelectorAll("[data-conc-mode]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.render();
+      });
+    });
+    this.bindSliderWithNumber("input-conc-x", "num-conc-x", (val) => { mods.concentration.attractorX = val / 100; this.render(); }, "Attractor X", "concentration");
+    this.bindSliderWithNumber("input-conc-y", "num-conc-y", (val) => { mods.concentration.attractorY = val / 100; this.render(); }, "Attractor Y", "concentration");
+    this.bindSliderWithNumber("input-conc-power", "num-conc-power", (val) => { mods.concentration.power = val; this.render(); }, "Field Power", "concentration");
+    this.bindSliderWithNumber("input-conc-radius", "num-conc-radius", (val) => { mods.concentration.radius = val; this.render(); }, "Field Radius", "concentration");
+
+    // 9. TEXTURE
+    this.bindModifierMasterToggle("toggle-mod-texture", "texture");
+    document.querySelectorAll("[data-texture-mode]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        this.ensureModifierActive("texture");
+        mods.texture.mode = btn.dataset.textureMode;
+        document.querySelectorAll("[data-texture-mode]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.render();
+      });
+    });
+    this.bindSliderWithNumber("input-texture-density", "num-texture-density", (val) => { mods.texture.density = val; this.render(); }, "Texture Density", "texture");
+    this.bindSliderWithNumber("input-texture-scale", "num-texture-scale", (val) => { mods.texture.scale = val; this.render(); }, "Texture Scale", "texture");
+    this.bindSliderWithNumber("input-texture-contrast", "num-texture-contrast", (val) => { mods.texture.contrast = val; this.render(); }, "Texture Contrast", "texture");
+
+    // 10. SPACE
+    this.bindModifierMasterToggle("toggle-mod-space", "space");
+    document.querySelectorAll("[data-space-mode]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        this.ensureModifierActive("space");
+        mods.space.mode = btn.dataset.spaceMode;
+        document.querySelectorAll("[data-space-mode]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.render();
+      });
+    });
+    this.bindSliderWithNumber("input-space-depth", "num-space-depth", (val) => { mods.space.depth = val; this.render(); }, "Isometric Depth", "space");
+    this.bindSliderWithNumber("input-space-angle", "num-space-angle", (val) => { mods.space.angle = val; this.render(); }, "Light Angle", "space");
+  }
+
+  ensureModifierActive(modifierKey) {
+    const mods = this.state.modifiers;
+    if (!mods[modifierKey] || mods[modifierKey].enabled) return;
+
+    mods[modifierKey].enabled = true;
+    this.syncCheckbox(`toggle-mod-${modifierKey}`, true);
+    this.setModifierCardActiveState(`card-${modifierKey}`, true);
+
+    if (modifierKey === "radiation") {
+      if (mods.repetition.enabled) {
+        mods.repetition.enabled = false;
+        this.syncCheckbox("toggle-mod-repetition", false);
+        this.setModifierCardActiveState("card-repetition", false);
+      }
+      if (mods.structure.enabled) {
+        mods.structure.enabled = false;
+        this.syncCheckbox("toggle-mod-structure", false);
+        this.setModifierCardActiveState("card-structure", false);
+      }
+    } else if (modifierKey === "repetition" || modifierKey === "structure") {
+      if (mods.radiation.enabled) {
+        mods.radiation.enabled = false;
+        this.syncCheckbox("toggle-mod-radiation", false);
+        this.setModifierCardActiveState("card-radiation", false);
+      }
+      if (modifierKey === "structure" && !mods.repetition.enabled) {
+        mods.repetition.enabled = true;
+        this.syncCheckbox("toggle-mod-repetition", true);
+        this.setModifierCardActiveState("card-repetition", true);
+      }
+    }
+    this.updateRailIndicatorDots();
+  }
+
+  bindModifierMasterToggle(switchId, modifierKey, extraCallback) {
+    const sw = document.getElementById(switchId);
+    if (!sw) return;
+    sw.addEventListener("change", (e) => {
+      const enabled = e.target.checked;
+      this.state.modifiers[modifierKey].enabled = enabled;
+      this.setModifierCardActiveState(`card-${modifierKey}`, enabled);
+      if (extraCallback) extraCallback(enabled);
+      this.updateRailIndicatorDots();
+      this.render();
+      this.pushHistory(`Modifier ${modifierKey}: ${enabled ? "ON" : "OFF"}`);
+    });
+  }
+
+  setModifierCardActiveState(cardId, isActive) {
+    const card = document.getElementById(cardId);
+    if (card) {
+      card.classList.toggle("is-active", isActive);
+    }
+  }
+
+  bindSliderWithNumber(sliderId, numberId, callback, label = "Parameter", modifierKey = null) {
+    const slider = document.getElementById(sliderId);
+    const numInput = document.getElementById(numberId);
+
+    if (slider) {
+      slider.addEventListener("input", (e) => {
+        if (modifierKey) this.ensureModifierActive(modifierKey);
+        const val = parseFloat(e.target.value);
+        if (numInput) numInput.value = val;
+        callback(val);
+      });
+      slider.addEventListener("change", (e) => {
+        this.pushHistory(`Changed ${label}: ${e.target.value}`);
+      });
+    }
+
+    if (numInput) {
+      numInput.addEventListener("change", (e) => {
+        if (modifierKey) this.ensureModifierActive(modifierKey);
+        const val = parseFloat(e.target.value);
+        if (slider) slider.value = val;
+        callback(val);
+        this.pushHistory(`Edited ${label}: ${val}`);
+      });
+    }
+  }
+
+  bindCheckbox(id, callback) {
+    const cb = document.getElementById(id);
+    if (cb) {
+      cb.addEventListener("change", (e) => callback(e.target.checked));
+    }
+  }
+
+  syncControlValue(inputId, value) {
+    const el = document.getElementById(inputId);
+    if (el) el.value = value;
+  }
+
+  syncCheckbox(id, checked) {
+    const cb = document.getElementById(id);
+    if (cb) cb.checked = checked;
+  }
+
+  /* =========================================================================
+     PRESET & HISTORY MANAGEMENT
+     ========================================================================= */
+
+  loadPreset(preset) {
+    this.state = JSON.parse(JSON.stringify(preset.state));
+    // If preset used legacy global repetition/radiation, assign to Form A
+    if (this.state.modifiers?.repetition?.enabled && this.state.formA) {
+      if (!this.state.formA.structure) this.state.formA.structure = this.getActiveLayerStructure();
+      this.state.formA.structure.enabled = true;
+      this.state.formA.structure.mode = "repetition";
+      Object.assign(this.state.formA.structure.repetition, this.state.modifiers.repetition);
+    } else if (this.state.modifiers?.radiation?.enabled && this.state.formA) {
+      if (!this.state.formA.structure) this.state.formA.structure = this.getActiveLayerStructure();
+      this.state.formA.structure.enabled = true;
+      this.state.formA.structure.mode = "radiation";
+      Object.assign(this.state.formA.structure.radiation, this.state.modifiers.radiation);
+    }
+    this.applyAspectRatio(this.state.aspectRatio || "1:1");
+    this.updateActivePalette();
+    this.render();
+    this.syncShapeInspectorWithActiveLayer();
+    this.syncStructureInspectorWithActiveLayer();
+    this.updateLayerCardsUI();
+    this.pushHistory(`Loaded Preset: ${preset.name}`);
+  }
+
+  pushHistory(label = "Action") {
+    if (this.historyIndex < this.history.length - 1) {
+      this.history = this.history.slice(0, this.historyIndex + 1);
+      this.historyLabels = this.historyLabels.slice(0, this.historyIndex + 1);
+    }
+    this.history.push(JSON.stringify(this.state));
+    this.historyLabels.push(label);
+    if (this.history.length > this.maxHistory) {
+      this.history.shift();
+      this.historyLabels.shift();
+    } else {
+      this.historyIndex++;
+    }
+  }
+
+  undo() {
+    if (this.historyIndex > 0) {
+      this.historyIndex--;
+      this.state = JSON.parse(this.history[this.historyIndex]);
+      this.render();
+      this.syncShapeInspectorWithActiveLayer();
+      this.syncStructureInspectorWithActiveLayer();
+      this.updateLayerCardsUI();
+    }
+  }
+
+  redo() {
+    if (this.historyIndex < this.history.length - 1) {
+      this.historyIndex++;
+      this.state = JSON.parse(this.history[this.historyIndex]);
+      this.render();
+      this.syncShapeInspectorWithActiveLayer();
+      this.syncStructureInspectorWithActiveLayer();
+      this.updateLayerCardsUI();
+    }
+  }
+}
+
+// Auto-boot upon DOM readiness
+document.addEventListener("DOMContentLoaded", () => {
+  window.studioProApp = new StudioProApp();
+  if (window.lucide) window.lucide.createIcons();
+});
+
+
+  if (typeof window !== 'undefined') {
+    window.StudioEngine = StudioEngine;
+    window.StudioProApp = StudioProApp;
+    window.CanvasUtils = CanvasUtils;
+    window.Shapes = Shapes;
+    window.STUDIO_PRESETS = STUDIO_PRESETS;
+    window.StudioExporter = StudioExporter;
+  }
+})();

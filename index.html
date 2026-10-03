@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Basic Studio — Parametric 2D Vector & Generative Studio</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            workspace: '#eceef2',
+            surface: '#ffffff',
+            dark: '#18181f'
+          },
+          fontFamily: {
+            sans: ['Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif],
+            mono: ['JetBrains Mono', 'monospace'],
+            display: ['Space Grotesk', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Basic Studio Pro Stylesheet -->
+  <link rel="stylesheet" href="css/studio-pro.css">
+</head>
+<body class="flex flex-col h-screen overflow-hidden bg-[#eceef2] text-[#121317]">
+
+  <!-- TOP APPLICATION BAR (Abstract Studio Style - Transparent) -->
+  <header class="h-14 px-6 flex items-center justify-between bg-transparent z-30 select-none flex-shrink-0">
+    
+    <!-- Left: Branding -->
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded flex items-center justify-center text-[#18181f]">
+        <!-- 3 Horizontal Lines Abstract Logo -->
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="16" y2="12"/>
+          <line x1="3" y1="18" x2="19" y2="18"/>
+        </svg>
+      </div>
+      <h1 class="font-display font-bold text-base tracking-tight text-[#121317]">
+        Basic Studio
+      </h1>
+    </div>
+
+    <!-- Center: Aspect Ratio & Canvas Controls -->
+    <div class="flex items-center gap-3">
+      <!-- Aspect Ratio Dropdown -->
+      <div class="relative">
+        <select id="canvas-aspect-ratio" class="aspect-select-box pr-8 appearance-none cursor-pointer">
+          <option value="1:1" selected>1 : 1</option>
+          <option value="9:16">9 : 16</option>
+          <option value="4:3">4 : 3</option>
+          <option value="3:4">3 : 4</option>
+          <option value="16:9">16 : 9</option>
+        </select>
+        <div class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+
+      <!-- Quick Canvas Toggles (Grid & Invert Tone) -->
+      <div class="flex items-center gap-1.5">
+        <button type="button" id="btn-toggle-grid" class="round-icon-btn active" title="Toggle Grid Guides">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="3" y1="15" x2="21" y2="15"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+            <line x1="15" y1="3" x2="15" y2="21"/>
+          </svg>
+        </button>
+        <button type="button" id="btn-toggle-invert" class="round-icon-btn" title="Toggle Figure / Ground Tone">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2a10 10 0 0 0 0 20v-20z"/>
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right: Actions -->
+    <div class="flex items-center gap-2">
+      <button type="button" id="btn-random-preset" class="header-pill-btn" title="Generate Random Parameters">
+        <span>Random</span>
+        <i data-lucide="wand-2" class="w-3.5 h-3.5 text-zinc-600"></i>
+      </button>
+
+      <button type="button" id="btn-open-config" class="header-pill-btn" title="Studio Configuration">
+        <span>Config</span>
+        <i data-lucide="settings" class="w-3.5 h-3.5 text-zinc-600"></i>
+      </button>
+
+      <button type="button" id="btn-copy-svg-code" class="header-pill-btn" title="Copy Vector SVG to Clipboard">
+        <span>Copy SVG</span>
+        <i data-lucide="copy" class="w-3.5 h-3.5 text-zinc-600"></i>
+      </button>
+
+      <button type="button" id="btn-download-svg" class="header-pill-btn font-semibold" title="Download SVG File">
+        <span>Download SVG</span>
+        <i data-lucide="download" class="w-3.5 h-3.5 text-zinc-700"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CANVAS-FIRST WORKSPACE -->
+  <main class="flex-1 flex overflow-hidden relative">
+
+    <!-- FLOATING LEFT PANEL: CAPAS (Layers / Modules Stack) -->
+    <div class="absolute top-4 left-6 z-20 w-[240px] flex flex-col gap-2 pointer-events-auto select-none">
+      <!-- Capas Header Card -->
+      <div class="flex items-center justify-between px-1">
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs font-semibold tracking-wider uppercase text-[#121317]">LAYERS</span>
+          <span id="layers-count-badge" class="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-[#e2e5eb] text-[#4b4f5d] font-bold">2</span>
+        </div>
+        <button type="button" id="btn-add-pattern" class="header-pill-btn py-1 px-2.5 text-[11px] gap-1 shadow-sm">
+          <span>Add pattern</span>
+          <i data-lucide="plus" class="w-3 h-3 text-zinc-600"></i>
+        </button>
+      </div>
+
+      <!-- Layers List Container -->
+      <div id="layers-stack-container" class="space-y-2">
+        <!-- Layer 2 Card (Active Layer) -->
+        <div id="layer-card-2" class="layer-card is-active" data-layer-id="layer-2" draggable="true">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div id="layer-thumb-2" class="layer-preview-box">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="7"/></svg>
+            </div>
+            <div class="min-w-0">
+              <div class="layer-title font-semibold text-xs truncate">Layer 2</div>
+              <div id="layer-sub-2" class="layer-subtitle text-[10px] font-mono truncate">circle • 50px</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1">
+            <button type="button" class="layer-action-btn btn-layer-eye" data-layer="layer-2" title="Toggle Visibility">
+              <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+            </button>
+            <button type="button" class="layer-action-btn btn-layer-delete" data-layer="layer-2" title="Delete Layer">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+            <span class="layer-action-btn layer-drag-handle cursor-grab active:cursor-grabbing text-zinc-400" title="Drag to reorder">
+              <i data-lucide="grip-vertical" class="w-3.5 h-3.5"></i>
+            </span>
+          </div>
+        </div>
+
+        <!-- Layer 1 Card -->
+        <div id="layer-card-1" class="layer-card" data-layer-id="layer-1" draggable="true">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div id="layer-thumb-1" class="layer-preview-box">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+            </div>
+            <div class="min-w-0">
+              <div class="layer-title font-semibold text-xs truncate">Layer 1</div>
+              <div id="layer-sub-1" class="layer-subtitle text-[10px] font-mono truncate">square • 50px</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1">
+            <button type="button" class="layer-action-btn btn-layer-eye" data-layer="layer-1" title="Toggle Visibility">
+              <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+            </button>
+            <button type="button" class="layer-action-btn btn-layer-delete" data-layer="layer-1" title="Delete Layer">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+            <span class="layer-action-btn layer-drag-handle cursor-grab active:cursor-grabbing text-zinc-400" title="Drag to reorder">
+              <i data-lucide="grip-vertical" class="w-3.5 h-3.5"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CANVAS VIEWPORT (Centered naturally between floating left layers panel and right tool rail) -->
+    <div id="canvas-viewport-container" class="w-full h-full relative overflow-hidden flex items-center justify-center pointer-events-none select-none">
+      <div id="artboard-wrapper" class="relative pointer-events-auto flex items-center justify-center">
+        <canvas id="studio-canvas" class="artboard-container shadow-2xl block" width="600" height="600"></canvas>
+      </div>
+
+      <!-- Bottom Right Status Line (Matching Reference 1 & 2) -->
+      <div class="absolute bottom-5 right-6 z-20 text-[10px] font-mono text-[#717482] select-none pointer-events-auto">
+        <span id="hud-resolution">600 × 600 PX</span> • <span id="hud-layers-status">2 LAYERS</span> • 100% ZOOM
+      </div>
+    </div>
+
+    <!-- FLOATING CONTEXTUAL INSPECTOR FLYOUT CARD (Floats to left of rail) -->
+    <div id="inspector-flyout" class="inspector-flyout-card z-30 pointer-events-auto select-none">
+      
+      <!-- ===================================================================
+           TAB 1: MODULE (EXACT MATCH REFERENCE 1)
+           =================================================================== -->
+      <div id="active-layer-inspector" class="flyout-tab-content space-y-4" data-flyout-tab="module">
+        <div class="flex items-center justify-between border-b border-[#eef0f4] pb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-semibold text-[#585b68]">Module</span>
+            <span id="active-layer-indicator-badge" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#18181f] text-white">Layer 2</span>
+          </div>
+          <button type="button" class="close-flyout-btn" title="Close Panel">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <!-- Section Title: SHAPE -->
+        <div>
+          <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-2">SHAPE</div>
+          
+          <!-- 15 Shape Glyphs Grid (Exact 3 Rows from Reference 1) -->
+          <div class="space-y-2">
+            <!-- Row 1 (7 shapes) -->
+            <div class="flex items-center justify-between gap-1">
+              <button type="button" class="shape-circle-btn active" data-shape="circle" title="Circle">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/></svg>
+              </button>
+              <button type="button" class="shape-circle-btn" data-shape="square" title="Square">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>
+              </button>
+              <button type="button" class="shape-circle-btn" data-shape="triangle" title="Triangle">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 4 20 20 4 20"/></svg>
+              </button>
+              <button type="button" class="shape-circle-btn" data-shape="wave" title="Sine Wave">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 12c3-4 6-4 9 0s6 4 9 0"/></svg>
+              </button>
+              <button type="button" class="shape-circle-btn" data-shape="horseshoe" title="Horseshoe">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 5v7a5 5 0 0 0 10 0V5"/></svg>
+              </button>
+              <button type="button" class="shape-circle-btn" data-shape="hexagon" title="Hexagon">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 3 20 7.5 20 16.5 12 21 4 16.5 4 7.5"/></svg>
+              </button>
+              <button type="button" class="shape-circle-btn" data-shape="line" title="Line">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="12" x2="21" y2="12"/></svg>
+              </button>
+            </div>
+
+            <!-- Row 2 (7 shapes) -->
+            <div class="flex items-center justify-between gap-1">
+              <button type="button" class="shape-circle-btn" data-shape="rhombus" title="Rhombus">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 3 21 12 12 21 3 12"/></svg>
+              </button>
+              <button type="button" class="shape-circle-btn" data-shape="hatch" title="Diagonal Hatch">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="20" x2="20" y2="4"/><line x1="4" y1="13" x2="13" y2="4"/><line x1="11" y1="20" x2="20" y2="11"/></svg>
+              </button>
+              <button type="button" class="shape-circle-btn" data-shape="crescent" title="Crescent">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 4a8 8 0 1 0 8 8c0-.4-.04-.8-.1-1.2A5 5 0 0 1 13 4z"/></svg>
+              </button>
+              <button type="button" class="shape-circle-btn" data-shape="teardrop" title="Teardrop">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3C8 8 5 12 5 15a7 7 0 0 0 14 0c0-3-3-7-7-12z"/><line x1="8" y1="15" x2="16" y2="15"/></svg>
+              </button>
+              <button type="button" class="shape-circle-btn" data-shape="cross" title="Cross">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <button type="button" class="shape-circle-btn" data-shape="digit1" title="Number 1">
+                <span>1</span>
+              </button>
+              <button type="button" class="shape-circle-btn" data-shape="digit5" title="Number 5">
+                <span>5</span>
+              </button>
+            </div>
+
+            <!-- Row 3 (1 shape) -->
+            <div class="flex items-center gap-1">
+              <button type="button" class="shape-circle-btn" data-shape="digit9" title="Number 9">
+                <span>9</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- WIDTH & HEIGHT Sliders -->
+        <div class="grid grid-cols-2 gap-4 pt-1">
+          <div>
+            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">WIDTH</div>
+            <div class="flex items-center gap-2">
+              <input type="range" id="input-active-width" min="5" max="250" value="50" class="flex-1">
+              <input type="text" id="num-active-width" class="val-box-input" value="50">
+            </div>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">HEIGHT</div>
+            <div class="flex items-center gap-2">
+              <input type="range" id="input-active-height" min="5" max="250" value="50" class="flex-1">
+              <input type="text" id="num-active-height" class="val-box-input" value="50">
+            </div>
+          </div>
+        </div>
+
+        <!-- ROTATION (°) & STROKE WIDTH Sliders -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">ROTATION (°)</div>
+            <div class="flex items-center gap-2">
+              <input type="range" id="input-active-rotation" min="0" max="360" step="0.5" value="4.5" class="flex-1">
+              <input type="text" id="num-active-rotation" class="val-box-input" value="4,5">
+            </div>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">STROKE WIDTH</div>
+            <div class="flex items-center gap-2">
+              <input type="range" id="input-active-stroke" min="0.2" max="10" step="0.1" value="1.2" class="flex-1">
+              <input type="text" id="num-active-stroke" class="val-box-input" value="1,2">
+            </div>
+          </div>
+        </div>
+
+        <!-- OFFSET X & OFFSET Y Sliders (Position) -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">OFFSET X</div>
+            <div class="flex items-center gap-2">
+              <input type="range" id="input-active-offset-x" min="-250" max="250" step="1" value="0" class="flex-1">
+              <input type="text" id="num-active-offset-x" class="val-box-input" value="0">
+            </div>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">OFFSET Y</div>
+            <div class="flex items-center gap-2">
+              <input type="range" id="input-active-offset-y" min="-250" max="250" step="1" value="0" class="flex-1">
+              <input type="text" id="num-active-offset-y" class="val-box-input" value="0">
+            </div>
+          </div>
+        </div>
+
+        <!-- DRAW MODE & SHAPE COLOR -->
+        <div class="grid grid-cols-2 gap-4 pt-1">
+          <div>
+            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">DRAW MODE</div>
+            <div class="segmented-pill-bar">
+              <button type="button" id="btn-mode-stroke" class="segmented-pill-btn active">Stroke</button>
+              <button type="button" id="btn-mode-fill" class="segmented-pill-btn">Fill</button>
+            </div>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">SHAPE COLOR</div>
+            <div class="flex items-center gap-2">
+              <div class="relative w-8 h-8 rounded-md border border-[#18181f] overflow-hidden flex items-center justify-center bg-white shadow-xs">
+                <input type="color" id="color-active-shape" value="#18181f" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                <div id="swatch-active-color" class="w-full h-full bg-[#18181f]"></div>
+              </div>
+              <span id="text-color-hex" class="text-xs font-mono font-medium text-[#121317]">#18181F</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===================================================================
+           TAB 2: LAYOUT STRUCTURE (EXACT MATCH REFERENCE 2)
+           Unified Repetition + Radiation
+           =================================================================== -->
+      <div id="card-layout-structure" class="flyout-tab-content space-y-4 hidden" data-flyout-tab="layout">
+        <div class="flex items-center justify-between border-b border-[#eef0f4] pb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-semibold text-[#585b68]">Layout structure</span>
+            <span id="badge-layout-layer" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#e2e5eb] text-[#4b4f5d] font-bold">Layer 1</span>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <label class="switch cursor-pointer" title="Enable / Disable Layout Structure">
+              <input type="checkbox" id="toggle-layout-structure">
+              <span class="switch-slider"></span>
+            </label>
+            <button type="button" class="close-flyout-btn" title="Close Panel">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Structure Mode Selector: Repetition | Radiation -->
+        <div>
+          <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">STRUCTURE MODE</div>
+          <div class="segmented-pill-bar">
+            <button type="button" id="btn-layout-repetition" class="segmented-pill-btn active" data-layout-mode="repetition">Repetition</button>
+            <button type="button" id="btn-layout-radiation" class="segmented-pill-btn" data-layout-mode="radiation">Radiation</button>
+          </div>
+        </div>
+
+        <!-- SUB-PANEL A: REPETITION MODE -->
+        <div id="subpanel-repetition" class="space-y-3.5">
+          <div>
+            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">GRID STRUCTURE VARIATION</div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button type="button" class="variation-pill-btn active" data-grid-var="basic">Grid</button>
+              <button type="button" class="variation-pill-btn" data-grid-var="curved">Curved</button>
+              <button type="button" class="variation-pill-btn" data-grid-var="sliding">Brick</button>
+              <button type="button" class="variation-pill-btn" data-grid-var="sheared">Diagonal</button>
+            </div>
+          </div>
+
+          <!-- COLUMNS & ROWS -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">COLUMNS</div>
+              <div class="flex items-center gap-2">
+                <input type="range" id="input-layout-cols" min="1" max="12" value="4" class="flex-1">
+                <input type="text" id="num-layout-cols" class="val-box-input" value="4">
+              </div>
+            </div>
+            <div>
+              <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">ROWS</div>
+              <div class="flex items-center gap-2">
+                <input type="range" id="input-layout-rows" min="1" max="12" value="4" class="flex-1">
+                <input type="text" id="num-layout-rows" class="val-box-input" value="4">
+              </div>
+            </div>
+          </div>
+
+          <!-- REPETITION CHECKBOXES (Exact Match Reference 2) -->
+          <div class="pt-2 border-t border-[#eef0f4] space-y-1">
+            <label class="toggle-check-row cursor-pointer">
+              <span>Clip cell</span>
+              <input type="checkbox" id="chk-rep-clip" class="custom-app-checkbox">
+            </label>
+            <label class="toggle-check-row cursor-pointer">
+              <span>Visible Grid Lines</span>
+              <input type="checkbox" id="chk-rep-gridlines" class="custom-app-checkbox">
+            </label>
+            <label class="toggle-check-row cursor-pointer">
+              <span>Checkerboard inversion</span>
+              <input type="checkbox" id="chk-rep-checker" class="custom-app-checkbox">
+            </label>
+          </div>
+        </div>
+
+        <!-- SUB-PANEL B: RADIATION MODE -->
+        <div id="subpanel-radiation" class="space-y-3.5 hidden">
+          <div>
+            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">RADIATION SCHEME</div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button type="button" class="variation-pill-btn active" data-rad-scheme="centrifugal">Centrifugal</button>
+              <button type="button" class="variation-pill-btn" data-rad-scheme="concentric">Concentric</button>
+              <button type="button" class="variation-pill-btn" data-rad-scheme="spiral">Spiral</button>
+              <button type="button" class="variation-pill-btn" data-rad-scheme="multi_center">Dual-center</button>
+            </div>
+          </div>
+
+          <!-- ANGULAR RAYS & CONCENTRIC RINGS -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">ANGULAR RAYS</div>
+              <div class="flex items-center gap-2">
+                <input type="range" id="input-layout-rays" min="4" max="36" value="12" class="flex-1">
+                <input type="text" id="num-layout-rays" class="val-box-input" value="12">
+              </div>
+            </div>
+            <div>
+              <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">CONCENTRIC RINGS</div>
+              <div class="flex items-center gap-2">
+                <input type="range" id="input-layout-rings" min="2" max="16" value="5" class="flex-1">
+                <input type="text" id="num-layout-rings" class="val-box-input" value="5">
+              </div>
+            </div>
+          </div>
+
+          <!-- SPIRAL TWIST (Full Width) -->
+          <div>
+            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">SPIRAL TWIST</div>
+            <div class="flex items-center gap-2">
+              <input type="range" id="input-layout-twist" min="-180" max="180" value="12" class="flex-1">
+              <input type="text" id="num-layout-twist" class="val-box-input" value="12">
+            </div>
+          </div>
+
+          <!-- RADIATION CHECKBOXES (Exact Match Reference 2) -->
+          <div class="pt-2 border-t border-[#eef0f4] space-y-1">
+            <label class="toggle-check-row cursor-pointer">
+              <span>Clip cell</span>
+              <input type="checkbox" id="chk-rad-clip" class="custom-app-checkbox">
+            </label>
+            <label class="toggle-check-row cursor-pointer">
+              <span>Visible Grid Lines</span>
+              <input type="checkbox" id="chk-rad-gridlines" class="custom-app-checkbox">
+            </label>
+            <label class="toggle-check-row cursor-pointer">
+              <span>Checkerboard inversion</span>
+              <input type="checkbox" id="chk-rad-checker" class="custom-app-checkbox">
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           TAB 3: STRUCTURE (EXACT MATCH MOCKUP media_1790991477208.png)
+           Rhythmic Cadence Proportions: Col Ratio, Row Ratio, Visible Grid Lines
+           =================================================================== -->
+      <div id="card-structure" class="flyout-tab-content space-y-4 hidden" data-flyout-tab="structure">
+        <div class="flex items-center justify-between border-b border-[#eef0f4] pb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-semibold text-[#585b68]">Structure</span>
+            <span id="badge-structure-layer" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#e2e5eb] text-[#4b4f5d] font-bold">Layer 1</span>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <label class="switch cursor-pointer" title="Enable / Disable Structure">
+              <input type="checkbox" id="toggle-structure-active">
+              <span class="switch-slider"></span>
+            </label>
+            <button type="button" class="close-flyout-btn" title="Close Panel">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Warning Alert Banner: Appears dynamically only when Radiation is active in Layout structure -->
+        <div id="warning-structure-radiation" class="warning-alert-box hidden">
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-[#d97706] shrink-0 mt-0.5"></i>
+          <span>This control cannot be used when Radiation is active in Layout structure control.</span>
+        </div>
+
+        <!-- Structure Controls Group -->
+        <div id="struct-controls-group" class="space-y-4">
+          <!-- Col Ratio & Row Ratio -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">COL RATIO [A:B]</div>
+              <div class="flex items-center gap-2">
+                <input type="range" id="input-struct-col-ratio" min="1" max="4" step="0.1" value="1" class="flex-1">
+                <input type="text" id="num-struct-col-ratio" class="val-box-input" value="1">
+              </div>
+            </div>
+            <div>
+              <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">ROW RATIO [A:B]</div>
+              <div class="flex items-center gap-2">
+                <input type="range" id="input-struct-row-ratio" min="1" max="4" step="0.1" value="1" class="flex-1">
+                <input type="text" id="num-struct-row-ratio" class="val-box-input" value="1">
+              </div>
+            </div>
+          </div>
+
+          <!-- Visible Grid Lines -->
+          <div class="pt-2 border-t border-[#eef0f4]">
+            <label class="toggle-check-row cursor-pointer flex items-center justify-between text-xs text-[#121317]">
+              <span>Visible Grid Lines</span>
+              <input type="checkbox" id="chk-struct-gridlines" class="custom-app-checkbox">
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===================================================================
+           TAB 4: SIMILARITY (EXACT MATCH MOCKUP media_1790993276297.png)
+           Visual Kinship: Elastic, 3D tilt, Wobble, Scale, Hibrid
+           Fluctuation Intensity & Spatial Cell Jitter
+           =================================================================== -->
+      <div id="card-similarity" class="flyout-tab-content space-y-4 hidden" data-flyout-tab="similarity">
+        <div class="flex items-center justify-between border-b border-[#eef0f4] pb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-semibold text-[#585b68]">Similarity</span>
+            <span id="badge-similarity-layer" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#e2e5eb] text-[#4b4f5d] font-bold">Layer 1</span>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <label class="switch cursor-pointer" title="Enable / Disable Similarity">
+              <input type="checkbox" id="toggle-similarity-active">
+              <span class="switch-slider"></span>
+            </label>
+            <button type="button" class="close-flyout-btn" title="Close Panel">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Dependency Warning Banner: Shown only when Similarity is ON but Layout Structure is OFF -->
+        <div id="warning-similarity-grid" class="warning-alert-box hidden">
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-[#d97706] shrink-0 mt-0.5"></i>
+          <span>Requires Repetition or Radiation in Layout structure to display across a population of units.</span>
+        </div>
+
+        <!-- Similarity Controls Group -->
+        <div id="similarity-controls-group" class="space-y-4">
+          <!-- Visual Kinship Type -->
+          <div>
+            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-2">VISUAL KINSHIP TYPE</div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button type="button" class="variation-pill-btn active" data-kinship-type="distortion">Elastic</button>
+              <button type="button" class="variation-pill-btn" data-kinship-type="foreshortening">3D tilt</button>
+              <button type="button" class="variation-pill-btn" data-kinship-type="rotation_wobble">Wobble</button>
+              <button type="button" class="variation-pill-btn" data-kinship-type="scale_kinship">Scale</button>
+              <button type="button" class="variation-pill-btn" data-kinship-type="hybrid">Hibrid</button>
+            </div>
+          </div>
+
+          <!-- Fluctuation Intensity & Spatial Cell Jitter -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">FLUCTUATION INTENSITY</div>
+              <div class="flex items-center gap-2">
+                <input type="range" id="input-sim-intensity" min="0" max="100" step="1" value="50" class="flex-1">
+                <input type="text" id="num-sim-intensity" class="val-box-input" value="50%">
+              </div>
+            </div>
+            <div>
+              <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">SPATIAL CELL JITTER</div>
+              <div class="flex items-center gap-2">
+                <input type="range" id="input-sim-jitter" min="0" max="30" step="1" value="0" class="flex-1">
+                <input type="text" id="num-sim-jitter" class="val-box-input" value="0">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           TAB 4: GRADATION
+           =================================================================== -->
+      <div id="card-gradation" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="gradation">
+        <div class="modifier-header">
+          <div class="flex items-center gap-2">
+            <i data-lucide="trending-up" class="w-3.5 h-3.5 text-zinc-600"></i>
+            <span class="font-semibold text-xs text-[#121317]">Gradation</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="switch">
+              <input type="checkbox" id="toggle-mod-gradation">
+              <span class="switch-slider"></span>
+            </label>
+            <button type="button" class="close-flyout-btn" title="Close Panel">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+        <div class="modifier-body space-y-2">
+          <div class="grid grid-cols-3 gap-1">
+            <button type="button" class="tool-btn active text-[10px]" data-grad-mode="size">Size</button>
+            <button type="button" class="tool-btn text-[10px]" data-grad-mode="rotation">Rotational</button>
+            <button type="button" class="tool-btn text-[10px]" data-grad-mode="position">Position</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
+                <span>Steps</span>
+                <input type="number" id="num-grad-steps" class="scrub-input w-10" value="6" min="3" max="16">
+              </div>
+              <input type="range" id="input-grad-steps" min="3" max="16" value="6">
+            </div>
+            <div>
+              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
+                <span>Rate</span>
+                <input type="number" id="num-grad-rate" class="scrub-input w-12" value="1.2" min="0.4" max="2.5" step="0.1">
+              </div>
+              <input type="range" id="input-grad-rate" min="0.4" max="2.5" step="0.1" value="1.2">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           TAB 4: ANOMALY
+           =================================================================== -->
+      <div id="card-anomaly" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="anomaly">
+        <div class="modifier-header">
+          <div class="flex items-center gap-2">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-zinc-600"></i>
+            <span class="font-semibold text-xs text-[#121317]">Anomaly</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="switch">
+              <input type="checkbox" id="toggle-mod-anomaly">
+              <span class="switch-slider"></span>
+            </label>
+            <button type="button" class="close-flyout-btn" title="Close Panel">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+        <div class="modifier-body space-y-2">
+          <div class="grid grid-cols-3 gap-1">
+            <button type="button" class="tool-btn active text-[10px]" data-anomaly-type="regular">Regular</button>
+            <button type="button" class="tool-btn text-[10px]" data-anomaly-type="random">Random</button>
+            <button type="button" class="tool-btn text-[10px]" data-anomaly-type="cluster">Cluster</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
+                <span>Frequency (%)</span>
+                <input type="number" id="num-anomaly-freq" class="scrub-input w-10" value="15" min="2" max="60">
+              </div>
+              <input type="range" id="input-anomaly-freq" min="2" max="60" value="15">
+            </div>
+            <div>
+              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
+                <span>Scale Var (x)</span>
+                <input type="number" id="num-anomaly-scale" class="scrub-input w-12" value="1.8" min="0.2" max="3.0" step="0.1">
+              </div>
+              <input type="range" id="input-anomaly-scale" min="0.2" max="3.0" step="0.1" value="1.8">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           TAB 5: CONTRAST
+           =================================================================== -->
+      <div id="card-contrast" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="contrast">
+        <div class="modifier-header">
+          <div class="flex items-center gap-2">
+            <i data-lucide="contrast" class="w-3.5 h-3.5 text-zinc-600"></i>
+            <span class="font-semibold text-xs text-[#121317]">Contrast</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="switch">
+              <input type="checkbox" id="toggle-mod-contrast">
+              <span class="switch-slider"></span>
+            </label>
+            <button type="button" class="close-flyout-btn" title="Close Panel">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+        <div class="modifier-body space-y-2">
+          <div class="grid grid-cols-3 gap-1">
+            <button type="button" class="tool-btn active text-[10px]" data-contrast-type="scale">Scale</button>
+            <button type="button" class="tool-btn text-[10px]" data-contrast-type="tone">Tone</button>
+            <button type="button" class="tool-btn text-[10px]" data-contrast-type="orientation">Angle</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
+                <span>Dominance (%)</span>
+                <input type="number" id="num-contrast-dominance" class="scrub-input w-10" value="80" min="60" max="95">
+              </div>
+              <input type="range" id="input-contrast-dominance" min="60" max="95" value="80">
+            </div>
+            <div>
+              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
+                <span>Scale Factor</span>
+                <input type="number" id="num-contrast-scale" class="scrub-input w-12" value="2.2" min="0.2" max="3.0" step="0.2">
+              </div>
+              <input type="range" id="input-contrast-scale" min="0.2" max="3.0" step="0.1" value="2.2">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           TAB 6: CONCENTRATION
+           =================================================================== -->
+      <div id="card-concentration" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="concentration">
+        <div class="modifier-header">
+          <div class="flex items-center gap-2">
+            <i data-lucide="target" class="w-3.5 h-3.5 text-zinc-600"></i>
+            <span class="font-semibold text-xs text-[#121317]">Concentration</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="switch">
+              <input type="checkbox" id="toggle-mod-concentration">
+              <span class="switch-slider"></span>
+            </label>
+            <button type="button" class="close-flyout-btn" title="Close Panel">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+        <div class="modifier-body space-y-2">
+          <div class="grid grid-cols-4 gap-1">
+            <button type="button" class="tool-btn active text-[10px]" data-conc-mode="point">Point</button>
+            <button type="button" class="tool-btn text-[10px]" data-conc-mode="void">Void</button>
+            <button type="button" class="tool-btn text-[10px]" data-conc-mode="line">Line</button>
+            <button type="button" class="tool-btn text-[10px]" data-conc-mode="free">Free</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
+                <span>Field Power</span>
+                <input type="number" id="num-conc-power" class="scrub-input w-10" value="65" min="20" max="100">
+              </div>
+              <input type="range" id="input-conc-power" min="20" max="100" value="65">
+            </div>
+            <div>
+              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
+                <span>Radius (px)</span>
+                <input type="number" id="num-conc-radius" class="scrub-input w-12" value="240" min="80" max="450">
+              </div>
+              <input type="range" id="input-conc-radius" min="80" max="450" value="240">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           TAB 7: TEXTURE
+           =================================================================== -->
+      <div id="card-texture" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="texture">
+        <div class="modifier-header">
+          <div class="flex items-center gap-2">
+            <i data-lucide="hash" class="w-3.5 h-3.5 text-zinc-600"></i>
+            <span class="font-semibold text-xs text-[#121317]">Texture</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="switch">
+              <input type="checkbox" id="toggle-mod-texture">
+              <span class="switch-slider"></span>
+            </label>
+            <button type="button" class="close-flyout-btn" title="Close Panel">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+        <div class="modifier-body space-y-2">
+          <div class="grid grid-cols-4 gap-1">
+            <button type="button" class="tool-btn active text-[10px]" data-texture-mode="grain">Grain</button>
+            <button type="button" class="tool-btn text-[10px]" data-texture-mode="halftone">Halftone</button>
+            <button type="button" class="tool-btn text-[10px]" data-texture-mode="ribbing">Ribbing</button>
+            <button type="button" class="tool-btn text-[10px]" data-texture-mode="typography">Type</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
+                <span>Density</span>
+                <input type="number" id="num-texture-density" class="scrub-input w-9" value="50" min="20" max="90">
+              </div>
+              <input type="range" id="input-texture-density" min="20" max="90" value="50">
+            </div>
+            <div>
+              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
+                <span>Scale</span>
+                <input type="number" id="num-texture-scale" class="scrub-input w-9" value="14" min="6" max="36">
+              </div>
+              <input type="range" id="input-texture-scale" min="6" max="36" value="14">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           TAB 8: SPACE & DEPTH
+           =================================================================== -->
+      <div id="card-space" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="space">
+        <div class="modifier-header">
+          <div class="flex items-center gap-2">
+            <i data-lucide="box" class="w-3.5 h-3.5 text-zinc-600"></i>
+            <span class="font-semibold text-xs text-[#121317]">Space & Depth</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="switch">
+              <input type="checkbox" id="toggle-mod-space">
+              <span class="switch-slider"></span>
+            </label>
+            <button type="button" class="close-flyout-btn" title="Close Panel">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+        <div class="modifier-body space-y-2">
+          <div class="grid grid-cols-2 gap-1">
+            <button type="button" class="tool-btn active text-[10px]" data-space-mode="isometric">Isometric 30°</button>
+            <button type="button" class="tool-btn text-[10px]" data-space-mode="foreshortening">Foreshortening</button>
+            <button type="button" class="tool-btn text-[10px]" data-space-mode="fluctuating">Fluctuating</button>
+            <button type="button" class="tool-btn text-[10px]" data-space-mode="conflicting">Conflicting</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
+                <span>Depth</span>
+                <input type="number" id="num-space-depth" class="scrub-input w-10" value="35" min="10" max="80">
+              </div>
+              <input type="range" id="input-space-depth" min="10" max="80" value="35">
+            </div>
+            <div>
+              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
+                <span>Light Angle</span>
+                <input type="number" id="num-space-angle" class="scrub-input w-10" value="30" min="-60" max="60">
+              </div>
+              <input type="range" id="input-space-angle" min="-60" max="60" value="30">
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FLOATING RIGHT CONTROLS RAIL (Vertical Black Circular Buttons Dock) -->
+    <nav id="controls-rail" class="controls-rail z-35 pointer-events-auto select-none" aria-label="Controls Rail">
+      <button type="button" class="rail-btn active" data-rail-tab="module" title="Module">
+        <i data-lucide="shapes" class="w-4 h-4"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="layout" title="Layout Structure">
+        <i data-lucide="layout-template" class="w-4 h-4"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="structure" title="Structure">
+        <i data-lucide="layout-grid" class="w-4 h-4"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="similarity" title="Similarity">
+        <i data-lucide="copy" class="w-4 h-4"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="gradation" title="Gradation">
+        <i data-lucide="trending-up" class="w-4 h-4"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="anomaly" title="Anomaly">
+        <i data-lucide="sparkles" class="w-4 h-4"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="contrast" title="Contrast">
+        <i data-lucide="contrast" class="w-4 h-4"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="concentration" title="Concentration">
+        <i data-lucide="target" class="w-4 h-4"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="texture" title="Texture">
+        <i data-lucide="hash" class="w-4 h-4"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="space" title="Space & Depth">
+        <i data-lucide="box" class="w-4 h-4"></i>
+      </button>
+    </nav>
+
+  </main>
+
+  <!-- Master Script Bundle -->
+  <script src="js/bundle-pro.js"></script>
+
+</body>
+</html>

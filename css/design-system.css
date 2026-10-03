@@ -1,0 +1,58 @@
+/* =========================================================================
+   BASIC STUDIO — DESIGN SYSTEM TOKENS
+   Inspired by Abstract Studio: Minimalist, Canvas-First, Floating Surface Aesthetic
+   ========================================================================= */
+
+:root {
+  /* Surface & Workspace Backgrounds */
+  --bs-bg-workspace: #eceef2;
+  --bs-canvas-grid-dot: rgba(0, 0, 0, 0.07);
+  --bs-surface-artboard: #ffffff;
+  --bs-surface-card: #ffffff;
+  --bs-surface-card-hover: #f7f8fa;
+  --bs-surface-card-active: #18181f;
+  --bs-surface-subtle: #f2f4f7;
+  --bs-surface-input: #ffffff;
+  --bs-surface-rail: rgba(24, 24, 31, 0.88);
+
+  /* Borders & Dividers */
+  --bs-border-default: #dcdfe6;
+  --bs-border-card: #e2e5eb;
+  --bs-border-button: #d2d5de;
+  --bs-border-subtle: rgba(0, 0, 0, 0.06);
+  --bs-border-active: #18181f;
+  --bs-border-focus: #3b82f6;
+
+  /* Typography Colors */
+  --bs-text-primary: #121317;
+  --bs-text-secondary: #585b68;
+  --bs-text-muted: #9195a4;
+  --bs-text-active-card: #ffffff;
+  --bs-text-active-card-muted: #9fa2b2;
+
+  /* Accent & Interactive States */
+  --bs-accent-primary: #18181f;
+  --bs-accent-primary-hover: #2b2b36;
+  --bs-accent-active: #111216;
+  --bs-accent-blue: #3b82f6;
+  --bs-accent-danger: #ef4444;
+
+  /* Elevation & Shadows */
+  --bs-shadow-card: 0 12px 36px -6px rgba(0, 0, 0, 0.08), 0 3px 10px -2px rgba(0, 0, 0, 0.04);
+  --bs-shadow-artboard: 0 24px 64px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  --bs-shadow-button: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --bs-shadow-floating-hud: 0 8px 24px -4px rgba(0, 0, 0, 0.25);
+
+  /* Radii */
+  --bs-radius-artboard: 12px;
+  --bs-radius-card: 14px;
+  --bs-radius-button: 8px;
+  --bs-radius-pill: 9999px;
+  --bs-radius-input: 6px;
+  --bs-radius-icon: 50%;
+
+  /* Typography Families */
+  --bs-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --bs-font-mono: 'JetBrains Mono', monospace;
+  --bs-font-display: 'Space Grotesk', var(--bs-font-sans);
+}
