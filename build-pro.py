@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Zero-dependency bundler for Studio Wong Pro.
+Zero-dependency bundler for Module Studio.
 Concatenates ES modules into a clean standalone js/bundle-pro.js that runs
 flawlessly on both http:// and file:/// protocols.
 """
@@ -42,7 +42,7 @@ def build():
     with open(os.path.join(js_dir, 'studio', 'studio-pro-app.js')) as f:
         c_app = strip_es6_modules(f.read())
 
-    bundle = f"""// Standalone self-contained script for Studio Wong Pro
+    bundle = f"""// Standalone self-contained script for Module Studio
 // Runs on both http:// (web server) and file:/// (local direct open)
 (function() {{
   'use strict';

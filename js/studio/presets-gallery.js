@@ -1,5 +1,5 @@
 /**
- * STUDIO WONG PRO — Presets Gallery
+ * MODULE STUDIO — Presets Gallery
  * Curated parametric compositions across Bauhaus, Swiss, Op-Art, and Kinetic aesthetics.
  */
 

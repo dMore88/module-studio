@@ -45,36 +45,35 @@ export const createDefaultLayerStructure = () => ({
   }
 });
 
+export const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "circle", offsetX = 0, offsetY = 0, rotation = 0) => ({
+  id,
+  name,
+  visible: true,
+  enabled: true,
+  shape,
+  scale: 50,
+  width: 50,
+  height: 50,
+  rotation,
+  offsetX,
+  offsetY,
+  wireframe: true,
+  strokeWidth: 1.2,
+  color: "#18181f",
+  structure: createDefaultLayerStructure()
+});
+
+const defaultLayer1 = createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5);
+const defaultLayer2 = createDefaultLayer("layer-2", "Layer 2", "square", 65, 0, 0);
+
 export const defaultStudioState = {
   aspectRatio: "1:1",
-  // Primary Module Form A
-  formA: {
-    visible: true,
-    shape: "circle",
-    scale: 50,
-    width: 50,
-    height: 50,
-    rotation: 4.5,
-    offsetX: 0,
-    offsetY: 0,
-    wireframe: true,
-    structure: createDefaultLayerStructure()
-  },
-  // Secondary Module Form B
-  formB: {
-    enabled: true,
-    visible: true,
-    shape: "square",
-    scale: 50,
-    width: 50,
-    height: 50,
-    rotation: 0,
-    offsetX: 65,
-    offsetY: 0,
-    wireframe: true,
-    structure: createDefaultLayerStructure()
-  },
+  layers: [defaultLayer1, defaultLayer2],
   layerOrder: ["layer-2", "layer-1"],
+  // Primary Module Form A (backward-compatibility reference)
+  formA: defaultLayer1,
+  // Secondary Module Form B (backward-compatibility reference)
+  formB: defaultLayer2,
   // Interrelation between Form A and B
   interrelation: "overlapping",
   invertFigureGround: false,
@@ -251,7 +250,7 @@ export class StudioEngine {
     } else {
       ctx.fill();
 
-      // In-shape tactile texture (Chapter 11)
+      // In-shape tactile texture (Texture)
       const text = this.state.modifiers.texture;
       if (text && text.enabled && (text.target === "shapes" || text.target === "both")) {
         ctx.save();
@@ -265,7 +264,7 @@ export class StudioEngine {
     ctx.restore();
   }
 
-  // Draw illusory 3D spatial form (Chapter 12: Space)
+  // Draw illusory 3D spatial form (Space)
   drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space) {
     const mode = space.mode || "isometric";
     const rawDepth = space.depth ?? 35;
@@ -475,7 +474,7 @@ export class StudioEngine {
     }
   }
 
-  // Draw tactile texture strictly within the clipped silhouette of a shape (Chapter 11)
+  // Draw tactile texture strictly within the clipped silhouette of a shape (Texture)
   fillShapeTexture(ctx, size, fgColor, etchColor, text) {
     const alpha = (text.contrast ?? 40) / 100;
     const density = (text.density ?? 50) / 100;
@@ -574,7 +573,8 @@ export class StudioEngine {
     targetCtx.translate(ox, oy);
     targetCtx.rotate(((mod.rotation || 0) * Math.PI) / 180);
     targetCtx.scale(sx, sy);
-    this.drawShape(targetCtx, shape, r, fgColor, wire, strokeW, bgColor, false, isCutout);
+    const layerColor = mod.color || fgColor;
+    this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, false, isCutout);
     targetCtx.restore();
   }
 
@@ -936,7 +936,7 @@ export class StudioEngine {
           cy += pRand(11) * sim.cellJitter;
         }
 
-        // Concentration Field Displacement & Density Kinematics (Chapter 10)
+        // Concentration Field Displacement & Density Kinematics (Concentration)
         let concAngle = 0;
         let concScaleMul = 1.0;
         if (conc && conc.enabled) {
@@ -1334,7 +1334,7 @@ export class StudioEngine {
     }
   }
 
-  // Render the polar radiation layout (Chapter 7)
+  // Render the polar radiation layout (Radiation)
   renderRadiation(ctx, width, height, palette, marginParam, usableWParam, usableHParam, targetMod = null, radConfig = null) {
     const rad = radConfig || (targetMod?.structure?.radiation) || this.state.modifiers.radiation;
     const grad = this.state.modifiers.gradation;
@@ -1742,6 +1742,16 @@ export class StudioEngine {
     }
   }
 
+  getLayers() {
+    if (Array.isArray(this.state.layers) && this.state.layers.length > 0) {
+      return this.state.layers;
+    }
+    const list = [];
+    if (this.state.formA) list.push(this.state.formA);
+    if (this.state.formB && this.state.formB.enabled !== false) list.push(this.state.formB);
+    return list;
+  }
+
   // Master render method
   render(palette) {
     if (!this.canvas) return;
@@ -1801,7 +1811,7 @@ export class StudioEngine {
       ctx.restore();
     }
 
-    // 2.5 Isometric Drafting Guides (Chapter 12: Space)
+    // 2.5 Isometric Drafting Guides (Space)
     if (this.state.modifiers.space.enabled && this.state.modifiers.space.showIsoGuides) {
       this.drawIsometricGuides(ctx, width, height, palette);
     }
@@ -1812,34 +1822,27 @@ export class StudioEngine {
     ctx.rect(margin, margin, usableW, usableH);
     ctx.clip();
 
-    const structA = this.state.formA?.structure;
-    const structB = this.state.formB?.enabled ? this.state.formB?.structure : null;
-    const hasLayerStructure = !!((structA && structA.enabled) || (structB && structB.enabled));
+    const layers = this.getLayers();
+    const order = (this.state.layerOrder && this.state.layerOrder.length > 0) 
+      ? this.state.layerOrder 
+      : layers.map(l => l.id);
+    const renderStack = [...order].reverse();
+
+    const hasLayerStructure = layers.some(l => l.visible !== false && l.structure && (l.structure.enabled || (l.structure.formalStructure && l.structure.formalStructure.enabled)));
     const hasGlobalStructure = !!(this.state.modifiers.radiation.enabled || this.state.modifiers.repetition.enabled);
 
     if (!hasLayerStructure && !hasGlobalStructure) {
-      // Single Module Study in Center (Pure Form A & Form B Base Unit with Wong Interrelations)
-      ctx.save();
-      ctx.translate(width / 2, height / 2);
-      const aspectScale = Math.min(1.0, Math.min(width, height) / 600);
-      this.renderModule(ctx, 1.25 * aspectScale, fgColor, bgColor);
-      ctx.restore();
-    } else if (hasLayerStructure) {
-      // Independent Layers Pipeline: Each layer has its own independent layout structure & properties
-      const order = this.state.layerOrder || ["layer-2", "layer-1"];
-      // In design tools (Figma, Photoshop), top card is foreground; render stack draws bottom to top
-      const renderStack = [...order].reverse();
-
+      // Single Module Study in Center (Pure Base Units centered on canvas)
       for (const layerId of renderStack) {
-        let mod = null;
-        if (layerId === "layer-1") {
-          mod = this.state.formA;
-          if (!mod || mod.visible === false) continue;
-        } else if (layerId === "layer-2") {
-          mod = this.state.formB;
-          if (!mod || !mod.enabled || mod.visible === false) continue;
-        }
-        if (!mod) continue;
+        const mod = layers.find(l => l.id === layerId);
+        if (!mod || mod.visible === false) continue;
+        this.renderSingleLayerModule(ctx, mod, width, height, palette);
+      }
+    } else if (hasLayerStructure) {
+      // Independent Multilayer Pipeline: Each layer has its own independent layout structure & properties
+      for (const layerId of renderStack) {
+        const mod = layers.find(l => l.id === layerId);
+        if (!mod || mod.visible === false) continue;
 
         const layerStruct = mod.structure;
         if (layerStruct && (layerStruct.enabled || (layerStruct.formalStructure && layerStruct.formalStructure.enabled))) {
@@ -1875,13 +1878,13 @@ export class StudioEngine {
       ctx.restore();
     }
 
-    // 5. Tactile Texture Rendering (Chapter 11)
+    // 5. Tactile Texture Rendering (Texture)
     if (this.state.modifiers.texture.enabled) {
       this.renderTexture(ctx, width, height, palette);
     }
   }
 
-  // Concentration Attractor Field Guide (Chapter 10)
+  // Concentration Attractor Field Guide (Concentration)
   drawAttractorGuide(ctx, width, height, palette, conc) {
     const attX = (conc.attractorX ?? 0.5) * width;
     const attY = (conc.attractorY ?? 0.5) * height;
@@ -1958,7 +1961,7 @@ export class StudioEngine {
     ctx.restore();
   }
 
-  // 30° Isometric Construction Guide Grid (Chapter 12: Space)
+  // 30° Isometric Construction Guide Grid (Space)
   drawIsometricGuides(ctx, width, height, palette) {
     ctx.save();
     ctx.strokeStyle = palette.grid;
@@ -1997,7 +2000,7 @@ export class StudioEngine {
     ctx.restore();
   }
 
-  // Tactile Texture Engine (Chapter 11) - Canvas-wide surface plate
+  // Tactile Texture Engine (Texture) - Canvas-wide surface plate
   renderTexture(ctx, width, height, palette) {
     const text = this.state.modifiers.texture;
     if (!text || !text.enabled) return;

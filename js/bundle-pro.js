@@ -1,4 +1,4 @@
-// Standalone self-contained script for Studio Wong Pro
+// Standalone self-contained script for Module Studio
 // Runs on both http:// (web server) and file:/// (local direct open)
 (function() {
   'use strict';
@@ -119,7 +119,7 @@ const CanvasUtils = {
     ctx.closePath();
   },
 
-  // Draw smooth teardrop shape (frequently used in Wong's similarity & concentration chapters)
+  // Draw smooth teardrop shape (frequently used in Wong's similarity & concentration principles)
   drawTeardrop(ctx, x, y, width, length, angle = 0) {
     ctx.save();
     ctx.translate(x, y);
@@ -869,36 +869,34 @@ const createDefaultLayerStructure = () => ({
     seed: 42
   }
 });
+const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "circle", offsetX = 0, offsetY = 0, rotation = 0) => ({
+  id,
+  name,
+  visible: true,
+  enabled: true,
+  shape,
+  scale: 50,
+  width: 50,
+  height: 50,
+  rotation,
+  offsetX,
+  offsetY,
+  wireframe: true,
+  strokeWidth: 1.2,
+  color: "#18181f",
+  structure: createDefaultLayerStructure()
+});
+
+const defaultLayer1 = createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5);
+const defaultLayer2 = createDefaultLayer("layer-2", "Layer 2", "square", 65, 0, 0);
 const defaultStudioState = {
   aspectRatio: "1:1",
-  // Primary Module Form A
-  formA: {
-    visible: true,
-    shape: "circle",
-    scale: 50,
-    width: 50,
-    height: 50,
-    rotation: 4.5,
-    offsetX: 0,
-    offsetY: 0,
-    wireframe: true,
-    structure: createDefaultLayerStructure()
-  },
-  // Secondary Module Form B
-  formB: {
-    enabled: true,
-    visible: true,
-    shape: "square",
-    scale: 50,
-    width: 50,
-    height: 50,
-    rotation: 0,
-    offsetX: 65,
-    offsetY: 0,
-    wireframe: true,
-    structure: createDefaultLayerStructure()
-  },
+  layers: [defaultLayer1, defaultLayer2],
   layerOrder: ["layer-2", "layer-1"],
+  // Primary Module Form A (backward-compatibility reference)
+  formA: defaultLayer1,
+  // Secondary Module Form B (backward-compatibility reference)
+  formB: defaultLayer2,
   // Interrelation between Form A and B
   interrelation: "overlapping",
   invertFigureGround: false,
@@ -1074,7 +1072,7 @@ class StudioEngine {
     } else {
       ctx.fill();
 
-      // In-shape tactile texture (Chapter 11)
+      // In-shape tactile texture (Texture)
       const text = this.state.modifiers.texture;
       if (text && text.enabled && (text.target === "shapes" || text.target === "both")) {
         ctx.save();
@@ -1088,7 +1086,7 @@ class StudioEngine {
     ctx.restore();
   }
 
-  // Draw illusory 3D spatial form (Chapter 12: Space)
+  // Draw illusory 3D spatial form (Space)
   drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space) {
     const mode = space.mode || "isometric";
     const rawDepth = space.depth ?? 35;
@@ -1298,7 +1296,7 @@ class StudioEngine {
     }
   }
 
-  // Draw tactile texture strictly within the clipped silhouette of a shape (Chapter 11)
+  // Draw tactile texture strictly within the clipped silhouette of a shape (Texture)
   fillShapeTexture(ctx, size, fgColor, etchColor, text) {
     const alpha = (text.contrast ?? 40) / 100;
     const density = (text.density ?? 50) / 100;
@@ -1397,7 +1395,8 @@ class StudioEngine {
     targetCtx.translate(ox, oy);
     targetCtx.rotate(((mod.rotation || 0) * Math.PI) / 180);
     targetCtx.scale(sx, sy);
-    this.drawShape(targetCtx, shape, r, fgColor, wire, strokeW, bgColor, false, isCutout);
+    const layerColor = mod.color || fgColor;
+    this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, false, isCutout);
     targetCtx.restore();
   }
 
@@ -1759,7 +1758,7 @@ class StudioEngine {
           cy += pRand(11) * sim.cellJitter;
         }
 
-        // Concentration Field Displacement & Density Kinematics (Chapter 10)
+        // Concentration Field Displacement & Density Kinematics (Concentration)
         let concAngle = 0;
         let concScaleMul = 1.0;
         if (conc && conc.enabled) {
@@ -2157,7 +2156,7 @@ class StudioEngine {
     }
   }
 
-  // Render the polar radiation layout (Chapter 7)
+  // Render the polar radiation layout (Radiation)
   renderRadiation(ctx, width, height, palette, marginParam, usableWParam, usableHParam, targetMod = null, radConfig = null) {
     const rad = radConfig || (targetMod?.structure?.radiation) || this.state.modifiers.radiation;
     const grad = this.state.modifiers.gradation;
@@ -2565,6 +2564,16 @@ class StudioEngine {
     }
   }
 
+  getLayers() {
+    if (Array.isArray(this.state.layers) && this.state.layers.length > 0) {
+      return this.state.layers;
+    }
+    const list = [];
+    if (this.state.formA) list.push(this.state.formA);
+    if (this.state.formB && this.state.formB.enabled !== false) list.push(this.state.formB);
+    return list;
+  }
+
   // Master render method
   render(palette) {
     if (!this.canvas) return;
@@ -2624,7 +2633,7 @@ class StudioEngine {
       ctx.restore();
     }
 
-    // 2.5 Isometric Drafting Guides (Chapter 12: Space)
+    // 2.5 Isometric Drafting Guides (Space)
     if (this.state.modifiers.space.enabled && this.state.modifiers.space.showIsoGuides) {
       this.drawIsometricGuides(ctx, width, height, palette);
     }
@@ -2635,34 +2644,27 @@ class StudioEngine {
     ctx.rect(margin, margin, usableW, usableH);
     ctx.clip();
 
-    const structA = this.state.formA?.structure;
-    const structB = this.state.formB?.enabled ? this.state.formB?.structure : null;
-    const hasLayerStructure = !!((structA && structA.enabled) || (structB && structB.enabled));
+    const layers = this.getLayers();
+    const order = (this.state.layerOrder && this.state.layerOrder.length > 0) 
+      ? this.state.layerOrder 
+      : layers.map(l => l.id);
+    const renderStack = [...order].reverse();
+
+    const hasLayerStructure = layers.some(l => l.visible !== false && l.structure && (l.structure.enabled || (l.structure.formalStructure && l.structure.formalStructure.enabled)));
     const hasGlobalStructure = !!(this.state.modifiers.radiation.enabled || this.state.modifiers.repetition.enabled);
 
     if (!hasLayerStructure && !hasGlobalStructure) {
-      // Single Module Study in Center (Pure Form A & Form B Base Unit with Wong Interrelations)
-      ctx.save();
-      ctx.translate(width / 2, height / 2);
-      const aspectScale = Math.min(1.0, Math.min(width, height) / 600);
-      this.renderModule(ctx, 1.25 * aspectScale, fgColor, bgColor);
-      ctx.restore();
-    } else if (hasLayerStructure) {
-      // Independent Layers Pipeline: Each layer has its own independent layout structure & properties
-      const order = this.state.layerOrder || ["layer-2", "layer-1"];
-      // In design tools (Figma, Photoshop), top card is foreground; render stack draws bottom to top
-      const renderStack = [...order].reverse();
-
+      // Single Module Study in Center (Pure Base Units centered on canvas)
       for (const layerId of renderStack) {
-        let mod = null;
-        if (layerId === "layer-1") {
-          mod = this.state.formA;
-          if (!mod || mod.visible === false) continue;
-        } else if (layerId === "layer-2") {
-          mod = this.state.formB;
-          if (!mod || !mod.enabled || mod.visible === false) continue;
-        }
-        if (!mod) continue;
+        const mod = layers.find(l => l.id === layerId);
+        if (!mod || mod.visible === false) continue;
+        this.renderSingleLayerModule(ctx, mod, width, height, palette);
+      }
+    } else if (hasLayerStructure) {
+      // Independent Multilayer Pipeline: Each layer has its own independent layout structure & properties
+      for (const layerId of renderStack) {
+        const mod = layers.find(l => l.id === layerId);
+        if (!mod || mod.visible === false) continue;
 
         const layerStruct = mod.structure;
         if (layerStruct && (layerStruct.enabled || (layerStruct.formalStructure && layerStruct.formalStructure.enabled))) {
@@ -2698,13 +2700,13 @@ class StudioEngine {
       ctx.restore();
     }
 
-    // 5. Tactile Texture Rendering (Chapter 11)
+    // 5. Tactile Texture Rendering (Texture)
     if (this.state.modifiers.texture.enabled) {
       this.renderTexture(ctx, width, height, palette);
     }
   }
 
-  // Concentration Attractor Field Guide (Chapter 10)
+  // Concentration Attractor Field Guide (Concentration)
   drawAttractorGuide(ctx, width, height, palette, conc) {
     const attX = (conc.attractorX ?? 0.5) * width;
     const attY = (conc.attractorY ?? 0.5) * height;
@@ -2781,7 +2783,7 @@ class StudioEngine {
     ctx.restore();
   }
 
-  // 30° Isometric Construction Guide Grid (Chapter 12: Space)
+  // 30° Isometric Construction Guide Grid (Space)
   drawIsometricGuides(ctx, width, height, palette) {
     ctx.save();
     ctx.strokeStyle = palette.grid;
@@ -2820,7 +2822,7 @@ class StudioEngine {
     ctx.restore();
   }
 
-  // Tactile Texture Engine (Chapter 11) - Canvas-wide surface plate
+  // Tactile Texture Engine (Texture) - Canvas-wide surface plate
   renderTexture(ctx, width, height, palette) {
     const text = this.state.modifiers.texture;
     if (!text || !text.enabled) return;
@@ -2911,7 +2913,7 @@ class StudioEngine {
 
 
   /**
- * STUDIO WONG PRO — Presets Gallery
+ * MODULE STUDIO — Presets Gallery
  * Curated parametric compositions across Bauhaus, Swiss, Op-Art, and Kinetic aesthetics.
  */
 const STUDIO_PRESETS = [
@@ -3151,14 +3153,14 @@ const STUDIO_PRESETS = [
 
 
   /**
- * STUDIO WONG PRO — Exporter Module
+ * MODULE STUDIO — Exporter Module
  * High-resolution PNG (Retina 2x/4x), SVG Vector generation, JSON project save/load.
  */
 const StudioExporter = {
   /**
    * Export high-res raster PNG
    */
-  exportPNG(canvas, engine, palette, scaleMultiplier = 2, filename = "studio-wong-composition.png") {
+  exportPNG(canvas, engine, palette, scaleMultiplier = 2, filename = "module-studio-composition.png") {
     const origW = canvas.width;
     const origH = canvas.height;
     
@@ -3185,7 +3187,7 @@ const StudioExporter = {
   /**
    * Export JSON project state
    */
-  exportJSON(state, filename = "studio-wong-project.json") {
+  exportJSON(state, filename = "module-studio-project.json") {
     const jsonStr = JSON.stringify(state, null, 2);
     const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -3201,7 +3203,7 @@ const StudioExporter = {
   /**
    * Export Vector SVG
    */
-  exportSVG(canvas, state, palette, filename = "studio-wong-vector.svg") {
+  exportSVG(canvas, state, palette, filename = "module-studio-vector.svg") {
     // Generate clean SVG container wrapping paths
     const width = canvas.width / (window.devicePixelRatio || 1);
     const height = canvas.height / (window.devicePixelRatio || 1);
@@ -3213,7 +3215,7 @@ const StudioExporter = {
 
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
-  <!-- Studio Wong Pro Vector/Composition Export (${width}x${height}) -->
+  <!-- Module Studio Vector/Composition Export (${width}x${height}) -->
   <defs>
     <style>
       .bg { fill: ${bg}; }
@@ -3246,7 +3248,7 @@ const StudioExporter = {
 
 
   /**
- * BASIC STUDIO PRO — Master Application Controller
+ * MODULE STUDIO PRO — Master Application Controller
  * Inspired by Abstract Studio: Canvas-First, Floating Capas Stack, Shape Inspector & Procedural Stack.
  */
 const ASPECT_RATIOS = {
@@ -3321,10 +3323,7 @@ class StudioProApp {
     this.updateActivePalette();
     this.render();
     this.centerArtboard();
-    this.syncShapeInspectorWithActiveLayer();
-    this.syncStructureInspectorWithActiveLayer();
-    this.syncFormalStructureInspectorWithActiveLayer();
-    this.syncSimilarityInspectorWithActiveLayer();
+    this.syncAllInspectorsWithActiveLayer();
     this.updateLayerCardsUI();
 
     // Sync header button states
@@ -3359,59 +3358,36 @@ class StudioProApp {
     this.customColors.bg = this.state.invertFigureGround ? "#18181f" : "#ffffff";
   }
 
-  getActiveModule() {
-    if (this.activeLayerId === "layer-2" && this.state.formB.enabled) {
-      return this.state.formB;
+  getLayers() {
+    if (!Array.isArray(this.state.layers) || this.state.layers.length === 0) {
+      this.state.layers = [];
+      if (this.state.formA) this.state.layers.push(this.state.formA);
+      if (this.state.formB && this.state.formB.enabled !== false) this.state.layers.push(this.state.formB);
+      if (this.state.layers.length === 0) {
+        this.state.layers.push(createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5));
+      }
     }
-    return this.state.formA;
+    return this.state.layers;
+  }
+
+  getActiveModule() {
+    const layers = this.getLayers();
+    const active = layers.find(l => l.id === this.activeLayerId);
+    if (active) return active;
+    return layers[0] || this.state.formA;
+  }
+
+  syncLegacyLayerRefs() {
+    const layers = this.getLayers();
+    this.state.formA = layers[0] || null;
+    this.state.formB = layers[1] || null;
   }
 
   getActiveLayerStructure() {
     const mod = this.getActiveModule();
     if (!mod) return null;
     if (!mod.structure) {
-      mod.structure = {
-        enabled: false,
-        mode: "repetition",
-        repetition: {
-          gridType: "basic",
-          cols: 4,
-          rows: 4,
-          spacing: 0,
-          shearAngle: 15,
-          slideOffset: 0.5,
-          curveIntensity: 18,
-          activeClipping: false,
-          showGridLines: false,
-          gridLineWidth: 1.5,
-          checkerInvert: false
-        },
-        radiation: {
-          scheme: "centrifugal",
-          rays: 12,
-          rings: 5,
-          spiralTwist: 45,
-          activeClipping: false,
-          showRays: false,
-          showRings: false,
-          checkerInvert: false,
-          centerX: 0,
-          centerY: 0
-        },
-        formalStructure: {
-          enabled: false,
-          colRatio: 1.0,
-          rowRatio: 1.0,
-          showGridLines: false
-        },
-        similarity: {
-          enabled: false,
-          kinshipType: "distortion",
-          intensity: 50,
-          cellJitter: 0,
-          seed: 42
-        }
-      };
+      mod.structure = createDefaultLayerStructure();
     }
     if (!mod.structure.similarity) {
       mod.structure.similarity = {
@@ -3423,6 +3399,14 @@ class StudioProApp {
       };
     }
     return mod.structure;
+  }
+
+  syncAllInspectorsWithActiveLayer() {
+    this.syncShapeInspectorWithActiveLayer();
+    this.syncStructureInspectorWithActiveLayer();
+    this.syncFormalStructureInspectorWithActiveLayer();
+    this.syncSimilarityInspectorWithActiveLayer();
+    this.updateRailIndicatorDots();
   }
 
   render() {
@@ -3524,7 +3508,7 @@ class StudioProApp {
     const downloadSvgBtn = document.getElementById("btn-download-svg");
     if (downloadSvgBtn) {
       downloadSvgBtn.addEventListener("click", () => {
-        StudioExporter.exportSVG(this.canvas, this.state, this.getActivePalette(), "basic-studio-composition.svg");
+        StudioExporter.exportSVG(this.canvas, this.state, this.getActivePalette(), "module-studio-composition.svg");
       });
     }
 
@@ -3532,7 +3516,7 @@ class StudioProApp {
     const configBtn = document.getElementById("btn-open-config");
     if (configBtn) {
       configBtn.addEventListener("click", () => {
-        StudioExporter.exportJSON(this.state, "basic-studio-project.json");
+        StudioExporter.exportJSON(this.state, "module-studio-project.json");
       });
     }
   }
@@ -3542,106 +3526,100 @@ class StudioProApp {
      ========================================================================= */
 
   setupFloatingLayersPanel() {
-    const card1 = document.getElementById("layer-card-1");
-    const card2 = document.getElementById("layer-card-2");
     const addBtn = document.getElementById("btn-add-pattern");
     const container = document.getElementById("layers-stack-container");
 
-    // Select Layer 1
-    card1?.addEventListener("click", (e) => {
-      if (e.target.closest(".layer-action-btn")) return;
-      this.selectLayer("layer-1");
-    });
-
-    // Select Layer 2
-    card2?.addEventListener("click", (e) => {
-      if (e.target.closest(".layer-action-btn")) return;
-      this.selectLayer("layer-2");
-    });
-
-    // Eye toggle buttons (Layer 1 & Layer 2)
-    document.querySelectorAll(".btn-layer-eye").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const layerId = btn.dataset.layer;
-        if (layerId === "layer-1") {
-          this.state.formA.visible = this.state.formA.visible === false ? true : false;
-          this.pushHistory(`Layer 1 Visibility: ${this.state.formA.visible}`);
-        } else if (layerId === "layer-2") {
-          this.state.formB.visible = this.state.formB.visible === false ? true : false;
-          this.pushHistory(`Layer 2 Visibility: ${this.state.formB.visible}`);
-        }
-        this.updateLayerCardsUI();
-        this.render();
-      });
-    });
-
-    // Trash / Delete buttons
-    document.querySelectorAll(".btn-layer-delete").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const layerId = btn.dataset.layer;
-        if (layerId === "layer-2") {
-          this.state.formB.enabled = false;
-          this.state.formB.visible = false;
-          if (this.activeLayerId === "layer-2") {
-            this.selectLayer("layer-1");
-          }
-          this.pushHistory("Deleted Layer 2");
-        } else if (layerId === "layer-1") {
-          this.state.formA.visible = !this.state.formA.visible;
-          this.pushHistory("Toggled Layer 1");
-        }
-        this.updateLayerCardsUI();
-        this.render();
-      });
-    });
-
-    // Add Pattern Button (Adds Layer 2 if disabled)
+    // Add Pattern Button (Adds new layer up to 5)
     addBtn?.addEventListener("click", (e) => {
       e.stopPropagation();
-      this.state.formB.enabled = true;
-      this.state.formB.visible = true;
-      this.selectLayer("layer-2");
-      this.updateLayerCardsUI();
-      this.render();
-      this.pushHistory("Added Layer 2 Pattern");
+      this.addLayer();
     });
 
-    // HTML5 Drag and Drop Sorting between Layer Cards
-    let draggedCard = null;
-    [card1, card2].forEach(card => {
-      if (!card) return;
+    if (container) {
+      // Event delegation for layer cards clicks
+      container.addEventListener("click", (e) => {
+        const eyeBtn = e.target.closest(".btn-layer-eye");
+        if (eyeBtn) {
+          e.stopPropagation();
+          const layerId = eyeBtn.dataset.layer;
+          this.toggleLayerVisibility(layerId);
+          return;
+        }
 
-      card.addEventListener("dragstart", (e) => {
+        const delBtn = e.target.closest(".btn-layer-delete");
+        if (delBtn) {
+          e.stopPropagation();
+          if (delBtn.disabled) return;
+          const layerId = delBtn.dataset.layer;
+          this.deleteLayer(layerId);
+          return;
+        }
+
+        const gripHandle = e.target.closest(".layer-drag-handle");
+        if (gripHandle) {
+          e.stopPropagation();
+          const card = gripHandle.closest(".layer-card");
+          if (card && container.children.length > 1) {
+            const next = card.nextElementSibling;
+            if (next) {
+              container.insertBefore(next, card);
+            } else {
+              container.insertBefore(card, container.firstElementChild);
+            }
+            const newOrder = Array.from(container.children).map(c => c.dataset.layerId).filter(Boolean);
+            this.state.layerOrder = newOrder;
+            this.render();
+            this.updateLayerCardsUI();
+            this.pushHistory(`Reorder Layers: ${newOrder.join(" > ")}`);
+          }
+          return;
+        }
+
+        const card = e.target.closest(".layer-card");
+        if (card) {
+          const layerId = card.dataset.layerId;
+          if (layerId && layerId !== this.activeLayerId) {
+            this.selectLayer(layerId);
+          }
+        }
+      });
+
+      // HTML5 Drag and Drop Sorting for Layer Cards
+      let draggedCard = null;
+
+      container.addEventListener("dragstart", (e) => {
+        const card = e.target.closest(".layer-card");
+        if (!card) return;
         draggedCard = card;
         card.classList.add("is-dragging");
         e.dataTransfer.effectAllowed = "move";
         e.dataTransfer.setData("text/plain", card.dataset.layerId || "");
       });
 
-      card.addEventListener("dragend", () => {
-        card.classList.remove("is-dragging");
-        document.querySelectorAll(".layer-card").forEach(c => c.classList.remove("drag-over"));
+      container.addEventListener("dragend", () => {
+        if (draggedCard) draggedCard.classList.remove("is-dragging");
+        container.querySelectorAll(".layer-card").forEach(c => c.classList.remove("drag-over"));
         draggedCard = null;
       });
 
-      card.addEventListener("dragover", (e) => {
+      container.addEventListener("dragover", (e) => {
         e.preventDefault();
+        const card = e.target.closest(".layer-card");
+        if (!card || card === draggedCard) return;
         e.dataTransfer.dropEffect = "move";
-        if (draggedCard && draggedCard !== card) {
-          card.classList.add("drag-over");
-        }
+        card.classList.add("drag-over");
       });
 
-      card.addEventListener("dragleave", () => {
-        card.classList.remove("drag-over");
+      container.addEventListener("dragleave", (e) => {
+        const card = e.target.closest(".layer-card");
+        if (card) card.classList.remove("drag-over");
       });
 
-      card.addEventListener("drop", (e) => {
+      container.addEventListener("drop", (e) => {
         e.preventDefault();
-        card.classList.remove("drag-over");
-        if (draggedCard && draggedCard !== card && container) {
+        container.querySelectorAll(".layer-card").forEach(c => c.classList.remove("drag-over"));
+        const card = e.target.closest(".layer-card");
+        if (draggedCard && card && draggedCard !== card) {
           const cards = Array.from(container.children);
           const draggedIdx = cards.indexOf(draggedCard);
           const targetIdx = cards.indexOf(card);
@@ -3653,93 +3631,164 @@ class StudioProApp {
           const newOrder = Array.from(container.children).map(c => c.dataset.layerId).filter(Boolean);
           this.state.layerOrder = newOrder;
           this.render();
+          this.updateLayerCardsUI();
           this.pushHistory(`Reorder Layers: ${newOrder.join(" > ")}`);
         }
       });
-    });
+    }
+  }
 
-    // Also support clicking grip handle to swap layers immediately
-    document.querySelectorAll(".layer-drag-handle").forEach(handle => {
-      handle.addEventListener("click", (e) => {
-        e.stopPropagation();
-        if (!container || container.children.length < 2) return;
-        const first = container.firstElementChild;
-        const last = container.lastElementChild;
-        container.insertBefore(last, first);
-        const newOrder = Array.from(container.children).map(c => c.dataset.layerId).filter(Boolean);
-        this.state.layerOrder = newOrder;
-        this.render();
-        this.pushHistory(`Swap Layers: ${newOrder.join(" > ")}`);
-      });
-    });
+  addLayer() {
+    const layers = this.getLayers();
+    if (layers.length >= 5) return;
+
+    let maxNum = 0;
+    for (const l of layers) {
+      const match = (l.id || "").match(/layer-(\d+)/);
+      if (match) {
+        const n = parseInt(match[1], 10);
+        if (n > maxNum) maxNum = n;
+      }
+    }
+    const nextNum = maxNum + 1;
+    const newId = `layer-${nextNum}`;
+    const newName = `Layer ${nextNum}`;
+
+    const shapesPool = ["circle", "square", "triangle_eq", "rhombus", "hexagon", "star4"];
+    const newShape = shapesPool[layers.length % shapesPool.length];
+    const newLayer = createDefaultLayer(newId, newName, newShape, 0, 0, 0);
+
+    layers.push(newLayer);
+    if (!this.state.layerOrder) {
+      this.state.layerOrder = layers.map(l => l.id);
+    }
+    this.state.layerOrder.unshift(newId);
+    this.activeLayerId = newId;
+
+    this.syncLegacyLayerRefs();
+    this.updateLayerCardsUI();
+    this.syncAllInspectorsWithActiveLayer();
+    this.render();
+    this.pushHistory(`Added ${newName}`);
+  }
+
+  deleteLayer(layerId) {
+    const layers = this.getLayers();
+    if (layers.length <= 1) return;
+
+    this.state.layers = layers.filter(l => l.id !== layerId);
+    this.state.layerOrder = (this.state.layerOrder || []).filter(id => id !== layerId);
+
+    if (this.activeLayerId === layerId) {
+      this.activeLayerId = this.state.layers[0]?.id || "layer-1";
+    }
+
+    this.syncLegacyLayerRefs();
+    this.updateLayerCardsUI();
+    this.syncAllInspectorsWithActiveLayer();
+    this.render();
+    this.pushHistory(`Deleted Layer ${layerId}`);
+  }
+
+  toggleLayerVisibility(layerId) {
+    const layers = this.getLayers();
+    const layer = layers.find(l => l.id === layerId);
+    if (!layer) return;
+
+    layer.visible = layer.visible === false ? true : false;
+    this.syncLegacyLayerRefs();
+    this.updateLayerCardsUI();
+    this.render();
+    this.pushHistory(`Toggled Visibility: ${layer.name || layerId}`);
   }
 
   selectLayer(layerId) {
     this.activeLayerId = layerId;
     this.updateLayerCardsUI();
-    this.syncShapeInspectorWithActiveLayer();
-    this.syncStructureInspectorWithActiveLayer();
-    this.syncFormalStructureInspectorWithActiveLayer();
-    this.syncSimilarityInspectorWithActiveLayer();
+    this.syncAllInspectorsWithActiveLayer();
   }
 
   updateLayerCardsUI() {
-    const card1 = document.getElementById("layer-card-1");
-    const card2 = document.getElementById("layer-card-2");
-    const badge = document.getElementById("active-layer-indicator-badge");
+    const container = document.getElementById("layers-stack-container");
+    const addBtn = document.getElementById("btn-add-pattern");
     const layersCountBadge = document.getElementById("layers-count-badge");
     const layersStatus = document.getElementById("hud-layers-status");
 
-    const count = this.state.formB.enabled ? 2 : 1;
-    if (layersCountBadge) layersCountBadge.textContent = count;
+    const layers = this.getLayers();
+    const count = layers.length;
+
+    if (layersCountBadge) layersCountBadge.textContent = `${count} / 5`;
     if (layersStatus) layersStatus.textContent = `${count} LAYERS`;
 
-    const isVis1 = this.state.formA.visible !== false;
-    const isVis2 = this.state.formB.enabled && this.state.formB.visible !== false;
-
-    if (card1) {
-      card1.classList.toggle("is-active", this.activeLayerId === "layer-1");
-      card1.classList.toggle("is-hidden", !isVis1);
-      const eye1 = card1.querySelector(".btn-layer-eye");
-      if (eye1) {
-        eye1.innerHTML = isVis1 
-          ? '<i data-lucide="eye" class="w-3.5 h-3.5"></i>' 
-          : '<i data-lucide="eye-off" class="w-3.5 h-3.5 opacity-40"></i>';
-      }
+    if (addBtn) {
+      const isMax = count >= 5;
+      addBtn.disabled = isMax;
+      addBtn.classList.toggle("opacity-40", isMax);
+      addBtn.classList.toggle("cursor-not-allowed", isMax);
     }
 
-    if (card2) {
-      card2.style.display = this.state.formB.enabled ? "flex" : "none";
-      card2.classList.toggle("is-active", this.activeLayerId === "layer-2");
-      card2.classList.toggle("is-hidden", !isVis2);
-      const eye2 = card2.querySelector(".btn-layer-eye");
-      if (eye2) {
-        eye2.innerHTML = isVis2 
-          ? '<i data-lucide="eye" class="w-3.5 h-3.5"></i>' 
-          : '<i data-lucide="eye-off" class="w-3.5 h-3.5 opacity-40"></i>';
-      }
-    }
+    const activeMod = this.getActiveModule();
+    const activeName = activeMod?.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
+    const badgeModule = document.getElementById("active-layer-indicator-badge");
+    if (badgeModule) badgeModule.textContent = activeName;
+    const badgeLayout = document.getElementById("badge-layout-layer");
+    if (badgeLayout) badgeLayout.textContent = activeName;
+    const badgeStructure = document.getElementById("badge-structure-layer");
+    if (badgeStructure) badgeStructure.textContent = activeName;
+    const badgeSimilarity = document.getElementById("badge-similarity-layer");
+    if (badgeSimilarity) badgeSimilarity.textContent = activeName;
 
-    if (badge) {
-      badge.textContent = this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1";
-    }
+    if (!container) return;
 
-    // Update subtitles with shape, draw mode, scale, and structure status
-    const sub1 = document.getElementById("layer-sub-1");
-    if (sub1) {
-      const mode1 = this.state.formA.wireframe !== false ? "stroke" : "fill";
-      const s1 = this.state.formA.structure;
-      const structText = s1?.enabled ? ` • ${s1.mode === "radiation" ? "radiation" : "grid"}` : "";
-      sub1.textContent = `${this.state.formA.shape} • ${mode1}${structText}`;
-    }
+    const order = (this.state.layerOrder && this.state.layerOrder.length > 0)
+      ? this.state.layerOrder
+      : layers.map(l => l.id);
 
-    const sub2 = document.getElementById("layer-sub-2");
-    if (sub2) {
-      const mode2 = this.state.formB.wireframe !== false ? "stroke" : "fill";
-      const s2 = this.state.formB.structure;
-      const structText = s2?.enabled ? ` • ${s2.mode === "radiation" ? "radiation" : "grid"}` : "";
-      sub2.textContent = `${this.state.formB.shape} • ${mode2}${structText}`;
+    const orderedLayers = [];
+    for (const id of order) {
+      const found = layers.find(l => l.id === id);
+      if (found) orderedLayers.push(found);
     }
+    for (const l of layers) {
+      if (!orderedLayers.includes(l)) orderedLayers.push(l);
+    }
+    this.state.layerOrder = orderedLayers.map(l => l.id);
+
+    const canDelete = count > 1;
+    container.innerHTML = orderedLayers.map(l => {
+      const isActive = l.id === this.activeLayerId;
+      const isVis = l.visible !== false;
+      const shapeDef = Shapes[l.shape] || Shapes.circle;
+      const icon = shapeDef?.iconSvg || '<svg viewBox="-20 -20 40 40" class="w-4 h-4"><circle cx="0" cy="0" r="14" fill="currentColor"/></svg>';
+      const mode = l.wireframe !== false ? "stroke" : "fill";
+      const s = l.structure;
+      const structText = s?.enabled ? (s.mode === "radiation" ? " • radiation" : " • grid") : "";
+
+      return `
+        <div id="layer-card-${l.id}" class="layer-card ${isActive ? 'is-active' : ''} ${!isVis ? 'is-hidden' : ''}" data-layer-id="${l.id}" draggable="true">
+          <div class="flex items-center gap-2.5 min-w-0 pointer-events-none">
+            <div class="layer-preview-box">
+              ${icon}
+            </div>
+            <div class="min-w-0">
+              <div class="layer-title font-semibold text-xs truncate">${l.name || l.id}</div>
+              <div class="layer-subtitle text-[10px] font-mono truncate">${l.shape} • ${mode}${structText}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1">
+            <button type="button" class="layer-action-btn btn-layer-eye" data-layer="${l.id}" title="Toggle Visibility">
+              ${isVis ? '<i data-lucide="eye" class="w-3.5 h-3.5"></i>' : '<i data-lucide="eye-off" class="w-3.5 h-3.5 opacity-40"></i>'}
+            </button>
+            <button type="button" class="layer-action-btn btn-layer-delete ${!canDelete ? 'opacity-25 cursor-not-allowed' : ''}" data-layer="${l.id}" title="${canDelete ? 'Delete Layer' : 'Cannot delete the only layer'}" ${!canDelete ? 'disabled' : ''}>
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+            <span class="layer-action-btn layer-drag-handle cursor-grab active:cursor-grabbing text-zinc-400" title="Drag to reorder">
+              <i data-lucide="grip-vertical" class="w-3.5 h-3.5"></i>
+            </span>
+          </div>
+        </div>
+      `;
+    }).join("");
 
     if (window.lucide) {
       window.lucide.createIcons();
@@ -3824,6 +3873,7 @@ class StudioProApp {
   }
 
   syncStructureInspectorWithActiveLayer() {
+    const mod = this.getActiveModule();
     const struct = this.getActiveLayerStructure();
     if (!struct) return;
 
@@ -3834,7 +3884,7 @@ class StudioProApp {
     const pnlRad = document.getElementById("subpanel-radiation");
 
     const layoutBadge = document.getElementById("badge-layout-layer");
-    if (layoutBadge) layoutBadge.textContent = this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1";
+    if (layoutBadge) layoutBadge.textContent = mod?.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
 
     if (toggleSwitch) toggleSwitch.checked = !!struct.enabled;
 
@@ -4094,7 +4144,7 @@ class StudioProApp {
 
     // Update layer badge
     const badge = document.getElementById("badge-structure-layer");
-    if (badge) badge.textContent = this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1";
+    if (badge) badge.textContent = mod?.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
 
     // Dynamic warning: This control cannot be used when Radiation is active in Layout structure control
     const isRadActive = !!(mod.structure.enabled && mod.structure.mode === "radiation");
@@ -4230,7 +4280,7 @@ class StudioProApp {
 
     // Update layer badge
     const badge = document.getElementById("badge-similarity-layer");
-    if (badge) badge.textContent = this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1";
+    if (badge) badge.textContent = mod?.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
 
     // Dependency warning: Shown only when Similarity is ON but Layout Structure is OFF (neither Repetition nor Radiation)
     const hasGrid = !!(mod.structure && mod.structure.enabled);
@@ -4452,8 +4502,15 @@ class StudioProApp {
       colorPicker.addEventListener("input", (e) => {
         const hex = e.target.value.toUpperCase();
         if (colorText) colorText.textContent = hex;
+        const mod = this.getActiveModule();
+        if (mod) mod.color = hex;
         this.customColors.fg = hex;
+        const swatch = document.getElementById("swatch-active-color");
+        if (swatch) swatch.style.backgroundColor = hex;
         this.render();
+      });
+      colorPicker.addEventListener("change", (e) => {
+        this.pushHistory(`Layer ${this.activeLayerId} Color: ${e.target.value.toUpperCase()}`);
       });
     }
 
@@ -4507,11 +4564,16 @@ class StudioProApp {
       btnStroke?.classList.remove("active");
     }
 
-    // Sync Swatch
+    // Sync Swatch & Color Picker
     const swatch = document.getElementById("swatch-active-color");
     const hexText = document.getElementById("text-color-hex");
-    if (swatch) swatch.style.backgroundColor = this.customColors.fg || "#18181F";
-    if (hexText) hexText.textContent = (this.customColors.fg || "#18181F").toUpperCase();
+    const layerColor = mod.color || this.customColors.fg || "#18181F";
+    const cp = document.getElementById("color-active-shape");
+    if (cp && layerColor.startsWith("#") && layerColor.length === 7) {
+      cp.value = layerColor;
+    }
+    if (swatch) swatch.style.backgroundColor = layerColor;
+    if (hexText) hexText.textContent = layerColor.toUpperCase();
     const badge = document.getElementById("badge-active-pathfinder");
     if (badge) badge.textContent = this.state.interrelation.toUpperCase();
   }
@@ -5000,23 +5062,69 @@ class StudioProApp {
 
   loadPreset(preset) {
     this.state = JSON.parse(JSON.stringify(preset.state));
-    // If preset used legacy global repetition/radiation, assign to Form A
-    if (this.state.modifiers?.repetition?.enabled && this.state.formA) {
-      if (!this.state.formA.structure) this.state.formA.structure = this.getActiveLayerStructure();
-      this.state.formA.structure.enabled = true;
-      this.state.formA.structure.mode = "repetition";
-      Object.assign(this.state.formA.structure.repetition, this.state.modifiers.repetition);
-    } else if (this.state.modifiers?.radiation?.enabled && this.state.formA) {
-      if (!this.state.formA.structure) this.state.formA.structure = this.getActiveLayerStructure();
-      this.state.formA.structure.enabled = true;
-      this.state.formA.structure.mode = "radiation";
-      Object.assign(this.state.formA.structure.radiation, this.state.modifiers.radiation);
+
+    // Normalize layers from preset
+    if (!Array.isArray(this.state.layers) || this.state.layers.length === 0) {
+      this.state.layers = [];
+      if (this.state.formA) {
+        const l1 = Object.assign(createDefaultLayer("layer-1", "Layer 1", this.state.formA.shape || "circle"), this.state.formA, { id: "layer-1", name: "Layer 1" });
+        this.state.layers.push(l1);
+      }
+      if (this.state.formB && this.state.formB.enabled !== false) {
+        const l2 = Object.assign(createDefaultLayer("layer-2", "Layer 2", this.state.formB.shape || "square"), this.state.formB, { id: "layer-2", name: "Layer 2" });
+        this.state.layers.push(l2);
+      }
+      if (this.state.layers.length === 0) {
+        this.state.layers.push(createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5));
+      }
     }
+
+    // Ensure all layers have valid structure and properties
+    this.state.layers.forEach((layer, idx) => {
+      if (!layer.id) layer.id = `layer-${idx + 1}`;
+      if (!layer.name) layer.name = `Layer ${idx + 1}`;
+      if (layer.visible === undefined) layer.visible = true;
+      if (layer.enabled === undefined) layer.enabled = true;
+      if (!layer.structure) layer.structure = createDefaultLayerStructure();
+      if (!layer.structure.formalStructure) {
+        layer.structure.formalStructure = { enabled: false, mode: "rhythmic", colRatio: 1.8, rowRatio: 1.8, bandThickness: 3, showBands: false };
+      }
+      if (!layer.structure.similarity) {
+        layer.structure.similarity = { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 };
+      }
+    });
+
+    // If global repetition or radiation is enabled in preset modifiers, propagate to layer 1 structure
+    const firstLayer = this.state.layers[0];
+    if (firstLayer && !firstLayer.structure.enabled) {
+      if (this.state.modifiers?.repetition?.enabled) {
+        firstLayer.structure.enabled = true;
+        firstLayer.structure.mode = "repetition";
+        Object.assign(firstLayer.structure.repetition, this.state.modifiers.repetition);
+      } else if (this.state.modifiers?.radiation?.enabled) {
+        firstLayer.structure.enabled = true;
+        firstLayer.structure.mode = "radiation";
+        Object.assign(firstLayer.structure.radiation, this.state.modifiers.radiation);
+      }
+      if (this.state.modifiers?.structure?.enabled) {
+        Object.assign(firstLayer.structure.formalStructure, this.state.modifiers.structure);
+      }
+      if (this.state.modifiers?.similarity?.enabled) {
+        Object.assign(firstLayer.structure.similarity, this.state.modifiers.similarity);
+      }
+    }
+
+    this.state.layerOrder = this.state.layers.map(l => l.id);
+    this.syncLegacyLayerRefs();
+
+    if (!this.state.layers.some(l => l.id === this.activeLayerId)) {
+      this.activeLayerId = this.state.layers[0].id;
+    }
+
     this.applyAspectRatio(this.state.aspectRatio || "1:1");
     this.updateActivePalette();
     this.render();
-    this.syncShapeInspectorWithActiveLayer();
-    this.syncStructureInspectorWithActiveLayer();
+    this.syncAllInspectorsWithActiveLayer();
     this.updateLayerCardsUI();
     this.pushHistory(`Loaded Preset: ${preset.name}`);
   }
@@ -5040,9 +5148,13 @@ class StudioProApp {
     if (this.historyIndex > 0) {
       this.historyIndex--;
       this.state = JSON.parse(this.history[this.historyIndex]);
+      this.syncLegacyLayerRefs();
+      const layers = this.getLayers();
+      if (!layers.some(l => l.id === this.activeLayerId)) {
+        this.activeLayerId = layers[0]?.id || "layer-1";
+      }
       this.render();
-      this.syncShapeInspectorWithActiveLayer();
-      this.syncStructureInspectorWithActiveLayer();
+      this.syncAllInspectorsWithActiveLayer();
       this.updateLayerCardsUI();
     }
   }
@@ -5051,9 +5163,13 @@ class StudioProApp {
     if (this.historyIndex < this.history.length - 1) {
       this.historyIndex++;
       this.state = JSON.parse(this.history[this.historyIndex]);
+      this.syncLegacyLayerRefs();
+      const layers = this.getLayers();
+      if (!layers.some(l => l.id === this.activeLayerId)) {
+        this.activeLayerId = layers[0]?.id || "layer-1";
+      }
       this.render();
-      this.syncShapeInspectorWithActiveLayer();
-      this.syncStructureInspectorWithActiveLayer();
+      this.syncAllInspectorsWithActiveLayer();
       this.updateLayerCardsUI();
     }
   }

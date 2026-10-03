@@ -1,7 +1,7 @@
-# Basic Studio — Design System & Tokens Specification
+# Module Studio — Design System & Tokens Specification
 ### Theme: Abstract Studio Clean Modernist Canvas Aesthetic
 
-This document establishes the design tokens, visual hierarchy, and structural patterns of **Basic Studio**, derived from the minimalist, floating-canvas interface of **Abstract Studio**.
+This document establishes the design tokens, visual hierarchy, and structural patterns of **Module Studio**, derived from the minimalist, floating-canvas interface of **Abstract Studio**.
 
 ---
 
@@ -48,7 +48,7 @@ This document establishes the design tokens, visual hierarchy, and structural pa
 
 Instead of full-height fixed sidebars that occupy canvas space, the interface employs:
 1. **Top Minimal Header (56px):**
-   - Left: Logo + `Basic Studio`
+   - Left: Logo + `Module Studio`
    - Center: Aspect Ratio dropdown (`1 : 1 ▼`), Grid toggle button, Theme/Invert toggle button.
    - Right: Actions (`Random`, `Config`, `Copy SVG`, `Download SVG`).
 2. **Left Floating Layers Panel (`CAPAS`):**

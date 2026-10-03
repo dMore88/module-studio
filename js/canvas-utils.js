@@ -115,7 +115,7 @@ export const CanvasUtils = {
     ctx.closePath();
   },
 
-  // Draw smooth teardrop shape (frequently used in Wong's similarity & concentration chapters)
+  // Draw smooth teardrop shape (frequently used in Wong's similarity & concentration principles)
   drawTeardrop(ctx, x, y, width, length, angle = 0) {
     ctx.save();
     ctx.translate(x, y);

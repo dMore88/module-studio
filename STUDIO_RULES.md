@@ -38,17 +38,17 @@ Para cumplir esto, el editor implementa 3 reglas mecánicas:
 
 | Modificador | Régimen / Dependencia | Razón según el libro de Wucius Wong | Comportamiento Mecánico en la Interfaz (Opción B) |
 | :--- | :--- | :--- | :--- |
-| **Form / Module** *(CH 02)* | **Autónomo (Base)** | Es la unidad visual fundamental e indivisible del diseño (figura-fondo y las 8 interrelaciones espaciales entre Form A y Form B). | **Siempre activo** en el canvas. Base matemática sobre la que operan todos los demás modificadores. |
-| **Repetition** *(CH 03)* | **Cartesiano (Incompatible con Radiation)** | Multiplica el módulo en una retícula ortogonal regular cartesiana ($X, Y$). | **Al activar:** Si *Radiation* estaba activo, lo apaga automáticamente. Notifica cambio a retícula cartesiana.<br>**Al desactivar:** Apaga *Structure*. Mantiene encendidos los modificadores cualitativos mostrando su banner pedagógico asistido. |
-| **Radiation** *(CH 07)* | **Polar (Incompatible con Repetition & Structure)** | Estructura el espacio mediante coordenadas polares (rayos y anillos concéntricos desde un foco). | **Al activar:** Apaga automáticamente *Repetition* y *Structure* (eliminando controles fantasma). Notifica cambio a esquema polar.<br>**Al desactivar:** Regresa al modo base sin apagar en cascada las calibraciones de modificadores cualitativos. |
-| **Structure** *(CH 04)* | **Requiere Repetition (Exclusivo Cartesiano)** | Regula las líneas estructurales y los intervalos rítmicos duales ($A : B$) que gobiernan las celdas ortogonales. No tiene sentido físico en rayos polares. | **Al activar:** Si *Radiation* estaba encendido, lo apaga y asegura *Repetition* activo.<br>**Al desactivar Repetition:** *Structure* se apaga automáticamente. |
-| **Similarity** *(CH 05)* | **Colectivo (Población de Módulos)** | Define variaciones de parentesco genético en una familia de formas. Requiere una población para comparar el parentesco. | **Al activar:** Se enciende libremente. Si no hay retícula activa, muestra advertencia ámbar asistida sin forzar switches. Se manifiesta en cuanto se active *Repetition* o *Radiation*. |
-| **Gradation** *(CH 06)* | **Colectivo (Población de Módulos)** | Es una secuencia gradual de pasos ordenados a lo largo de un camino espacial. Requiere una progresión de módulos para manifestar el cambio. | **Al activar:** Se enciende libremente. Si no hay retícula, muestra advertencia ámbar asistida indicando la necesidad de un camino modular. |
-| **Anomaly** *(CH 08)* | **Colectivo (Población de Módulos)** | Es la presencia de irregularidad *donde prevalece una regularidad*. Sin una base regular previa, no existe concepto de anomalía. | **Al activar:** Se enciende libremente. Muestra advertencia ámbar si no hay campo regular activo. |
-| **Contrast** *(CH 09)* | **Colectivo (Población de Módulos)** | Establece disparidad y dominancia (mayoría regular vs. minoría contrastante). | **Al activar:** Se enciende libremente. Muestra advertencia ámbar si no hay población donde distribuir la proporción de dominancia. |
-| **Concentration** *(CH 10)* | **Colectivo (Población de Módulos)** | Simula fuerzas gravitatorias acumulando módulos hacia puntos, líneas o vacíos dentro de un campo modular. | **Al activar:** Se enciende libremente. Muestra advertencia ámbar si no hay campo modular sobre el cual aplicar la fuerza gravitatoria. |
-| **Texture** *(CH 11)* | **Autónomo (Superficial)** | Tratamiento superficial táctil y óptico (grano litográfico, semitono, estriado, tipografía). | **Funciona en todos los modos:** Aplica directamente sobre la silueta de las formas (Form A y Form B) en módulo único o sobre cada celda de cualquier retícula, o sobre el fondo. |
-| **Space** *(CH 12)* | **Autónomo (Tridimensional)** | Modula la ilusión de profundidad tridimensional mediante extrusión isométrica, inclinaciones, planos reversibles y planos en conflicto. | **Funciona en todos los modos:** Transforma volumétricamente las formas planas tanto en módulo único como en retículas cartesianas o polares. |
+| **Form / Module** | **Autónomo (Base)** | Es la unidad visual fundamental e indivisible del diseño (figura-fondo y las 8 interrelaciones espaciales entre Form A y Form B). | **Siempre activo** en el canvas. Base matemática sobre la que operan todos los demás modificadores. |
+| **Repetition** | **Cartesiano (Incompatible con Radiation)** | Multiplica el módulo en una retícula ortogonal regular cartesiana ($X, Y$). | **Al activar:** Si *Radiation* estaba activo, lo apaga automáticamente. Notifica cambio a retícula cartesiana.<br>**Al desactivar:** Apaga *Structure*. Mantiene encendidos los modificadores cualitativos mostrando su banner pedagógico asistido. |
+| **Radiation** | **Polar (Incompatible con Repetition & Structure)** | Estructura el espacio mediante coordenadas polares (rayos y anillos concéntricos desde un foco). | **Al activar:** Apaga automáticamente *Repetition* y *Structure* (eliminando controles fantasma). Notifica cambio a esquema polar.<br>**Al desactivar:** Regresa al modo base sin apagar en cascada las calibraciones de modificadores cualitativos. |
+| **Structure** | **Requiere Repetition (Exclusivo Cartesiano)** | Regula las líneas estructurales y los intervalos rítmicos duales ($A : B$) que gobiernan las celdas ortogonales. No tiene sentido físico en rayos polares. | **Al activar:** Si *Radiation* estaba encendido, lo apaga y asegura *Repetition* activo.<br>**Al desactivar Repetition:** *Structure* se apaga automáticamente. |
+| **Similarity** | **Colectivo (Población de Módulos)** | Define variaciones de parentesco genético en una familia de formas. Requiere una población para comparar el parentesco. | **Al activar:** Se enciende libremente. Si no hay retícula activa, muestra advertencia ámbar asistida sin forzar switches. Se manifiesta en cuanto se active *Repetition* o *Radiation*. |
+| **Gradation** | **Colectivo (Población de Módulos)** | Es una secuencia gradual de pasos ordenados a lo largo de un camino espacial. Requiere una progresión de módulos para manifestar el cambio. | **Al activar:** Se enciende libremente. Si no hay retícula, muestra advertencia ámbar asistida indicando la necesidad de un camino modular. |
+| **Anomaly** | **Colectivo (Población de Módulos)** | Es la presencia de irregularidad *donde prevalece una regularidad*. Sin una base regular previa, no existe concepto de anomalía. | **Al activar:** Se enciende libremente. Muestra advertencia ámbar si no hay campo regular activo. |
+| **Contrast** | **Colectivo (Población de Módulos)** | Establece disparidad y dominancia (mayoría regular vs. minoría contrastante). | **Al activar:** Se enciende libremente. Muestra advertencia ámbar si no hay población donde distribuir la proporción de dominancia. |
+| **Concentration** | **Colectivo (Población de Módulos)** | Simula fuerzas gravitatorias acumulando módulos hacia puntos, líneas o vacíos dentro de un campo modular. | **Al activar:** Se enciende libremente. Muestra advertencia ámbar si no hay campo modular sobre el cual aplicar la fuerza gravitatoria. |
+| **Texture** | **Autónomo (Superficial)** | Tratamiento superficial táctil y óptico (grano litográfico, semitono, estriado, tipografía). | **Funciona en todos los modos:** Aplica directamente sobre la silueta de las formas (Form A y Form B) en módulo único o sobre cada celda de cualquier retícula, o sobre el fondo. |
+| **Space** | **Autónomo (Tridimensional)** | Modula la ilusión de profundidad tridimensional mediante extrusión isométrica, inclinaciones, planos reversibles y planos en conflicto. | **Funciona en todos los modos:** Transforma volumétricamente las formas planas tanto en módulo único como en retículas cartesianas o polares. |
 
 ---
 
@@ -57,13 +57,13 @@ Para cumplir esto, el editor implementa 3 reglas mecánicas:
 1. **Sincronización Total con los Switches:**  
    Hacer clic en el botón `[×]` de una Study Card en la columna izquierda desmarca el switch correspondiente de forma limpia, sincronizando el estado sin efectos secundarios destructivos.
 2. **Base Permanente:**  
-   La tarjeta `CH 02 • FORM & 8 INTERRELATIONS` permanece siempre en el tope del feed y no se puede cerrar.
+   La tarjeta `FORM & 8 INTERRELATIONS` permanece siempre en el tope del feed y no se puede cerrar.
 3. **Avisos de Dependencia en Tiempo Real:**  
    Si un modificador colectivo está activo sin una retícula, la Study Card muestra un badge ámbar:
    `[i] Requires Repetition or Radiation`
 4. **Acciones Contextuales:**  
    Cada tarjeta cuenta con accesos directos:
-   - `[📖 Theory]`: Navega al capítulo correspondiente en el libro/teoría.
+   - `[📖 Theory]`: Navega a la teoría correspondiente.
    - `[💼 Real World]`: Muestra el caso de estudio profesional aplicado.
 
 ---
@@ -97,10 +97,38 @@ Para cumplir esto, el editor implementa 3 reglas mecánicas:
 
 ---
 
-## 7. Protocolo de Compilación Obligatorio (`build.py`)
+## 7. Protocolo de Compilación Obligatorio (`build-pro.py`)
 
 Después de cualquier modificación en los archivos de la carpeta `js/`:
 ```bash
-python3 build.py
+python3 build-pro.py
 ```
-Esto genera `js/bundle.js` manteniendo sincronizada la versión standalone de la aplicación.
+Esto genera `js/bundle-pro.js` manteniendo sincronizada la versión standalone de la aplicación.
+
+---
+
+## 8. Protocolo de Calidad Obligatorio (Zero-Breakage)
+
+> **REGLA DE ORO DE DESARROLLO:**  
+> Ningún cambio, refactor o nuevo control puede entregarse sin cumplir estrictamente estos 6 mandamientos de calidad:
+
+1. **Compilación Inmediata:**  
+   Tras editar cualquier archivo en `js/`, compilar inmediatamente con `python3 build-pro.py` para regenerar `js/bundle-pro.js`.
+
+2. **Validación Sintáctica y de Ejecución (JXA):**  
+   Ejecutar obligatoriamente la validación en macOS con `osascript -l JavaScript` para garantizar 0 errores de sintaxis (`SyntaxError`, llaves faltantes, etc.) y ejecución limpia:
+   ```bash
+   osascript -l JavaScript -e 'var code = ObjC.unwrap($.NSString.stringWithContentsOfFileEncodingError("/Users/dgo/Documents/AI Projects/module-studio/js/bundle-pro.js", $.NSUTF8StringEncoding, null)); new Function(code); var window = { addEventListener: function(){} }; var document = { addEventListener: function(){}, querySelector: function(){ return null; }, querySelectorAll: function(){ return []; }, getElementById: function(){ return null; } }; eval(code); console.log("ZERO-BREAKAGE VALIDATION PASSED");'
+   ```
+
+3. **Sincronización Atómica de Inspectores (`syncAllInspectorsWithActiveLayer`):**  
+   Cualquier evento que mute el estado o cambie la capa activa (`selectLayer`, `undo`, `redo`, `loadPreset`, `init`) debe invocar `syncAllInspectorsWithActiveLayer()`. Prohibido actualizar inspectores de forma parcial dejando controles desfasados.
+
+4. **Balance Estricto del Canvas 2D:**  
+   Todo `ctx.save()` en `studio-engine.js` debe poseer exactamente un `ctx.restore()` correspondiente en todas las ramas de ejecución (incluyendo salidas tempranas como `tear` anomaly), protegiendo la matriz de transformación y el área de clipping de arte.
+
+5. **Soporte Per-Layer y Contrato Asistido (Opción B):**  
+   Cada control nuevo debe operar de forma independiente por capa (`mod.structure`). Si un modificador colectivo se activa sin una retícula en esa capa, no se apaga destructivamente; despliega su banner ámbar informativo (`#warning-*-grid`).
+
+6. **Integración Dual Cartesiano + Polar:**  
+   Cada modificador debe implementarse y probarse tanto en la retícula cartesiana (`renderRepetitionGrid`) como en el esquema polar (`renderRadiation`).

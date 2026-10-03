@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Basic Studio — Parametric 2D Vector & Generative Studio</title>
+  <title>Module Studio — Parametric 2D Vector & Generative Studio</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -29,7 +29,7 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Basic Studio Pro Stylesheet -->
+  <!-- Module Studio Pro Stylesheet -->
   <link rel="stylesheet" href="css/studio-pro.css">
 </head>
 <body class="flex flex-col h-screen overflow-hidden bg-[#eceef2] text-[#121317]">
@@ -48,7 +48,7 @@
         </svg>
       </div>
       <h1 class="font-display font-bold text-base tracking-tight text-[#121317]">
-        Basic Studio
+        Module Studio
       </h1>
     </div>
 
@@ -129,56 +129,8 @@
         </button>
       </div>
 
-      <!-- Layers List Container -->
-      <div id="layers-stack-container" class="space-y-2">
-        <!-- Layer 2 Card (Active Layer) -->
-        <div id="layer-card-2" class="layer-card is-active" data-layer-id="layer-2" draggable="true">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <div id="layer-thumb-2" class="layer-preview-box">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="7"/></svg>
-            </div>
-            <div class="min-w-0">
-              <div class="layer-title font-semibold text-xs truncate">Layer 2</div>
-              <div id="layer-sub-2" class="layer-subtitle text-[10px] font-mono truncate">circle • 50px</div>
-            </div>
-          </div>
-          <div class="flex items-center gap-1">
-            <button type="button" class="layer-action-btn btn-layer-eye" data-layer="layer-2" title="Toggle Visibility">
-              <i data-lucide="eye" class="w-3.5 h-3.5"></i>
-            </button>
-            <button type="button" class="layer-action-btn btn-layer-delete" data-layer="layer-2" title="Delete Layer">
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-            </button>
-            <span class="layer-action-btn layer-drag-handle cursor-grab active:cursor-grabbing text-zinc-400" title="Drag to reorder">
-              <i data-lucide="grip-vertical" class="w-3.5 h-3.5"></i>
-            </span>
-          </div>
-        </div>
-
-        <!-- Layer 1 Card -->
-        <div id="layer-card-1" class="layer-card" data-layer-id="layer-1" draggable="true">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <div id="layer-thumb-1" class="layer-preview-box">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
-            </div>
-            <div class="min-w-0">
-              <div class="layer-title font-semibold text-xs truncate">Layer 1</div>
-              <div id="layer-sub-1" class="layer-subtitle text-[10px] font-mono truncate">square • 50px</div>
-            </div>
-          </div>
-          <div class="flex items-center gap-1">
-            <button type="button" class="layer-action-btn btn-layer-eye" data-layer="layer-1" title="Toggle Visibility">
-              <i data-lucide="eye" class="w-3.5 h-3.5"></i>
-            </button>
-            <button type="button" class="layer-action-btn btn-layer-delete" data-layer="layer-1" title="Delete Layer">
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-            </button>
-            <span class="layer-action-btn layer-drag-handle cursor-grab active:cursor-grabbing text-zinc-400" title="Drag to reorder">
-              <i data-lucide="grip-vertical" class="w-3.5 h-3.5"></i>
-            </span>
-          </div>
-        </div>
-      </div>
+      <!-- Layers List Container (Populated dynamically up to 5 layers) -->
+      <div id="layers-stack-container" class="space-y-2"></div>
     </div>
 
     <!-- CANVAS VIEWPORT (Centered naturally between floating left layers panel and right tool rail) -->

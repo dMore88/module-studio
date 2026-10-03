@@ -1,5 +1,5 @@
 /**
- * STUDIO WONG PRO — Exporter Module
+ * MODULE STUDIO — Exporter Module
  * High-resolution PNG (Retina 2x/4x), SVG Vector generation, JSON project save/load.
  */
 
@@ -7,7 +7,7 @@ export const StudioExporter = {
   /**
    * Export high-res raster PNG
    */
-  exportPNG(canvas, engine, palette, scaleMultiplier = 2, filename = "studio-wong-composition.png") {
+  exportPNG(canvas, engine, palette, scaleMultiplier = 2, filename = "module-studio-composition.png") {
     const origW = canvas.width;
     const origH = canvas.height;
     
@@ -34,7 +34,7 @@ export const StudioExporter = {
   /**
    * Export JSON project state
    */
-  exportJSON(state, filename = "studio-wong-project.json") {
+  exportJSON(state, filename = "module-studio-project.json") {
     const jsonStr = JSON.stringify(state, null, 2);
     const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -50,7 +50,7 @@ export const StudioExporter = {
   /**
    * Export Vector SVG
    */
-  exportSVG(canvas, state, palette, filename = "studio-wong-vector.svg") {
+  exportSVG(canvas, state, palette, filename = "module-studio-vector.svg") {
     // Generate clean SVG container wrapping paths
     const width = canvas.width / (window.devicePixelRatio || 1);
     const height = canvas.height / (window.devicePixelRatio || 1);
@@ -62,7 +62,7 @@ export const StudioExporter = {
 
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
-  <!-- Studio Wong Pro Vector/Composition Export (${width}x${height}) -->
+  <!-- Module Studio Vector/Composition Export (${width}x${height}) -->
   <defs>
     <style>
       .bg { fill: ${bg}; }
