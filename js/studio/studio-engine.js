@@ -84,6 +84,14 @@ export const createDefaultLayerStructure = () => ({
     alignToField: false,
     densityScale: false,
     showAttractor: false
+  },
+  space: {
+    enabled: false,
+    mode: "isometric", // isometric, foreshortening, fluctuating, conflicting (paradox)
+    depth: 10, // extrusion depth, 10 to 80 px
+    angle: 30, // projection angle, -60 to 60
+    shading: 50, // facet shading contrast, 20 to 100
+    showIsoGuides: false
   }
 });
 
@@ -260,9 +268,9 @@ export class StudioEngine {
   }
 
   // Draw a single shape helper with in-figure texture and illusory 3D space support
-  drawShape(ctx, shapeId, size, fgColor, strokeOnly = false, lineWidth = 2, bgColor = null, isAlternating = false, skipSpace = false) {
+  drawShape(ctx, shapeId, size, fgColor, strokeOnly = false, lineWidth = 2, bgColor = null, isAlternating = false, skipSpace = false, spaceConfig = null) {
     const shapeDef = Shapes[shapeId] || Shapes.circle;
-    const space = this.state.modifiers.space;
+    const space = spaceConfig || this.state.modifiers.space;
 
     if (!space || !space.enabled || skipSpace) {
       this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
@@ -611,7 +619,7 @@ export class StudioEngine {
     targetCtx.scale(sx, sy);
     // An explicit override (anomaly / contrast accent) wins over the layer color.
     const layerColor = colorOverride || mod.color || fgColor;
-    this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, false, isCutout);
+    this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, false, isCutout, mod.structure?.space || null);
     targetCtx.restore();
   }
 
@@ -1652,7 +1660,9 @@ export class StudioEngine {
     }
 
     // 2.5 Isometric Drafting Guides (Space)
-    if (this.state.modifiers.space.enabled && this.state.modifiers.space.showIsoGuides) {
+    const showIsoGuides = this.getLayers().some(l => l.visible !== false && l.structure?.space?.enabled && l.structure.space.showIsoGuides)
+      || (this.state.modifiers.space.enabled && this.state.modifiers.space.showIsoGuides);
+    if (showIsoGuides) {
       this.drawIsometricGuides(ctx, width, height, palette);
     }
 

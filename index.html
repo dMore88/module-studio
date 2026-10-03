@@ -937,47 +937,65 @@
       </div>
 
       <!-- ===================================================================
-           TAB 10: SPACE & DEPTH
+           TAB 10: SPACE (Figma: Web apps / Abstract studio, node 5779:3145)
+           Mode, Extrusion depth, Projection angle, Facet shading contrast, Iso grid
+           Autonomous modifier: works on a single module and on any layout.
            =================================================================== -->
-      <div id="card-space" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="space">
-        <div class="modifier-header">
-          <div class="flex items-center gap-2">
-            <i class="ph ph-cube text-[14px] text-zinc-600"></i>
-            <span class="font-semibold text-xs text-[#121317]">Space & Depth</span>
+      <div id="card-space" class="flyout-tab-content ds-card hidden" data-flyout-tab="space">
+        <div class="ds-card-header">
+          <div class="ds-card-title">
+            <span class="ds-card-title-text">Space</span>
+            <span id="badge-space-layer" class="ds-badge">Layer 1</span>
           </div>
-          <div class="flex items-center gap-2">
-            <label class="switch">
-              <input type="checkbox" id="toggle-mod-space">
-              <span class="switch-slider"></span>
-            </label>
-            <button type="button" class="close-flyout-btn" title="Close Panel">
-              <i class="ph ph-x text-[14px]"></i>
-            </button>
+          <label class="ds-switch" title="Enable / Disable Space">
+            <input type="checkbox" id="toggle-space-active">
+            <span class="ds-switch-track"></span>
+          </label>
+          <button type="button" class="close-flyout-btn" title="Close Panel">
+            <i class="ph ph-x text-[14px]"></i>
+          </button>
+        </div>
+
+        <div class="ds-field">
+          <div class="ds-label">Mode</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-space-mode="isometric">Isometric</button>
+            <button type="button" class="ds-tag" data-space-mode="foreshortening">3D tilt</button>
+            <button type="button" class="ds-tag" data-space-mode="fluctuating">Fluctuating</button>
+            <button type="button" class="ds-tag" data-space-mode="conflicting">Paradox</button>
           </div>
         </div>
-        <div class="modifier-body space-y-2">
-          <div class="grid grid-cols-2 gap-1">
-            <button type="button" class="tool-btn active text-[10px]" data-space-mode="isometric">Isometric 30°</button>
-            <button type="button" class="tool-btn text-[10px]" data-space-mode="foreshortening">Foreshortening</button>
-            <button type="button" class="tool-btn text-[10px]" data-space-mode="fluctuating">Fluctuating</button>
-            <button type="button" class="tool-btn text-[10px]" data-space-mode="conflicting">Conflicting</button>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
-                <span>Depth</span>
-                <input type="number" id="num-space-depth" class="scrub-input w-10" value="35" min="10" max="80">
-              </div>
-              <input type="range" id="input-space-depth" min="10" max="80" value="35">
-            </div>
-            <div>
-              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
-                <span>Light Angle</span>
-                <input type="number" id="num-space-angle" class="scrub-input w-10" value="30" min="-60" max="60">
-              </div>
-              <input type="range" id="input-space-angle" min="-60" max="60" value="30">
+
+        <div class="ds-row">
+          <div class="ds-field">
+            <div class="ds-label ds-label-clip">Extrusion depth</div>
+            <div class="ds-slider">
+              <input type="range" id="input-space-depth" min="10" max="80" step="1" value="10">
+              <input type="text" id="num-space-depth" class="ds-value" value="10px" inputmode="numeric">
             </div>
           </div>
+          <div class="ds-field">
+            <div class="ds-label ds-label-clip">Projection angle</div>
+            <div class="ds-slider">
+              <input type="range" id="input-space-angle" min="-60" max="60" step="1" value="30">
+              <input type="text" id="num-space-angle" class="ds-value" value="30º" inputmode="numeric">
+            </div>
+          </div>
+        </div>
+
+          <div class="ds-field">
+            <div class="ds-label ds-label-clip">Facet shading contrast</div>
+            <div class="ds-slider">
+              <input type="range" id="input-space-shading" min="20" max="100" step="1" value="50">
+              <input type="text" id="num-space-shading" class="ds-value" value="50%" inputmode="numeric">
+            </div>
+          </div>
+
+        <div class="ds-toggles">
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Display 30º Isometric Grid Lines</span>
+            <input type="checkbox" id="toggle-space-guides" class="ds-checkbox">
+          </label>
         </div>
       </div>
 

@@ -43,7 +43,7 @@ The application is built on a clean, zero-dependency stack with high-performance
 | **Contrast** | Tension & Dominance | Per-layer minority clash across scale, shape, angle and tone, with dominance ratio, scale multiplier and minority accent. |
 | **Concentration** | Gravitational Fields | Per-layer density kinematics towards attractor points, axes, voids and hotspots, with pull, field radius, flow orientation, density scale and attractor guide. |
 | **Texture** | Surface Treatment | Halftone, lithographic grain, linear hatching, and typographic glyph stamping. *(In progress)* |
-| **Space** | 3D Illusion | 30° isometric extrusion, fluctuating planes, and light angle depth. *(In progress)* |
+| **Space** | 3D Illusion | Per-layer isometric extrusion, 3D tilt, fluctuating and paradox planes, with depth, projection angle, facet shading and isometric grid lines. |
 
 ---
 

@@ -242,17 +242,19 @@ Aplica grano físico y micro-patrones ópticos que despojan a la composición de
 ---
 
 ### 4.10 Space (Ilusión Tridimensional y Extrusión Isométrica)
-Transforma el espacio plano bidimensional en una experiencia volumétrica de profundidad.
+Transforma el espacio plano bidimensional en una experiencia volumétrica de profundidad. Estado por capa en `layer.structure.space`. Es un modificador autónomo: funciona en módulo único y sobre cualquier retícula, sin banner de dependencia.
 
-* **`mode`**:
-  * `isometric`: Proyección axonométrica paralela a 30° con facetas de luz y sombra.
-  * `foreshortening`: Inclinación con desvanecimiento simulando perspectiva cónica.
-  * `fluctuating`: Planos que avanzan y retroceden ópticamente (profundidad flotante).
-  * `conflicting`: Planos espaciales paradójicos o figuras imposibles.
-* **`depth`** (10 a 80px): Profundidad o altura de la extrusión volumétrica.
-* **`angle`** (-60° a +60°): Ángulo del vector de proyección de sombra.
-* **`shading`** (20% a 100%): Grado de contraste tonal entre las caras iluminadas y las facetas en sombra.
-* **`showIsoGuides`** (`boolean`): Dibuja la trama isométrica de soporte.
+* **`mode`** (tags *Mode*):
+  * `isometric` (*Isometric*): Proyección axonométrica paralela a 30° con facetas de luz y sombra.
+  * `foreshortening` (*3D tilt*): Inclinación con desvanecimiento simulando perspectiva cónica.
+  * `fluctuating` (*Fluctuating*): Planos que avanzan y retroceden ópticamente (profundidad flotante).
+  * `conflicting` (*Paradox*): Planos espaciales paradójicos o figuras imposibles.
+* **`depth`** (*Extrusion depth*, 10 a 80 px, por defecto 10): Profundidad o altura de la extrusión volumétrica.
+* **`angle`** (*Projection angle*, -60° a +60°, por defecto 30°): Ángulo del vector de proyección.
+* **`shading`** (*Facet shading contrast*, 20% a 100%, por defecto 50%): Grado de contraste tonal entre las caras iluminadas y las facetas en sombra.
+* **`showIsoGuides`** (*Display 30º Isometric Grid Lines*, por defecto apagado): Dibuja la trama isométrica de soporte. Se dibuja una sola vez si alguna capa visible lo pide.
+
+**UI (Figma, nodo `5779:3145`).**
 
 ---
 
