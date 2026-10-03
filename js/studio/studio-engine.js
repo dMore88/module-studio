@@ -50,6 +50,17 @@ export const createDefaultLayerStructure = () => ({
     range: 180, // degrees of total rotation (rotation type)
     steps: 1, // cycles (1 to 4)
     reverse: false
+  },
+  anomaly: {
+    enabled: false,
+    type: "focal", // focal, fracture, swell, tear
+    epicenterX: 0.5, // 0.1 to 0.9
+    epicenterY: 0.5, // 0.1 to 0.9
+    radius: 160, // 50 to 350 px
+    intensity: 65, // severity, 10 to 100
+    anomalousShape: "triangle",
+    highlightColor: false,
+    showReticle: false
   }
 });
 
@@ -641,7 +652,7 @@ export class StudioEngine {
     const struct = (targetMod?.structure?.formalStructure) || this.state.modifiers.structure;
     const sim = (targetMod?.structure?.similarity) || this.state.modifiers.similarity;
     const grad = (targetMod?.structure?.gradation) || this.state.modifiers.gradation;
-    const anom = this.state.modifiers.anomaly;
+    const anom = (targetMod?.structure?.anomaly) || this.state.modifiers.anomaly;
     const contrast = this.state.modifiers.contrast;
     const conc = this.state.modifiers.concentration;
 
@@ -1152,7 +1163,7 @@ export class StudioEngine {
     const rad = radConfig || (targetMod?.structure?.radiation) || this.state.modifiers.radiation;
     const grad = (targetMod?.structure?.gradation) || this.state.modifiers.gradation;
     const sim = (targetMod?.structure?.similarity) || this.state.modifiers.similarity;
-    const anom = this.state.modifiers.anomaly;
+    const anom = (targetMod?.structure?.anomaly) || this.state.modifiers.anomaly;
     const contrast = this.state.modifiers.contrast;
     const conc = this.state.modifiers.concentration;
 

@@ -75,6 +75,7 @@ export class StudioProApp {
     this.setupFormalStructure();
     this.setupSimilarity();
     this.setupGradation();
+    this.setupAnomaly();
     this.setupShapeInspector();
     this.setupInteractiveHandles();
     this.setupModifierCards();
@@ -150,6 +151,9 @@ export class StudioProApp {
     if (!mod.structure.gradation) {
       mod.structure.gradation = createDefaultLayerStructure().gradation;
     }
+    if (!mod.structure.anomaly) {
+      mod.structure.anomaly = createDefaultLayerStructure().anomaly;
+    }
     return mod.structure;
   }
 
@@ -159,6 +163,7 @@ export class StudioProApp {
     this.syncFormalStructureInspectorWithActiveLayer();
     this.syncSimilarityInspectorWithActiveLayer();
     this.syncGradationInspectorWithActiveLayer();
+    this.syncAnomalyInspectorWithActiveLayer();
     this.updateRailIndicatorDots();
   }
 
@@ -489,6 +494,8 @@ export class StudioProApp {
     if (badgeSimilarity) badgeSimilarity.textContent = activeName;
     const badgeGradation = document.getElementById("badge-gradation-layer");
     if (badgeGradation) badgeGradation.textContent = activeName;
+    const badgeAnomaly = document.getElementById("badge-anomaly-layer");
+    if (badgeAnomaly) badgeAnomaly.textContent = activeName;
 
     if (!container) return;
 
@@ -613,6 +620,8 @@ export class StudioProApp {
         isActive = !!mod?.structure?.similarity?.enabled;
       } else if (tab === "gradation") {
         isActive = !!mod?.structure?.gradation?.enabled;
+      } else if (tab === "anomaly") {
+        isActive = !!mod?.structure?.anomaly?.enabled;
       } else if (this.state.modifiers && this.state.modifiers[tab]) {
         isActive = !!this.state.modifiers[tab].enabled;
       }
@@ -1281,6 +1290,135 @@ export class StudioProApp {
   }
 
   /* =========================================================================
+     ANOMALY INSPECTOR & CONTROLLER (Per Active Layer)
+     Type (Focal, Rupture, Swell, Void), Focal intruder shape, X/Y position,
+     Radius, Severity, Highlight with accent color, Epicenter reticle.
+     Clicking the canvas while the Anomaly tab is open sets the focal point.
+     ========================================================================= */
+
+  getActiveAnomaly() {
+    const struct = this.getActiveLayerStructure();
+    return struct ? struct.anomaly : null;
+  }
+
+  syncAnomalyInspectorWithActiveLayer() {
+    const mod = this.getActiveModule();
+    const anom = this.getActiveAnomaly();
+    if (!mod || !anom) return;
+
+    const badge = document.getElementById("badge-anomaly-layer");
+    if (badge) badge.textContent = mod.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
+
+    const hasGrid = !!mod.structure.enabled;
+    const warnBox = document.getElementById("warning-anomaly-grid");
+    if (warnBox) warnBox.classList.toggle("hidden", !(anom.enabled && !hasGrid));
+
+    const toggle = document.getElementById("toggle-anomaly-active");
+    if (toggle) toggle.checked = !!anom.enabled;
+
+    document.querySelectorAll("#card-anomaly [data-anom-type]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.anomType === anom.type);
+    });
+    document.querySelectorAll("#card-anomaly [data-anom-shape]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.anomShape === anom.anomalousShape);
+    });
+
+    const setPair = (sliderId, numId, value, suffix) => {
+      this.syncControlValue(sliderId, value);
+      const num = document.getElementById(numId);
+      if (num) num.value = `${value}${suffix}`;
+    };
+    setPair("input-anom-x", "num-anom-x", Math.round((anom.epicenterX ?? 0.5) * 100), "%");
+    setPair("input-anom-y", "num-anom-y", Math.round((anom.epicenterY ?? 0.5) * 100), "%");
+    setPair("input-anom-radius", "num-anom-radius", anom.radius ?? 160, "px");
+    setPair("input-anom-intensity", "num-anom-intensity", anom.intensity ?? 65, "%");
+
+    this.syncCheckbox("toggle-anom-highlight", !!anom.highlightColor);
+    this.syncCheckbox("toggle-anom-reticle", !!anom.showReticle);
+
+    this.updateRailIndicatorDots();
+  }
+
+  setupAnomaly() {
+    const toggle = document.getElementById("toggle-anomaly-active");
+
+    // Any edit enables Anomaly on the active layer, then refreshes everything.
+    const commit = (mutate, historyLabel, { resync = true } = {}) => {
+      const anom = this.getActiveAnomaly();
+      if (!anom) return;
+      mutate(anom);
+      anom.enabled = true;
+      if (toggle) toggle.checked = true;
+      if (resync) this.syncAnomalyInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      if (historyLabel) this.pushHistory(`Layer ${this.activeLayerId} ${historyLabel}`);
+    };
+
+    toggle?.addEventListener("change", (e) => {
+      const anom = this.getActiveAnomaly();
+      if (!anom) return;
+      anom.enabled = e.target.checked;
+      this.syncAnomalyInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      this.pushHistory(`Layer ${this.activeLayerId} Anomaly: ${anom.enabled ? "ON" : "OFF"}`);
+    });
+
+    document.querySelectorAll("#card-anomaly [data-anom-type]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(a => { a.type = btn.dataset.anomType; }, `Anomaly Type: ${btn.dataset.anomType}`);
+      });
+    });
+    document.querySelectorAll("#card-anomaly [data-anom-shape]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(a => { a.anomalousShape = btn.dataset.anomShape; }, `Anomaly Shape: ${btn.dataset.anomShape}`);
+      });
+    });
+
+    // Slider + value box pairs. `toValue` maps the UI value to the stored value.
+    const bindPair = (sliderId, numId, { min, max, suffix, toStored, label, key }) => {
+      const slider = document.getElementById(sliderId);
+      const num = document.getElementById(numId);
+      slider?.addEventListener("input", (e) => {
+        const val = parseInt(e.target.value, 10);
+        commit(a => { a[key] = toStored(val); }, null, { resync: false });
+        if (num) num.value = `${val}${suffix}`;
+      });
+      slider?.addEventListener("change", (e) => {
+        this.pushHistory(`Layer ${this.activeLayerId} Anomaly ${label}: ${e.target.value}${suffix}`);
+      });
+      num?.addEventListener("change", (e) => {
+        const raw = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10);
+        const val = isNaN(raw) ? min : Math.max(min, Math.min(max, raw));
+        commit(a => { a[key] = toStored(val); }, `Anomaly ${label}: ${val}${suffix}`);
+      });
+    };
+    bindPair("input-anom-x", "num-anom-x", { min: 10, max: 90, suffix: "%", toStored: v => v / 100, label: "X", key: "epicenterX" });
+    bindPair("input-anom-y", "num-anom-y", { min: 10, max: 90, suffix: "%", toStored: v => v / 100, label: "Y", key: "epicenterY" });
+    bindPair("input-anom-radius", "num-anom-radius", { min: 50, max: 350, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
+    bindPair("input-anom-intensity", "num-anom-intensity", { min: 10, max: 100, suffix: "%", toStored: v => v, label: "Severity", key: "intensity" });
+
+    document.getElementById("toggle-anom-highlight")?.addEventListener("change", (e) => {
+      const checked = e.target.checked;
+      commit(a => { a.highlightColor = checked; }, `Anomaly Highlight: ${checked ? "ON" : "OFF"}`);
+    });
+    document.getElementById("toggle-anom-reticle")?.addEventListener("change", (e) => {
+      const checked = e.target.checked;
+      commit(a => { a.showReticle = checked; }, `Anomaly Reticle: ${checked ? "ON" : "OFF"}`);
+    });
+
+    // Click on the canvas sets the focal point while the Anomaly tab is open.
+    this.canvas?.addEventListener("click", (e) => {
+      if (!this.isFlyoutOpen || this.activeRailTab !== "anomaly") return;
+      const rect = this.canvas.getBoundingClientRect();
+      const nx = Math.max(0.1, Math.min(0.9, (e.clientX - rect.left) / rect.width));
+      const ny = Math.max(0.1, Math.min(0.9, (e.clientY - rect.top) / rect.height));
+      commit(a => { a.epicenterX = nx; a.epicenterY = ny; }, "Anomaly Focal Point");
+    });
+  }
+
+  /* =========================================================================
      CONTEXTUAL SHAPE & STYLE INSPECTOR (Applies to currently active layer)
      ========================================================================= */
 
@@ -1479,7 +1617,6 @@ export class StudioProApp {
      ========================================================================= */
 
   setupInteractiveHandles() {
-    const handleAnomaly = document.getElementById("handle-anomaly-epicenter");
     const handleConcentration = document.getElementById("handle-concentration-attractor");
 
     const setupDrag = (handle, onMove) => {
@@ -1490,13 +1627,6 @@ export class StudioProApp {
         document.body.style.cursor = "grabbing";
       });
     };
-
-    setupDrag(handleAnomaly, (nx, ny) => {
-      this.state.modifiers.anomaly.epicenterX = nx;
-      this.state.modifiers.anomaly.epicenterY = ny;
-      this.syncControlValue("input-anom-x", Math.round(nx * 100));
-      this.syncControlValue("input-anom-y", Math.round(ny * 100));
-    });
 
     setupDrag(handleConcentration, (nx, ny) => {
       this.state.modifiers.concentration.attractorX = nx;
@@ -1524,19 +1654,8 @@ export class StudioProApp {
   }
 
   updateHandlesPosition() {
-    const handleAnomaly = document.getElementById("handle-anomaly-epicenter");
     const handleConcentration = document.getElementById("handle-concentration-attractor");
     const cfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"];
-
-    if (handleAnomaly) {
-      const anom = this.state.modifiers.anomaly;
-      const isVisible = anom.enabled && anom.showReticle;
-      handleAnomaly.style.display = isVisible ? "flex" : "none";
-      if (isVisible) {
-        handleAnomaly.style.left = `${(anom.epicenterX ?? 0.5) * cfg.w}px`;
-        handleAnomaly.style.top = `${(anom.epicenterY ?? 0.5) * cfg.h}px`;
-      }
-    }
 
     if (handleConcentration) {
       const conc = this.state.modifiers.concentration;
@@ -1715,21 +1834,6 @@ export class StudioProApp {
     this.bindSliderWithNumber("input-sim-intensity", "num-sim-intensity", (val) => { mods.similarity.intensity = val; this.render(); }, "Similarity Variance", "similarity");
     this.bindSliderWithNumber("input-sim-jitter", "num-sim-jitter", (val) => { mods.similarity.cellJitter = val; this.render(); }, "Cell Jitter", "similarity");
 
-    // 6. ANOMALY
-    this.bindModifierMasterToggle("toggle-mod-anomaly", "anomaly");
-    document.querySelectorAll("[data-anom-type]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        this.ensureModifierActive("anomaly");
-        mods.anomaly.type = btn.dataset.anomType;
-        document.querySelectorAll("[data-anom-type]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        this.render();
-      });
-    });
-    this.bindSliderWithNumber("input-anom-x", "num-anom-x", (val) => { mods.anomaly.epicenterX = val / 100; this.render(); }, "Epicenter X", "anomaly");
-    this.bindSliderWithNumber("input-anom-y", "num-anom-y", (val) => { mods.anomaly.epicenterY = val / 100; this.render(); }, "Epicenter Y", "anomaly");
-    this.bindSliderWithNumber("input-anom-radius", "num-anom-radius", (val) => { mods.anomaly.radius = val; this.render(); }, "Anomaly Radius", "anomaly");
-    this.bindSliderWithNumber("input-anom-intensity", "num-anom-intensity", (val) => { mods.anomaly.intensity = val; this.render(); }, "Anomaly Intensity", "anomaly");
 
     // 7. CONTRAST
     this.bindModifierMasterToggle("toggle-mod-contrast", "contrast");
@@ -1918,6 +2022,9 @@ export class StudioProApp {
       if (!layer.structure.gradation) {
         layer.structure.gradation = createDefaultLayerStructure().gradation;
       }
+      if (!layer.structure.anomaly) {
+        layer.structure.anomaly = createDefaultLayerStructure().anomaly;
+      }
     });
 
     // If global repetition or radiation is enabled in preset modifiers, propagate to layer 1 structure
@@ -1940,6 +2047,9 @@ export class StudioProApp {
       }
       if (this.state.modifiers?.gradation?.enabled) {
         Object.assign(firstLayer.structure.gradation, this.state.modifiers.gradation);
+      }
+      if (this.state.modifiers?.anomaly?.enabled) {
+        Object.assign(firstLayer.structure.anomaly, this.state.modifiers.anomaly);
       }
     }
 

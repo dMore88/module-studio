@@ -167,19 +167,21 @@ Genera una ilusión de movimiento, velocidad o dimensión mediante una progresi�
 ---
 
 ### 4.6 Anomaly (Ruptura Focal y Fractura)
-Introduce una zona de irregularidad donde prevalece una estructura regular previa, creando un epicentro de máxima tensión focal.
+Introduce una zona de irregularidad donde prevalece una estructura regular previa, creando un epicentro de máxima tensión focal. Estado por capa en `layer.structure.anomaly`.
 
-* **`type`**:
-  * `focal`: Epicentro circular que transforma a los módulos inscritos en su radio.
-  * `fracture`: Falla o hendidura transversal que parte la composición y desfasa los módulos a ambos lados.
-  * `swell`: Deformación gravitatoria que expande y empuja los módulos contiguos.
-  * `tear`: Desaparición o vacío absoluto de módulos en un área delimitada.
-* **`epicenterX / epicenterY`** (10% a 90%): Coordenadas normalizadas del epicentro en el canvas.
-* **`radius`** (50 a 350px): Radio espacial de influencia del evento anómalo.
-* **`intensity`** (10% a 100%): Nivel de mutación aplicada a los módulos intervenidos.
-* **`anomalousShape`**: Silueta discordante (una de las 15 formas) que adoptan las formas dentro del epicentro.
-* **`highlightColor`** (`boolean`): Aplica el color de acento de la paleta a los módulos anómalos.
-* **`showReticle`** (`boolean`): Renderiza la mira arquitectónica del epicentro.
+* **`type`** (tags *Type*):
+  * `focal` (*Focal*): Epicentro circular que transforma a los módulos inscritos en su radio.
+  * `fracture` (*Rupture*): Falla o hendidura transversal que parte la composición y desfasa los módulos a ambos lados.
+  * `swell` (*Swell*): Deformación gravitatoria que expande y empuja los módulos contiguos.
+  * `tear` (*Void*): Desaparición o vacío absoluto de módulos en un área delimitada.
+* **`anomalousShape`** (*Focal Intruder Shape*): una de las 15 formas del selector. Es la silueta que adoptan los módulos dentro del epicentro en modo `focal`.
+* **`epicenterX / epicenterY`** (*X / Y position*, 10% a 90%, por defecto 50%): Coordenadas normalizadas del epicentro. También se fijan haciendo clic en el canvas con la pestaña Anomaly abierta.
+* **`radius`** (*Radius*, 50 a 350 px, por defecto 160): Radio espacial de influencia del evento anómalo.
+* **`intensity`** (*Severity*, 10% a 100%, por defecto 65%): Nivel de mutación aplicada a los módulos intervenidos.
+* **`highlightColor`** (*Highlight with accent color*, por defecto apagado): Aplica el color de acento de la paleta a los módulos anómalos.
+* **`showReticle`** (*Show Epicenter Reticle*, por defecto apagado): Dibuja el radio de influencia y la mira del epicentro.
+
+**UI (Figma, nodo `5779:2565`).** Requiere retícula (Repetition o Radiation) en la capa para manifestarse; sin ella se muestra el banner ámbar del contrato Opción B.
 
 ---
 

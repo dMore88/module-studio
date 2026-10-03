@@ -39,7 +39,7 @@ The application is built on a clean, zero-dependency stack with high-performance
 | **Structure** | Formal Cadence | Formal rhythmic subdivision with dual alternating intervals ($A:B:A:B$) for columns and rows, and visible structural grid lines. |
 | **Similarity** | Visual Kinship | Genetic morphological variation across population: *Elastic* (distortion), *3D tilt* (foreshortening), *Wobble* (rotation wobble), *Scale* (scale kinship), and *Hibrid* (hybrid fusion). Includes fluctuation intensity and spatial cell jitter. |
 | **Gradation** | Progressive Transition | Per-layer progression across cartesian/polar pathways: attribute (Rotate, Scale, Depth, Drift), range, cycles, pathway direction and reverse. |
-| **Anomaly** | Focal Disruption | Structural fracture, focal epicenters, and anomalous geometric mutations. *(In progress)* |
+| **Anomaly** | Focal Disruption | Per-layer focal, rupture, swell and void anomalies with intruder shape, epicenter (click on canvas), radius, severity, accent highlight and reticle. |
 | **Contrast** | Tension & Dominance | Minority clash across scale, shape, direction, and tone. *(In progress)* |
 | **Concentration** | Gravitational Fields | Density kinematics towards attractor points, axes, and voids. *(In progress)* |
 | **Texture** | Surface Treatment | Halftone, lithographic grain, linear hatching, and typographic glyph stamping. *(In progress)* |

@@ -587,46 +587,107 @@
       </div>
 
       <!-- ===================================================================
-           TAB 4: ANOMALY
+           TAB 6: ANOMALY (Figma: Web apps / Abstract studio, node 5779:2565)
+           Type, Focal intruder shape, X/Y position, Radius, Severity, Highlight, Reticle
            =================================================================== -->
-      <div id="card-anomaly" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="anomaly">
-        <div class="modifier-header">
-          <div class="flex items-center gap-2">
-            <i class="ph ph-sparkle text-[14px] text-zinc-600"></i>
-            <span class="font-semibold text-xs text-[#121317]">Anomaly</span>
+      <div id="card-anomaly" class="flyout-tab-content ds-card hidden" data-flyout-tab="anomaly">
+        <div class="ds-card-header">
+          <div class="ds-card-title">
+            <span class="ds-card-title-text">Anomaly</span>
+            <span id="badge-anomaly-layer" class="ds-badge">Layer 1</span>
           </div>
-          <div class="flex items-center gap-2">
-            <label class="switch">
-              <input type="checkbox" id="toggle-mod-anomaly">
-              <span class="switch-slider"></span>
-            </label>
-            <button type="button" class="close-flyout-btn" title="Close Panel">
-              <i class="ph ph-x text-[14px]"></i>
-            </button>
+          <label class="ds-switch" title="Enable / Disable Anomaly">
+            <input type="checkbox" id="toggle-anomaly-active">
+            <span class="ds-switch-track"></span>
+          </label>
+          <button type="button" class="close-flyout-btn" title="Close Panel">
+            <i class="ph ph-x text-[14px]"></i>
+          </button>
+        </div>
+
+        <!-- Dependency banner: Anomaly ON but no Repetition / Radiation in this layer -->
+        <div id="warning-anomaly-grid" class="warning-alert-box hidden">
+          <i class="ph ph-warning text-[16px] text-[#d97706] shrink-0 mt-0.5"></i>
+          <span>Requires Repetition or Radiation in Layout structure to display across a population of units.</span>
+        </div>
+
+        <div class="ds-field">
+          <div class="ds-label">Type</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-anom-type="focal">Focal</button>
+            <button type="button" class="ds-tag" data-anom-type="fracture">Rupture</button>
+            <button type="button" class="ds-tag" data-anom-type="swell">Swell</button>
+            <button type="button" class="ds-tag" data-anom-type="tear">Void</button>
           </div>
         </div>
-        <div class="modifier-body space-y-2">
-          <div class="grid grid-cols-3 gap-1">
-            <button type="button" class="tool-btn active text-[10px]" data-anomaly-type="regular">Regular</button>
-            <button type="button" class="tool-btn text-[10px]" data-anomaly-type="random">Random</button>
-            <button type="button" class="tool-btn text-[10px]" data-anomaly-type="cluster">Cluster</button>
+
+        <div class="ds-field">
+          <div class="ds-label">Focal Intruder Shape</div>
+          <div class="shape-grid">
+            <button type="button" class="shape-circle-btn active" data-anom-shape="circle" title="Circle"><i class="ph-fill ph-circle text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="square" title="Square"><i class="ph-fill ph-square text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="triangle" title="Triangle"><i class="ph-fill ph-triangle text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="wave" title="Sine Wave"><i class="ph-fill ph-wave-sine text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="horseshoe" title="Horseshoe"><i class="ph-fill ph-circle-notch text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="hexagon" title="Hexagon"><i class="ph-fill ph-hexagon text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="line" title="Line"><i class="ph-fill ph-minus text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="parallelogram" title="Parallelogram"><i class="ph-fill ph-parallelogram text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="hatch" title="Diagonal Hatch"><i class="ph-fill ph-line-segments text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="crescent" title="Crescent"><i class="ph-fill ph-moon text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="teardrop" title="Teardrop"><i class="ph-fill ph-drop text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="cross" title="Cross"><i class="ph-fill ph-plus text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="digit1" title="Number 1"><i class="ph-fill ph-number-one text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="digit5" title="Number 5"><i class="ph-fill ph-number-five text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="digit9" title="Number 9"><i class="ph-fill ph-number-nine text-[16px]"></i></button>
           </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
-                <span>Frequency (%)</span>
-                <input type="number" id="num-anomaly-freq" class="scrub-input w-10" value="15" min="2" max="60">
-              </div>
-              <input type="range" id="input-anomaly-freq" min="2" max="60" value="15">
-            </div>
-            <div>
-              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
-                <span>Scale Var (x)</span>
-                <input type="number" id="num-anomaly-scale" class="scrub-input w-12" value="1.8" min="0.2" max="3.0" step="0.1">
-              </div>
-              <input type="range" id="input-anomaly-scale" min="0.2" max="3.0" step="0.1" value="1.8">
+        </div>
+
+        <div class="ds-field">
+          <div class="ds-row">
+          <div class="ds-field">
+            <div class="ds-label">X position</div>
+            <div class="ds-slider">
+              <input type="range" id="input-anom-x" min="10" max="90" step="1" value="50">
+              <input type="text" id="num-anom-x" class="ds-value" value="50%" inputmode="numeric">
             </div>
           </div>
+          <div class="ds-field">
+            <div class="ds-label">Y position</div>
+            <div class="ds-slider">
+              <input type="range" id="input-anom-y" min="10" max="90" step="1" value="50">
+              <input type="text" id="num-anom-y" class="ds-value" value="50%" inputmode="numeric">
+            </div>
+          </div>
+          </div>
+          <p class="ds-hint">Click anywhere on the canvas to set focal point</p>
+        </div>
+
+        <div class="ds-row">
+          <div class="ds-field">
+            <div class="ds-label">Radius</div>
+            <div class="ds-slider">
+              <input type="range" id="input-anom-radius" min="50" max="350" step="5" value="160">
+              <input type="text" id="num-anom-radius" class="ds-value" value="160px" inputmode="numeric">
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Severity</div>
+            <div class="ds-slider">
+              <input type="range" id="input-anom-intensity" min="10" max="100" step="1" value="65">
+              <input type="text" id="num-anom-intensity" class="ds-value" value="65%" inputmode="numeric">
+            </div>
+          </div>
+        </div>
+
+        <div class="ds-toggles">
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Highlight with accent color</span>
+            <input type="checkbox" id="toggle-anom-highlight" class="ds-checkbox">
+          </label>
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Show Epicenter Reticle</span>
+            <input type="checkbox" id="toggle-anom-reticle" class="ds-checkbox">
+          </label>
         </div>
       </div>
 
