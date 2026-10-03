@@ -4198,6 +4198,20 @@ class StudioProApp {
     const numScale = document.getElementById("num-contrast-scale");
     if (numScale) numScale.value = `${scale}x`;
 
+    const angle = con.angle ?? 45;
+    this.syncControlValue("input-contrast-angle", angle);
+    const numAngle = document.getElementById("num-contrast-angle");
+    if (numAngle) numAngle.value = `${angle}º`;
+
+    document.querySelectorAll("#card-contrast [data-contrast-shape]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.contrastShape === con.contrastShape);
+    });
+
+    // Each dimension only shows the controls that drive it.
+    document.getElementById("contrast-shape-block")?.classList.toggle("hidden", con.dimension !== "shape");
+    document.getElementById("contrast-scale-block")?.classList.toggle("hidden", con.dimension !== "scale");
+    document.getElementById("contrast-angle-block")?.classList.toggle("hidden", con.dimension !== "direction");
+
     this.syncCheckbox("toggle-contrast-highlight", !!con.highlightContrast);
 
     this.updateRailIndicatorDots();
@@ -4254,6 +4268,13 @@ class StudioProApp {
     };
     bindPair("input-contrast-dominance", "num-contrast-dominance", { min: 50, max: 95, suffix: "%", label: "Dominance", key: "dominanceRatio" });
     bindPair("input-contrast-scale", "num-contrast-scale", { min: 0.2, max: 3, suffix: "x", label: "Scale", key: "scaleFactor" });
+    bindPair("input-contrast-angle", "num-contrast-angle", { min: 15, max: 90, suffix: "º", label: "Angle", key: "angle" });
+
+    document.querySelectorAll("#card-contrast [data-contrast-shape]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(c => { c.contrastShape = btn.dataset.contrastShape; }, `Contrast Shape: ${btn.dataset.contrastShape}`);
+      });
+    });
 
     document.getElementById("toggle-contrast-highlight")?.addEventListener("change", (e) => {
       const checked = e.target.checked;

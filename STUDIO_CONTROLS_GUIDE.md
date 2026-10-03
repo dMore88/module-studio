@@ -190,14 +190,14 @@ Establece disparidad formal estructurada en una relación matemática de **mayor
 
 * **`dimension`** (tags *Dimension*):
   * `scale` (*Scale*): Mayoría regular reducida vs. minoría monumental.
-  * `shape` (*Shape*): Mayoría regular vs. minoría con glifo completamente discordante (`contrastShape`, por defecto `cross`).
-  * `direction` (*Angle*): Mayoría alineada vs. minoría rotada en un ángulo de choque (`angle`, por defecto 45°).
+  * `shape` (*Shape*): Mayoría regular vs. minoría con glifo completamente discordante (`contrastShape`, selector *Minority Shape* con las 15 formas, por defecto `cross`).
+  * `direction` (*Angle*): Mayoría alineada vs. minoría rotada en un ángulo de choque (`angle`, slider *Clash Angle* de 15° a 90°, por defecto 45°).
   * `tone` (*Tone*): Mayoría en línea/tinta vs. minoría en masa rellena o invertida.
 * **`dominanceRatio`** (*Dominance ratio*, 50% a 95%, por defecto 80%): Proporción que ocupa la mayoría regular. El techo del 95% garantiza que siempre exista una minoría.
 * **`scaleFactor`** (*Contrast Scale Multiplier*, 0.2x a 3.0x, por defecto 2.2x): Multiplicador de la minoría en la dimensión `scale`.
 * **`highlightContrast`** (*Accentuate Minority Elements*, por defecto apagado): Destaca tonalmente la minoría discordante.
 
-**UI (Figma, nodo `5779:2773`).** El mockup no incluye selector de forma ni slider de ángulo, así que `contrastShape` y `angle` quedan en sus valores por defecto. Requiere retícula (Repetition o Radiation) en la capa; sin ella se muestra el banner ámbar del contrato Opción B.
+**UI (Figma, nodo `5779:2773`).** Cada dimensión muestra solo los controles que la gobiernan: *Scale* → multiplicador de escala, *Shape* → selector de forma, *Angle* → ángulo de choque, *Tone* → ninguno (*Dominance ratio* y *Accentuate Minority Elements* siempre visibles). Los controles de forma y ángulo se añadieron a lo que muestra el mockup. A diferencia de Anomaly, Contrast no tiene puntero en el canvas: la minoría se reparte por distribución, no por posición. Requiere retícula (Repetition o Radiation) en la capa; sin ella se muestra el banner ámbar del contrato Opción B.
 
 ---
 

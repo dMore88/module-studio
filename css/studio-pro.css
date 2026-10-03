@@ -1006,3 +1006,5 @@ input[type="range"]:hover::-webkit-slider-thumb {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.ds-field.hidden { display: none !important; }
