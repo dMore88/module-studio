@@ -780,47 +780,98 @@
       </div>
 
       <!-- ===================================================================
-           TAB 8: CONCENTRATION
+           TAB 8: CONCENTRATION (Figma: Web apps / Abstract studio, node 5779:2910)
+           Structure, X/Y position, Gathering pull, Field radius, Orient, Density, Guide
            =================================================================== -->
-      <div id="card-concentration" class="flyout-tab-content modifier-card space-y-3 hidden" data-flyout-tab="concentration">
-        <div class="modifier-header">
-          <div class="flex items-center gap-2">
-            <i class="ph ph-target text-[14px] text-zinc-600"></i>
-            <span class="font-semibold text-xs text-[#121317]">Concentration</span>
+      <div id="card-concentration" class="flyout-tab-content ds-card hidden" data-flyout-tab="concentration">
+        <div class="ds-card-header">
+          <div class="ds-card-title">
+            <span class="ds-card-title-text">Concentration</span>
+            <span id="badge-concentration-layer" class="ds-badge">Layer 1</span>
           </div>
-          <div class="flex items-center gap-2">
-            <label class="switch">
-              <input type="checkbox" id="toggle-mod-concentration">
-              <span class="switch-slider"></span>
-            </label>
-            <button type="button" class="close-flyout-btn" title="Close Panel">
-              <i class="ph ph-x text-[14px]"></i>
-            </button>
+          <label class="ds-switch" title="Enable / Disable Concentration">
+            <input type="checkbox" id="toggle-concentration-active">
+            <span class="ds-switch-track"></span>
+          </label>
+          <button type="button" class="close-flyout-btn" title="Close Panel">
+            <i class="ph ph-x text-[14px]"></i>
+          </button>
+        </div>
+
+        <!-- Dependency banner: Concentration ON but no Repetition / Radiation in this layer -->
+        <div id="warning-concentration-grid" class="warning-alert-box hidden">
+          <i class="ph ph-warning text-[16px] text-[#d97706] shrink-0 mt-0.5"></i>
+          <span>Requires Repetition or Radiation in Layout structure to display across a population of units.</span>
+        </div>
+
+        <div class="ds-field">
+          <div class="ds-label">Structure</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-conc-mode="point">Point</button>
+            <button type="button" class="ds-tag" data-conc-mode="void">Void</button>
+            <button type="button" class="ds-tag" data-conc-mode="line">Line</button>
+            <button type="button" class="ds-tag" data-conc-mode="free">Hotspots</button>
           </div>
         </div>
-        <div class="modifier-body space-y-2">
-          <div class="grid grid-cols-4 gap-1">
-            <button type="button" class="tool-btn active text-[10px]" data-conc-mode="point">Point</button>
-            <button type="button" class="tool-btn text-[10px]" data-conc-mode="void">Void</button>
-            <button type="button" class="tool-btn text-[10px]" data-conc-mode="line">Line</button>
-            <button type="button" class="tool-btn text-[10px]" data-conc-mode="free">Free</button>
+
+        <div id="conc-axis-block" class="ds-field hidden">
+          <div class="ds-label">Line axis</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-conc-axis="horizontal">Horizontal</button>
+            <button type="button" class="ds-tag" data-conc-axis="vertical">Vertical</button>
           </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
-                <span>Field Power</span>
-                <input type="number" id="num-conc-power" class="scrub-input w-10" value="65" min="20" max="100">
-              </div>
-              <input type="range" id="input-conc-power" min="20" max="100" value="65">
-            </div>
-            <div>
-              <div class="flex items-center justify-between text-[10px] font-mono text-zinc-600 mb-1">
-                <span>Radius (px)</span>
-                <input type="number" id="num-conc-radius" class="scrub-input w-12" value="240" min="80" max="450">
-              </div>
-              <input type="range" id="input-conc-radius" min="80" max="450" value="240">
+        </div>
+
+        <div class="ds-field">
+          <div class="ds-row">
+          <div class="ds-field">
+            <div class="ds-label ds-label-clip">X position</div>
+            <div class="ds-slider">
+              <input type="range" id="input-conc-x" min="5" max="95" step="1" value="50">
+              <input type="text" id="num-conc-x" class="ds-value" value="50%" inputmode="numeric">
             </div>
           </div>
+          <div class="ds-field">
+            <div class="ds-label ds-label-clip">Y position</div>
+            <div class="ds-slider">
+              <input type="range" id="input-conc-y" min="5" max="95" step="1" value="50">
+              <input type="text" id="num-conc-y" class="ds-value" value="50%" inputmode="numeric">
+            </div>
+          </div>
+          </div>
+          <p class="ds-hint">Click anywhere on the canvas to reposition the attractor</p>
+        </div>
+
+        <div class="ds-row">
+          <div class="ds-field">
+            <div class="ds-label ds-label-clip">Gathering pull</div>
+            <div class="ds-slider">
+              <input type="range" id="input-conc-power" min="20" max="100" step="1" value="50">
+              <input type="text" id="num-conc-power" class="ds-value" value="50%" inputmode="numeric">
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label ds-label-clip">Field radius</div>
+            <div class="ds-slider">
+              <input type="range" id="input-conc-radius" min="80" max="450" step="5" value="240">
+              <input type="text" id="num-conc-radius" class="ds-value" value="240px" inputmode="numeric">
+            </div>
+          </div>
+        </div>
+
+        <div class="ds-toggles">
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Orient Modules to Field Flow</span>
+            <input type="checkbox" id="toggle-conc-align" class="ds-checkbox">
+          </label>
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Dynamic Density Scale</span>
+            <input type="checkbox" id="toggle-conc-density" class="ds-checkbox">
+          </label>
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Display Attractor Guide</span>
+            <input type="checkbox" id="toggle-conc-guide" class="ds-checkbox">
+          </label>
         </div>
       </div>
 

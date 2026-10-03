@@ -544,6 +544,18 @@ const createDefaultLayerStructure = () => ({
     scaleFactor: 2.2, // scale multiplier for scale contrast (0.2 to 3.0)
     angle: 45, // clash angle for direction contrast
     highlightContrast: false // accentuate minority elements
+  },
+  concentration: {
+    enabled: false,
+    mode: "point", // point, void, line, free (hotspots)
+    attractorX: 0.5, // 0.05 to 0.95
+    attractorY: 0.5, // 0.05 to 0.95
+    power: 50, // gathering pull, 20 to 100
+    radius: 240, // field radius, 80 to 450 px
+    lineAxis: "horizontal", // horizontal, vertical (line mode)
+    alignToField: false,
+    densityScale: false,
+    showAttractor: false
   }
 });
 const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "circle", offsetX = 0, offsetY = 0, rotation = 0) => ({
@@ -1134,7 +1146,7 @@ class StudioEngine {
     const grad = (targetMod?.structure?.gradation) || this.state.modifiers.gradation;
     const anom = (targetMod?.structure?.anomaly) || this.state.modifiers.anomaly;
     const contrast = (targetMod?.structure?.contrast) || this.state.modifiers.contrast;
-    const conc = this.state.modifiers.concentration;
+    const conc = (targetMod?.structure?.concentration) || this.state.modifiers.concentration;
 
     const cols = Math.max(1, rep.cols);
     const rows = Math.max(1, rep.rows);
@@ -1645,7 +1657,7 @@ class StudioEngine {
     const sim = (targetMod?.structure?.similarity) || this.state.modifiers.similarity;
     const anom = (targetMod?.structure?.anomaly) || this.state.modifiers.anomaly;
     const contrast = (targetMod?.structure?.contrast) || this.state.modifiers.contrast;
-    const conc = this.state.modifiers.concentration;
+    const conc = (targetMod?.structure?.concentration) || this.state.modifiers.concentration;
 
     const margin = marginParam !== undefined ? marginParam : Math.round(Math.max(20, Math.min(width, height) * 0.05));
     const usableW = usableWParam !== undefined ? usableWParam : width - margin * 2;
@@ -2788,8 +2800,6 @@ class StudioProApp {
     this.activeRailTab = "module";
     this.isFlyoutOpen = true;
 
-    // Dragging canvas handles
-    this.activeDragHandle = null;
 
     this.init();
   }
@@ -2808,8 +2818,8 @@ class StudioProApp {
     this.setupGradation();
     this.setupAnomaly();
     this.setupContrast();
+    this.setupConcentration();
     this.setupShapeInspector();
-    this.setupInteractiveHandles();
     this.setupModifierCards();
 
     // Initial render
@@ -2889,6 +2899,9 @@ class StudioProApp {
     if (!mod.structure.contrast) {
       mod.structure.contrast = createDefaultLayerStructure().contrast;
     }
+    if (!mod.structure.concentration) {
+      mod.structure.concentration = createDefaultLayerStructure().concentration;
+    }
     return mod.structure;
   }
 
@@ -2900,6 +2913,7 @@ class StudioProApp {
     this.syncGradationInspectorWithActiveLayer();
     this.syncAnomalyInspectorWithActiveLayer();
     this.syncContrastInspectorWithActiveLayer();
+    this.syncConcentrationInspectorWithActiveLayer();
     this.updateRailIndicatorDots();
   }
 
@@ -2909,7 +2923,6 @@ class StudioProApp {
     const palette = this.getActivePalette();
     this.engine.render(palette);
     this.updateHUD();
-    this.updateHandlesPosition();
   }
 
   applyAspectRatio(key) {
@@ -3234,6 +3247,8 @@ class StudioProApp {
     if (badgeAnomaly) badgeAnomaly.textContent = activeName;
     const badgeContrast = document.getElementById("badge-contrast-layer");
     if (badgeContrast) badgeContrast.textContent = activeName;
+    const badgeConcentration = document.getElementById("badge-concentration-layer");
+    if (badgeConcentration) badgeConcentration.textContent = activeName;
 
     if (!container) return;
 
@@ -3362,6 +3377,8 @@ class StudioProApp {
         isActive = !!mod?.structure?.anomaly?.enabled;
       } else if (tab === "contrast") {
         isActive = !!mod?.structure?.contrast?.enabled;
+      } else if (tab === "concentration") {
+        isActive = !!mod?.structure?.concentration?.enabled;
       } else if (this.state.modifiers && this.state.modifiers[tab]) {
         isActive = !!this.state.modifiers[tab].enabled;
       }
@@ -4283,6 +4300,138 @@ class StudioProApp {
   }
 
   /* =========================================================================
+     CONCENTRATION INSPECTOR & CONTROLLER (Per Active Layer)
+     Structure (Point, Void, Line, Hotspots), X/Y position, Gathering pull,
+     Field radius, Orient to field flow, Dynamic density scale, Attractor guide.
+     Clicking the canvas while the Concentration tab is open moves the attractor.
+     ========================================================================= */
+
+  getActiveConcentration() {
+    const struct = this.getActiveLayerStructure();
+    return struct ? struct.concentration : null;
+  }
+
+  syncConcentrationInspectorWithActiveLayer() {
+    const mod = this.getActiveModule();
+    const conc = this.getActiveConcentration();
+    if (!mod || !conc) return;
+
+    const badge = document.getElementById("badge-concentration-layer");
+    if (badge) badge.textContent = mod.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
+
+    const hasGrid = !!mod.structure.enabled;
+    const warnBox = document.getElementById("warning-concentration-grid");
+    if (warnBox) warnBox.classList.toggle("hidden", !(conc.enabled && !hasGrid));
+
+    const toggle = document.getElementById("toggle-concentration-active");
+    if (toggle) toggle.checked = !!conc.enabled;
+
+    document.querySelectorAll("#card-concentration [data-conc-mode]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.concMode === conc.mode);
+    });
+    document.querySelectorAll("#card-concentration [data-conc-axis]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.concAxis === conc.lineAxis);
+    });
+    // The axis only matters for the line structure.
+    document.getElementById("conc-axis-block")?.classList.toggle("hidden", conc.mode !== "line");
+
+    const setPair = (sliderId, numId, value, suffix) => {
+      this.syncControlValue(sliderId, value);
+      const num = document.getElementById(numId);
+      if (num) num.value = `${value}${suffix}`;
+    };
+    setPair("input-conc-x", "num-conc-x", Math.round((conc.attractorX ?? 0.5) * 100), "%");
+    setPair("input-conc-y", "num-conc-y", Math.round((conc.attractorY ?? 0.5) * 100), "%");
+    setPair("input-conc-power", "num-conc-power", conc.power ?? 50, "%");
+    setPair("input-conc-radius", "num-conc-radius", conc.radius ?? 240, "px");
+
+    this.syncCheckbox("toggle-conc-align", !!conc.alignToField);
+    this.syncCheckbox("toggle-conc-density", !!conc.densityScale);
+    this.syncCheckbox("toggle-conc-guide", !!conc.showAttractor);
+
+    this.updateRailIndicatorDots();
+  }
+
+  setupConcentration() {
+    const toggle = document.getElementById("toggle-concentration-active");
+
+    // Any edit enables Concentration on the active layer, then refreshes everything.
+    const commit = (mutate, historyLabel, { resync = true } = {}) => {
+      const conc = this.getActiveConcentration();
+      if (!conc) return;
+      mutate(conc);
+      conc.enabled = true;
+      if (toggle) toggle.checked = true;
+      if (resync) this.syncConcentrationInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      if (historyLabel) this.pushHistory(`Layer ${this.activeLayerId} ${historyLabel}`);
+    };
+
+    toggle?.addEventListener("change", (e) => {
+      const conc = this.getActiveConcentration();
+      if (!conc) return;
+      conc.enabled = e.target.checked;
+      this.syncConcentrationInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      this.pushHistory(`Layer ${this.activeLayerId} Concentration: ${conc.enabled ? "ON" : "OFF"}`);
+    });
+
+    document.querySelectorAll("#card-concentration [data-conc-mode]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(c => { c.mode = btn.dataset.concMode; }, `Concentration Structure: ${btn.dataset.concMode}`);
+      });
+    });
+    document.querySelectorAll("#card-concentration [data-conc-axis]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(c => { c.lineAxis = btn.dataset.concAxis; }, `Concentration Axis: ${btn.dataset.concAxis}`);
+      });
+    });
+
+    const bindPair = (sliderId, numId, { min, max, suffix, toStored, label, key }) => {
+      const slider = document.getElementById(sliderId);
+      const num = document.getElementById(numId);
+      slider?.addEventListener("input", (e) => {
+        const val = parseInt(e.target.value, 10);
+        commit(c => { c[key] = toStored(val); }, null, { resync: false });
+        if (num) num.value = `${val}${suffix}`;
+      });
+      slider?.addEventListener("change", (e) => {
+        this.pushHistory(`Layer ${this.activeLayerId} Concentration ${label}: ${e.target.value}${suffix}`);
+      });
+      num?.addEventListener("change", (e) => {
+        const raw = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10);
+        const val = isNaN(raw) ? min : Math.max(min, Math.min(max, raw));
+        commit(c => { c[key] = toStored(val); }, `Concentration ${label}: ${val}${suffix}`);
+      });
+    };
+    bindPair("input-conc-x", "num-conc-x", { min: 5, max: 95, suffix: "%", toStored: v => v / 100, label: "X", key: "attractorX" });
+    bindPair("input-conc-y", "num-conc-y", { min: 5, max: 95, suffix: "%", toStored: v => v / 100, label: "Y", key: "attractorY" });
+    bindPair("input-conc-power", "num-conc-power", { min: 20, max: 100, suffix: "%", toStored: v => v, label: "Pull", key: "power" });
+    bindPair("input-conc-radius", "num-conc-radius", { min: 80, max: 450, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
+
+    const bindCheck = (id, key, label) => {
+      document.getElementById(id)?.addEventListener("change", (e) => {
+        const checked = e.target.checked;
+        commit(c => { c[key] = checked; }, `Concentration ${label}: ${checked ? "ON" : "OFF"}`);
+      });
+    };
+    bindCheck("toggle-conc-align", "alignToField", "Orient to Flow");
+    bindCheck("toggle-conc-density", "densityScale", "Density Scale");
+    bindCheck("toggle-conc-guide", "showAttractor", "Attractor Guide");
+
+    // Click on the canvas moves the attractor while the Concentration tab is open.
+    this.canvas?.addEventListener("click", (e) => {
+      if (!this.isFlyoutOpen || this.activeRailTab !== "concentration") return;
+      const rect = this.canvas.getBoundingClientRect();
+      const nx = Math.max(0.05, Math.min(0.95, (e.clientX - rect.left) / rect.width));
+      const ny = Math.max(0.05, Math.min(0.95, (e.clientY - rect.top) / rect.height));
+      commit(c => { c.attractorX = nx; c.attractorY = ny; }, "Concentration Attractor");
+    });
+  }
+
+  /* =========================================================================
      CONTEXTUAL SHAPE & STYLE INSPECTOR (Applies to currently active layer)
      ========================================================================= */
 
@@ -4477,62 +4626,6 @@ class StudioProApp {
   }
 
   /* =========================================================================
-     INTERACTIVE ON-CANVAS HANDLES
-     ========================================================================= */
-
-  setupInteractiveHandles() {
-    const handleConcentration = document.getElementById("handle-concentration-attractor");
-
-    const setupDrag = (handle, onMove) => {
-      if (!handle) return;
-      handle.addEventListener("mousedown", (e) => {
-        e.stopPropagation();
-        this.activeDragHandle = { handle, onMove };
-        document.body.style.cursor = "grabbing";
-      });
-    };
-
-    setupDrag(handleConcentration, (nx, ny) => {
-      this.state.modifiers.concentration.attractorX = nx;
-      this.state.modifiers.concentration.attractorY = ny;
-      this.syncControlValue("input-conc-x", Math.round(nx * 100));
-      this.syncControlValue("input-conc-y", Math.round(ny * 100));
-    });
-
-    window.addEventListener("mousemove", (e) => {
-      if (!this.activeDragHandle) return;
-      const canvasRect = this.canvas.getBoundingClientRect();
-      const nx = Math.max(0.05, Math.min(0.95, (e.clientX - canvasRect.left) / (canvasRect.width)));
-      const ny = Math.max(0.05, Math.min(0.95, (e.clientY - canvasRect.top) / (canvasRect.height)));
-      this.activeDragHandle.onMove(nx, ny);
-      this.render();
-    });
-
-    window.addEventListener("mouseup", () => {
-      if (this.activeDragHandle) {
-        this.activeDragHandle = null;
-        document.body.style.cursor = "default";
-        this.pushHistory("Adjusted Handle Position");
-      }
-    });
-  }
-
-  updateHandlesPosition() {
-    const handleConcentration = document.getElementById("handle-concentration-attractor");
-    const cfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"];
-
-    if (handleConcentration) {
-      const conc = this.state.modifiers.concentration;
-      const isVisible = conc.enabled && conc.showAttractor;
-      handleConcentration.style.display = isVisible ? "flex" : "none";
-      if (isVisible) {
-        handleConcentration.style.left = `${(conc.attractorX ?? 0.5) * cfg.w}px`;
-        handleConcentration.style.top = `${(conc.attractorY ?? 0.5) * cfg.h}px`;
-      }
-    }
-  }
-
-  /* =========================================================================
      KEYBOARD SHORTCUTS
      ========================================================================= */
 
@@ -4699,22 +4792,6 @@ class StudioProApp {
     this.bindSliderWithNumber("input-sim-jitter", "num-sim-jitter", (val) => { mods.similarity.cellJitter = val; this.render(); }, "Cell Jitter", "similarity");
 
 
-    // 8. CONCENTRATION
-    this.bindModifierMasterToggle("toggle-mod-concentration", "concentration");
-    document.querySelectorAll("[data-conc-mode]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        this.ensureModifierActive("concentration");
-        mods.concentration.mode = btn.dataset.concMode;
-        document.querySelectorAll("[data-conc-mode]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        this.render();
-      });
-    });
-    this.bindSliderWithNumber("input-conc-x", "num-conc-x", (val) => { mods.concentration.attractorX = val / 100; this.render(); }, "Attractor X", "concentration");
-    this.bindSliderWithNumber("input-conc-y", "num-conc-y", (val) => { mods.concentration.attractorY = val / 100; this.render(); }, "Attractor Y", "concentration");
-    this.bindSliderWithNumber("input-conc-power", "num-conc-power", (val) => { mods.concentration.power = val; this.render(); }, "Field Power", "concentration");
-    this.bindSliderWithNumber("input-conc-radius", "num-conc-radius", (val) => { mods.concentration.radius = val; this.render(); }, "Field Radius", "concentration");
-
     // 9. TEXTURE
     this.bindModifierMasterToggle("toggle-mod-texture", "texture");
     document.querySelectorAll("[data-texture-mode]").forEach(btn => {
@@ -4878,6 +4955,9 @@ class StudioProApp {
       if (!layer.structure.contrast) {
         layer.structure.contrast = createDefaultLayerStructure().contrast;
       }
+      if (!layer.structure.concentration) {
+        layer.structure.concentration = createDefaultLayerStructure().concentration;
+      }
     });
 
     // If global repetition or radiation is enabled in preset modifiers, propagate to layer 1 structure
@@ -4906,6 +4986,9 @@ class StudioProApp {
       }
       if (this.state.modifiers?.contrast?.enabled) {
         Object.assign(firstLayer.structure.contrast, this.state.modifiers.contrast);
+      }
+      if (this.state.modifiers?.concentration?.enabled) {
+        Object.assign(firstLayer.structure.concentration, this.state.modifiers.concentration);
       }
     }
 

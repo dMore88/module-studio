@@ -70,6 +70,18 @@ export const createDefaultLayerStructure = () => ({
     scaleFactor: 2.2, // scale multiplier for scale contrast (0.2 to 3.0)
     angle: 45, // clash angle for direction contrast
     highlightContrast: false // accentuate minority elements
+  },
+  concentration: {
+    enabled: false,
+    mode: "point", // point, void, line, free (hotspots)
+    attractorX: 0.5, // 0.05 to 0.95
+    attractorY: 0.5, // 0.05 to 0.95
+    power: 50, // gathering pull, 20 to 100
+    radius: 240, // field radius, 80 to 450 px
+    lineAxis: "horizontal", // horizontal, vertical (line mode)
+    alignToField: false,
+    densityScale: false,
+    showAttractor: false
   }
 });
 
@@ -663,7 +675,7 @@ export class StudioEngine {
     const grad = (targetMod?.structure?.gradation) || this.state.modifiers.gradation;
     const anom = (targetMod?.structure?.anomaly) || this.state.modifiers.anomaly;
     const contrast = (targetMod?.structure?.contrast) || this.state.modifiers.contrast;
-    const conc = this.state.modifiers.concentration;
+    const conc = (targetMod?.structure?.concentration) || this.state.modifiers.concentration;
 
     const cols = Math.max(1, rep.cols);
     const rows = Math.max(1, rep.rows);
@@ -1174,7 +1186,7 @@ export class StudioEngine {
     const sim = (targetMod?.structure?.similarity) || this.state.modifiers.similarity;
     const anom = (targetMod?.structure?.anomaly) || this.state.modifiers.anomaly;
     const contrast = (targetMod?.structure?.contrast) || this.state.modifiers.contrast;
-    const conc = this.state.modifiers.concentration;
+    const conc = (targetMod?.structure?.concentration) || this.state.modifiers.concentration;
 
     const margin = marginParam !== undefined ? marginParam : Math.round(Math.max(20, Math.min(width, height) * 0.05));
     const usableW = usableWParam !== undefined ? usableWParam : width - margin * 2;

@@ -41,7 +41,7 @@ The application is built on a clean, zero-dependency stack with high-performance
 | **Gradation** | Progressive Transition | Per-layer progression across cartesian/polar pathways: attribute (Rotate, Scale, Depth, Drift), range, cycles, pathway direction and reverse. |
 | **Anomaly** | Focal Disruption | Per-layer focal, rupture, swell and void anomalies with intruder shape, epicenter (click on canvas), radius, severity, accent highlight and reticle. |
 | **Contrast** | Tension & Dominance | Per-layer minority clash across scale, shape, angle and tone, with dominance ratio, scale multiplier and minority accent. |
-| **Concentration** | Gravitational Fields | Density kinematics towards attractor points, axes, and voids. *(In progress)* |
+| **Concentration** | Gravitational Fields | Per-layer density kinematics towards attractor points, axes, voids and hotspots, with pull, field radius, flow orientation, density scale and attractor guide. |
 | **Texture** | Surface Treatment | Halftone, lithographic grain, linear hatching, and typographic glyph stamping. *(In progress)* |
 | **Space** | 3D Illusion | 30° isometric extrusion, fluctuating planes, and light angle depth. *(In progress)* |
 

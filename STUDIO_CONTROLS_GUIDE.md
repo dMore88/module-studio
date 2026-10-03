@@ -202,19 +202,22 @@ Establece disparidad formal estructurada en una relación matemática de **mayor
 ---
 
 ### 4.8 Concentration (Campos Gravitatorios y Densidad)
-Agrupa o dispersa los módulos según campos de fuerza invisibles, simulando gravedad, magnetismo o cúmulos.
+Agrupa o dispersa los módulos según campos de fuerza invisibles, simulando gravedad, magnetismo o cúmulos. Estado por capa en `layer.structure.concentration`.
 
-* **`mode`**:
-  * `point`: Los módulos se atraen y concentran hacia un único punto de atracción.
-  * `void`: Los módulos huyen del centro generando un vacío circular despejado.
-  * `line`: Concentración hacia un eje lineal principal.
-  * `free`: Cúmulos libres con múltiples focos de densidad.
-* **`attractorX / attractorY`** (5% a 95%): Ubicación del polo atractor en el espacio.
-* **`power`** (20% a 100%): Intensidad de la fuerza atractiva o repulsiva.
-* **`radius`** (80 a 450px): Alcance o zona de influencia del campo gravitatorio.
-* **`lineAxis`** (`horizontal` / `vertical`): Orientación del eje lineal (activo en modo `line`).
-* **`alignToField`** (`boolean`): Rota los módulos haciéndolos tangentes a las líneas de fuerza.
-* **`densityScale`** (`boolean`): Reduce o agranda la escala del módulo en función de su proximidad al polo.
+* **`mode`** (tags *Structure*):
+  * `point` (*Point*): Los módulos se atraen y concentran hacia un único punto de atracción.
+  * `void` (*Void*): Los módulos huyen del centro generando un vacío circular despejado.
+  * `line` (*Line*): Concentración hacia un eje lineal principal.
+  * `free` (*Hotspots*): Dos focos de densidad (el atractor y su simétrico respecto al centro del canvas).
+* **`lineAxis`** (*Line axis*, `horizontal` / `vertical`): Orientación del eje lineal. Solo se muestra en modo `line`.
+* **`attractorX / attractorY`** (*X / Y position*, 5% a 95%, por defecto 50%): Ubicación del polo atractor. También se fijan haciendo clic en el canvas con la pestaña Concentration abierta.
+* **`power`** (*Gathering pull*, 20% a 100%, por defecto 50%): Intensidad de la fuerza atractiva o repulsiva.
+* **`radius`** (*Field radius*, 80 a 450 px, por defecto 240): Alcance o zona de influencia del campo gravitatorio.
+* **`alignToField`** (*Orient Modules to Field Flow*, por defecto apagado): Rota los módulos haciéndolos tangentes a las líneas de fuerza.
+* **`densityScale`** (*Dynamic Density Scale*, por defecto apagado): Reduce o agranda la escala del módulo en función de su proximidad al polo.
+* **`showAttractor`** (*Display Attractor Guide*, por defecto apagado): Dibuja los anillos del campo, el punto atractor y, en modo `line`, el eje.
+
+**UI (Figma, nodo `5779:2910`).** Requiere retícula (Repetition o Radiation) en la capa; sin ella se muestra el banner ámbar del contrato Opción B. El mockup muestra "1px" en *Field radius*; ese valor queda fuera del rango del campo, así que se usa 240 px. El selector de eje se añadió a lo que muestra el mockup.
 
 ---
 
