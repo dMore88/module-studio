@@ -4,7 +4,7 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 
 **Prioridades:** **P1** siguiente · **P2** backlog · **P3** al final / baja prioridad · **✖** descartado por ahora.
 
-**Principio de trabajo:** primero dejar bien hechos los controles de modificación de cada capa (un módulo = una figura = una capa). Las funciones que dependen de relacionar capas entre sí van después.
+**Principio de trabajo:** primero revisar y consolidar (sección 0), luego dejar bien hechos los controles de modificación de cada capa (un módulo = una figura = una capa). Las funciones que dependen de relacionar capas entre sí van después.
 
 ---
 
@@ -14,11 +14,30 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 | :-- | :--- | :--- |
 | 1 | Fluctuating alterna la dirección entre celdas vecinas | ✅ Hecho (2026-10-04) |
 | 2 | Gradation: *Range* aplica a Scale, Depth y Drift (180 = cantidad original) | ✅ Hecho (2026-10-04) |
-| 3 | Gradation avanzada (G1 a G7) | P1 |
-| 4 | Radiación: centrípeta y centro abierto (R1, R2, y lo que acompaña) | P1 |
-| 5 | Resto de modificadores por capa (secciones 3 a 10) | P2 |
-| 6 | Interrelaciones entre capas (sección 2) | P2, después del 5 |
-| 7 | Supermódulos (RP6) | P3, al final de todo |
+| 3 | **Revisión de código y auditoría de lo propuesto** (sección 0, Q1 y Q2) | P1, antes de seguir con funciones nuevas |
+| 4 | **Design system `.md` desde Figma** (sección 0, Q3) | P1 |
+| 5 | Gradation avanzada (G1 a G7) | P1 |
+| 6 | Radiación: centrípeta y centro abierto (R1, R2, y lo que acompaña) | P1 |
+| 7 | Resto de modificadores por capa (secciones 3 a 10) | P2 |
+| 8 | Interrelaciones entre capas (sección 2) | P2, después del 7 |
+| 9 | Supermódulos (RP6) | P3, al final de todo |
+
+---
+
+## 0. Calidad y fundamentos
+
+| ID | Ítem | Notas | Prioridad |
+| :-- | :--- | :--- | :-- |
+| Q1 | **Revisión de código como experto** | Calidad y funcionamiento de todo el código. Todavía no se ha hecho una revisión completa; solo se han corregido cosas sueltas al trabajar. Alcance: arquitectura y estado (global frente a por capa), código muerto, duplicación, rendimiento del render, accesibilidad de los controles, manejo de errores, dependencias por CDN, el flujo de build (`build-pro.py` y el bundle), pruebas y el protocolo de calidad de `STUDIO_RULES.md`. Resultado: informe con hallazgos por gravedad y un plan de arreglos | P1 |
+| Q2 | **Auditoría de lo propuesto frente a lo que la app ya hace** | Varias ideas del backlog pueden existir ya, aunque no de la mejor forma. Antes de implementar cada ítem, comprobar qué hay hoy en el código y en la UI, y decidir si se reemplaza, se mejora o se descarta. Se hace junto con Q1 | P1 |
+| Q3 | **Mejor design system `.md` desde Figma** | Leer variables, estilos y componentes del archivo de Figma (tokens `neutral/…`, `primary/…`, `spacing/…`, `border/…`, `sizing/…`, tipografía y elevación) con el MCP de Figma. Reescribir `docs/DESIGN_SYSTEM_TOKENS.md` con los nombres reales, valores, componentes (switch, tag, slider, value box, toggle item, badge, buttonIcon, snackbar, btn-group) y sus estados. Alinear `css/studio-pro.css` con esos tokens (hoy hay colores y medidas fijos). Resultado: documento y variables CSS | P1 |
+
+**Hallazgos incidentales** (punto de partida de Q1, aún sin verificar a fondo):
+- Quedan enlaces antiguos en `setupModifierCards()` que apuntan a ids que ya no existen (restos del estado global por modificador, por ejemplo Similarity, Repetition, Structure y Radiation).
+- `getActivePrinciples()` del motor lee el estado global de modificadores, no el de cada capa; la lista de principios usados puede quedar desfasada.
+- Tailwind se carga por CDN en tiempo de ejecución.
+- El export SVG incrusta un PNG (ver O1).
+- Hay estado duplicado: `state.modifiers` global y `layer.structure` por capa.
 
 ---
 
