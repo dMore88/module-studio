@@ -1242,7 +1242,7 @@ class StudioEngine {
     const layerColor = colorOverride || mod.color || fgColor;
     const layerNum = parseInt(String(mod.id || "").replace(/\D/g, ""), 10) || 1;
     const seed = (this.cellSeed || 0) * 7.13 + layerNum * 53.7;
-    this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, false, isCutout, mod.structure?.space || null, mod.structure?.texture || null, seed);
+    this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, !!this.cellAlt, isCutout, mod.structure?.space || null, mod.structure?.texture || null, seed);
     targetCtx.restore();
   }
 
@@ -1253,6 +1253,7 @@ class StudioEngine {
     ctx.translate(width / 2, height / 2);
     const aspectScale = Math.min(1.0, Math.min(width, height) / 600);
     this.cellSeed = 0;
+    this.cellAlt = false;
     this.drawSingleLayerShape(ctx, mod, 1.25 * aspectScale, palette.fg, palette.bg);
     ctx.restore();
   }
@@ -1551,14 +1552,15 @@ class StudioEngine {
             const rotSpan = ((grad.range ?? 180) * Math.PI) / 180;
             ctx.rotate(t * rotSpan);
           } else if (grad.type === "scale") {
-            const sFactor = 0.35 + t * 1.1;
+            // Range scales the amount of change; 180 keeps the original 0.35x to 1.45x
+            const sFactor = Math.max(0.05, 0.9 + (t - 0.5) * 1.1 * (((grad.range ?? 180)) / 180));
             ctx.scale(sFactor, sFactor);
           } else if (grad.type === "depth") {
             ctx.rotate(Math.PI / 6);
-            ctx.scale(1, Math.max(0.18, 1 - t * 0.82));
+            ctx.scale(1, Math.max(0.18, 1 - t * 0.82 * ((grad.range ?? 180) / 180)));
             ctx.rotate(-Math.PI / 6);
           } else if (grad.type === "drift") {
-            ctx.translate(t * (cW * 0.28), 0);
+            ctx.translate(t * (cW * 0.28) * ((grad.range ?? 180) / 180), 0);
           }
         }
 
@@ -1673,6 +1675,7 @@ class StudioEngine {
         const cellRatio = Math.min(cW / usableW, cH / usableH);
         const normScale = scaleUnit * cellRatio * cellScaleMul * concScaleMul;
         this.cellSeed = r * cols + c + 1;
+        this.cellAlt = (r + c) % 2 === 1;
         const lineWidthMul = (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * cellScaleMul * concScaleMul : null;
         this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor ? cellFg : null, lineWidthMul);
         ctx.restore();
@@ -2014,12 +2017,15 @@ class StudioEngine {
             if (grad.type === "rotation") {
               ctx.rotate(t * (((grad.range ?? 180) * Math.PI) / 180));
             } else if (grad.type === "scale") {
-              const sFactor = 0.35 + t * 1.1;
+              const sFactor = Math.max(0.05, 0.9 + (t - 0.5) * 1.1 * ((grad.range ?? 180) / 180));
               ctx.scale(sFactor, sFactor);
             } else if (grad.type === "depth") {
               ctx.rotate(0.3);
-              ctx.scale(1, Math.max(0.2, 1 - t * 0.75));
+              ctx.scale(1, Math.max(0.2, 1 - t * 0.75 * ((grad.range ?? 180) / 180)));
               ctx.rotate(-0.3);
+            } else if (grad.type === "drift") {
+              // Slide along the module's local x axis, up to ~one ring thickness
+              ctx.translate(t * (maxR / rings) * 0.9 * ((grad.range ?? 180) / 180), 0);
             }
           }
 
@@ -2139,6 +2145,7 @@ class StudioEngine {
           const radScaleMul = isMultiCenter ? 0.7 : 1.0;
           const normScale = scaleUnit * sectorRatio * growthFactor * radScaleMul * cellScaleMul * concScaleMul;
           this.cellSeed = i * rays + j + 1;
+          this.cellAlt = (i + j) % 2 === 1;
           this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== palette.fg ? cellFg : null);
           ctx.restore();
         }

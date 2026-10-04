@@ -158,11 +158,11 @@ Genera una ilusión de movimiento, velocidad o dimensión mediante una progresi�
   * `horizontal`: Progresión por filas de izquierda a derecha.
   * `vertical`: Progresión por columnas de arriba hacia abajo.
   * `concentric`: Progresión radial desde el centro hacia la periferia ($\sqrt{\Delta x^2 + \Delta y^2}$).
-* **`range`** (15° a 360°, pasos de 5°): Rango total de la transición. Aplica al atributo `rotation`.
+* **`range`** (15° a 360°, pasos de 5°): Magnitud total de la transición. En `rotation` son los grados de giro. En `scale`, `depth` y `drift` escala la cantidad de cambio, y 180 equivale a la cantidad original (escala de 0.35x a 1.45x).
 * **`steps`** (1 a 4): Cantidad de ciclos o frecuencias completas en el recorrido (slider *Cycles*).
 * **`reverse`** (`boolean`): Invierte el sentido del gradiente (*Reverse Gradient Direction*).
 
-**UI (Figma, nodo `5779:2472`):** tags *Attribute* (Rotate, Scale, Depth, Drift), sliders *Range* y *Cycles* con caja de valor, tags *Pathway direction* (Diagonal, Horizontal, Vertical, Concentric) y checkbox de reverse. Estado por capa en `layer.structure.gradation`. En esquema polar, `drift` aún no está implementado.
+**UI (Figma, nodo `5779:2472`):** tags *Attribute* (Rotate, Scale, Depth, Drift), sliders *Range* y *Cycles* con caja de valor, tags *Pathway direction* (Diagonal, Horizontal, Vertical, Concentric) y checkbox de reverse. Estado por capa en `layer.structure.gradation`. En esquema polar, `drift` desplaza el módulo sobre su eje local hasta cerca de un anillo.
 
 ---
 
@@ -245,7 +245,7 @@ Transforma el espacio plano bidimensional en una experiencia volumétrica de pro
 * **`mode`** (tags *Mode*):
   * `isometric` (*Isometric*): Proyección axonométrica paralela a 30° con facetas de luz y sombra.
   * `foreshortening` (*3D tilt*): Inclinación con desvanecimiento simulando perspectiva cónica.
-  * `fluctuating` (*Fluctuating*): Planos que avanzan y retroceden ópticamente (profundidad flotante).
+  * `fluctuating` (*Fluctuating*): Planos que avanzan y retroceden ópticamente (profundidad flotante). Celdas vecinas alternan la dirección de la extrusión.
   * `conflicting` (*Paradox*): Planos espaciales paradójicos o figuras imposibles.
 * **`depth`** (*Extrusion depth*, 10 a 80 px, por defecto 10): Profundidad o altura de la extrusión volumétrica.
 * **`angle`** (*Projection angle*, -60° a +60°, por defecto 30°): Ángulo del vector de proyección.
