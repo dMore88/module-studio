@@ -128,112 +128,9 @@ export const defaultStudioState = {
   layers: [defaultLayer1, defaultLayer2],
   layerOrder: ["layer-2", "layer-1"],
   invertFigureGround: false,
-  wireframe: true,
-  strokeWeight: 1.2,
-
-  // Modifiers Stack
-  modifiers: {
-    repetition: {
-      enabled: false,
-      gridType: "basic", // basic, sliding, sheared, curved, zigzag, triangular, alternating
-      cols: 4,
-      rows: 4,
-      spacing: 0,
-      shearAngle: 15,
-      slideOffset: 0.5,
-      curveIntensity: 18,
-      activeClipping: false,
-      showGridLines: false,
-      gridLineWidth: 1.5,
-      checkerInvert: false
-    },
-    structure: {
-      enabled: false,
-      mode: "rhythmic", // rhythmic (A:B:A:B cadence), compression
-      colRatio: 1.8,
-      rowRatio: 1.8,
-      bandThickness: 3,
-      showBands: false
-    },
-    similarity: {
-      enabled: false,
-      kinshipType: "distortion", // distortion, foreshortening, rotation_wobble, scale_kinship, hybrid
-      intensity: 50, // 0 to 100
-      cellJitter: 0, // 0 to 30
-      seed: 42
-    },
-    gradation: {
-      enabled: false,
-      type: "rotation", // rotation, scale, depth, drift
-      pathway: "diagonal", // diagonal, horizontal, vertical, concentric
-      range: 180, // degrees or span
-      steps: 1, // cycles (1 to 4)
-      reverse: false
-    },
-    radiation: {
-      enabled: false,
-      scheme: "centrifugal", // centrifugal, concentric, spiral, multi_center
-      rays: 12, // 4 to 28
-      rings: 5, // 2 to 10
-      spiralTwist: 45, // -180 to 180
-      activeClipping: false,
-      showRays: false,
-      showRings: false,
-      centerX: 0,
-      centerY: 0
-    },
-    anomaly: {
-      enabled: false,
-      type: "focal", // focal, fracture, swell, tear
-      epicenterX: 0.5, // 0.1 to 0.9
-      epicenterY: 0.5, // 0.1 to 0.9
-      radius: 160, // 50 to 350
-      intensity: 65, // 10 to 100
-      anomalousShape: "triangle",
-      highlightColor: true,
-      showReticle: true
-    },
-    contrast: {
-      enabled: false,
-      dimension: "scale", // scale, shape, direction, tone
-      dominanceRatio: 80, // % majority regular (60 to 95)
-      contrastShape: "cross", // shape for shape contrast
-      scaleFactor: 2.2, // scale multiplier for scale contrast
-      angle: 45, // clash angle for direction contrast
-      highlightContrast: false // highlight minority elements
-    },
-    concentration: {
-      enabled: false,
-      mode: "point", // point, void, line, free
-      attractorX: 0.5,
-      attractorY: 0.5,
-      power: 65, // 20 to 100
-      radius: 240, // 80 to 450
-      lineAxis: "horizontal", // horizontal, vertical
-      alignToField: true,
-      densityScale: true,
-      showAttractor: true
-    },
-    texture: {
-      enabled: false,
-      jitter: 1,
-      skipChance: 10,
-      crossing: 10,
-      undulation: 10
-    },
-    space: {
-      enabled: false,
-      mode: "isometric", // isometric, foreshortening, fluctuating, conflicting
-      depth: 35, // 10 to 80
-      angle: 30, // -60 to 60
-      shading: 65, // 20 to 100
-      showIsoGuides: false
-    }
-  },
 
   // Mat / Canvas display settings
-  showSafeBounds: true,
-  zoomLevel: 1.0
+  showSafeBounds: true
 };
 
 export class StudioEngine {
@@ -242,42 +139,11 @@ export class StudioEngine {
     this.state = JSON.parse(JSON.stringify(defaultStudioState));
   }
 
-  // Get active principles list for the editorial colophon
-  getActivePrinciples() {
-    const list = ["FORM"];
-    const hasRep = this.state.modifiers.repetition.enabled;
-    const hasRad = this.state.modifiers.radiation.enabled;
-    const hasGrid = hasRep || hasRad;
-
-    if (hasRad) {
-      list.push("RADIATION");
-    } else if (hasRep) {
-      list.push("REPETITION");
-      if (this.state.modifiers.structure.enabled) list.push("STRUCTURE");
-    }
-
-    if (hasGrid) {
-      if (this.state.modifiers.similarity.enabled) list.push("SIMILARITY");
-      if (this.state.modifiers.gradation.enabled) list.push("GRADATION");
-      if (this.state.modifiers.anomaly.enabled) list.push("ANOMALY");
-      if (this.state.modifiers.contrast.enabled) list.push("CONTRAST");
-    }
-
-    if (this.state.modifiers.concentration.enabled && hasGrid) list.push("CONCENTRATION");
-    if (this.state.modifiers.texture.enabled) list.push("TEXTURE");
-    if (this.state.modifiers.space.enabled) list.push("SPACE");
-    return list;
-  }
-
-  getColophonString() {
-    return `USED ON THIS DESIGN: ${this.getActivePrinciples().join(" / ")}`;
-  }
-
   // Draw a single shape: texture deformation, then flat or illusory 3D space.
   drawShape(ctx, shapeId, size, fgColor, strokeOnly = false, lineWidth = 2, bgColor = null, isAlternating = false, skipSpace = false, spaceConfig = null, textureConfig = null, seed = 0) {
     let shapeDef = Shapes[shapeId] || Shapes.circle;
-    const space = spaceConfig || this.state.modifiers.space;
-    const texture = textureConfig || this.state.modifiers.texture;
+    const space = spaceConfig;
+    const texture = textureConfig;
 
     // Texture deforms the geometry itself, so it applies before any space mode.
     if (texture && texture.enabled) {
@@ -616,13 +482,14 @@ export class StudioEngine {
 
   // Render the repetition / structural grid with similarity and gradation kinematics
   renderRepetitionGrid(ctx, width, height, palette, marginParam, usableWParam, usableHParam, targetMod = null, repConfig = null) {
-    const rep = repConfig || (targetMod?.structure?.repetition) || this.state.modifiers.repetition;
-    const struct = (targetMod?.structure?.formalStructure) || this.state.modifiers.structure;
-    const sim = (targetMod?.structure?.similarity) || this.state.modifiers.similarity;
-    const grad = (targetMod?.structure?.gradation) || this.state.modifiers.gradation;
-    const anom = (targetMod?.structure?.anomaly) || this.state.modifiers.anomaly;
-    const contrast = (targetMod?.structure?.contrast) || this.state.modifiers.contrast;
-    const conc = (targetMod?.structure?.concentration) || this.state.modifiers.concentration;
+    if (!targetMod || !targetMod.structure) return;
+    const rep = repConfig || targetMod.structure.repetition;
+    const struct = targetMod.structure.formalStructure;
+    const sim = targetMod.structure.similarity;
+    const grad = targetMod.structure.gradation;
+    const anom = targetMod.structure.anomaly;
+    const contrast = targetMod.structure.contrast;
+    const conc = targetMod.structure.concentration;
 
     const cols = Math.max(1, rep.cols);
     const rows = Math.max(1, rep.rows);
@@ -987,7 +854,7 @@ export class StudioEngine {
         const normScale = scaleUnit * cellRatio * cellScaleMul * concScaleMul;
         this.cellSeed = r * cols + c + 1;
         this.cellAlt = (r + c) % 2 === 1;
-        const lineWidthMul = (cellShapeA || targetMod?.shape) === "line" ? scaleUnit * (cW / usableW) * cellScaleMul * concScaleMul : null;
+        const lineWidthMul = (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * cellScaleMul * concScaleMul : null;
         this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor ? cellFg : null, lineWidthMul);
         ctx.restore();
       };
@@ -1132,12 +999,13 @@ export class StudioEngine {
 
   // Render the polar radiation layout (Radiation)
   renderRadiation(ctx, width, height, palette, marginParam, usableWParam, usableHParam, targetMod = null, radConfig = null) {
-    const rad = radConfig || (targetMod?.structure?.radiation) || this.state.modifiers.radiation;
-    const grad = (targetMod?.structure?.gradation) || this.state.modifiers.gradation;
-    const sim = (targetMod?.structure?.similarity) || this.state.modifiers.similarity;
-    const anom = (targetMod?.structure?.anomaly) || this.state.modifiers.anomaly;
-    const contrast = (targetMod?.structure?.contrast) || this.state.modifiers.contrast;
-    const conc = (targetMod?.structure?.concentration) || this.state.modifiers.concentration;
+    if (!targetMod || !targetMod.structure) return;
+    const rad = radConfig || targetMod.structure.radiation;
+    const grad = targetMod.structure.gradation;
+    const sim = targetMod.structure.similarity;
+    const anom = targetMod.structure.anomaly;
+    const contrast = targetMod.structure.contrast;
+    const conc = targetMod.structure.concentration;
 
     const margin = marginParam !== undefined ? marginParam : Math.round(Math.max(20, Math.min(width, height) * 0.05));
     const usableW = usableWParam !== undefined ? usableWParam : width - margin * 2;
@@ -1604,9 +1472,8 @@ export class StudioEngine {
       ctx.restore();
     }
 
-    // 2.5 Isometric Drafting Guides (Space)
-    const showIsoGuides = this.getLayers().some(l => l.visible !== false && l.structure?.space?.enabled && l.structure.space.showIsoGuides)
-      || (this.state.modifiers.space.enabled && this.state.modifiers.space.showIsoGuides);
+    // 2.5 Isometric Drafting Guides (Space): drawn once if any visible layer asks for them
+    const showIsoGuides = this.getLayers().some(l => l.visible !== false && l.structure?.space?.enabled && l.structure.space.showIsoGuides);
     if (showIsoGuides) {
       this.drawIsometricGuides(ctx, width, height, palette);
     }
@@ -1618,52 +1485,36 @@ export class StudioEngine {
     ctx.clip();
 
     const layers = this.getLayers();
-    const order = (this.state.layerOrder && this.state.layerOrder.length > 0) 
-      ? this.state.layerOrder 
+    const order = (this.state.layerOrder && this.state.layerOrder.length > 0)
+      ? this.state.layerOrder
       : layers.map(l => l.id);
     const renderStack = [...order].reverse();
 
-    const hasLayerStructure = layers.some(l => l.visible !== false && l.structure && (l.structure.enabled || (l.structure.formalStructure && l.structure.formalStructure.enabled)));
-    const hasGlobalStructure = !!(this.state.modifiers.radiation.enabled || this.state.modifiers.repetition.enabled);
+    // Each layer has its own independent layout structure & properties
+    const usesStructure = (struct) => !!(struct && (struct.enabled || (struct.formalStructure && struct.formalStructure.enabled)));
+    let anyLayerStructure = false;
+    for (const layerId of renderStack) {
+      const mod = layers.find(l => l.id === layerId);
+      if (!mod || mod.visible === false) continue;
 
-    if (!hasLayerStructure && !hasGlobalStructure) {
-      // Single Module Study in Center (Pure Base Units centered on canvas)
-      for (const layerId of renderStack) {
-        const mod = layers.find(l => l.id === layerId);
-        if (!mod || mod.visible === false) continue;
-        this.renderSingleLayerModule(ctx, mod, width, height, palette);
-      }
-    } else if (hasLayerStructure) {
-      // Independent Multilayer Pipeline: Each layer has its own independent layout structure & properties
-      for (const layerId of renderStack) {
-        const mod = layers.find(l => l.id === layerId);
-        if (!mod || mod.visible === false) continue;
-
-        const layerStruct = mod.structure;
-        if (layerStruct && (layerStruct.enabled || (layerStruct.formalStructure && layerStruct.formalStructure.enabled))) {
-          if (layerStruct.mode === "radiation") {
-            this.renderRadiation(ctx, width, height, palette, margin, usableW, usableH, mod, layerStruct.radiation);
-          } else {
-            this.renderRepetitionGrid(ctx, width, height, palette, margin, usableW, usableH, mod, layerStruct.repetition);
-          }
+      const layerStruct = mod.structure;
+      if (usesStructure(layerStruct)) {
+        anyLayerStructure = true;
+        if (layerStruct.mode === "radiation") {
+          this.renderRadiation(ctx, width, height, palette, margin, usableW, usableH, mod, layerStruct.radiation);
         } else {
-          // Layer rendered as single element centered on canvas
-          this.renderSingleLayerModule(ctx, mod, width, height, palette);
+          this.renderRepetitionGrid(ctx, width, height, palette, margin, usableW, usableH, mod, layerStruct.repetition);
         }
-      }
-    } else {
-      // Global structure fallback
-      if (this.state.modifiers.radiation.enabled) {
-        this.renderRadiation(ctx, width, height, palette, margin, usableW, usableH);
       } else {
-        this.renderRepetitionGrid(ctx, width, height, palette, margin, usableW, usableH);
+        // Layer rendered as a single element centered on the canvas
+        this.renderSingleLayerModule(ctx, mod, width, height, palette);
       }
     }
 
     ctx.restore(); // end master artboard clip
 
-    // 4. Subtle center reference dot (when in single module mode)
-    if (!this.state.modifiers.repetition.enabled && !this.state.modifiers.structure.enabled && !this.state.modifiers.radiation.enabled) {
+    // 4. Subtle center reference dot (only in single module mode, when no layer uses a layout)
+    if (!anyLayerStructure) {
       ctx.save();
       ctx.fillStyle = palette.accent;
       ctx.globalAlpha = 0.6;

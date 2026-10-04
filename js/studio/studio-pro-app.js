@@ -78,7 +78,6 @@ export class StudioProApp {
     this.setupSpace();
     this.setupTexture();
     this.setupShapeInspector();
-    this.setupModifierCards();
 
     // Initial render
     this.updateActivePalette();
@@ -669,8 +668,6 @@ export class StudioProApp {
         isActive = !!mod?.structure?.space?.enabled;
       } else if (tab === "texture") {
         isActive = !!mod?.structure?.texture?.enabled;
-      } else if (this.state.modifiers && this.state.modifiers[tab]) {
-        isActive = !!this.state.modifiers[tab].enabled;
       }
       btn.classList.toggle("has-modifier-active", isActive);
     });
@@ -2071,7 +2068,7 @@ export class StudioProApp {
     // Sync Mode (per active layer)
     const btnStroke = document.getElementById("btn-mode-stroke");
     const btnFill = document.getElementById("btn-mode-fill");
-    const isWireframe = mod.wireframe !== undefined ? mod.wireframe : this.state.wireframe;
+    const isWireframe = mod.wireframe !== false;
     if (isWireframe) {
       btnStroke?.classList.add("active");
       btnFill?.classList.remove("active");
@@ -2104,16 +2101,6 @@ export class StudioProApp {
     if (this.artboardWrapper) {
       this.artboardWrapper.style.transform = "none";
     }
-  }
-
-  updateViewportTransform() {
-    if (this.artboardWrapper) {
-      this.artboardWrapper.style.transform = "none";
-    }
-  }
-
-  adjustZoom(factor) {
-    // Disabled
   }
 
   centerArtboard() {
@@ -2168,198 +2155,12 @@ export class StudioProApp {
     });
   }
 
-  /* =========================================================================
-     MODIFIERS STACK BINDINGS
-     ========================================================================= */
-
-  setupModifierCards() {
-    const mods = this.state.modifiers;
-
-    // Click anywhere on header to toggle switch
-    document.querySelectorAll(".modifier-card").forEach(card => {
-      const header = card.querySelector(".modifier-header");
-      const switchInput = card.querySelector(".switch input[type='checkbox']");
-      if (header && switchInput) {
-        header.addEventListener("click", (e) => {
-          if (!e.target.closest(".switch") && !e.target.closest(".close-flyout-btn")) {
-            switchInput.checked = !switchInput.checked;
-            switchInput.dispatchEvent(new Event("change"));
-          }
-        });
-      }
-    });
-
-    // 1. REPETITION
-    this.bindModifierMasterToggle("toggle-mod-repetition", "repetition", (enabled) => {
-      if (enabled && mods.radiation.enabled) {
-        mods.radiation.enabled = false;
-        this.syncCheckbox("toggle-mod-radiation", false);
-        this.setModifierCardActiveState("card-radiation", false);
-      }
-      if (!enabled && mods.structure.enabled) {
-        mods.structure.enabled = false;
-        this.syncCheckbox("toggle-mod-structure", false);
-        this.setModifierCardActiveState("card-structure", false);
-      }
-      this.render();
-    });
-
-    document.querySelectorAll("[data-grid-type]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        this.ensureModifierActive("repetition");
-        mods.repetition.gridType = btn.dataset.gridType;
-        document.querySelectorAll("[data-grid-type]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        this.render();
-        this.pushHistory(`Repetition Grid: ${btn.dataset.gridType}`);
-      });
-    });
-
-    this.bindSliderWithNumber("input-grid-cols", "num-grid-cols", (val) => { mods.repetition.cols = val; this.render(); }, "Grid Columns", "repetition");
-    this.bindSliderWithNumber("input-grid-rows", "num-grid-rows", (val) => { mods.repetition.rows = val; this.render(); }, "Grid Rows", "repetition");
-    this.bindSliderWithNumber("input-grid-spacing", "num-grid-spacing", (val) => { mods.repetition.spacing = val; this.render(); }, "Gutter Spacing", "repetition");
-    this.bindSliderWithNumber("input-grid-shear", "num-grid-shear", (val) => { mods.repetition.shearAngle = val; this.render(); }, "Grid Shear", "repetition");
-    this.bindSliderWithNumber("input-grid-slide", "num-grid-slide", (val) => { mods.repetition.slideOffset = val; this.render(); }, "Grid Slide", "repetition");
-
-    // 2. STRUCTURE
-    this.bindModifierMasterToggle("toggle-mod-structure", "structure", (enabled) => {
-      if (enabled) {
-        if (mods.radiation.enabled) {
-          mods.radiation.enabled = false;
-          this.syncCheckbox("toggle-mod-radiation", false);
-          this.setModifierCardActiveState("card-radiation", false);
-        }
-        if (!mods.repetition.enabled) {
-          mods.repetition.enabled = true;
-          this.syncCheckbox("toggle-mod-repetition", true);
-          this.setModifierCardActiveState("card-repetition", true);
-        }
-      }
-      this.render();
-    });
-
-    document.querySelectorAll("[data-struct-mode]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        this.ensureModifierActive("structure");
-        mods.structure.mode = btn.dataset.structMode;
-        document.querySelectorAll("[data-struct-mode]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        this.render();
-      });
-    });
-    this.bindSliderWithNumber("input-struct-col-ratio", "num-struct-col-ratio", (val) => { mods.structure.colRatio = val; this.render(); }, "Column Ratio", "structure");
-    this.bindSliderWithNumber("input-struct-row-ratio", "num-struct-row-ratio", (val) => { mods.structure.rowRatio = val; this.render(); }, "Row Ratio", "structure");
-    this.bindCheckbox("check-struct-bands", (val) => { this.ensureModifierActive("structure"); mods.structure.showBands = val; this.render(); });
-
-    // 3. RADIATION
-    this.bindModifierMasterToggle("toggle-mod-radiation", "radiation", (enabled) => {
-      if (enabled) {
-        if (mods.repetition.enabled) {
-          mods.repetition.enabled = false;
-          this.syncCheckbox("toggle-mod-repetition", false);
-          this.setModifierCardActiveState("card-repetition", false);
-        }
-        if (mods.structure.enabled) {
-          mods.structure.enabled = false;
-          this.syncCheckbox("toggle-mod-structure", false);
-          this.setModifierCardActiveState("card-structure", false);
-        }
-      }
-      this.render();
-    });
-
-    document.querySelectorAll("[data-rad-scheme]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        this.ensureModifierActive("radiation");
-        mods.radiation.scheme = btn.dataset.radScheme;
-        document.querySelectorAll("[data-rad-scheme]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        this.render();
-      });
-    });
-    this.bindSliderWithNumber("input-rad-rays", "num-rad-rays", (val) => { mods.radiation.rays = val; this.render(); }, "Rays Count", "radiation");
-    this.bindSliderWithNumber("input-rad-rings", "num-rad-rings", (val) => { mods.radiation.rings = val; this.render(); }, "Rings Count", "radiation");
-    this.bindSliderWithNumber("input-rad-twist", "num-rad-twist", (val) => { mods.radiation.spiralTwist = val; this.render(); }, "Spiral Twist", "radiation");
-    this.bindCheckbox("check-rad-show-rays", (val) => { this.ensureModifierActive("radiation"); mods.radiation.showRays = val; this.render(); });
-    this.bindCheckbox("check-rad-show-rings", (val) => { this.ensureModifierActive("radiation"); mods.radiation.showRings = val; this.render(); });
-
-    // 4. SIMILARITY
-    this.bindModifierMasterToggle("toggle-mod-similarity", "similarity");
-    document.querySelectorAll("[data-kinship-type]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        this.ensureModifierActive("similarity");
-        mods.similarity.kinshipType = btn.dataset.kinshipType;
-        document.querySelectorAll("[data-kinship-type]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        this.render();
-      });
-    });
-    this.bindSliderWithNumber("input-sim-intensity", "num-sim-intensity", (val) => { mods.similarity.intensity = val; this.render(); }, "Similarity Variance", "similarity");
-    this.bindSliderWithNumber("input-sim-jitter", "num-sim-jitter", (val) => { mods.similarity.cellJitter = val; this.render(); }, "Cell Jitter", "similarity");
-  }
-
-  ensureModifierActive(modifierKey) {
-    const mods = this.state.modifiers;
-    if (!mods[modifierKey] || mods[modifierKey].enabled) return;
-
-    mods[modifierKey].enabled = true;
-    this.syncCheckbox(`toggle-mod-${modifierKey}`, true);
-    this.setModifierCardActiveState(`card-${modifierKey}`, true);
-
-    if (modifierKey === "radiation") {
-      if (mods.repetition.enabled) {
-        mods.repetition.enabled = false;
-        this.syncCheckbox("toggle-mod-repetition", false);
-        this.setModifierCardActiveState("card-repetition", false);
-      }
-      if (mods.structure.enabled) {
-        mods.structure.enabled = false;
-        this.syncCheckbox("toggle-mod-structure", false);
-        this.setModifierCardActiveState("card-structure", false);
-      }
-    } else if (modifierKey === "repetition" || modifierKey === "structure") {
-      if (mods.radiation.enabled) {
-        mods.radiation.enabled = false;
-        this.syncCheckbox("toggle-mod-radiation", false);
-        this.setModifierCardActiveState("card-radiation", false);
-      }
-      if (modifierKey === "structure" && !mods.repetition.enabled) {
-        mods.repetition.enabled = true;
-        this.syncCheckbox("toggle-mod-repetition", true);
-        this.setModifierCardActiveState("card-repetition", true);
-      }
-    }
-    this.updateRailIndicatorDots();
-  }
-
-  bindModifierMasterToggle(switchId, modifierKey, extraCallback) {
-    const sw = document.getElementById(switchId);
-    if (!sw) return;
-    sw.addEventListener("change", (e) => {
-      const enabled = e.target.checked;
-      this.state.modifiers[modifierKey].enabled = enabled;
-      this.setModifierCardActiveState(`card-${modifierKey}`, enabled);
-      if (extraCallback) extraCallback(enabled);
-      this.updateRailIndicatorDots();
-      this.render();
-      this.pushHistory(`Modifier ${modifierKey}: ${enabled ? "ON" : "OFF"}`);
-    });
-  }
-
-  setModifierCardActiveState(cardId, isActive) {
-    const card = document.getElementById(cardId);
-    if (card) {
-      card.classList.toggle("is-active", isActive);
-    }
-  }
-
-  bindSliderWithNumber(sliderId, numberId, callback, label = "Parameter", modifierKey = null) {
+  bindSliderWithNumber(sliderId, numberId, callback, label = "Parameter") {
     const slider = document.getElementById(sliderId);
     const numInput = document.getElementById(numberId);
 
     if (slider) {
       slider.addEventListener("input", (e) => {
-        if (modifierKey) this.ensureModifierActive(modifierKey);
         const val = parseFloat(e.target.value);
         if (numInput) numInput.value = val;
         callback(val);
@@ -2371,19 +2172,11 @@ export class StudioProApp {
 
     if (numInput) {
       numInput.addEventListener("change", (e) => {
-        if (modifierKey) this.ensureModifierActive(modifierKey);
         const val = parseFloat(e.target.value);
         if (slider) slider.value = val;
         callback(val);
         this.pushHistory(`Edited ${label}: ${val}`);
       });
-    }
-  }
-
-  bindCheckbox(id, callback) {
-    const cb = document.getElementById(id);
-    if (cb) {
-      cb.addEventListener("change", (e) => callback(e.target.checked));
     }
   }
 

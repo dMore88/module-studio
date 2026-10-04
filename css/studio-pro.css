@@ -67,12 +67,6 @@ body {
 }
 
 /* Canvas Workspace Dot Pattern */
-.canvas-workspace {
-  background-color: #eceef2;
-  background-image: radial-gradient(var(--canvas-grid-dot) 1.2px, transparent 1.2px);
-  background-size: 20px 20px;
-  background-position: 0 0;
-}
 
 /* Artboard Shadow Frame (Exact Proportions from Reference) */
 .artboard-container {
@@ -91,12 +85,6 @@ body {
 }
 
 /* Floating Card Base */
-.floating-card {
-  background: #ffffff;
-  border: 1px solid var(--panel-border);
-  border-radius: 14px;
-  box-shadow: 0 12px 36px -6px rgba(0, 0, 0, 0.08), 0 2px 8px -2px rgba(0, 0, 0, 0.04);
-}
 
 /* Pill Action Buttons in Header */
 .header-pill-btn {
@@ -258,52 +246,8 @@ body {
 }
 
 /* Shape Icon Buttons Grid */
-.shape-glyph-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid #dcdfe6;
-  background: #ffffff;
-  color: #4b4f5d;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.12s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-}
-.shape-glyph-btn:hover {
-  background: #f7f8fa;
-  color: #121317;
-  border-color: #b0b4c2;
-}
-.shape-glyph-btn.active {
-  background: #18181f;
-  color: #ffffff;
-  border-color: #18181f;
-  box-shadow: 0 2px 6px rgba(24, 24, 31, 0.25);
-}
 
 /* Numeric Scrubbable Input (Light Minimalist) */
-.scrub-input {
-  font-family: var(--bs-font-mono);
-  font-size: 11px;
-  background: #ffffff;
-  color: #121317;
-  border: 1px solid #dcdfe6;
-  border-radius: 5px;
-  padding: 2px 6px;
-  text-align: right;
-  transition: all 0.15s ease;
-  outline: none;
-}
-.scrub-input:hover {
-  border-color: #b0b4c2;
-}
-.scrub-input:focus {
-  border-color: #18181f;
-  box-shadow: 0 0 0 2px rgba(24, 24, 31, 0.1);
-}
 
 /* Range Inputs */
 input[type="range"] {
@@ -333,26 +277,6 @@ input[type="range"]:hover::-webkit-slider-thumb {
 }
 
 /* Mode Segment Buttons (Trazo vs Relleno) */
-.segment-btn {
-  padding: 4px 12px;
-  font-size: 11px;
-  font-weight: 500;
-  border-radius: 5px;
-  border: 1px solid #d2d5de;
-  background: #ffffff;
-  color: #585b68;
-  cursor: pointer;
-  transition: all 0.12s ease;
-}
-.segment-btn:hover {
-  background: #f7f8fa;
-  color: #121317;
-}
-.segment-btn.active {
-  background: #18181f;
-  color: #ffffff;
-  border-color: #18181f;
-}
 
 /* Micro Toggle Switches */
 .switch {
@@ -405,125 +329,12 @@ input[type="range"]:hover::-webkit-slider-thumb {
 }
 
 /* Modifiers Stack Card (Light Theme) */
-.modifier-card {
-  border: 1px solid #e2e5eb;
-  background: #ffffff;
-  border-radius: 10px;
-  overflow: hidden;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-}
-.modifier-card.is-active {
-  border-color: #18181f;
-  box-shadow: 0 4px 12px -2px rgba(24, 24, 31, 0.08);
-}
-.modifier-header {
-  padding: 8px 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  user-select: none;
-  background: #fafbfc;
-  border-bottom: 1px solid #eef0f4;
-  transition: background 0.15s ease;
-}
-.modifier-header:hover {
-  background: #f2f4f8;
-}
-.modifier-body {
-  padding: 10px 12px;
-  background: #ffffff;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  transition: opacity 0.2s ease;
-}
-.modifier-card:not(.is-active) .modifier-body {
-  opacity: 0.55;
-}
 
 /* Segmented Buttons */
-.tool-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3px 8px;
-  font-size: 10.5px;
-  font-weight: 500;
-  border-radius: 5px;
-  background: #ffffff;
-  color: #585b68;
-  border: 1px solid #dcdfe6;
-  cursor: pointer;
-  transition: all 0.12s ease;
-}
-.tool-btn:hover {
-  background: #f7f8fa;
-  color: #121317;
-  border-color: #b0b4c2;
-}
-.tool-btn.active {
-  background: #18181f;
-  color: #ffffff;
-  border-color: #18181f;
-}
 
 /* Floating Bottom Zoom HUD Pill */
-.floating-zoom-hud {
-  backdrop-blur-md;
-  background: rgba(24, 24, 31, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 9999px;
-  padding: 4px 8px;
-  color: #ffffff;
-  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.floating-zoom-hud button {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #a0a4b4;
-  cursor: pointer;
-  transition: color 0.1s ease;
-}
-.floating-zoom-hud button:hover {
-  color: #ffffff;
-}
 
 /* Draggable Canvas Overlay Handles */
-.interactive-handle {
-  position: absolute;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 2px solid #ffffff;
-  box-shadow: 0 0 0 2px #18181f, 0 3px 10px rgba(0, 0, 0, 0.4);
-  cursor: grab;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 25;
-}
-.interactive-handle:hover {
-  transform: translate(-50%, -50%) scale(1.2);
-}
-.interactive-handle:active {
-  cursor: grabbing;
-}
-.interactive-handle-center {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #18181f;
-}
 
 /* =========================================================================
    CONTROLS RAIL (ABSTRACT STUDIO DOCK)
@@ -792,8 +603,6 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .warning-alert-box.hidden {
   display: none !important;
 }
-
-
 
 /* =========================================================================
    DS INSPECTOR CONTROLS (Figma: Web apps / Abstract studio)

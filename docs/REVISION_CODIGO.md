@@ -54,11 +54,11 @@ El resto son problemas de orden interno que no se ven hoy pero encarecen cada ca
 
 ## 🟠 Importantes
 
-### 3. Quedó código viejo sin uso (unas 300 líneas)
+### 3. ✅ Quedó código viejo sin uso (unas 300 líneas) — resuelto
 
 - **Qué pasa:** hay 23 controles de la versión anterior enlazados a elementos que ya no existen en la pantalla (por ejemplo `toggle-mod-radiation`, `input-grid-cols`, `input-rad-rays`). No fallan, pero ocupan espacio y confunden. También hay 3 funciones que nadie llama y 10 estilos CSS sin uso.
 - **Por qué importa:** esos restos son la raíz del hallazgo 1: el "estado global viejo" sigue vivo junto al estado por capa. Quien lea el código no sabe cuál manda.
-- **Propuesta:** eliminarlos y dejar solo el estado por capa.
+- **Resuelto:** se eliminaron unas 350 líneas de JavaScript (el motor pasó de 1.794 a 1.645 líneas y la app de 2.451 a 2.244), 27 reglas de CSS sin uso y el estado global de modificadores. Ahora cada capa es la única fuente de verdad. Lo único que cambió a la vista: el punto de referencia del centro ya solo aparece cuando ninguna capa usa una cuadrícula o radial, como indicaba el comentario original.
 
 ### 4. Código repetido entre cuadrícula y radial (unas 400 líneas)
 
@@ -156,7 +156,7 @@ Orden sugerido, de lo más urgente a lo menos:
 | :-- | :--- | :-- | :-- |
 | F1 | ~~Arreglar presets + Layout (hallazgo 1)~~ ✅ resuelto al eliminar los presets | — | — |
 | F2 | PDF del libro (hallazgo 2): ✅ quitado del repositorio. Pendiente: push y decidir si se limpia el historial | Bajo | Ninguno |
-| F3 | Eliminar el código viejo (hallazgo 3) | Medio | Bajo |
+| F3 | ✅ Hecho (2026-10-04): eliminado el estado global viejo, los 23 enlaces a controles inexistentes, las funciones y los estilos sin uso (hallazgo 3) | — | — |
 | F4 | ✅ Hecho: página `tests/smoke.html` (7 pruebas, incluidas las 400 combinaciones) y aviso de error en pantalla (hallazgo 5) | — | — |
 | F5 | Accesibilidad (hallazgo 7) | Medio | Bajo |
 | F6 | Exponer las retículas ocultas y el grosor de líneas (Q2) | Bajo | Bajo |
