@@ -1044,3 +1044,21 @@ input[type="range"]:hover::-webkit-slider-thumb {
   cursor: pointer;
 }
 .ds-swatch-fill { display: block; width: 100%; height: 100%; }
+
+/* Visible notice when a draw fails (instead of a silent blank canvas) */
+.render-error {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #282a36;
+  color: #eeeef4;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: 0 10px 20px rgba(15, 38, 72, 0.15), 0 3px 6px rgba(15, 38, 72, 0.1);
+  z-index: 100;
+}
+.render-error[hidden] { display: none; }

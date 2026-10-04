@@ -187,8 +187,34 @@ export class StudioProApp {
     if (!this.engine || !this.canvas) return;
     this.engine.state = this.state;
     const palette = this.getActivePalette();
-    this.engine.render(palette);
+    try {
+      this.engine.render(palette);
+      this.hideRenderError();
+    } catch (err) {
+      // A failed draw must not leave a silent blank canvas: log it and tell the user.
+      console.error("Render failed:", err);
+      this.showRenderError(err);
+      return;
+    }
     this.updateHUD();
+  }
+
+  showRenderError(err) {
+    let box = document.getElementById("render-error");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "render-error";
+      box.className = "render-error";
+      box.setAttribute("role", "alert");
+      document.body.appendChild(box);
+    }
+    box.textContent = `Something went wrong while drawing (${err && err.message ? err.message : "unknown error"}). Press Cmd/Ctrl+Z to go back to the last working state.`;
+    box.hidden = false;
+  }
+
+  hideRenderError() {
+    const box = document.getElementById("render-error");
+    if (box) box.hidden = true;
   }
 
   applyAspectRatio(key) {

@@ -97,7 +97,7 @@ Esto genera `js/bundle-pro.js` manteniendo sincronizada la versión standalone d
 ## 7. Protocolo de Calidad Obligatorio (Zero-Breakage)
 
 > **REGLA DE ORO DE DESARROLLO:**  
-> Ningún cambio, refactor o nuevo control puede entregarse sin cumplir estrictamente estos 6 mandamientos de calidad:
+> Ningún cambio, refactor o nuevo control puede entregarse sin cumplir estrictamente estos 7 mandamientos de calidad:
 
 1. **Compilación Inmediata:**  
    Tras editar cualquier archivo en `js/`, compilar inmediatamente con `python3 build-pro.py` para regenerar `js/bundle-pro.js`.
@@ -119,3 +119,6 @@ Esto genera `js/bundle-pro.js` manteniendo sincronizada la versión standalone d
 
 6. **Integración Dual Cartesiano + Polar:**  
    Cada modificador debe implementarse y probarse tanto en la retícula cartesiana (`renderRepetitionGrid`) como en el esquema polar (`renderRadiation`).
+
+7. **Pruebas de humo:**  
+   Antes de entregar, abrir `tests/smoke.html` a través de un servidor (`python3 -m http.server`, luego `/tests/smoke.html`). Debe terminar en **"All tests passed"**. Prueba el dibujo de las 15 formas, 400 combinaciones al azar de todos los controles, la textura determinista, deshacer y rehacer, el alta y baja de capas y el aviso de error en pantalla. Si se añade un control o modificador nuevo, ampliar `randomizeState` en esa página para que lo incluya.

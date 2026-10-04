@@ -2,7 +2,7 @@
 
 Fecha: 2026-10-04. Cubre los ítems **Q1** (revisión de código) y **Q2** (auditoría contra el backlog).
 
-> **Actualización (2026-10-04, misma jornada):** se eliminaron los presets y el botón Random, lo que resuelve el hallazgo 1 de raíz (repetida la prueba de 400 combinaciones: **0 fallos**). El PDF del libro (hallazgo 2) se quitó del repositorio y se añadió a `.gitignore`; sigue existiendo en tu disco como base de conocimiento local. Queda pendiente hacer push (para que desaparezca de la página publicada) y decidir si se limpia el historial de git.
+> **Actualización (2026-10-04, misma jornada):** se eliminaron los presets y el botón Random, lo que resuelve el hallazgo 1 de raíz (repetida la prueba de 400 combinaciones: **0 fallos**). El PDF del libro (hallazgo 2) se quitó del repositorio y se añadió a `.gitignore`; sigue existiendo en tu disco como base de conocimiento local. El historial de git se reescribió para quitarlo de todos los commits y se hizo push forzado. Pendiente: pedir a GitHub que purgue las copias en caché (ver el mensaje de la sesión).
 
 Este informe está escrito sin jerga. Cada hallazgo dice **qué pasa**, **por qué importa** y **qué propongo**. No se cambió ningún código para escribirlo.
 
@@ -157,7 +157,7 @@ Orden sugerido, de lo más urgente a lo menos:
 | F1 | ~~Arreglar presets + Layout (hallazgo 1)~~ ✅ resuelto al eliminar los presets | — | — |
 | F2 | PDF del libro (hallazgo 2): ✅ quitado del repositorio. Pendiente: push y decidir si se limpia el historial | Bajo | Ninguno |
 | F3 | Eliminar el código viejo (hallazgo 3) | Medio | Bajo |
-| F4 | Guardar la prueba de 400 combinaciones y añadir el aviso de errores (hallazgo 5) | Medio | Bajo |
+| F4 | ✅ Hecho: página `tests/smoke.html` (7 pruebas, incluidas las 400 combinaciones) y aviso de error en pantalla (hallazgo 5) | — | — |
 | F5 | Accesibilidad (hallazgo 7) | Medio | Bajo |
 | F6 | Exponer las retículas ocultas y el grosor de líneas (Q2) | Bajo | Bajo |
 | F7 | Unificar cuadrícula y radial (hallazgo 4) | Alto | Medio, con F4 como red de seguridad |

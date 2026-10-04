@@ -987,7 +987,7 @@ export class StudioEngine {
         const normScale = scaleUnit * cellRatio * cellScaleMul * concScaleMul;
         this.cellSeed = r * cols + c + 1;
         this.cellAlt = (r + c) % 2 === 1;
-        const lineWidthMul = (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * cellScaleMul * concScaleMul : null;
+        const lineWidthMul = (cellShapeA || targetMod?.shape) === "line" ? scaleUnit * (cW / usableW) * cellScaleMul * concScaleMul : null;
         this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor ? cellFg : null, lineWidthMul);
         ctx.restore();
       };

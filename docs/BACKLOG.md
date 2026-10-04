@@ -15,7 +15,7 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 | 1 | Fluctuating alterna la dirección entre celdas vecinas | ✅ Hecho (2026-10-04) |
 | 2 | Gradation: *Range* aplica a Scale, Depth y Drift (180 = cantidad original) | ✅ Hecho (2026-10-04) |
 | 3 | **Revisión de código y auditoría de lo propuesto** (sección 0, Q1 y Q2) | ✅ Informe hecho: [REVISION_CODIGO.md](./REVISION_CODIGO.md) |
-| 3b | **Arreglos de la revisión** (F1 a F9 del informe) | F1 ✅ y F2 ✅ (parcial: falta push). P1: F4 (pruebas) antes de funciones nuevas |
+| 3b | **Arreglos de la revisión** (F1 a F9 del informe) | F1 ✅, F2 ✅ (falta purga de caché en GitHub) y F4 ✅. Siguen F3, F5 a F9 |
 | 4 | **Design system `.md` desde Figma** (sección 0, Q3) | P1 |
 | 5 | Gradation avanzada (G1 a G7) | P1 |
 | 6 | Radiación: centrípeta y centro abierto (R1, R2, y lo que acompaña) | P1 |
