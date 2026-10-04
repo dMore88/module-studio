@@ -2,6 +2,8 @@
 
 Fecha: 2026-10-04. Cubre los ítems **Q1** (revisión de código) y **Q2** (auditoría contra el backlog).
 
+> **Actualización (2026-10-04, misma jornada):** se eliminaron los presets y el botón Random, lo que resuelve el hallazgo 1 de raíz (repetida la prueba de 400 combinaciones: **0 fallos**). El PDF del libro (hallazgo 2) se quitó del repositorio y se añadió a `.gitignore`; sigue existiendo en tu disco como base de conocimiento local. Queda pendiente hacer push (para que desaparezca de la página publicada) y decidir si se limpia el historial de git.
+
 Este informe está escrito sin jerga. Cada hallazgo dice **qué pasa**, **por qué importa** y **qué propongo**. No se cambió ningún código para escribirlo.
 
 **Cómo leer la gravedad:** 🔴 grave (rompe algo o es un riesgo real) · 🟠 importante (cuesta mantener o limita) · 🟡 mejorable · 🟢 está bien.
@@ -23,10 +25,10 @@ El resto son problemas de orden interno que no se ven hoy pero encarecen cada ca
 
 | Prueba | Resultado |
 | :--- | :--- |
-| Cargar los 8 presets y apagar el Layout de la capa 1 | 🔴 Los 8 fallan (2 en blanco, 6 con error) |
-| 400 combinaciones al azar de formas, capas (1 a 5), proporciones y todos los modificadores | 🟠 21 fallaron (5%), todas por el mismo motivo del punto 1 |
+| Cargar los 8 presets y apagar el Layout de la capa 1 | 🔴 Los 8 fallaban (2 en blanco, 6 con error). **Resuelto al eliminar los presets** |
+| 400 combinaciones al azar de formas, capas (1 a 5), proporciones y todos los modificadores | 🟠 21 fallaron (5%), todas por el motivo del punto 1. Tras eliminar los presets: 🟢 0 fallos |
 | Equilibrio del lienzo (`save` / `restore`) en esas 400 | 🟢 0 desbalanceadas |
-| Velocidad de dibujo | 🟢 10 ms de promedio; peor caso 161 ms (50×50 con 5 capas) |
+| Velocidad de dibujo | 🟢 pocos milisegundos con ajustes normales. 🟡 En combinaciones extremas al azar (50×50, 5 capas, todos los modificadores a la vez): promedio 73 ms, peor caso 973 ms |
 | Deshacer y rehacer un cambio de Texture | 🟢 Correcto, y el control se actualiza |
 | Añadir hasta 5 capas y borrarlas | 🟢 Correcto; todas conservan todos sus bloques de ajustes |
 | Accesibilidad (etiquetas, nombres de botones) | 🟠 Ver hallazgo 7 |
@@ -98,7 +100,7 @@ El resto son problemas de orden interno que no se ven hoy pero encarecen cada ca
 
 ## 🟡 Mejorables
 
-- **10. Cada movimiento de un deslizador dibuja de inmediato.** Con ajustes pesados (peor caso 161 ms) arrastrar puede sentirse con retraso. Conviene agrupar los dibujos de un mismo instante.
+- **10. Cada movimiento de un deslizador dibuja de inmediato.** Con ajustes pesados (peor caso medido: 973 ms) arrastrar puede sentirse con retraso. Conviene agrupar los dibujos de un mismo instante.
 - **11. Archivos muy grandes.** La lógica de pantalla tiene 2.529 líneas en una sola clase y el motor 1.794. Funcionan, pero cuesta encontrar cosas. A futuro, separar por modificador.
 - **12. Colores y medidas escritos a mano en el CSS** en lugar de variables de diseño. Se resuelve con el trabajo del design system (Q3).
 - **13. Pequeñas rarezas visuales.** El punto de referencia del centro se dibuja siempre, incluso con capas en cuadrícula. El zoom quedó desactivado pero su código sigue.
@@ -108,7 +110,7 @@ El resto son problemas de orden interno que no se ven hoy pero encarecen cada ca
 ## 🟢 Lo que está bien
 
 - Dibujo equilibrado: ninguna de las 400 combinaciones dejó el lienzo en mal estado.
-- Rápido en el uso normal: 10 ms de promedio.
+- Rápido en el uso normal (pocos milisegundos); solo las combinaciones extremas tardan cerca de un segundo.
 - Deshacer y rehacer se comportan bien con todos los controles nuevos.
 - Cada capa conserva todos sus bloques de ajustes tras añadir, borrar o cargar presets.
 - La textura no parpadea: el ruido es estable por capa y celda.
@@ -152,8 +154,8 @@ Orden sugerido, de lo más urgente a lo menos:
 
 | Paso | Qué | Esfuerzo | Riesgo |
 | :-- | :--- | :-- | :-- |
-| F1 | Arreglar presets + Layout (hallazgo 1) | Bajo | Bajo |
-| F2 | Decidir qué hacer con el PDF del libro (hallazgo 2) | Bajo | Ninguno |
+| F1 | ~~Arreglar presets + Layout (hallazgo 1)~~ ✅ resuelto al eliminar los presets | — | — |
+| F2 | PDF del libro (hallazgo 2): ✅ quitado del repositorio. Pendiente: push y decidir si se limpia el historial | Bajo | Ninguno |
 | F3 | Eliminar el código viejo (hallazgo 3) | Medio | Bajo |
 | F4 | Guardar la prueba de 400 combinaciones y añadir el aviso de errores (hallazgo 5) | Medio | Bajo |
 | F5 | Accesibilidad (hallazgo 7) | Medio | Bajo |

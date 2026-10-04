@@ -6,7 +6,6 @@
 import { StudioEngine, defaultStudioState, createDefaultLayerStructure, createDefaultLayer } from './studio-engine.js';
 import { Shapes } from './shapes.js';
 import { CanvasUtils } from '../canvas-utils.js';
-import { STUDIO_PRESETS } from './presets-gallery.js';
 import { StudioExporter } from './exporter.js';
 
 export const ASPECT_RATIOS = {
@@ -247,17 +246,7 @@ export class StudioProApp {
       });
     }
 
-    // 4. Randomize Button
-    const randomBtn = document.getElementById("btn-random-preset");
-    if (randomBtn) {
-      randomBtn.addEventListener("click", () => {
-        const randomIndex = Math.floor(Math.random() * STUDIO_PRESETS.length);
-        const preset = STUDIO_PRESETS[randomIndex];
-        this.loadPreset(preset);
-      });
-    }
-
-    // 5. Copy SVG Code
+    // 4. Copy SVG Code
     const copySvgBtn = document.getElementById("btn-copy-svg-code");
     if (copySvgBtn) {
       copySvgBtn.addEventListener("click", async () => {
@@ -278,7 +267,7 @@ export class StudioProApp {
       });
     }
 
-    // 6. Download SVG File
+    // 5. Download SVG File
     const downloadSvgBtn = document.getElementById("btn-download-svg");
     if (downloadSvgBtn) {
       downloadSvgBtn.addEventListener("click", () => {
@@ -286,7 +275,7 @@ export class StudioProApp {
       });
     }
 
-    // 7. Config Button
+    // 6. Config Button
     const configBtn = document.getElementById("btn-open-config");
     if (configBtn) {
       configBtn.addEventListener("click", () => {
@@ -2383,101 +2372,8 @@ export class StudioProApp {
   }
 
   /* =========================================================================
-     PRESET & HISTORY MANAGEMENT
+     HISTORY MANAGEMENT
      ========================================================================= */
-
-  loadPreset(preset) {
-    this.state = JSON.parse(JSON.stringify(preset.state));
-
-    // Normalize layers from preset
-    if (!Array.isArray(this.state.layers) || this.state.layers.length === 0) {
-      this.state.layers = [createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5)];
-    }
-
-    // Ensure all layers have valid structure and properties
-    this.state.layers.forEach((layer, idx) => {
-      if (!layer.id) layer.id = `layer-${idx + 1}`;
-      if (!layer.name) layer.name = `Layer ${idx + 1}`;
-      if (layer.visible === undefined) layer.visible = true;
-      if (layer.enabled === undefined) layer.enabled = true;
-      if (!layer.structure) layer.structure = createDefaultLayerStructure();
-      if (!layer.structure.formalStructure) {
-        layer.structure.formalStructure = { enabled: false, mode: "rhythmic", colRatio: 1.8, rowRatio: 1.8, bandThickness: 3, showBands: false };
-      }
-      if (!layer.structure.similarity) {
-        layer.structure.similarity = { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 };
-      }
-      if (!layer.structure.gradation) {
-        layer.structure.gradation = createDefaultLayerStructure().gradation;
-      }
-      if (!layer.structure.anomaly) {
-        layer.structure.anomaly = createDefaultLayerStructure().anomaly;
-      }
-      if (!layer.structure.contrast) {
-        layer.structure.contrast = createDefaultLayerStructure().contrast;
-      }
-      if (!layer.structure.concentration) {
-        layer.structure.concentration = createDefaultLayerStructure().concentration;
-      }
-      if (!layer.structure.space) {
-        layer.structure.space = createDefaultLayerStructure().space;
-      }
-      if (!layer.structure.texture) {
-        layer.structure.texture = createDefaultLayerStructure().texture;
-      }
-    });
-
-    // If global repetition or radiation is enabled in preset modifiers, propagate to layer 1 structure
-    const firstLayer = this.state.layers[0];
-    if (firstLayer && !firstLayer.structure.enabled) {
-      if (this.state.modifiers?.repetition?.enabled) {
-        firstLayer.structure.enabled = true;
-        firstLayer.structure.mode = "repetition";
-        Object.assign(firstLayer.structure.repetition, this.state.modifiers.repetition);
-      } else if (this.state.modifiers?.radiation?.enabled) {
-        firstLayer.structure.enabled = true;
-        firstLayer.structure.mode = "radiation";
-        Object.assign(firstLayer.structure.radiation, this.state.modifiers.radiation);
-      }
-      if (this.state.modifiers?.structure?.enabled) {
-        Object.assign(firstLayer.structure.formalStructure, this.state.modifiers.structure);
-      }
-      if (this.state.modifiers?.similarity?.enabled) {
-        Object.assign(firstLayer.structure.similarity, this.state.modifiers.similarity);
-      }
-      if (this.state.modifiers?.gradation?.enabled) {
-        Object.assign(firstLayer.structure.gradation, this.state.modifiers.gradation);
-      }
-      if (this.state.modifiers?.anomaly?.enabled) {
-        Object.assign(firstLayer.structure.anomaly, this.state.modifiers.anomaly);
-      }
-      if (this.state.modifiers?.contrast?.enabled) {
-        Object.assign(firstLayer.structure.contrast, this.state.modifiers.contrast);
-      }
-      if (this.state.modifiers?.concentration?.enabled) {
-        Object.assign(firstLayer.structure.concentration, this.state.modifiers.concentration);
-      }
-      if (this.state.modifiers?.space?.enabled) {
-        Object.assign(firstLayer.structure.space, this.state.modifiers.space);
-      }
-      if (this.state.modifiers?.texture?.enabled) {
-        Object.assign(firstLayer.structure.texture, this.state.modifiers.texture);
-      }
-    }
-
-    this.state.layerOrder = this.state.layers.map(l => l.id);
-
-    if (!this.state.layers.some(l => l.id === this.activeLayerId)) {
-      this.activeLayerId = this.state.layers[0].id;
-    }
-
-    this.applyAspectRatio(this.state.aspectRatio || "1:1");
-    this.updateActivePalette();
-    this.render();
-    this.syncAllInspectorsWithActiveLayer();
-    this.updateLayerCardsUI();
-    this.pushHistory(`Loaded Preset: ${preset.name}`);
-  }
 
   pushHistory(label = "Action") {
     if (this.historyIndex < this.history.length - 1) {

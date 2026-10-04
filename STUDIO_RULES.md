@@ -109,7 +109,7 @@ Esto genera `js/bundle-pro.js` manteniendo sincronizada la versión standalone d
    ```
 
 3. **Sincronización Atómica de Inspectores (`syncAllInspectorsWithActiveLayer`):**  
-   Cualquier evento que mute el estado o cambie la capa activa (`selectLayer`, `undo`, `redo`, `loadPreset`, `init`) debe invocar `syncAllInspectorsWithActiveLayer()`. Prohibido actualizar inspectores de forma parcial dejando controles desfasados.
+   Cualquier evento que mute el estado o cambie la capa activa (`selectLayer`, `undo`, `redo`, `init`) debe invocar `syncAllInspectorsWithActiveLayer()`. Prohibido actualizar inspectores de forma parcial dejando controles desfasados.
 
 4. **Balance Estricto del Canvas 2D:**  
    Todo `ctx.save()` en `studio-engine.js` debe poseer exactamente un `ctx.restore()` correspondiente en todas las ramas de ejecución (incluyendo salidas tempranas como `tear` anomaly), protegiendo la matriz de transformación y el área de clipping de arte.

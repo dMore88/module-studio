@@ -33,9 +33,6 @@ def build():
     with open(os.path.join(js_dir, 'studio', 'studio-engine.js')) as f:
         c_engine = strip_es6_modules(f.read())
 
-    with open(os.path.join(js_dir, 'studio', 'presets-gallery.js')) as f:
-        c_presets = strip_es6_modules(f.read())
-
     with open(os.path.join(js_dir, 'studio', 'exporter.js')) as f:
         c_exporter = strip_es6_modules(f.read())
 
@@ -53,8 +50,6 @@ def build():
 
   {c_engine}
 
-  {c_presets}
-
   {c_exporter}
 
   {c_app}
@@ -64,7 +59,6 @@ def build():
     window.StudioProApp = StudioProApp;
     window.CanvasUtils = CanvasUtils;
     window.Shapes = Shapes;
-    window.STUDIO_PRESETS = STUDIO_PRESETS;
     window.StudioExporter = StudioExporter;
   }}
 }})();

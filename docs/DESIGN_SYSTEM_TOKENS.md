@@ -25,7 +25,7 @@ This document establishes the design tokens, visual hierarchy, and structural pa
 | :--- | :--- | :--- |
 | `--bs-border-default` | `#dcdfe6` | Standard inputs, divider lines, and button outlines. |
 | `--bs-border-card` | `#e2e5eb` | Subtle perimeter stroke for floating cards. |
-| `--bs-border-button` | `#d2d5de` | Pill buttons in top header (`Random`, `Config`, `Copy SVG`). |
+| `--bs-border-button` | `#d2d5de` | Pill buttons in top header (`Config`, `Copy SVG`). |
 | `--bs-shadow-card` | `0 12px 36px -6px rgba(0,0,0,0.08)` | Soft diffusion shadow for floating tool panels. |
 | `--bs-shadow-artboard` | `0 24px 64px -12px rgba(0,0,0,0.08)` | Premium depth shadow separating the canvas from the background. |
 
@@ -50,7 +50,7 @@ Instead of full-height fixed sidebars that occupy canvas space, the interface em
 1. **Top Minimal Header (56px):**
    - Left: Logo + `Module Studio`
    - Center: Aspect Ratio dropdown (`1 : 1 ▼`), Grid toggle button, Theme/Invert toggle button.
-   - Right: Actions (`Random`, `Config`, `Copy SVG`, `Download SVG`).
+   - Right: Actions (`Config`, `Copy SVG`, `Download SVG`).
 2. **Left Floating Layers Panel (`CAPAS`):**
    - Header with count badge (`CAPAS 2`) and action `Add pattern ⊕`.
    - Each layer represents an independent **Module Unit**:

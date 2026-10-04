@@ -15,7 +15,7 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 | 1 | Fluctuating alterna la dirección entre celdas vecinas | ✅ Hecho (2026-10-04) |
 | 2 | Gradation: *Range* aplica a Scale, Depth y Drift (180 = cantidad original) | ✅ Hecho (2026-10-04) |
 | 3 | **Revisión de código y auditoría de lo propuesto** (sección 0, Q1 y Q2) | ✅ Informe hecho: [REVISION_CODIGO.md](./REVISION_CODIGO.md) |
-| 3b | **Arreglos de la revisión** (F1 a F9 del informe) | P1; F1 (presets + Layout) y F4 (pruebas) antes de funciones nuevas |
+| 3b | **Arreglos de la revisión** (F1 a F9 del informe) | F1 ✅ y F2 ✅ (parcial: falta push). P1: F4 (pruebas) antes de funciones nuevas |
 | 4 | **Design system `.md` desde Figma** (sección 0, Q3) | P1 |
 | 5 | Gradation avanzada (G1 a G7) | P1 |
 | 6 | Radiación: centrípeta y centro abierto (R1, R2, y lo que acompaña) | P1 |
@@ -199,4 +199,5 @@ Ya cubierto: textura espontánea mediante deformación de geometría (Jitter, Li
 | :-- | :--- | :--- | :-- |
 | O1 | Exportar SVG vectorial real | Hoy incrusta un PNG. Ya no hay texturas de píxeles, así que es posible, pero requiere reescribir el export | P2, por decidir |
 | O2 | Controles de Contrast sin diseño en Figma | Minority Shape y Clash Angle se añadieron sin mockup | Pendiente de diseño |
+| O4 | Aleatorizar parámetros (botón Random) | Se eliminaron los presets y el botón. Si se retoma, generar combinaciones válidas al azar de los controles de capa (la prueba de 400 combinaciones ya sabe hacerlo). Sin presets prediseñados | P3, baja prioridad |
 | O3 | Controles extra sin diseño en Figma | Eje de línea en Concentration; selector de color de acento en Anomaly y Contrast | Pendiente de diseño |

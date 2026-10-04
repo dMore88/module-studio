@@ -2484,262 +2484,6 @@ class StudioEngine {
 
 
   /**
- * MODULE STUDIO — Presets Gallery
- * Curated parametric compositions across Bauhaus, Swiss, Op-Art, and Kinetic aesthetics.
- */
-
-
-
-// Preset layer: shape, size (width = height), rotation, offsets and draw mode.
-const presetLayer = (id, shape, size, rotation, offsetX, offsetY, wireframe) => ({
-  ...createDefaultLayer(id, id === "layer-1" ? "Layer 1" : "Layer 2", shape, offsetX, offsetY, rotation),
-  scale: size,
-  width: size,
-  height: size,
-  wireframe
-});
-const STUDIO_PRESETS = [
-  {
-    id: "nautilus_spiral",
-    name: "Nautilus Kinetic Spiral",
-    category: "Radial & Polar",
-    description: "Centrifugal spiral radiation with logarithmic twist and crescent layers.",
-    state: {
-      aspectRatio: "1:1",
-      paletteId: "inverted",
-      layers: [
-        presetLayer("layer-1", "circle", 95, 0, 0, 0, false),
-        presetLayer("layer-2", "crescent", 75, 45, 25, 0, false)
-      ],
-      invertFigureGround: false,
-      wireframe: false,
-      modifiers: {
-        repetition: { enabled: false, gridType: "basic", cols: 4, rows: 4, spacing: 0, shearAngle: 15, slideOffset: 0.5, curveIntensity: 18, activeClipping: false, showGridLines: false, gridLineWidth: 1.5, checkerInvert: false },
-        structure: { enabled: false, mode: "rhythmic", colRatio: 1.8, rowRatio: 1.8, bandThickness: 3, showBands: false },
-        similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
-        gradation: { enabled: true, type: "scale", pathway: "concentric", range: 120, steps: 1, reverse: false },
-        radiation: { enabled: true, scheme: "spiral", rays: 16, rings: 6, spiralTwist: 60, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
-        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
-        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
-        concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
-        space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
-      },
-      showSafeBounds: false,
-      zoomLevel: 1.0
-    }
-  },
-  {
-    id: "moire_guilloche",
-    name: "Moiré Guilloché Rosette",
-    category: "Radial & Polar",
-    description: "Dual-center interference pattern generating high-frequency geometric moiré.",
-    state: {
-      aspectRatio: "1:1",
-      paletteId: "blueprint",
-      layers: [
-        presetLayer("layer-1", "cross", 70, 0, 0, 0, true),
-        presetLayer("layer-2", "parallelogram", 65, 45, 0, 0, true)
-      ],
-      invertFigureGround: false,
-      wireframe: true,
-      modifiers: {
-        repetition: { enabled: false, gridType: "basic", cols: 4, rows: 4, spacing: 0, shearAngle: 15, slideOffset: 0.5, curveIntensity: 18, activeClipping: false, showGridLines: false, gridLineWidth: 1.5, checkerInvert: false },
-        structure: { enabled: false, mode: "rhythmic", colRatio: 1.8, rowRatio: 1.8, bandThickness: 3, showBands: false },
-        similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
-        gradation: { enabled: false, type: "rotation", pathway: "diagonal", range: 180, steps: 1, reverse: false },
-        radiation: { enabled: true, scheme: "multi_center", rays: 24, rings: 7, spiralTwist: -35, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
-        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
-        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
-        concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
-        space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
-      },
-      showSafeBounds: false,
-      zoomLevel: 1.0
-    }
-  },
-  {
-    id: "bauhaus_subtraction",
-    name: "Bauhaus Minimal Construct",
-    category: "Cartesian Grid",
-    description: "Orthogonal structural tension with an overlapping circular layer and primary contrast.",
-    state: {
-      aspectRatio: "3:4",
-      paletteId: "bauhaus",
-      layers: [
-        presetLayer("layer-1", "square", 115, 0, 0, 0, false),
-        presetLayer("layer-2", "circle", 90, 0, 45, 0, false)
-      ],
-      invertFigureGround: false,
-      wireframe: false,
-      modifiers: {
-        repetition: { enabled: true, gridType: "basic", cols: 3, rows: 4, spacing: 24, shearAngle: 0, slideOffset: 0, curveIntensity: 0, activeClipping: false, showGridLines: false, gridLineWidth: 1.5, checkerInvert: false },
-        structure: { enabled: false, mode: "rhythmic", colRatio: 1.8, rowRatio: 1.8, bandThickness: 3, showBands: false },
-        similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
-        gradation: { enabled: true, type: "rotation", pathway: "diagonal", range: 90, steps: 1, reverse: false },
-        radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
-        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
-        contrast: { enabled: true, dimension: "direction", dominanceRatio: 75, contrastShape: "cross", scaleFactor: 1.0, angle: 45, highlightContrast: true },
-        concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
-        space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
-      },
-      showSafeBounds: true,
-      zoomLevel: 1.0
-    }
-  },
-  {
-    id: "tectonic_rift",
-    name: "Tectonic Fault Line",
-    category: "Anomaly & Rift",
-    description: "Sheared repetition lattice disrupted by a transversal geological fracture.",
-    state: {
-      aspectRatio: "1:1",
-      paletteId: "monochrome",
-      layers: [
-        presetLayer("layer-1", "square", 65, 0, 0, 0, false)
-      ],
-      invertFigureGround: true,
-      wireframe: false,
-      modifiers: {
-        repetition: { enabled: true, gridType: "sheared", cols: 7, rows: 7, spacing: 10, shearAngle: 15, slideOffset: 0, curveIntensity: 0, activeClipping: false, showGridLines: false, gridLineWidth: 1.5, checkerInvert: false },
-        structure: { enabled: false, mode: "rhythmic", colRatio: 1.8, rowRatio: 1.8, bandThickness: 3, showBands: false },
-        similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
-        gradation: { enabled: false, type: "rotation", pathway: "diagonal", range: 180, steps: 1, reverse: false },
-        radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
-        anomaly: { enabled: true, type: "fracture", epicenterX: 0.5, epicenterY: 0.5, radius: 220, intensity: 85, anomalousShape: "cross", highlightColor: true, showReticle: false },
-        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
-        concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
-        space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
-      },
-      showSafeBounds: false,
-      zoomLevel: 1.0
-    }
-  },
-  {
-    id: "gravitational_singularity",
-    name: "Gravitational Singularity",
-    category: "Fields & Forces",
-    description: "High-density triangular field collapsing inward toward an off-center vortex.",
-    state: {
-      aspectRatio: "9:16",
-      paletteId: "inverted",
-      layers: [
-        presetLayer("layer-1", "triangle", 50, 0, 0, 0, false)
-      ],
-      invertFigureGround: false,
-      wireframe: false,
-      modifiers: {
-        repetition: { enabled: true, gridType: "sliding", cols: 8, rows: 14, spacing: 4, shearAngle: 0, slideOffset: 0.5, curveIntensity: 0, activeClipping: false, showGridLines: false, gridLineWidth: 1.5, checkerInvert: false },
-        structure: { enabled: false, mode: "rhythmic", colRatio: 1.8, rowRatio: 1.8, bandThickness: 3, showBands: false },
-        similarity: { enabled: true, kinshipType: "rotation_wobble", intensity: 25, cellJitter: 0, seed: 88 },
-        gradation: { enabled: false, type: "rotation", pathway: "diagonal", range: 180, steps: 1, reverse: false },
-        radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
-        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
-        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
-        concentration: { enabled: true, mode: "point", attractorX: 0.5, attractorY: 0.45, power: 85, radius: 340, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
-        space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
-      },
-      showSafeBounds: false,
-      zoomLevel: 1.0
-    }
-  },
-  {
-    id: "washi_isometric",
-    name: "Washi Isometric Plate",
-    category: "Space & Material",
-    description: "Axonometric hexagonal volumes immersed in authentic litographic paper grain.",
-    state: {
-      aspectRatio: "4:3",
-      paletteId: "sepia",
-      layers: [
-        presetLayer("layer-1", "hexagon", 110, 0, 0, 0, false),
-        presetLayer("layer-2", "circle", 80, 0, 0, 0, false)
-      ],
-      invertFigureGround: false,
-      wireframe: false,
-      modifiers: {
-        repetition: { enabled: true, gridType: "basic", cols: 4, rows: 3, spacing: 30, shearAngle: 0, slideOffset: 0, curveIntensity: 0, activeClipping: false, showGridLines: false, gridLineWidth: 1.5, checkerInvert: false },
-        structure: { enabled: false, mode: "rhythmic", colRatio: 1.8, rowRatio: 1.8, bandThickness: 3, showBands: false },
-        similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
-        gradation: { enabled: false, type: "rotation", pathway: "diagonal", range: 180, steps: 1, reverse: false },
-        radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
-        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
-        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
-        concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: true, jitter: 2, skipChance: 0, crossing: 0, undulation: 4 },
-        space: { enabled: true, mode: "isometric", depth: 40, angle: 30, shading: 70, showIsoGuides: false }
-      },
-      showSafeBounds: false,
-      zoomLevel: 1.0
-    }
-  },
-  {
-    id: "optical_wave_scan",
-    name: "Optical Slit-Scan Waves",
-    category: "Kinetic Op-Art",
-    description: "Curved sinusoidal wave rasterization with rotational diagonal progression.",
-    state: {
-      aspectRatio: "16:9",
-      paletteId: "inverted",
-      layers: [
-        presetLayer("layer-1", "cross", 45, 0, 0, 0, false)
-      ],
-      invertFigureGround: false,
-      wireframe: false,
-      modifiers: {
-        repetition: { enabled: true, gridType: "curved", cols: 12, rows: 6, spacing: 6, shearAngle: 0, slideOffset: 0, curveIntensity: 28, activeClipping: false, showGridLines: false, gridLineWidth: 1.5, checkerInvert: false },
-        structure: { enabled: false, mode: "rhythmic", colRatio: 1.8, rowRatio: 1.8, bandThickness: 3, showBands: false },
-        similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
-        gradation: { enabled: true, type: "rotation", pathway: "diagonal", range: 180, steps: 2, reverse: false },
-        radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
-        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
-        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
-        concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
-        space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
-      },
-      showSafeBounds: false,
-      zoomLevel: 1.0
-    }
-  },
-  {
-    id: "rhythmic_cadence",
-    name: "Swiss Rhythmic Compression",
-    category: "Cartesian Grid",
-    description: "Proportional column cadence A:B:A:B with architectural band lines.",
-    state: {
-      aspectRatio: "3:4",
-      paletteId: "monochrome",
-      layers: [
-        presetLayer("layer-1", "parallelogram", 80, 0, 0, 0, false),
-        presetLayer("layer-2", "circle", 50, 0, 0, 0, false)
-      ],
-      invertFigureGround: false,
-      wireframe: false,
-      modifiers: {
-        repetition: { enabled: true, gridType: "basic", cols: 5, rows: 6, spacing: 12, shearAngle: 0, slideOffset: 0, curveIntensity: 0, activeClipping: false, showGridLines: false, gridLineWidth: 1.5, checkerInvert: false },
-        structure: { enabled: true, mode: "rhythmic", colRatio: 2.2, rowRatio: 1.6, bandThickness: 2, showBands: true },
-        similarity: { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 },
-        gradation: { enabled: false, type: "rotation", pathway: "diagonal", range: 180, steps: 1, reverse: false },
-        radiation: { enabled: false, scheme: "centrifugal", rays: 12, rings: 5, spiralTwist: 45, activeClipping: false, showRays: false, showRings: false, centerX: 0, centerY: 0 },
-        anomaly: { enabled: false, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 160, intensity: 65, anomalousShape: "triangle", highlightColor: true, showReticle: false },
-        contrast: { enabled: false, dimension: "scale", dominanceRatio: 80, contrastShape: "cross", scaleFactor: 2.2, angle: 45, highlightContrast: false },
-        concentration: { enabled: false, mode: "point", attractorX: 0.5, attractorY: 0.5, power: 65, radius: 240, lineAxis: "horizontal", alignToField: true, densityScale: true, showAttractor: false },
-        texture: { enabled: false, jitter: 1, skipChance: 10, crossing: 10, undulation: 10 },
-        space: { enabled: false, mode: "isometric", depth: 35, angle: 30, shading: 65, showIsoGuides: false }
-      },
-      showSafeBounds: true,
-      zoomLevel: 1.0
-    }
-  }
-];
-
-
-  /**
  * MODULE STUDIO — Exporter Module
  * High-resolution PNG (Retina 2x/4x), SVG Vector generation, JSON project save/load.
  */
@@ -3075,17 +2819,7 @@ class StudioProApp {
       });
     }
 
-    // 4. Randomize Button
-    const randomBtn = document.getElementById("btn-random-preset");
-    if (randomBtn) {
-      randomBtn.addEventListener("click", () => {
-        const randomIndex = Math.floor(Math.random() * STUDIO_PRESETS.length);
-        const preset = STUDIO_PRESETS[randomIndex];
-        this.loadPreset(preset);
-      });
-    }
-
-    // 5. Copy SVG Code
+    // 4. Copy SVG Code
     const copySvgBtn = document.getElementById("btn-copy-svg-code");
     if (copySvgBtn) {
       copySvgBtn.addEventListener("click", async () => {
@@ -3106,7 +2840,7 @@ class StudioProApp {
       });
     }
 
-    // 6. Download SVG File
+    // 5. Download SVG File
     const downloadSvgBtn = document.getElementById("btn-download-svg");
     if (downloadSvgBtn) {
       downloadSvgBtn.addEventListener("click", () => {
@@ -3114,7 +2848,7 @@ class StudioProApp {
       });
     }
 
-    // 7. Config Button
+    // 6. Config Button
     const configBtn = document.getElementById("btn-open-config");
     if (configBtn) {
       configBtn.addEventListener("click", () => {
@@ -5211,101 +4945,8 @@ class StudioProApp {
   }
 
   /* =========================================================================
-     PRESET & HISTORY MANAGEMENT
+     HISTORY MANAGEMENT
      ========================================================================= */
-
-  loadPreset(preset) {
-    this.state = JSON.parse(JSON.stringify(preset.state));
-
-    // Normalize layers from preset
-    if (!Array.isArray(this.state.layers) || this.state.layers.length === 0) {
-      this.state.layers = [createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5)];
-    }
-
-    // Ensure all layers have valid structure and properties
-    this.state.layers.forEach((layer, idx) => {
-      if (!layer.id) layer.id = `layer-${idx + 1}`;
-      if (!layer.name) layer.name = `Layer ${idx + 1}`;
-      if (layer.visible === undefined) layer.visible = true;
-      if (layer.enabled === undefined) layer.enabled = true;
-      if (!layer.structure) layer.structure = createDefaultLayerStructure();
-      if (!layer.structure.formalStructure) {
-        layer.structure.formalStructure = { enabled: false, mode: "rhythmic", colRatio: 1.8, rowRatio: 1.8, bandThickness: 3, showBands: false };
-      }
-      if (!layer.structure.similarity) {
-        layer.structure.similarity = { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 };
-      }
-      if (!layer.structure.gradation) {
-        layer.structure.gradation = createDefaultLayerStructure().gradation;
-      }
-      if (!layer.structure.anomaly) {
-        layer.structure.anomaly = createDefaultLayerStructure().anomaly;
-      }
-      if (!layer.structure.contrast) {
-        layer.structure.contrast = createDefaultLayerStructure().contrast;
-      }
-      if (!layer.structure.concentration) {
-        layer.structure.concentration = createDefaultLayerStructure().concentration;
-      }
-      if (!layer.structure.space) {
-        layer.structure.space = createDefaultLayerStructure().space;
-      }
-      if (!layer.structure.texture) {
-        layer.structure.texture = createDefaultLayerStructure().texture;
-      }
-    });
-
-    // If global repetition or radiation is enabled in preset modifiers, propagate to layer 1 structure
-    const firstLayer = this.state.layers[0];
-    if (firstLayer && !firstLayer.structure.enabled) {
-      if (this.state.modifiers?.repetition?.enabled) {
-        firstLayer.structure.enabled = true;
-        firstLayer.structure.mode = "repetition";
-        Object.assign(firstLayer.structure.repetition, this.state.modifiers.repetition);
-      } else if (this.state.modifiers?.radiation?.enabled) {
-        firstLayer.structure.enabled = true;
-        firstLayer.structure.mode = "radiation";
-        Object.assign(firstLayer.structure.radiation, this.state.modifiers.radiation);
-      }
-      if (this.state.modifiers?.structure?.enabled) {
-        Object.assign(firstLayer.structure.formalStructure, this.state.modifiers.structure);
-      }
-      if (this.state.modifiers?.similarity?.enabled) {
-        Object.assign(firstLayer.structure.similarity, this.state.modifiers.similarity);
-      }
-      if (this.state.modifiers?.gradation?.enabled) {
-        Object.assign(firstLayer.structure.gradation, this.state.modifiers.gradation);
-      }
-      if (this.state.modifiers?.anomaly?.enabled) {
-        Object.assign(firstLayer.structure.anomaly, this.state.modifiers.anomaly);
-      }
-      if (this.state.modifiers?.contrast?.enabled) {
-        Object.assign(firstLayer.structure.contrast, this.state.modifiers.contrast);
-      }
-      if (this.state.modifiers?.concentration?.enabled) {
-        Object.assign(firstLayer.structure.concentration, this.state.modifiers.concentration);
-      }
-      if (this.state.modifiers?.space?.enabled) {
-        Object.assign(firstLayer.structure.space, this.state.modifiers.space);
-      }
-      if (this.state.modifiers?.texture?.enabled) {
-        Object.assign(firstLayer.structure.texture, this.state.modifiers.texture);
-      }
-    }
-
-    this.state.layerOrder = this.state.layers.map(l => l.id);
-
-    if (!this.state.layers.some(l => l.id === this.activeLayerId)) {
-      this.activeLayerId = this.state.layers[0].id;
-    }
-
-    this.applyAspectRatio(this.state.aspectRatio || "1:1");
-    this.updateActivePalette();
-    this.render();
-    this.syncAllInspectorsWithActiveLayer();
-    this.updateLayerCardsUI();
-    this.pushHistory(`Loaded Preset: ${preset.name}`);
-  }
 
   pushHistory(label = "Action") {
     if (this.historyIndex < this.history.length - 1) {
@@ -5362,7 +5003,6 @@ document.addEventListener("DOMContentLoaded", () => {
     window.StudioProApp = StudioProApp;
     window.CanvasUtils = CanvasUtils;
     window.Shapes = Shapes;
-    window.STUDIO_PRESETS = STUDIO_PRESETS;
     window.StudioExporter = StudioExporter;
   }
 })();
