@@ -1,0 +1,182 @@
+/* =========================================================================
+   MODULE STUDIO — FIGMA DESIGN TOKENS
+   Source: Figma file "Web apps", page "Components pack" (variables) and the
+   Abstract studio design page. Names follow the Figma variables, with "/"
+   replaced by "-"  (neutral/text/main  ->  --neutral-text-main).
+   Documented in docs/DESIGN_SYSTEM_TOKENS.md
+   ========================================================================= */
+
+:root {
+  /* ---- Color primitives (only the ones the Figma frames use) ---- */
+  --color-n-30: #63657b;
+  --color-n-50: #8689a5;
+  --color-n-99: #eeeef4;
+  --color-n-100: #ffffff;
+  --color-n-black: #000000;
+  --color-p-10: #0f2648;
+  --color-p-50: #2371e7;
+  --color-p-80: #97bcf5;
+  --color-p-90: #b8d1f8;
+
+  /* ---- Neutral ---- */
+  --neutral-text-main: #282a36;
+  --neutral-text-soft: #63657b;
+  --neutral-text-subtle: #787b94;
+  --neutral-text-main-inverted: #eeeef4;
+
+  --neutral-bg-light: #ffffff;
+  --neutral-bg-main: #eeeef4;
+  --neutral-bg-strong: #e1e2eb;
+  --neutral-bg-muted: #cfd0dd;
+
+  --neutral-border-main: #cfd0dd;
+  --neutral-border-strong: #9ea1b8;
+  --neutral-border-muted: #b8bacc;
+  --neutral-border-white: #ffffff;
+
+  --neutral-interactive-default: #282a36;
+  --neutral-interactive-hover: #4b4d5f;
+  --neutral-interactive-active: #282a36;
+  --neutral-interactive-disabled: #cfd0dd;
+  --neutral-interactive-default-inverted: #e1e2eb;
+  --neutral-interactive-hover-inverted: #cfd0dd;
+  --neutral-interactive-active-inverted: #eeeef4;
+
+  --neutral-icon-main: #4b4d5f;
+  --neutral-icon-soft: #8689a5;
+  --neutral-icon-inverted: #eeeef4;
+  --neutral-icon-disabled: #787b94;
+
+  /* ---- Primary (blue in the library; the app UI uses the dark neutral ink) ---- */
+  --primary-bg-main: #2371e7;
+  --primary-bg-soft: #b8d1f8;
+  --primary-bg-subtle: #dae8fd;
+  --primary-bg-strong: #0f2648;
+  --primary-border-main: #2371e7;
+  --primary-border-soft: #b8d1f8;
+  --primary-text-main: #2371e7;
+  --primary-text-soft: #71a4f0;
+  --primary-text-subtle: #97bcf5;
+  --primary-text-link: #1f63ca;
+  --primary-icon-main: #2371e7;
+  --primary-icon-subtle: #97bcf5;
+  --primary-interactive-hover: #4385eb;
+  --primary-interactive-focus: #97bcf5;
+
+  /* ---- Status ---- */
+  --success-bg-main: #17c84d;
+  --success-bg-soft: #b4f3c7;
+  --success-border-main: #17c84d;
+  --success-icon-main: #17c84d;
+  --success-icon-strong: #158236;
+  --success-text-default: #165f2c;
+
+  --warning-bg-main: #f2a624;
+  --warning-bg-soft: #fce8c5;
+  --warning-border-main: #f2a624;
+  --warning-icon-main: #f2a624;
+  --warning-icon-strong: #986a1b;
+  --warning-text-default: #614616;
+
+  --danger-bg-main: #f41e1e;
+  --danger-bg-soft: #fcc1c1;
+  --danger-border-main: #f41e1e;
+  --danger-icon-main: #f41e1e;
+  --danger-icon-strong: #8f1616;
+  --danger-text-default: #651414;
+  --danger-interactive-default: #f41e1e;
+  --danger-interactive-hover: #f64949;
+  --danger-interactive-active: #c91919;
+
+  --info-bg-main: #17b9c8;
+  --info-bg-soft: #cbf2f5;
+  --info-border-main: #17b9c8;
+  --info-icon-main: #17b9c8;
+  --info-icon-strong: #188994;
+  --info-text-default: #1b6d75;
+
+  /* ---- Typography ---- */
+  --typography-family-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --typography-family-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --typography-family-mono: 'DM Mono', 'JetBrains Mono', monospace;
+  --typography-weight-400: 400;
+  --typography-weight-500: 500;
+  --typography-weight-600: 600;
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+  --font-size-4xl: 36px;
+  --line-height-tight: 1;
+  --line-height-body: 1.5;
+  --line-height-small: 1.7;
+  --letter-spacing-overline: 0.02em; /* Overline style: 2% */
+
+  /* ---- Spacing ---- */
+  --spacing-0: 0px;
+  --spacing-1: 2px;
+  --spacing-2: 4px;
+  --spacing-3: 8px;
+  --spacing-4: 12px;
+  --spacing-5: 16px;
+  --spacing-6: 24px;
+  --spacing-7: 40px;
+  --spacing-8: 48px;
+  --spacing-9: 68px;
+  --spacing-10: 80px;
+  --spacing-11: 96px;
+
+  /* ---- Sizing ---- */
+  --sizing-1: 4px;
+  --sizing-2: 8px;
+  --sizing-3: 12px;
+  --sizing-4: 16px;
+  --sizing-5: 20px;
+  --sizing-6: 24px;
+  --sizing-7: 40px;
+  --sizing-8: 48px;
+  --sizing-9: 56px;
+  --sizing-10: 64px;
+  --sizing-11: 68px;
+  --sizing-12: 80px;
+  --sizing-13: 96px;
+  --sizing-14: 128px;
+  --sizing-15: 144px;
+  --sizing-16: 224px;
+  --sizing-17: 256px;
+  --sizing-18: 288px;
+
+  /* ---- Border ---- */
+  --border-weight-1: 1px;
+  --border-weight-2: 2px;
+  --border-weight-3: 4px;
+  --border-weight-4: 8px;
+  --border-radius-1: 8px;
+  --border-radius-2: 16px;
+  --border-radius-3: 20px;
+  --border-radius-full: 99999px;
+
+  /* ---- Elevation ---- */
+  --elevation-1x: 0 1px 2px rgba(15, 38, 72, 0.12), 0 1px 3px rgba(15, 38, 72, 0.24);
+  --elevation-2x: 0 2px 4px rgba(15, 38, 72, 0.12), 0 3px 6px rgba(15, 38, 72, 0.15);
+  --elevation-3x: 0 3px 6px rgba(15, 38, 72, 0.1), 0 10px 20px rgba(15, 38, 72, 0.15);
+  --elevation-4x: 0 5px 10px rgba(15, 38, 72, 0.05), 0 15px 25px rgba(15, 38, 72, 0.15);
+  --elevation-5x: 0 20px 40px rgba(15, 38, 72, 0.2);
+
+  /* ---- Layout ---- */
+  --layout-cols: 12;
+  --layout-gap: 16px;
+  --layout-margin: 48px;
+  --breakpoint-min-width: 1200px;
+
+  /* ---- Values drawn in the Figma design page but NOT defined as variables there ----
+     (slider track, value box). Kept as named component tokens until Figma defines them. */
+  --ds-slider-track: #1d1d25;
+  --ds-value-bg: #f0f0f2;
+  --ds-value-border: #292932;
+  --ds-value-radius: 7px;
+  --ds-value-font: 'Roboto Mono', var(--bs-font-mono, monospace);
+  --ds-value-font-size: 15px;
+}

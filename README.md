@@ -52,7 +52,7 @@ The application is built on a clean, zero-dependency stack with high-performance
 Every feature and interaction in Module Studio strictly follows the design contracts established in:
 - [**`STUDIO_RULES.md`**](./STUDIO_RULES.md): Mechanics of mutual exclusions (Cartesian vs. Polar), per-layer isolation, collective modifier warnings, rendering pipeline, and the **Mandatory Zero-Breakage Quality Protocol**.
 - [**`STUDIO_CONTROLS_GUIDE.md`**](./STUDIO_CONTROLS_GUIDE.md): Technical specification of all formulas, sliders, ranges, and geometric algorithms.
-- [**`docs/DESIGN_SYSTEM_TOKENS.md`**](./docs/DESIGN_SYSTEM_TOKENS.md): Design tokens, spacing, typography, and color palettes.
+- [**`docs/DESIGN_SYSTEM_TOKENS.md`**](./docs/DESIGN_SYSTEM_TOKENS.md): Design system from Figma: tokens (`css/tokens.css`), components and open design decisions.
 - [**`docs/BACKLOG.md`**](./docs/BACKLOG.md): Pending work derived from Wong's book, with priorities and decisions.
 
 ---

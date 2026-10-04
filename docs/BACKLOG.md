@@ -16,7 +16,8 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 | 2 | Gradation: *Range* aplica a Scale, Depth y Drift (180 = cantidad original) | ✅ Hecho (2026-10-04) |
 | 3 | **Revisión de código y auditoría de lo propuesto** (sección 0, Q1 y Q2) | ✅ Informe hecho: [REVISION_CODIGO.md](./REVISION_CODIGO.md) |
 | 3b | **Arreglos de la revisión** (F1 a F9 del informe) | F1 ✅, F2 ✅, F3 ✅ y F4 ✅. Siguen F5 a F9 |
-| 4 | **Design system `.md` desde Figma** (sección 0, Q3) | P1 |
+| 4 | **Design system `.md` desde Figma** (sección 0, Q3) | ✅ Hecho: [DESIGN_SYSTEM_TOKENS.md](./DESIGN_SYSTEM_TOKENS.md) y `css/tokens.css` |
+| 4b | **Migrar los paneles Module, Layout, Structure y Similarity y la barra superior al diseño de Figma** (Q3b) | P1, antes de los controles nuevos |
 | 5 | Gradation avanzada (G1 a G7) | P1 |
 | 6 | Radiación: centrípeta y centro abierto (R1, R2, y lo que acompaña) | P1 |
 | 7 | Resto de modificadores por capa (secciones 3 a 10) | P2 |
@@ -31,7 +32,9 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 | :-- | :--- | :--- | :-- |
 | Q1 | **Revisión de código como experto** ✅ | Informe en [REVISION_CODIGO.md](./REVISION_CODIGO.md). Calidad y funcionamiento de todo el código. Todavía no se ha hecho una revisión completa; solo se han corregido cosas sueltas al trabajar. Alcance: arquitectura y estado (global frente a por capa), código muerto, duplicación, rendimiento del render, accesibilidad de los controles, manejo de errores, dependencias por CDN, el flujo de build (`build-pro.py` y el bundle), pruebas y el protocolo de calidad de `STUDIO_RULES.md`. Resultado: informe con hallazgos por gravedad y un plan de arreglos | ✅ |
 | Q2 | **Auditoría de lo propuesto frente a lo que la app ya hace** | Varias ideas del backlog pueden existir ya, aunque no de la mejor forma. Antes de implementar cada ítem, comprobar qué hay hoy en el código y en la UI, y decidir si se reemplaza, se mejora o se descarta. Se hace junto con Q1 ✅ (tabla de auditoría en el informe) | P1 |
-| Q3 | **Mejor design system `.md` desde Figma** | Leer variables, estilos y componentes del archivo de Figma (tokens `neutral/…`, `primary/…`, `spacing/…`, `border/…`, `sizing/…`, tipografía y elevación) con el MCP de Figma. Reescribir `docs/DESIGN_SYSTEM_TOKENS.md` con los nombres reales, valores, componentes (switch, tag, slider, value box, toggle item, badge, buttonIcon, snackbar, btn-group) y sus estados. Alinear `css/studio-pro.css` con esos tokens (hoy hay colores y medidas fijos). Resultado: documento y variables CSS | P1 |
+| Q3 | **Mejor design system `.md` desde Figma** ✅ | Leer variables, estilos y componentes del archivo de Figma (tokens `neutral/…`, `primary/…`, `spacing/…`, `border/…`, `sizing/…`, tipografía y elevación) con el MCP de Figma. Reescribir `docs/DESIGN_SYSTEM_TOKENS.md` con los nombres reales, valores, componentes (switch, tag, slider, value box, toggle item, badge, buttonIcon, snackbar, btn-group) y sus estados. Alinear `css/studio-pro.css` con esos tokens (hoy hay colores y medidas fijos). Resultado: documento y variables CSS | ✅ |
+| Q3b | **Migrar los paneles antiguos al diseño de Figma** | Module, Layout, Structure y Similarity, la barra superior, las tarjetas de capas y el riel usan todavía el tema antiguo (`css/design-system.css`, `--bs-*`, tinta `#18181f`). Figma ya tiene sus mockups (nodos `5779:2128`, `5779:255`, `5779:2299` y `5779:2401`). Al migrarlos se retira `design-system.css` | P1 |
+| Q3c | **Decisiones de diseño pendientes** | Ver la sección 8 de [DESIGN_SYSTEM_TOKENS.md](./DESIGN_SYSTEM_TOKENS.md): tokens para la caja de valor y la pista del slider, fuente monoespaciada (DM Mono o Roboto Mono), unificar interruptor y checkbox entre librería y diseño, y diseñar los controles sin mockup (O2, O3) | P1 |
 
 Los hallazgos de la revisión están en [REVISION_CODIGO.md](./REVISION_CODIGO.md), con su plan de arreglos F1 a F9.
 
