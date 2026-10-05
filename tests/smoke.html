@@ -1051,6 +1051,33 @@
       assert(win.document.getElementById("render-error").hidden, "Notice stays after a successful draw");
     });
 
+    await test("Checkerboard reverses figure and ground, also with a coloured module", () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const render = (color) => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        const L = st.layers[0];
+        Object.assign(L, { shape: "square", width: 80, height: 80, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false, color });
+        L.structure.enabled = true; L.structure.mode = "repetition";
+        Object.assign(L.structure.repetition, { cols: 2, rows: 2, gridType: "basic", showGridLines: false, checkerInvert: true });
+        app.state = st; drawRaw(app);
+        return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      };
+      const dpr = cv.width / 600;
+      const px = (d, x, y) => { const i = (Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4; return [d[i], d[i + 1], d[i + 2]]; };
+      // Cell (0,0) normal: module centre 150,150 in ink; cell (0,1) inverted: corner is ink, centre is the ground
+      const d = render("#111111");
+      const inv = px(d, 450, 150), invCorner = px(d, 310, 10);
+      assert(inv[0] > 200, "Inverted cell: the module should show in the ground colour");
+      assert(invCorner[0] < 60, "Inverted cell: the cell should be filled with the module colour");
+      const red = render("#cc2222");
+      const rc = px(red, 310, 10);
+      assert(rc[0] > 150 && rc[1] < 80, "A coloured module should fill the inverted cell with its colour");
+      reset();
+    });
+
+
     const failed = results.filter(r => !r.ok).length;
     summary.textContent = failed === 0 ? `All ${results.length} tests passed` : `${failed} of ${results.length} tests FAILED`;
     summary.className = failed === 0 ? "pass" : "fail";

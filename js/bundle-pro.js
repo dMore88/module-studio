@@ -1951,17 +1951,21 @@ class StudioEngine {
           const isOddCell = (r + c) % 2 === 1;
           let fgColor = palette.fg;
           let bgColor = palette.bg;
+          let flipped = false;
 
           // Checkerboard inversion; Contrast > Space reverses figure and ground in the minority (the two cancel out)
           const spaceFlip = !!(contrast.enabled && contrast.dimension === "space" && this.isContrastMinority(contrast, r * cols + c));
           if ((rep.checkerInvert && isOddCell) !== spaceFlip) {
             ctx.save();
             this.buildCellPath(ctx, r, c, rows, cols, cellCx, cellCy, cW, cH, rep, cellStartX);
-            ctx.fillStyle = palette.fg;
+            // The cell takes the module's own colour and the module is drawn in the ground colour
+            const figColor = targetMod.color || palette.fg;
+            ctx.fillStyle = figColor;
             ctx.fill();
             ctx.restore();
             fgColor = palette.bg;
-            bgColor = palette.fg;
+            bgColor = figColor;
+            flipped = true;
           }
 
           // Active clipping: restrict drawing strictly to cell boundaries (in Fit to canvas, to the
@@ -2031,7 +2035,7 @@ class StudioEngine {
         if ((refl === "columns" || refl === "both") && c % 2 === 1) ctx.scale(-1, 1);
         if ((refl === "rows" || refl === "both") && r % 2 === 1) ctx.scale(1, -1);
         const lineWidthMul = !isFixed && (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) : null;
-        this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor ? cellFg : null, lineWidthMul);
+        this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor || flipped ? cellFg : null, lineWidthMul);
         ctx.restore();
       };
 
