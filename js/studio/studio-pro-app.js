@@ -2315,6 +2315,7 @@ export class StudioProApp {
     });
     // The axis only matters for the line structure.
     document.getElementById("conc-axis-block")?.classList.toggle("hidden", conc.mode !== "line" && conc.mode !== "line_void");
+    document.getElementById("conc-foci-block")?.classList.toggle("hidden", conc.mode !== "free");
     // The whole-design modes (Dense, Sparse) have no field radius and no absence method; they can fade at the edges
     const wholeDesign = conc.mode === "dense" || conc.mode === "sparse";
     document.getElementById("conc-method-block")?.classList.toggle("hidden", wholeDesign);
@@ -2336,6 +2337,7 @@ export class StudioProApp {
     };
     setPair("input-conc-x", "num-conc-x", Math.round((conc.attractorX ?? 0.5) * 100), "%");
     setPair("input-conc-y", "num-conc-y", Math.round((conc.attractorY ?? 0.5) * 100), "%");
+    setPair("input-conc-foci", "num-conc-foci", conc.focusCount ?? 2, "");
     setPair("input-conc-power", "num-conc-power", conc.power ?? 50, "%");
     setPair("input-conc-radius", "num-conc-radius", conc.radius ?? 240, "px");
 
@@ -2413,6 +2415,7 @@ export class StudioProApp {
     };
     bindPair("input-conc-x", "num-conc-x", { min: 5, max: 95, suffix: "%", toStored: v => v / 100, label: "X", key: "attractorX" });
     bindPair("input-conc-y", "num-conc-y", { min: 5, max: 95, suffix: "%", toStored: v => v / 100, label: "Y", key: "attractorY" });
+    bindPair("input-conc-foci", "num-conc-foci", { min: 2, max: 6, suffix: "", toStored: v => v, label: "Foci", key: "focusCount" });
     bindPair("input-conc-power", "num-conc-power", { min: 20, max: 100, suffix: "%", toStored: v => v, label: "Pull", key: "power" });
     bindPair("input-conc-radius", "num-conc-radius", { min: 80, max: 450, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
 

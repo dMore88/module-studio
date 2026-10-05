@@ -17,7 +17,6 @@ Sale de las filas ⏳ del mapa de conceptos, más las mejoras de filas 🟡 que 
 ### P3 — ideas que parecen divertidas (probar primero)
 | ID | Concepto | Notas |
 | :-- | :-- | :-- |
-| K8 | Concentración libre con más de dos focos | Hoy *Hotspots* son dos focos simétricos |
 | S9 | Distribución visual libre, sin retícula | Cada módulo con un espacio similar, a ojo |
 | A3 | Anomalía: una zona con otra clase de regularidad | Transformar la regularidad en una zona |
 

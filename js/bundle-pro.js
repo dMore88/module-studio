@@ -909,6 +909,7 @@ const createDefaultLayerStructure = () => ({
     mode: "point", // point, void, line, line_void (away from a line), free (hotspots), dense, sparse (the whole design)
     method: "move", // move (modules are displaced) or absence (modules vanish with the density)
     edgeFade: false, // dense / sparse: the effect fades toward the edges of the canvas
+    focusCount: 2, // hotspots: how many foci share the density (2 to 6)
     attractorX: 0.5, // 0.05 to 0.95
     attractorY: 0.5, // 0.05 to 0.95
     power: 50, // gathering pull, 20 to 100
@@ -1379,6 +1380,18 @@ class StudioEngine {
 
   // Concentration: pulls/pushes a module position toward an attractor.
   // Returns the new position, the flow angle and a density scale multiplier.
+  // Hotspot foci: the attractor and its copies turned around the centre of the canvas (two foci = the mirror pair)
+  hotspots(conc, width, height) {
+    const attX = (conc.attractorX ?? 0.5) * width, attY = (conc.attractorY ?? 0.5) * height;
+    const n = Math.max(2, Math.min(6, Math.round(conc.focusCount || 2)));
+    if (n === 2) return [{ x: attX, y: attY }, { x: width - attX, y: height - attY }];
+    const cx = width / 2, cy = height / 2, dx = attX - cx, dy = attY - cy;
+    return Array.from({ length: n }, (_, k) => {
+      const a = (k * Math.PI * 2) / n, c = Math.cos(a), s = Math.sin(a);
+      return { x: cx + dx * c - dy * s, y: cy + dx * s + dy * c };
+    });
+  }
+
   applyConcentration(conc, px, py, width, height) {
     let x = px, y = py, angle = 0, scaleMul = 1.0;
     const attX = (conc.attractorX ?? 0.5) * width;
@@ -1392,7 +1405,7 @@ class StudioEngine {
     if (conc.method === "absence" && conc.mode !== "dense" && conc.mode !== "sparse") {
       let dist;
       if (conc.mode === "line" || conc.mode === "line_void") dist = vertical ? Math.abs(x - attX) : Math.abs(y - attY);
-      else if (conc.mode === "free") dist = Math.min(Math.hypot(x - attX, y - attY), Math.hypot(x - (width - attX), y - (height - attY)));
+      else if (conc.mode === "free") dist = Math.min(...this.hotspots(conc, width, height).map(f => Math.hypot(x - f.x, y - f.y)));
       else dist = Math.hypot(x - attX, y - attY);
       const prox = Math.pow(Math.max(0, 1 - dist / radius), 1.4);
       const repel = conc.mode === "void" || conc.mode === "line_void";
@@ -1466,13 +1479,11 @@ class StudioEngine {
         }
       }
     } else if (conc.mode === "free") {
-      const att2X = width - attX;
-      const att2Y = height - attY;
-      const dist1 = Math.hypot(x - attX, y - attY);
-      const dist2 = Math.hypot(x - att2X, y - att2Y);
-      const nearestDist = Math.min(dist1, dist2);
-      const targetX = dist1 < dist2 ? attX : att2X;
-      const targetY = dist1 < dist2 ? attY : att2Y;
+      let nearestDist = Infinity, targetX = attX, targetY = attY;
+      for (const f of this.hotspots(conc, width, height)) {
+        const d = Math.hypot(x - f.x, y - f.y);
+        if (d < nearestDist) { nearestDist = d; targetX = f.x; targetY = f.y; }
+      }
       if (nearestDist < radius) {
         const factor = Math.pow(1 - nearestDist / radius, 1.4) * power;
         const pull = factor * (radius * 0.4);
@@ -2845,17 +2856,19 @@ class StudioEngine {
       ctx.fill();
 
       if (conc.mode === "free") {
-        // Complementary node for dual hotspot
-        const att2X = width - attX;
-        const att2Y = height - attY;
-        ctx.beginPath();
-        ctx.arc(att2X, att2Y, 3.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.setLineDash([3, 4]);
-        ctx.globalAlpha = 0.25;
-        ctx.beginPath();
-        ctx.arc(att2X, att2Y, radius * 0.5, 0, Math.PI * 2);
-        ctx.stroke();
+        // The other foci of the hotspots
+        this.hotspots(conc, width, height).slice(1).forEach((f) => {
+          ctx.setLineDash([]);
+          ctx.globalAlpha = 0.75;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.setLineDash([3, 4]);
+          ctx.globalAlpha = 0.25;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, radius * 0.5, 0, Math.PI * 2);
+          ctx.stroke();
+        });
       }
     }
 
@@ -5467,6 +5480,7 @@ class StudioProApp {
     });
     // The axis only matters for the line structure.
     document.getElementById("conc-axis-block")?.classList.toggle("hidden", conc.mode !== "line" && conc.mode !== "line_void");
+    document.getElementById("conc-foci-block")?.classList.toggle("hidden", conc.mode !== "free");
     // The whole-design modes (Dense, Sparse) have no field radius and no absence method; they can fade at the edges
     const wholeDesign = conc.mode === "dense" || conc.mode === "sparse";
     document.getElementById("conc-method-block")?.classList.toggle("hidden", wholeDesign);
@@ -5488,6 +5502,7 @@ class StudioProApp {
     };
     setPair("input-conc-x", "num-conc-x", Math.round((conc.attractorX ?? 0.5) * 100), "%");
     setPair("input-conc-y", "num-conc-y", Math.round((conc.attractorY ?? 0.5) * 100), "%");
+    setPair("input-conc-foci", "num-conc-foci", conc.focusCount ?? 2, "");
     setPair("input-conc-power", "num-conc-power", conc.power ?? 50, "%");
     setPair("input-conc-radius", "num-conc-radius", conc.radius ?? 240, "px");
 
@@ -5565,6 +5580,7 @@ class StudioProApp {
     };
     bindPair("input-conc-x", "num-conc-x", { min: 5, max: 95, suffix: "%", toStored: v => v / 100, label: "X", key: "attractorX" });
     bindPair("input-conc-y", "num-conc-y", { min: 5, max: 95, suffix: "%", toStored: v => v / 100, label: "Y", key: "attractorY" });
+    bindPair("input-conc-foci", "num-conc-foci", { min: 2, max: 6, suffix: "", toStored: v => v, label: "Foci", key: "focusCount" });
     bindPair("input-conc-power", "num-conc-power", { min: 20, max: 100, suffix: "%", toStored: v => v, label: "Pull", key: "power" });
     bindPair("input-conc-radius", "num-conc-radius", { min: 80, max: 450, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
 

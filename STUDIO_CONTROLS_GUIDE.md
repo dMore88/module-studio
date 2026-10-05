@@ -236,9 +236,10 @@ Establece disparidad formal entre una **mayoría dominante** y una **minoría di
 ### 4.8 Concentration (Campos Gravitatorios y Densidad)
 Agrupa o dispersa los módulos según campos de fuerza invisibles. Requiere retícula. Estado en `layer.structure.concentration`.
 
-* **`mode`** (*Structure*, chips): `point`, `void`, `line`, `line_void` (*Away from line*), `free` (*Hotspots*, dos focos), `dense` (todo el diseño se comprime hacia el atractor) y `sparse` (todo se dispersa).
+* **`mode`** (*Structure*, chips): `point`, `void`, `line`, `line_void` (*Away from line*), `free` (*Hotspots*, de 2 a 6 focos), `dense` (todo el diseño se comprime hacia el atractor) y `sparse` (todo se dispersa).
 * **`method`** (*Method*): `move` desplaza los módulos; `absence` no mueve nada y hace desaparecer módulos según la densidad (el mecanismo que el libro usa en estructuras formales). No se muestra en `dense` ni `sparse`.
 * **`lineAxis`** (*Line axis*): solo en `line` y `line_void`.
+* **`focusCount`** (*Foci*, 2 a 6, por defecto 2): solo en `free`. El atractor y sus copias girando alrededor del centro del lienzo; con 2 son el atractor y su simétrico. Cada módulo se dirige al foco más cercano, y *Absence* usa todos los focos.
 * **Field style** (chips que se pueden **mezclar**): **`edgeFade`** (*Soft edge*, solo en `dense` y `sparse`: el efecto se debilita hacia los bordes), **`alignToField`** (*Flowing*: los módulos giran tangentes al campo) y **`densityScale`** (*Dynamic density*: la escala depende de la cercanía al polo).
 * **`attractorX / attractorY`** (*X / Y position*, 5 a 95 %): también se fija con un clic en el lienzo.
 * **`power`** (*Gathering pull*, 20 a 100 %) y **`radius`** (*Field radius*, 80 a 450 px; no en `dense` ni `sparse`).

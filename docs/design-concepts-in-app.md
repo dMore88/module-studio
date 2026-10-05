@@ -228,7 +228,7 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | K5 | **Concentración desde un punto** | Estructura de concentración | Concentration › `Void` | ✅ |  |
 | K6 | **Concentración hacia una línea** | Estructura de concentración | Concentration › `Line` con Line axis | ✅ |  |
 | K7 | **Concentración desde una línea** | Estructura de concentración | Concentration › `Away from line` | ✅ |  |
-| K8 | **Concentración libre**: grupos de densidad y escasez variables | Estructura de concentración | Concentration › `Hotspots` | 🟡 | Hoy son solo dos focos simétricos |
+| K8 | **Concentración libre**: grupos de densidad y escasez variables | Estructura de concentración | Concentration › `Hotspots` con *Foci* (2 a 6) | ✅ | (2 a 6); los focos se reparten girando el atractor alrededor del centro del lienzo |
 | K9 | **Superconcentración**: todo el diseño agrupado densamente | Estructura de concentración | Concentration › `Dense` con Soft edge | ✅ |  |
 | K10 | **Desconcentración**: todo el diseño esparcido | Estructura de concentración | Concentration › `Sparse` con Soft edge | ✅ |  |
 | K11 | **Más de un tipo de módulo**: uno concentrado y otro disperso | Combinaciones | Varias capas, cada una con su concentración | ✅ |  |
