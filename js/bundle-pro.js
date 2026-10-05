@@ -4952,8 +4952,7 @@ class StudioProApp {
     const color = this.engine.guideColor();
     const input = document.getElementById("input-guide-color");
     if (input) input.value = color;
-    const swatch = document.getElementById("swatch-guide-color");
-    if (swatch) swatch.style.backgroundColor = color;
+    document.getElementById("btn-guide-color")?.style.setProperty("--guide-color", color);
   }
 
   syncAccentColorRow(prefix, color, active) {

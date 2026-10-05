@@ -721,7 +721,15 @@ input[type="range"]:hover::-webkit-slider-thumb {
   height: var(--sizing-7);
 }
 .ds-view-options { display: flex; align-items: center; gap: var(--spacing-4); }
-.ds-swatch-guide { width: var(--sizing-7); height: var(--sizing-7); border-radius: var(--border-radius-full); }
+/* Guide colour: an icon button that opens the colour picker; a small bar under the icon shows the chosen colour */
+.ds-guide-btn { position: relative; cursor: pointer; padding-bottom: 7px; }
+.ds-guide-btn::after {
+  content: "";
+  position: absolute; left: 30%; right: 30%; bottom: 7px; height: 3px;
+  border-radius: var(--border-radius-full);
+  background: var(--guide-color, #f24822);
+}
+.ds-guide-btn input[type="color"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
 /* Workspace: layers | canvas column | rail, with the controls panel floating over the right edge */
 .ds-workspace {
