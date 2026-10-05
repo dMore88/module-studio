@@ -1455,6 +1455,44 @@
       reset();
     });
 
+    await test("Gradation of structure: columns and rows that grow step by step, in Fit and in Actual size", async () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const render = (sizeMode, colGrade, rowGrade = 0, cols = 4, rows = 1, modW = 200) => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        const L = st.layers[0];
+        Object.assign(L, { shape: "square", width: modW, height: modW, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false, containerW: 100, containerH: 100 });
+        L.structure.enabled = true; L.structure.mode = "repetition";
+        Object.assign(L.structure.repetition, { cols, rows, gridType: "basic", sizeMode, showGridLines: false, placement: "centers", cellMix: "none" });
+        L.structure.formalStructure = { enabled: true, colRatio: 1, rowRatio: 1, colGrade, rowGrade, showGridLines: false };
+        app.state = st; drawRaw(app);
+        return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      };
+      const dpr = cv.width / 600;
+      const dark = (d, x, y) => d[(Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4] < 100;
+      // Fit, 4 columns, each 30 % wider than the one before: widths 97, 126, 164, 213 -> centres 48.5, 160, 305, 493.5 (modules 32 px, the size of the first cell)
+      const fit = render("fit", 30);
+      const centres = [48.5, 160, 305, 493.5];
+      assert(centres.every(x => dark(fit, x, 300)), "Fit: modules should sit at the centres of columns that grow");
+      assert(!dark(fit, 225, 300) || !dark(fit, 375, 300), "Fit: the equal-column centres are no longer where the modules are");
+      // Negative: each column 30 % narrower than the one before: widths 237, 166, 116, 81 -> centres 118.4, 319.8, 460.7, 559.4
+      const shrink = render("fit", -30);
+      assert([118.4, 319.8, 460.7, 559.4].every(x => dark(shrink, x, 300)), "A negative gradation should make each column narrower");
+      // Actual, container 100: widths 100, 130, 169, 219.7 (total 618.7, centred) -> centres 40.7, 155.7, 305.2, 499.5
+      const act = render("actual", 30, 0, 4, 1, 10);
+      assert([40.7, 155.7, 305.2, 499.5].every(x => dark(act, x, 300)), "Actual: columns should grow from the container width");
+      // Rows grow too
+      const rows = render("actual", 0, 30, 1, 4, 10);
+      assert([40.7, 155.7, 305.2, 499.5].every(y => dark(rows, 300, y)), "Actual: rows should grow from the container height");
+      // Inspector
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      q('[data-rail-tab="layout"]').click(); await wait(80); q("#toggle-layout-structure").click();
+      const inp = q("#input-struct-col-grade"); inp.value = 20; inp.dispatchEvent(new win.Event("input", { bubbles: true }));
+      assert(app.getActiveLayerStructure().formalStructure.colGrade === 20 && q("#num-struct-col-grade").value === "20%", "The gradation slider did not reach the state");
+      reset();
+    });
+
     await test("Checkerboard reverses figure and ground, also with a coloured module", () => {
       reset();
       const cv = win.document.getElementById("studio-canvas");

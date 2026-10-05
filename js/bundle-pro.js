@@ -848,6 +848,8 @@ const createDefaultLayerStructure = () => ({
     enabled: false,
     colRatio: 1.0,
     rowRatio: 1.0,
+    colGrade: 0, // gradation of structure: each column is this % wider (or narrower) than the one before (-30 to 30)
+    rowGrade: 0, // the same for rows
     showGridLines: false
   },
   similarity: {
@@ -1848,6 +1850,11 @@ class StudioEngine {
     const cols = Math.max(1, rep.cols);
     const rows = Math.max(1, rep.rows);
 
+    // Gradation of structure: every column / row is a fixed % bigger than the one before (kept in a sane range)
+    const gC = Math.max(-0.3, Math.min(0.3, (Number(struct && struct.enabled ? struct.colGrade : 0) || 0) / 100));
+    const gR = Math.max(-0.3, Math.min(0.3, (Number(struct && struct.enabled ? struct.rowGrade : 0) || 0) / 100));
+    const gradeC = (c) => Math.max(0.05, Math.min(20, Math.pow(1 + gC, c)));
+    const gradeR = (r) => Math.max(0.05, Math.min(20, Math.pow(1 + gR, r)));
     // Calculate column widths and x positions (Dual rhythmic interval support)
     const colWidths = [];
     const colX = [];
@@ -1857,7 +1864,7 @@ class StudioEngine {
       // Rhythm in Actual size: the A columns are the container; the B columns are Col ratio times narrower
       const rhythmic = !!(struct && struct.enabled && rep.gridType !== "hexagonal");
       const rA = rhythmic ? Math.max(1, Number(struct.colRatio) || 1) : 1;
-      const widths = Array.from({ length: cols }, (_, c) => fixedCW / (c % 2 === 0 ? 1 : rA));
+      const widths = Array.from({ length: cols }, (_, c) => (fixedCW * gradeC(c)) / (c % 2 === 0 ? 1 : rA));
       const total = widths.reduce((a, b) => a + b, 0);
       let currX = margin + usableW / 2 - total / 2;
       for (let c = 0; c < cols; c++) {
@@ -1870,12 +1877,12 @@ class StudioEngine {
       const rA = Number(struct.colRatio) || 1.0;
       let weightSum = 0;
       for (let c = 0; c < cols; c++) {
-        weightSum += (c % 2 === 0 ? rA : 1.0);
+        weightSum += (c % 2 === 0 ? rA : 1.0) * gradeC(c);
       }
       const unitW = usableW / weightSum;
       let currX = margin;
       for (let c = 0; c < cols; c++) {
-        const w = (c % 2 === 0 ? rA : 1.0) * unitW;
+        const w = (c % 2 === 0 ? rA : 1.0) * gradeC(c) * unitW;
         colStarts.push(currX);
         colWidths.push(w);
         colX.push(currX + w / 2);
@@ -1899,7 +1906,7 @@ class StudioEngine {
       const isHexRows = rep.gridType === "hexagonal";
       const rowRhythm = !!(struct && struct.enabled && !isHexRows);
       const rB = rowRhythm ? Math.max(1, Number(struct.rowRatio) || 1) : 1;
-      const heights = Array.from({ length: rows }, (_, r) => (isHexRows ? hexFixedPitch : fixedCH) / (r % 2 === 0 ? 1 : rB));
+      const heights = Array.from({ length: rows }, (_, r) => ((isHexRows ? hexFixedPitch : fixedCH) * gradeR(r)) / (r % 2 === 0 ? 1 : rB));
       const totalH = heights.reduce((a, b) => a + b, 0);
       let currY = margin + usableH / 2 - totalH / 2;
       for (let r = 0; r < rows; r++) {
@@ -1912,12 +1919,12 @@ class StudioEngine {
       const rA = Number(struct.rowRatio) || 1.0;
       let weightSum = 0;
       for (let r = 0; r < rows; r++) {
-        weightSum += (r % 2 === 0 ? rA : 1.0);
+        weightSum += (r % 2 === 0 ? rA : 1.0) * gradeR(r);
       }
       const unitH = usableH / weightSum;
       let currY = margin;
       for (let r = 0; r < rows; r++) {
-        const h = (r % 2 === 0 ? rA : 1.0) * unitH;
+        const h = (r % 2 === 0 ? rA : 1.0) * gradeR(r) * unitH;
         rowStarts.push(currY);
         rowHeights.push(h);
         rowY.push(currY + h / 2);
@@ -1943,7 +1950,7 @@ class StudioEngine {
     // Hexagonal grid: rows interlock, so the row pitch is 0.866 of the cell width (squeezed if it does not fit)
     const isHex = rep.gridType === "hexagonal";
     // Rhythm scales the space: the A column and row keep the module's size, the B ones shrink it in proportion
-    const rhythmOn = !isHex && !!(struct && struct.enabled) && ((Number(struct.colRatio) || 1) !== 1 || (Number(struct.rowRatio) || 1) !== 1);
+    const rhythmOn = !isHex && !!(struct && struct.enabled) && ((Number(struct.colRatio) || 1) !== 1 || (Number(struct.rowRatio) || 1) !== 1 || gC !== 0 || gR !== 0);
     const refW = colWidths[0], refH = rowHeights[0];
     const hexPitch = isFixed ? hexFixedPitch : Math.min(colWidths[0] * 0.866, usableH / rows);
     // Far edges of the grid (the canvas edge in fit mode; past it in fixed mode)
@@ -2081,7 +2088,7 @@ class StudioEngine {
         const scaleUnit = MODULE_UNIT;
         const cellRatio = rhythmOn ? Math.min(refW / usableW, refH / usableH) : Math.min(cW / usableW, cH / usableH);
         // A module keeps its proportions: it shrinks with the smaller side of its column and row (Wong: a repeated figure is not deformed)
-        const rhythmK = rhythmOn ? Math.min(cW / refW, rowHeights[r] / refH) : 1;
+        const rhythmK = rhythmOn ? Math.min(MAX_SCALE_MUL, Math.min(cW / refW, rowHeights[r] / refH)) : 1;
         const stretch = rhythmOn ? { x: rhythmK, y: rhythmK } : null;
         const normScale = isFixed
           ? scaleUnit * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k
@@ -4490,6 +4497,10 @@ class StudioProApp {
 
     this.syncControlValue("input-struct-col-ratio", fs.colRatio !== undefined ? fs.colRatio : 1);
     this.syncControlValue("num-struct-col-ratio", fs.colRatio !== undefined ? fs.colRatio : 1);
+    this.syncControlValue("input-struct-col-grade", fs.colGrade || 0);
+    this.syncControlValue("num-struct-col-grade", `${fs.colGrade || 0}%`);
+    this.syncControlValue("input-struct-row-grade", fs.rowGrade || 0);
+    this.syncControlValue("num-struct-row-grade", `${fs.rowGrade || 0}%`);
     this.syncControlValue("input-struct-row-ratio", fs.rowRatio !== undefined ? fs.rowRatio : 1);
     this.syncControlValue("num-struct-row-ratio", fs.rowRatio !== undefined ? fs.rowRatio : 1);
     this.syncCheckbox("chk-struct-gridlines", !!fs.showGridLines);
@@ -4520,6 +4531,26 @@ class StudioProApp {
       this.updateLayerCardsUI();
       this.pushHistory(`Layer ${this.activeLayerId} Formal Structure: ${enabled ? "ON" : "OFF"}`);
     });
+
+    // Gradation of structure: columns / rows that grow or shrink step by step
+    const bindGrade = (inputId, numId, key, label) => {
+      this.bindSliderWithNumber(inputId, numId, (val) => {
+        const mod = this.getActiveModule();
+        if (!mod || !mod.structure) return;
+        if (!mod.structure.formalStructure) {
+          mod.structure.formalStructure = { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false };
+        }
+        mod.structure.formalStructure[key] = Math.max(-30, Math.min(30, val));
+        mod.structure.formalStructure.enabled = true;
+        mod.structure.enabled = true;
+        if (mod.structure.mode === "radiation") mod.structure.mode = "repetition";
+        this.syncStructureInspectorWithActiveLayer();
+        this.render();
+        this.updateLayerCardsUI();
+      }, label, "%");
+    };
+    bindGrade("input-struct-col-grade", "num-struct-col-grade", "colGrade", "Col Gradation");
+    bindGrade("input-struct-row-grade", "num-struct-row-grade", "rowGrade", "Row Gradation");
 
     this.bindSliderWithNumber("input-struct-col-ratio", "num-struct-col-ratio", (val) => {
       const mod = this.getActiveModule();

@@ -1345,6 +1345,10 @@ export class StudioProApp {
 
     this.syncControlValue("input-struct-col-ratio", fs.colRatio !== undefined ? fs.colRatio : 1);
     this.syncControlValue("num-struct-col-ratio", fs.colRatio !== undefined ? fs.colRatio : 1);
+    this.syncControlValue("input-struct-col-grade", fs.colGrade || 0);
+    this.syncControlValue("num-struct-col-grade", `${fs.colGrade || 0}%`);
+    this.syncControlValue("input-struct-row-grade", fs.rowGrade || 0);
+    this.syncControlValue("num-struct-row-grade", `${fs.rowGrade || 0}%`);
     this.syncControlValue("input-struct-row-ratio", fs.rowRatio !== undefined ? fs.rowRatio : 1);
     this.syncControlValue("num-struct-row-ratio", fs.rowRatio !== undefined ? fs.rowRatio : 1);
     this.syncCheckbox("chk-struct-gridlines", !!fs.showGridLines);
@@ -1375,6 +1379,26 @@ export class StudioProApp {
       this.updateLayerCardsUI();
       this.pushHistory(`Layer ${this.activeLayerId} Formal Structure: ${enabled ? "ON" : "OFF"}`);
     });
+
+    // Gradation of structure: columns / rows that grow or shrink step by step
+    const bindGrade = (inputId, numId, key, label) => {
+      this.bindSliderWithNumber(inputId, numId, (val) => {
+        const mod = this.getActiveModule();
+        if (!mod || !mod.structure) return;
+        if (!mod.structure.formalStructure) {
+          mod.structure.formalStructure = { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false };
+        }
+        mod.structure.formalStructure[key] = Math.max(-30, Math.min(30, val));
+        mod.structure.formalStructure.enabled = true;
+        mod.structure.enabled = true;
+        if (mod.structure.mode === "radiation") mod.structure.mode = "repetition";
+        this.syncStructureInspectorWithActiveLayer();
+        this.render();
+        this.updateLayerCardsUI();
+      }, label, "%");
+    };
+    bindGrade("input-struct-col-grade", "num-struct-col-grade", "colGrade", "Col Gradation");
+    bindGrade("input-struct-row-grade", "num-struct-row-grade", "rowGrade", "Row Gradation");
 
     this.bindSliderWithNumber("input-struct-col-ratio", "num-struct-col-ratio", (val) => {
       const mod = this.getActiveModule();

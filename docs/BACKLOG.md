@@ -78,7 +78,7 @@ Ya cubierto: rotación en el plano (Rotate), progresión en el plano (Drift), ro
 | G4 | Velocidad de gradación | ✅ Hecho: slider *Acceleration* (-100 a 100); *Cycles* sigue siendo el número de repeticiones | ✅ |
 | G5 | Gradación de figura | ✅ Hecho: atributo *Shape* con la rejilla *Becomes*; interpola los contornos de cualquier pareja de formas | ✅ |
 | G6 | Atributo *Texture* | ✅ Hecho: atributo *Texture*; la deformación crece a lo largo del camino | ✅ |
-| G7 | Gradación de estructura | Celdas que cambian de tamaño progresivamente (fig. 44). Se relaciona con E4 | P2 |
+| G7 | Gradación de estructura | ✅ Hecho: sliders *Col gradation* y *Row gradation* (−30 a 30 %) en Layout > Advanced | ✅ |
 
 ---
 
