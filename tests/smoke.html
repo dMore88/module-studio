@@ -74,7 +74,7 @@
       const g = st.gradation; g.enabled = rb(); g.type = pick(["rotation","scale","depth","drift","shape","texture","color"]); g.pathway = pick(["diagonal","horizontal","vertical","concentric","zigzag"]); g.range = ri(15, 360); g.steps = ri(1, 4); g.reverse = rb();
       g.sequence = pick(["restart","pingpong"]); g.easing = ri(-100, 100); g.alternate = rb(); g.targetShape = pick(SHAPES);
       const an = st.anomaly; an.enabled = rb(); an.type = pick(["focal","fracture","swell","tear","regrid"]); an.zoneGrid = pick(["sliding","sheared","curved","zigzag","triangular","alternating"]); an.epicenterX = 0.1 + rnd() * 0.8; an.epicenterY = 0.1 + rnd() * 0.8; an.radius = ri(50, 350); an.intensity = ri(10, 100); an.anomalousShape = pick(SHAPES); an.highlightColor = rb(); an.showReticle = rb(); an.distribution = pick(["single","regular","random"]); an.count = ri(2, 12); an.seed = ri(1, 99); an.attrs = { shape: rb(), scale: rb(), rotation: rb(), position: rb() };
-      const co = st.contrast; co.enabled = rb(); co.dimension = pick(["scale","shape","direction","position","tone","texture","space"]); co.positionShift = ri(5, 50); co.positionAngle = ri(0, 360); co.dominanceRatio = ri(50, 95); co.scaleFactor = 0.2 + rnd() * 2.8; co.contrastShape = pick(SHAPES); co.angle = ri(15, 90); co.highlightContrast = rb();
+      const co = st.contrast; co.enabled = rb(); co.dimension = pick(["scale","shape","direction","position","tone","texture","space"]); co.positionShift = ri(5, 50); co.positionAngle = ri(0, 360); co.dominanceRatio = ri(50, 95); co.scaleFactor = 0.2 + rnd() * 2.8; co.contrastShape = pick(SHAPES); co.angle = ri(15, 90); co.highlightContrast = rb(); co.spread = pick(["scattered","balanced","edge","center"]);
       const cn = st.concentration; cn.enabled = rb(); cn.mode = pick(["point","void","line","line_void","free","dense","sparse"]); cn.method = pick(["move","absence"]); cn.edgeFade = rb(); cn.attractorX = 0.05 + rnd() * 0.9; cn.attractorY = 0.05 + rnd() * 0.9; cn.power = ri(20, 100); cn.radius = ri(80, 450); cn.lineAxis = pick(["horizontal","vertical"]); cn.alignToField = rb(); cn.densityScale = rb(); cn.showAttractor = rb(); cn.focusCount = ri(2, 6);
       const tx = st.texture; tx.enabled = rb(); tx.jitter = ri(0, 8); tx.skipChance = ri(0, 60); tx.crossing = ri(0, 60); tx.undulation = ri(0, 30);
       const sp = st.space; sp.enabled = rb(); sp.mode = pick(["isometric","foreshortening","fluctuating","conflicting"]); sp.depth = ri(10, 80); sp.angle = ri(-60, 60); sp.shading = ri(20, 100); sp.showIsoGuides = rb();
@@ -425,6 +425,32 @@
       assert(near(e.gradationValue(g({}), 0.3), 0.3), "The default sequence changed");
       // Acceleration: positive starts slow, negative starts fast
       assert(e.gradationValue(g({ easing: 100 }), 0.5) < 0.4 && e.gradationValue(g({ easing: -100 }), 0.5) > 0.6, "Acceleration does not bend the ramp");
+    });
+
+    await test("Contrast spread: balanced, toward the edges and toward the center", () => {
+      const e = app.engine;
+      const con = (spread) => ({ enabled: true, dominanceRatio: 75, spread });
+      const N = 16;
+      const stats = (spread) => {
+        let total = 0, outer = 0, inner = 0, quadrants = [0, 0, 0, 0];
+        for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+          const x = (c + 0.5) / N, y = (r + 0.5) / N;
+          if (!e.isContrastMinority(con(spread), r * N + c, { a: c, b: r, x, y })) continue;
+          total++;
+          const d = Math.max(Math.abs(x - 0.5), Math.abs(y - 0.5)) * 2;
+          if (d > 0.7) outer++; if (d < 0.5) inner++;
+          quadrants[(x > 0.5 ? 1 : 0) + (y > 0.5 ? 2 : 0)]++;
+        }
+        return { total, outer, inner, quadrants };
+      };
+      const bal = stats("balanced");
+      assert(Math.abs(bal.total - 64) <= 8, "Balanced should give about 25% minority, got " + bal.total);
+      assert(Math.max(...bal.quadrants) - Math.min(...bal.quadrants) <= 8, "Balanced should fill the four quadrants evenly: " + bal.quadrants);
+      const edge = stats("edge"), center = stats("center");
+      assert(edge.total > 0 && edge.outer > edge.inner * 3, `Edge should pile the minority outside (outer ${edge.outer}, inner ${edge.inner})`);
+      assert(center.total > 0 && center.inner > center.outer * 3, `Center should pile the minority inside (outer ${center.outer}, inner ${center.inner})`);
+      // Scattered is the original behaviour, with or without a place
+      assert(e.isContrastMinority(con("scattered"), 7, { a: 1, b: 1, x: 0.5, y: 0.5 }) === e.isContrastMinority({ dominanceRatio: 75 }, 7), "Scattered changed the original behaviour");
     });
 
     await test("Gradation attribute Color moves the module colour toward the end colour", () => {

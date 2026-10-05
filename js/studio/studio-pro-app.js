@@ -2183,6 +2183,9 @@ export class StudioProApp {
     const toggle = document.getElementById("toggle-contrast-active");
     if (toggle) toggle.checked = !!con.enabled;
 
+    document.querySelectorAll("#card-contrast [data-contrast-spread]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.contrastSpread === (con.spread || "scattered"));
+    });
     document.querySelectorAll("#card-contrast [data-contrast-dimension]").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.contrastDimension === con.dimension);
     });
@@ -2256,6 +2259,11 @@ export class StudioProApp {
       this.pushHistory(`Layer ${this.activeLayerId} Contrast: ${con.enabled ? "ON" : "OFF"}`);
     });
 
+    document.querySelectorAll("#card-contrast [data-contrast-spread]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(c => { c.spread = btn.dataset.contrastSpread; }, `Contrast Spread: ${btn.dataset.contrastSpread}`);
+      });
+    });
     document.querySelectorAll("#card-contrast [data-contrast-dimension]").forEach(btn => {
       btn.addEventListener("click", () => {
         commit(c => { c.dimension = btn.dataset.contrastDimension; }, `Contrast Dimension: ${btn.dataset.contrastDimension}`);

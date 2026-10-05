@@ -898,6 +898,7 @@ const createDefaultLayerStructure = () => ({
     enabled: false,
     dimension: "scale", // scale, shape, direction, position, tone, texture, space
     dominanceRatio: 80, // % majority regular (50 to 95)
+    spread: "scattered", // where the minority sits: scattered (at random), balanced (evenly spread), edge (pulled to the borders) or center
     contrastShape: "cross", // shape for shape contrast
     scaleFactor: 2.2, // scale multiplier for scale contrast (0.2 to 3.0)
     angle: 45, // clash angle for direction contrast
@@ -1784,9 +1785,21 @@ class StudioEngine {
   }
 
   // Contrast: is the module with running index `k` part of the minority?
-  isContrastMinority(contrast, k) {
+  // `loc` is the module's place: its column and row (a, b) and its position in the canvas (x, y, 0 to 1).
+  isContrastMinority(contrast, k, loc = null) {
     const hash = Math.abs(Math.sin(k * 137.5 + 43.1) * 10000) % 100;
-    return hash >= (contrast.dominanceRatio ?? 80);
+    const ratio = contrast.dominanceRatio ?? 80;
+    const spread = contrast.spread || "scattered";
+    if (!loc || spread === "scattered") return hash >= ratio;
+    if (spread === "balanced") {
+      // A lattice sequence: the minority is spread evenly, with no clumps and no gaps
+      const u = (loc.a * 0.7548776662 + loc.b * 0.5698402910) % 1;
+      return u * 100 >= ratio;
+    }
+    // Edge / center: the farther toward the edge (or the middle), the likelier; a little chance keeps it alive
+    const d = Math.min(1, Math.max(Math.abs(loc.x - 0.5), Math.abs(loc.y - 0.5)) * 2);
+    const p = spread === "edge" ? d * d : 1 - d * d;
+    return (p * 0.8 + (hash / 100) * 0.2) * 100 >= ratio;
   }
 
   // Contrast: `k` is the module's running index, used to pick the minority.
@@ -1802,8 +1815,8 @@ class StudioEngine {
     return "#" + pa.map((v, i) => Math.round(v + (pb[i] - v) * t).toString(16).padStart(2, "0")).join("");
   }
 
-  applyContrast(ctx, contrast, k, palette, cell) {
-    if (!this.isContrastMinority(contrast, k)) return;
+  applyContrast(ctx, contrast, k, palette, cell, loc = null) {
+    if (!this.isContrastMinority(contrast, k, loc)) return;
     if (contrast.dimension === "scale") {
       cell.scaleMul *= contrast.scaleFactor ?? 2.2;
     } else if (contrast.dimension === "shape") {
@@ -2107,7 +2120,7 @@ class StudioEngine {
           let flipped = false;
 
           // Checkerboard inversion; Contrast > Space reverses figure and ground in the minority (the two cancel out)
-          const spaceFlip = !!(contrast.enabled && contrast.dimension === "space" && this.isContrastMinority(contrast, r * cols + c));
+          const spaceFlip = !!(contrast.enabled && contrast.dimension === "space" && this.isContrastMinority(contrast, r * cols + c, { a: c, b: r, x: cx / width, y: cy / height }));
           if (!extra && (rep.checkerInvert && isOddCell) !== spaceFlip) {
             ctx.save();
             this.buildCellPath(ctx, r, c, rows, cols, cellCx, cellCy, cW, cH, repCell, cellStartX);
@@ -2168,7 +2181,7 @@ class StudioEngine {
           ctx.restore();
           return;
         }
-        if (contrast.enabled) this.applyContrast(ctx, contrast, r * cols + c, palette, cell);
+        if (contrast.enabled) this.applyContrast(ctx, contrast, r * cols + c, palette, cell, { a: c, b: r, x: cx / width, y: cy / height });
         this.applyGradationColor(grad, palette, cell);
         const cellShapeA = cell.shape;
         const cellWireframe = cell.wireframe;
@@ -2543,7 +2556,7 @@ class StudioEngine {
           }
 
           // Contrast > Space: the minority is drawn with figure and ground reversed
-          const spaceFlip = !!(contrast.enabled && contrast.dimension === "space" && this.isContrastMinority(contrast, centerIdx * 1000 + i * rays + j));
+          const spaceFlip = !!(contrast.enabled && contrast.dimension === "space" && this.isContrastMinority(contrast, centerIdx * 1000 + i * rays + j, { a: j, b: i, x: x / width, y: y / height }));
           if (spaceFlip) {
             ctx.save();
             sectorPath();
@@ -2611,7 +2624,7 @@ class StudioEngine {
             ctx.restore();
             continue;
           }
-          if (contrast.enabled) this.applyContrast(ctx, contrast, centerIdx * 1000 + i * rays + j, palette, cell);
+          if (contrast.enabled) this.applyContrast(ctx, contrast, centerIdx * 1000 + i * rays + j, palette, cell, { a: j, b: i, x: x / width, y: y / height });
           this.applyGradationColor(grad, palette, cell);
           const cellShapeA = cell.shape;
           const cellWireframe = cell.wireframe;
@@ -5430,6 +5443,9 @@ class StudioProApp {
     const toggle = document.getElementById("toggle-contrast-active");
     if (toggle) toggle.checked = !!con.enabled;
 
+    document.querySelectorAll("#card-contrast [data-contrast-spread]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.contrastSpread === (con.spread || "scattered"));
+    });
     document.querySelectorAll("#card-contrast [data-contrast-dimension]").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.contrastDimension === con.dimension);
     });
@@ -5503,6 +5519,11 @@ class StudioProApp {
       this.pushHistory(`Layer ${this.activeLayerId} Contrast: ${con.enabled ? "ON" : "OFF"}`);
     });
 
+    document.querySelectorAll("#card-contrast [data-contrast-spread]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(c => { c.spread = btn.dataset.contrastSpread; }, `Contrast Spread: ${btn.dataset.contrastSpread}`);
+      });
+    });
     document.querySelectorAll("#card-contrast [data-contrast-dimension]").forEach(btn => {
       btn.addEventListener("click", () => {
         commit(c => { c.dimension = btn.dataset.contrastDimension; }, `Contrast Dimension: ${btn.dataset.contrastDimension}`);

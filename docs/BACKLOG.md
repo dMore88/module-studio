@@ -24,7 +24,6 @@ Sale de las filas ⏳ del mapa de conceptos, más las mejoras de filas 🟡 que 
 | S8 | Retícula de celdas irregulares | Subdivisiones similares, no repetidas |
 | A8 | Deformar las líneas de estructura visibles | Hoy solo se deforman los módulos |
 | C4 | Contraste cálido/frío entre zonas | La gradación de color ya está hecha (Gradation › Color) |
-| C11, C14 | Estructura de contraste y equilibrio por zonas | La minoría tira desde el borde |
 | SP9 | Sombra unida o separada | |
 | SP11 | Perspectiva con disminución de tamaño | |
 | SP12 | Planos transparentes (marcos espaciales) | |
@@ -89,8 +88,7 @@ Hasta el 5 de octubre de 2026 el backlog numeraba **tareas** (R4, E2, G7...). De
 | RP6 | RP8 a RP10, E29, R26 | | C3 | B12, C9 (descartado) |
 | G1 | G15 | | C4 | Contraste cálido/frío entre zonas | La gradación de color ya está hecha (Gradation › Color) |
 | G2 | G16 | | C5 | C4, G3 |
-| G3 | G21 | | C6 | C11, C14 |
-| G4 | G12 | | C7 | C4 |
+| G3 | G21 | | C6 | G4 | G12 | | C7 | C4 |
 | G5 | G1 | | K1 | K7 |
 | G6 | G4, T10 | | K2 | K9, K10 |
 | G7 | G17 | | K3 | K8 |

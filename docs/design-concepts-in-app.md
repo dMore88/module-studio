@@ -212,10 +212,10 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | C8 | **Contraste de espacio**: ocupado/vacío, positivo/negativo, plano/ilusorio | Elementos de relación | Contrast › `Space` | ✅ |  |
 | C9 | **Contraste de gravedad**: estable/inestable, ligero/pesado | Elementos de relación | — | ➖ | Descartado: se consigue con Position a 90º (ver C7) |
 | C10 | **Contrastes dentro de una forma**: partes angulares y curvas en un mismo módulo | Contraste dentro de una forma | Module › Shape (formas compuestas: herradura, creciente, gota) | 🟡 | No hay editor de formas propias |
-| C11 | **La estructura de contraste**: informal, sin regularidad estricta; equilibrio informal | Estructura de contraste | — | ⏳ | Falta que la minoría tire desde el borde para equilibrar |
+| C11 | **La estructura de contraste**: informal, sin regularidad estricta; equilibrio informal | Estructura de contraste | Contrast › Minority spread | ✅ | Dispersa, equilibrada, hacia los bordes o hacia el centro |
 | C12 | **Dominación de una mayoría**: un tipo de módulo ocupa más espacio | Dominancia y énfasis | Contrast › Dominance ratio | ✅ |  |
 | C13 | **Énfasis de una minoría**: llama la atención como una anomalía | Dominancia y énfasis | Contrast › Accent color | ✅ |  |
-| C14 | **Equilibrio** de mayoría y minoría, como pesos en una balanza | Dominancia y énfasis | — | ⏳ |  |
+| C14 | **Equilibrio** de mayoría y minoría, como pesos en una balanza | Dominancia y énfasis | Contrast › Minority spread (Balanced) | ✅ |  |
 
 ## Concentración
 

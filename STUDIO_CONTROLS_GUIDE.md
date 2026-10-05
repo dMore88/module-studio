@@ -230,6 +230,7 @@ Establece disparidad formal entre una **mayoría dominante** y una **minoría di
   * `texture`: solo la minoría recibe la deformación de Texture.
   * `space`: la minoría se dibuja con figura y fondo invertidos. Con *Checkerboard inversion* se combinan por exclusión.
 * **`dominanceRatio`** (*Dominance ratio*, 50 a 95 %, por defecto 80).
+* **`spread`** (*Minority spread*, dropdown): dónde cae la minoría. `scattered` (al azar, por defecto), `balanced` (repartida con parejo, sin racimos ni huecos), `edge` (se acumula hacia los bordes) o `center` (hacia el centro). Funciona en retícula y en radial.
 * **Color de acento:** la fila *Accent color* (`accentColor`) destaca la minoría; elegir un color enciende el acento (`highlightContrast`) y el **×** lo quita. Manda sobre el tono.
 * Cada dimensión muestra solo sus controles. Contrast no tiene puntero en el lienzo.
 
