@@ -63,6 +63,7 @@ export class StudioProApp {
     this.setupFloatingLayersPanel();
     this.setupControlsRail();
     this.setupLayoutStructure();
+    this.setupSelects();
     this.setupRepetitionExtras();
     this.setupFormalStructure();
     this.setupSimilarity();
@@ -792,12 +793,8 @@ export class StudioProApp {
         btn.classList.toggle("active", btn.dataset.radSize === (rad.sizeMode || "fit"));
       });
       document.querySelectorAll("[data-rad-dir]").forEach(btn => btn.classList.toggle("active", btn.dataset.radDir === (rad.direction || "repeated")));
-      document.querySelectorAll("[data-rad-tone]").forEach(btn => btn.classList.toggle("active", btn.dataset.radTone === (rad.lineTone || "guide")));
       document.getElementById("rad-lines-block")?.classList.toggle("hidden", !(rad.showRays || rad.showRings));
-      const radGuide = (rad.lineTone || "guide") === "guide";
-      document.getElementById("rad-linewidth-block")?.classList.toggle("hidden", radGuide);
-      this.syncAccentColorRow("radguide", rad.guideColor || "#f24822", true);
-      document.getElementById("radguide-accent-row")?.classList.toggle("hidden", !radGuide);
+      this.syncAccentColorRow("radline", rad.lineColor || mod?.color || "#18181f", true);
       this.syncControlValue("input-layout-radline", rad.lineWidth ?? 1);
       this.syncControlValue("num-layout-radline", `${rad.lineWidth ?? 1}px`);
       this.syncControlValue("input-layout-open", rad.centerOpen || 0);
@@ -854,10 +851,7 @@ export class StudioProApp {
       if (num) num.value = `${val}${spec.suffix}`;
     }
     document.getElementById("rep-lines-block")?.classList.toggle("hidden", !rep.showGridLines);
-    const repGuide = (rep.lineTone || "guide") === "guide";
-    document.getElementById("rep-linewidth-block")?.classList.toggle("hidden", repGuide);
-    this.syncAccentColorRow("repguide", rep.guideColor || "#f24822", true);
-    document.getElementById("repguide-accent-row")?.classList.toggle("hidden", !repGuide);
+    this.syncAccentColorRow("repline", rep.lineColor || this.getActiveModule()?.color || "#18181f", true);
     const mark = (attr, value) => document.querySelectorAll(`[${attr}]`).forEach(b => {
       const v = b.getAttribute(attr);
       b.classList.toggle("active", v === value);
@@ -874,7 +868,6 @@ export class StudioProApp {
     this.syncControlValue("input-layout-inter", rep.interScale ?? 50);
     const ni = document.getElementById("num-layout-inter");
     if (ni) ni.value = `${rep.interScale ?? 50}%`;
-    mark("data-rep-tone", rep.lineTone || "guide");
     mark("data-rep-linedir", rep.lineDirection || "both");
     mark("data-rep-linespace", rep.lineSpacing || "all");
     mark("data-rep-reflect", rep.reflection || "none");
@@ -882,6 +875,43 @@ export class StudioProApp {
     this.syncControlValue("input-layout-linewidth", w);
     const nw = document.getElementById("num-layout-linewidth");
     if (nw) nw.value = `${w}px`;
+  }
+
+  // Dropdowns (.ds-select): the items are the same buttons the controllers already listen to, so a click
+  // only has to close the menu. The trigger always shows whichever item is marked active.
+  setupSelects() {
+    const selects = document.querySelectorAll("[data-select]");
+    const closeAll = (except) => selects.forEach(sel => {
+      if (sel === except) return;
+      sel.querySelector(".ds-dropdown-menu")?.classList.add("hidden");
+      sel.querySelector(".ds-dropdown-trigger")?.setAttribute("aria-expanded", "false");
+    });
+    selects.forEach(sel => {
+      const trigger = sel.querySelector(".ds-dropdown-trigger");
+      const menu = sel.querySelector(".ds-dropdown-menu");
+      const current = sel.querySelector(".ds-dropdown-current");
+      const refresh = () => {
+        const active = menu.querySelector(".ds-dropdown-item.active") || menu.querySelector(".ds-dropdown-item");
+        if (active && current) current.innerHTML = active.innerHTML;
+      };
+      trigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const open = menu.classList.contains("hidden");
+        closeAll(sel);
+        menu.classList.toggle("hidden", !open);
+        trigger.setAttribute("aria-expanded", String(open));
+      });
+      menu.addEventListener("click", () => {
+        menu.classList.add("hidden");
+        trigger.setAttribute("aria-expanded", "false");
+        trigger.focus();
+        refresh();
+      });
+      new MutationObserver(refresh).observe(menu, { attributes: true, attributeFilter: ["class"], subtree: true });
+      refresh();
+    });
+    document.addEventListener("click", () => closeAll(null));
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(null); });
   }
 
   setupRepetitionExtras() {
@@ -922,20 +952,19 @@ export class StudioProApp {
         });
       });
     };
-    bindTags("[data-rep-tone]", "data-rep-tone", "lineTone", "Line Tone");
     const bindGuideColor = (id, getBlock, label) => {
       const input = document.getElementById(id);
       input?.addEventListener("input", (e) => {
         const b = getBlock();
         if (!b) return;
-        b.guideColor = e.target.value;
+        b.lineColor = e.target.value;
         this.syncAccentColorRow(id.replace("-accent-color", ""), e.target.value, true);
         this.render();
       });
       input?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${label}: ${e.target.value.toUpperCase()}`));
     };
-    bindGuideColor("repguide-accent-color", () => this.getActiveLayerStructure()?.repetition, "Guide Color");
-    bindGuideColor("radguide-accent-color", () => this.getActiveLayerStructure()?.radiation, "Radiation Guide Color");
+    bindGuideColor("repline-accent-color", () => this.getActiveLayerStructure()?.repetition, "Line Color");
+    bindGuideColor("radline-accent-color", () => this.getActiveLayerStructure()?.radiation, "Radiation Line Color");
     bindTags("[data-rep-linedir]", "data-rep-linedir", "lineDirection", "Line Direction");
     bindTags("[data-rep-linespace]", "data-rep-linespace", "lineSpacing", "Line Spacing");
     bindTags("[data-rep-reflect]", "data-rep-reflect", "reflection", "Reflection");
@@ -1132,7 +1161,6 @@ export class StudioProApp {
       });
     };
     bindRadTags("[data-rad-dir]", "radDir", "direction", "Radiation Direction");
-    bindRadTags("[data-rad-tone]", "radTone", "lineTone", "Radiation Line Tone");
     this.bindSliderWithNumber("input-layout-radline", "num-layout-radline", (val) => {
       const struct = this.getActiveLayerStructure();
       if (!struct) return;

@@ -464,6 +464,59 @@ input[type="range"]:hover::-webkit-slider-thumb {
 }
 .ds-swatch-fill { display: block; width: 100%; height: 100%; }
 
+/* Select (dropdown) and Advanced section */
+.ds-dropdown { position: relative; }
+.ds-dropdown-trigger {
+  box-sizing: border-box;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-3);
+  width: 100%; height: var(--sizing-8);
+  padding: 0 var(--spacing-4);
+  border-radius: var(--border-radius-2);
+  border: var(--border-weight-1) solid var(--neutral-interactive-default);
+  background: var(--neutral-interactive-default-inverted);
+  color: var(--neutral-text-main);
+  font-family: inherit; font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+.ds-dropdown-trigger:hover { background: var(--neutral-interactive-hover-inverted); }
+.ds-dropdown-trigger:focus-visible, .ds-dropdown-item:focus-visible { outline: var(--border-weight-2) solid var(--neutral-interactive-default); outline-offset: var(--spacing-1); }
+.ds-dropdown-current { display: flex; align-items: center; gap: var(--spacing-3); min-width: 0; }
+.ds-dropdown-menu {
+  position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + var(--spacing-2));
+  display: flex; flex-direction: column;
+  padding: var(--spacing-2);
+  background: var(--neutral-surface-main, #fff);
+  border: var(--border-weight-1) solid var(--neutral-border-strong);
+  border-radius: var(--border-radius-2);
+  box-shadow: 0 8px 24px rgba(24, 24, 31, 0.14);
+  max-height: 320px; overflow-y: auto;
+}
+.ds-dropdown-menu.hidden { display: none; }
+.ds-dropdown-item {
+  display: flex; align-items: center; gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-4);
+  border: 0; border-radius: var(--border-radius-1);
+  background: transparent; color: var(--neutral-text-main);
+  font-family: inherit; font-size: var(--font-size-sm); text-align: left; cursor: pointer;
+}
+.ds-dropdown-item:hover { background: var(--neutral-interactive-default-inverted); }
+.ds-dropdown-item.active { background: var(--neutral-interactive-default); color: var(--neutral-text-main-inverted); }
+.ds-icon-grid { width: 20px; height: 20px; flex: none; }
+.ds-advanced > summary {
+  display: flex; align-items: center; gap: var(--spacing-3);
+  list-style: none; cursor: pointer;
+  padding: var(--spacing-4) 0;
+  border-top: var(--border-weight-1) solid var(--neutral-border-main);
+  font-size: var(--font-size-xs); font-weight: var(--typography-weight-600);
+  letter-spacing: var(--letter-spacing-overline); text-transform: uppercase;
+  color: var(--neutral-text-soft);
+}
+.ds-advanced > summary::-webkit-details-marker { display: none; }
+.ds-advanced > summary i { transition: transform 0.15s ease; }
+.ds-advanced[open] > summary i { transform: rotate(90deg); }
+.ds-advanced > .ds-stack { padding-top: var(--spacing-3); }
+.ds-hint { margin: 0; font-size: var(--font-size-xs); line-height: var(--line-height-body); color: var(--neutral-text-subtle); }
+
 /* Visible notice when a draw fails (instead of a silent blank canvas) */
 .render-error {
   position: fixed;

@@ -104,7 +104,7 @@ Multiplica el módulo en una retícula ortogonal sobre el plano cartesiano $X, Y
 * **`showGridLines`** (`boolean`): Renderiza las líneas maestras de la retícula. Con las líneas visibles aparecen sus opciones:
   *   * **`placement`** (*Module placement*, `centers`): dónde se colocan los módulos. `centers` en el centro de cada celda, `intersections` en los cruces de las líneas, `both` los dos a la vez (dos clases de módulo entretejidas, fig. 23). **`interScale`** (*Intersection size*, 50 %) es el tamaño de los módulos de los cruces. No aplica a la retícula hexagonal.
   * **`cellMix`** (*Cell mix*, `none`): `merge` convierte bloques alternos de 2×2 celdas en un módulo grande; `divide` parte esos bloques en módulos más pequeños (fig. 22f y 22g). Solo en retícula básica y alternada.
-**`lineTone`** (*Line tone*, `guide` por defecto): `guide` es una guía de ayuda, como las de Figma: siempre 1 px, con un color a elegir (*Guide color*), y **no se exporta** al SVG ni al PNG; `positive` se dibuja en tinta (el color de la capa); `negative` se dibuja con el color del fondo y corta los módulos que cruza (fig. 20b y 20c). Los módulos más grandes que la celda son los que muestran el corte.
+**`lineColor`** (*Line color*, vacío = el color de la capa): las líneas visibles son **parte del diseño** (Wong): llevan color y grosor y **se exportan** al SVG y al PNG. Ya no hay modos Guide, Positive y Negative; para una línea que corte los módulos basta elegir el color del fondo (fig. 20b y 20c). Los módulos más grandes que la celda son los que muestran el corte.
   * **`lineDirection`** (*Line direction*, `both`): solo líneas `horizontal`, solo `vertical` o ambas (fig. 20d).
   * **`lineSpacing`** (*Line spacing*, `all`): `alternate` dibuja una línea de cada dos.
   * **`gridLineWidth`** (*Line width*, 0.5 a 6 px).
@@ -147,7 +147,7 @@ Genera el espacio desde uno o varios centros focales utilizando coordenadas pola
 * **`centerOpen`** (*Open center*, 0% a 70%, por defecto 0): Radio del agujero central como porcentaje del radio total. Los anillos y rayos empiezan en el borde del agujero (fig. 48d, abrir el centro de radiación). Con las guías visibles se dibuja el círculo del agujero.
 * **`sizeMode`** (*Module size*, `fit`): `actual` hace lo mismo que en la cuadrícula: el módulo conserva su tamaño real y cada anillo tiene de grosor la *Container height* del módulo. *Concentric rings* y *Angular rays* siguen diciendo cuántos; la estructura puede salirse del lienzo.
 * **`direction`** (*Direction*, `repeated`): Igual que en la cuadrícula, encima de la orientación del módulo: `alternated` gira 180° las celdas alternas y `undefined` da a cada módulo un giro propio.
-* **`lineTone` / `lineWidth`** (*Line tone* y *Line width*, `guide` y 1 px): Con *Visible Grid Lines* encendido, los rayos y anillos pueden dibujarse como guía de 1 px con color propio y sin exportarse (`guide`), en tinta (`positive`) o con el color del fondo (`negative`), con un grosor de 0,5 a 6 px (el grosor solo aplica a `positive` y `negative`).
+* **`lineColor` / `lineWidth`** (*Line color* y *Line width*): Con *Visible lines* encendido, los rayos y anillos se dibujan con el color elegido (vacío = color de la capa) y un grosor de 0,5 a 6 px. Son parte del diseño y se exportan.
 * **`ringRotation`** (*Ring rotation*, -90° a 90°, por defecto 0): Grados que cada anillo gira más que el anillo interior (rotación gradual de capas concéntricas, fig. 49g). Sirve para que las subdivisiones de un anillo no se alineen con las del vecino. Las guías de rayos se dibujan por anillo.
 * **`centerX / centerY`**: Desplazamiento excéntrico del foco fuera del centro del lienzo.
 * **`showRays / showRings`** (`boolean`): Dibuja las líneas guía polares en la composición final.
@@ -358,3 +358,12 @@ Para incorporar estos conceptos dentro de [Abstract Studio](https://github.com/d
    * La lógica de `Concentration` (`mode: point`, `mode: void`, `radius`, `power`) puede integrarse como un modo generativo previo o complementario al pincel de esculpido manual de `engine.js`.
 4. **Arquetipos Radiales Avanzados:**
    * Expandir los generadores radiales de Abstract Studio con los esquemas de `Radiation`: `centrifugal`, `concentric`, `spiral` con torsión continua (`spiralTwist`) y centros dobles concurrentes (`multi_center`).
+
+
+## Organización de los paneles (oct 2026)
+
+* **Panel Structure eliminado.** Sus proporciones *Col ratio* y *Row ratio* viven ahora en *Layout > Repetition > Advanced*.
+* **Layout > Repetition:** arriba, lo esencial: *Grid structure variation* (dropdown con un icono por retícula), el parámetro de la variación (solo en Brick, Diagonal, Curved y Zigzag), *Columns*, *Rows*, *Module size*, *Module placement* y *Cell mix*. En la sección plegable **Advanced**: *Reflection*, *Direction*, las proporciones A:B, *Clip cell*, *Checkerboard inversion* y *Visible lines* (color, grosor, dirección y espaciado).
+* **Layout > Radiation:** arriba, *Radiation scheme* (dropdown), *Angular rays*, *Concentric rings*, *Spiral twist* y *Module size*. En **Advanced**: orientación, dirección, *Open center*, *Ring rotation*, las casillas y las líneas visibles.
+* **Dropdown (`.ds-dropdown`):** componente nuevo. Sus elementos son los mismos botones con `data-*` que antes eran chips; el menú solo se abre y se cierra, y el botón muestra el elemento activo.
+* **Regla:** chips para 2 o 3 opciones de uso frecuente; dropdown para 4 o más, o para lo que se toca poco.

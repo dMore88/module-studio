@@ -812,8 +812,7 @@ const createDefaultLayerStructure = () => ({
     activeClipping: false,
     showGridLines: false,
     gridLineWidth: 1.5,
-    lineTone: "guide", // guide (1px helper in its own colour, never exported), positive (ink) or negative (ground colour, cuts the modules)
-    guideColor: "#f24822",
+        lineColor: "", // empty = the layer's ink colour
     lineDirection: "both", // both, horizontal, vertical
     lineSpacing: "all", // all, alternate (every other line)
     reflection: "none", // none, columns, rows, both: mirror the module in alternate cells
@@ -831,8 +830,7 @@ const createDefaultLayerStructure = () => ({
     ringRotation: 0, // degrees each ring is rotated more than the previous one (-90 to 90)
     sizeMode: "fit", // fit (Fit to canvas) or actual (Actual size: each ring is as thick as the module)
     direction: "repeated", // repeated, alternated or undefined (see the repetition)
-    lineTone: "guide", // guide (1px helper in its own colour, never exported), positive (ink) or negative (ground colour) for the visible rays and rings
-    guideColor: "#f24822",
+        lineColor: "", // empty = the layer's ink colour
     lineWidth: 1, // thickness of the visible rays and rings, 0.5 to 6 px
     rays: 12,
     rings: 5,
@@ -2105,17 +2103,11 @@ class StudioEngine {
     // Optional visible structure grid lines
     const showLines = !!(rep.showGridLines || (struct && (struct.showGridLines || (struct.enabled && struct.showBands))));
     const bandLines = !!(struct && struct.enabled && struct.showBands);
-    const repTone = rep.lineTone || "guide";
-    const isGuide = repTone === "guide" && !bandLines;
-    // Guide lines are an on-screen helper (like Figma guides): 1px, own colour, left out of exports
-    if (showLines && !(isGuide && this.exporting)) {
+    // Visible lines are part of the design (Wong): they have their own colour and width and are exported
+    if (showLines) {
       ctx.save();
-      // Tone: guide, positive (drawn in ink) or negative (drawn in the ground colour, cutting the modules)
-      const tone = repTone;
-      ctx.strokeStyle = tone === "positive" ? (targetMod.color || palette.fg)
-        : tone === "negative" ? palette.bg
-        : (isGuide ? (rep.guideColor || "#f24822") : (palette.isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(24, 24, 31, 0.35)"));
-      ctx.lineWidth = isGuide ? 1 : bandLines ? struct.bandThickness : (rep.gridLineWidth || 1.2);
+      ctx.strokeStyle = rep.lineColor || targetMod.color || palette.fg;
+      ctx.lineWidth = bandLines ? struct.bandThickness : (rep.gridLineWidth || 1.2);
       const dir = rep.lineDirection || "both";
       const showH = dir !== "vertical";
       const showV = dir !== "horizontal";
@@ -2462,12 +2454,11 @@ class StudioEngine {
 
     ctx.restore(); // end outer clip
 
-    // Structural visible guides
-    const rtone = rad.lineTone || "guide";
-    if ((rad.showRings || rad.showRays) && !(rtone === "guide" && this.exporting)) {
+    // Visible rays and rings: part of the design, with their own colour and width
+    if (rad.showRings || rad.showRays) {
       ctx.save();
-      ctx.strokeStyle = rtone === "positive" ? (targetMod.color || palette.fg) : rtone === "negative" ? palette.bg : (rad.guideColor || "#f24822");
-      ctx.lineWidth = rtone === "guide" ? 1 : (rad.lineWidth || 1);
+      ctx.strokeStyle = rad.lineColor || targetMod.color || palette.fg;
+      ctx.lineWidth = rad.lineWidth || 1;
 
       centers.forEach(center => {
         if (rad.showRings) {
@@ -3122,6 +3113,7 @@ class StudioProApp {
     this.setupFloatingLayersPanel();
     this.setupControlsRail();
     this.setupLayoutStructure();
+    this.setupSelects();
     this.setupRepetitionExtras();
     this.setupFormalStructure();
     this.setupSimilarity();
@@ -3851,12 +3843,8 @@ class StudioProApp {
         btn.classList.toggle("active", btn.dataset.radSize === (rad.sizeMode || "fit"));
       });
       document.querySelectorAll("[data-rad-dir]").forEach(btn => btn.classList.toggle("active", btn.dataset.radDir === (rad.direction || "repeated")));
-      document.querySelectorAll("[data-rad-tone]").forEach(btn => btn.classList.toggle("active", btn.dataset.radTone === (rad.lineTone || "guide")));
       document.getElementById("rad-lines-block")?.classList.toggle("hidden", !(rad.showRays || rad.showRings));
-      const radGuide = (rad.lineTone || "guide") === "guide";
-      document.getElementById("rad-linewidth-block")?.classList.toggle("hidden", radGuide);
-      this.syncAccentColorRow("radguide", rad.guideColor || "#f24822", true);
-      document.getElementById("radguide-accent-row")?.classList.toggle("hidden", !radGuide);
+      this.syncAccentColorRow("radline", rad.lineColor || mod?.color || "#18181f", true);
       this.syncControlValue("input-layout-radline", rad.lineWidth ?? 1);
       this.syncControlValue("num-layout-radline", `${rad.lineWidth ?? 1}px`);
       this.syncControlValue("input-layout-open", rad.centerOpen || 0);
@@ -3913,10 +3901,7 @@ class StudioProApp {
       if (num) num.value = `${val}${spec.suffix}`;
     }
     document.getElementById("rep-lines-block")?.classList.toggle("hidden", !rep.showGridLines);
-    const repGuide = (rep.lineTone || "guide") === "guide";
-    document.getElementById("rep-linewidth-block")?.classList.toggle("hidden", repGuide);
-    this.syncAccentColorRow("repguide", rep.guideColor || "#f24822", true);
-    document.getElementById("repguide-accent-row")?.classList.toggle("hidden", !repGuide);
+    this.syncAccentColorRow("repline", rep.lineColor || this.getActiveModule()?.color || "#18181f", true);
     const mark = (attr, value) => document.querySelectorAll(`[${attr}]`).forEach(b => {
       const v = b.getAttribute(attr);
       b.classList.toggle("active", v === value);
@@ -3933,7 +3918,6 @@ class StudioProApp {
     this.syncControlValue("input-layout-inter", rep.interScale ?? 50);
     const ni = document.getElementById("num-layout-inter");
     if (ni) ni.value = `${rep.interScale ?? 50}%`;
-    mark("data-rep-tone", rep.lineTone || "guide");
     mark("data-rep-linedir", rep.lineDirection || "both");
     mark("data-rep-linespace", rep.lineSpacing || "all");
     mark("data-rep-reflect", rep.reflection || "none");
@@ -3941,6 +3925,43 @@ class StudioProApp {
     this.syncControlValue("input-layout-linewidth", w);
     const nw = document.getElementById("num-layout-linewidth");
     if (nw) nw.value = `${w}px`;
+  }
+
+  // Dropdowns (.ds-select): the items are the same buttons the controllers already listen to, so a click
+  // only has to close the menu. The trigger always shows whichever item is marked active.
+  setupSelects() {
+    const selects = document.querySelectorAll("[data-select]");
+    const closeAll = (except) => selects.forEach(sel => {
+      if (sel === except) return;
+      sel.querySelector(".ds-dropdown-menu")?.classList.add("hidden");
+      sel.querySelector(".ds-dropdown-trigger")?.setAttribute("aria-expanded", "false");
+    });
+    selects.forEach(sel => {
+      const trigger = sel.querySelector(".ds-dropdown-trigger");
+      const menu = sel.querySelector(".ds-dropdown-menu");
+      const current = sel.querySelector(".ds-dropdown-current");
+      const refresh = () => {
+        const active = menu.querySelector(".ds-dropdown-item.active") || menu.querySelector(".ds-dropdown-item");
+        if (active && current) current.innerHTML = active.innerHTML;
+      };
+      trigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const open = menu.classList.contains("hidden");
+        closeAll(sel);
+        menu.classList.toggle("hidden", !open);
+        trigger.setAttribute("aria-expanded", String(open));
+      });
+      menu.addEventListener("click", () => {
+        menu.classList.add("hidden");
+        trigger.setAttribute("aria-expanded", "false");
+        trigger.focus();
+        refresh();
+      });
+      new MutationObserver(refresh).observe(menu, { attributes: true, attributeFilter: ["class"], subtree: true });
+      refresh();
+    });
+    document.addEventListener("click", () => closeAll(null));
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(null); });
   }
 
   setupRepetitionExtras() {
@@ -3981,20 +4002,19 @@ class StudioProApp {
         });
       });
     };
-    bindTags("[data-rep-tone]", "data-rep-tone", "lineTone", "Line Tone");
     const bindGuideColor = (id, getBlock, label) => {
       const input = document.getElementById(id);
       input?.addEventListener("input", (e) => {
         const b = getBlock();
         if (!b) return;
-        b.guideColor = e.target.value;
+        b.lineColor = e.target.value;
         this.syncAccentColorRow(id.replace("-accent-color", ""), e.target.value, true);
         this.render();
       });
       input?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${label}: ${e.target.value.toUpperCase()}`));
     };
-    bindGuideColor("repguide-accent-color", () => this.getActiveLayerStructure()?.repetition, "Guide Color");
-    bindGuideColor("radguide-accent-color", () => this.getActiveLayerStructure()?.radiation, "Radiation Guide Color");
+    bindGuideColor("repline-accent-color", () => this.getActiveLayerStructure()?.repetition, "Line Color");
+    bindGuideColor("radline-accent-color", () => this.getActiveLayerStructure()?.radiation, "Radiation Line Color");
     bindTags("[data-rep-linedir]", "data-rep-linedir", "lineDirection", "Line Direction");
     bindTags("[data-rep-linespace]", "data-rep-linespace", "lineSpacing", "Line Spacing");
     bindTags("[data-rep-reflect]", "data-rep-reflect", "reflection", "Reflection");
@@ -4191,7 +4211,6 @@ class StudioProApp {
       });
     };
     bindRadTags("[data-rad-dir]", "radDir", "direction", "Radiation Direction");
-    bindRadTags("[data-rad-tone]", "radTone", "lineTone", "Radiation Line Tone");
     this.bindSliderWithNumber("input-layout-radline", "num-layout-radline", (val) => {
       const struct = this.getActiveLayerStructure();
       if (!struct) return;

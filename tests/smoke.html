@@ -64,11 +64,11 @@
       L.shape = pick(SHAPES); L.width = ri(5, 400); L.height = ri(5, 250); L.rotation = ri(0, 360);
       L.offsetX = ri(-250, 250); L.offsetY = ri(-250, 250); L.wireframe = rb(); L.strokeWidth = ri(1, 10) / 2; L.visible = rnd() < 0.9;
       const st = L.structure; st.enabled = rnd() < 0.8; st.mode = pick(["repetition", "radiation"]);
-      const rp = st.repetition; rp.gridType = pick(["basic","sliding","sheared","curved","zigzag","triangular","alternating","hexagonal"]); rp.lineTone = pick(["guide","positive","negative"]); rp.lineDirection = pick(["both","horizontal","vertical"]); rp.lineSpacing = pick(["all","alternate"]); rp.reflection = pick(["none","columns","rows","both"]);
+      const rp = st.repetition; rp.gridType = pick(["basic","sliding","sheared","curved","zigzag","triangular","alternating","hexagonal"]); rp.lineColor = pick(["","#cc2222","#ffffff"]); rp.lineDirection = pick(["both","horizontal","vertical"]); rp.lineSpacing = pick(["all","alternate"]); rp.reflection = pick(["none","columns","rows","both"]);
       rp.cols = ri(1, 50); rp.rows = ri(1, 50); rp.spacing = ri(0, 40); rp.shearAngle = ri(0, 45); rp.slideOffset = rnd(); rp.curveIntensity = ri(0, 60);
       rp.activeClipping = rb(); rp.showGridLines = rb(); rp.checkerInvert = rb(); rp.direction = pick(["repeated","alternated","undefined"]);
       const rd = st.radiation; rd.scheme = pick(["centrifugal","centripetal","concentric","spiral","multi_center"]); rd.orientation = pick(["auto","outward","inward","tangent","fixed"]); rd.centerOpen = ri(0, 70); rd.ringRotation = ri(-90, 90); rd.rays = ri(4, 28); rd.rings = ri(2, 10);
-      rd.spiralTwist = ri(-180, 180); rd.centerX = ri(-200, 200); rd.centerY = ri(-200, 200); rd.showRays = rb(); rd.showRings = rb(); rd.activeClipping = rb(); rd.direction = pick(["repeated","alternated","undefined"]); rd.lineTone = pick(["guide","positive","negative"]); rd.lineWidth = ri(1, 12) / 2;
+      rd.spiralTwist = ri(-180, 180); rd.centerX = ri(-200, 200); rd.centerY = ri(-200, 200); rd.showRays = rb(); rd.showRings = rb(); rd.activeClipping = rb(); rd.direction = pick(["repeated","alternated","undefined"]); rd.lineColor = pick(["","#2244cc"]); rd.lineWidth = ri(1, 12) / 2;
       const fs = st.formalStructure; fs.enabled = rnd() < 0.4; fs.colRatio = 1 + rnd() * 2; fs.rowRatio = 1 + rnd() * 2; fs.showGridLines = rb();
       const sm = st.similarity; sm.enabled = rb(); sm.kinshipType = pick(["distortion","foreshortening","rotation_wobble","scale_kinship","hybrid"]); sm.intensity = ri(0, 100); sm.cellJitter = ri(0, 30); sm.association = pick(["none","round","angular","lines","numbers"]); sm.assocMix = ri(0, 100); sm.imperfection = pick(["none","cut","broken"]); sm.imperfAmount = ri(0, 100);
       const g = st.gradation; g.enabled = rb(); g.type = pick(["rotation","scale","depth","drift","shape","texture"]); g.pathway = pick(["diagonal","horizontal","vertical","concentric","zigzag"]); g.range = ri(15, 360); g.steps = ri(1, 4); g.reverse = rb();
@@ -220,13 +220,11 @@
       assert(q("#subpanel-repetition").classList.contains("hidden") && !q("#subpanel-radiation").classList.contains("hidden"), "Sub-panels did not swap");
       assert(q("#btn-layout-radiation").classList.contains("active") && !q("#btn-layout-repetition").classList.contains("active"), "Button group active state wrong");
 
-      await tab("structure");
-      assert(!q("#warning-structure-radiation").classList.contains("hidden"), "Structure notice should show while Radiation is active");
-      await tab("layout"); q("#btn-layout-repetition").click(); await wait(60);
-      await tab("structure");
-      assert(q("#warning-structure-radiation").classList.contains("hidden"), "Structure notice should hide on Repetition");
+      q("#btn-layout-repetition").click(); await wait(60);
+      assert(!q("#subpanel-repetition").classList.contains("hidden"), "Repetition sub-panel should come back");
       fire(q("#input-struct-col-ratio"), 2.5);
-      assert(st().formalStructure.colRatio === 2.5, "Structure col ratio did not apply");
+      assert(st().formalStructure.colRatio === 2.5, "Rhythm col ratio (Layout > Advanced) did not apply");
+      assert(!q('[data-rail-tab="structure"]') && !q("#card-structure"), "The Structure panel should be gone (its rhythm lives in Layout > Advanced)");
 
       await tab("similarity");
       q("#toggle-similarity-active").click();
@@ -549,7 +547,7 @@
         const L = st.layers[0];
         Object.assign(L, { shape: "triangle", width: 30, height: 30, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false }, layer);
         L.structure.enabled = true; L.structure.mode = "repetition";
-        Object.assign(L.structure.repetition, { cols: 6, rows: 6, gridType: "basic", showGridLines: false, lineTone: "guide", lineDirection: "both", lineSpacing: "all", reflection: "none", activeClipping: false, gridLineWidth: 3 }, o);
+        Object.assign(L.structure.repetition, { cols: 6, rows: 6, gridType: "basic", showGridLines: false, lineColor: "", lineDirection: "both", lineSpacing: "all", reflection: "none", activeClipping: false, gridLineWidth: 3 }, o);
         app.state = st; drawRaw(app);
         return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
       };
@@ -567,15 +565,15 @@
       assert(diff(hex, render({ gridType: "triangular" })) > 100 && diff(hex, render({})) > 100, "Hexagonal looks like another grid");
       // Lines: the boundary between rows 2 and 3 is y = 300 (100 px cells); modules are small so nothing else is there
       const ink = (o) => px(render({ showGridLines: true, ...o }), 150, 300);
-      assert(ink({ lineTone: "positive" }) < 100, "Positive lines are not drawn in ink");
-      assert(ink({ lineTone: "guide" }) > 150, "Guide lines should stay faint");
+      assert(ink({}) < 100, "Visible lines are not drawn in ink by default");
+      assert(ink({ lineColor: "#ffffff" }) > 200, "A white line colour should draw white lines");
       const big = { width: 800, height: 800, shape: "square" }; // larger than the 100 px cell (800 / 6 = 133 px), so the lines cross it
-      const cut = px(render({ showGridLines: true, lineTone: "negative" }, big), 150, 300);
+      const cut = px(render({ showGridLines: true, lineColor: "#ffffff" }, big), 150, 300);
       const uncut = px(render({}, big), 150, 300);
       assert(uncut < 100 && cut > 200, "Negative lines do not cut the modules");
-      assert(px(render({ showGridLines: true, lineTone: "positive", lineDirection: "vertical" }), 150, 300) > 150 && px(render({ showGridLines: true, lineTone: "positive", lineDirection: "vertical" }), 300, 150) < 100, "Vertical-only lines wrong");
-      assert(px(render({ showGridLines: true, lineTone: "positive", lineDirection: "horizontal" }), 150, 300) < 100 && px(render({ showGridLines: true, lineTone: "positive", lineDirection: "horizontal" }), 300, 150) > 150, "Horizontal-only lines wrong");
-      const every = render({ showGridLines: true, lineTone: "positive", lineSpacing: "alternate" });
+      assert(px(render({ showGridLines: true, lineDirection: "vertical" }), 150, 300) > 150 && px(render({ showGridLines: true, lineDirection: "vertical" }), 300, 150) < 100, "Vertical-only lines wrong");
+      assert(px(render({ showGridLines: true, lineDirection: "horizontal" }), 150, 300) < 100 && px(render({ showGridLines: true, lineDirection: "horizontal" }), 300, 150) > 150, "Horizontal-only lines wrong");
+      const every = render({ showGridLines: true, lineSpacing: "alternate" });
       assert(px(every, 150, 100) > 150 && px(every, 150, 200) < 100, "Every-other spacing should skip the odd lines");
       // Reflection: row 1 is the mirror image of row 1 without reflection
       const plain = render({}), refl = render({ reflection: "rows" });
@@ -595,17 +593,18 @@
       assert(q("#rep-lines-block").classList.contains("hidden"), "Line options should be hidden while the lines are off");
       q("#chk-rep-gridlines").click(); await wait(40);
       assert(!q("#rep-lines-block").classList.contains("hidden"), "Line options should show with the lines on");
-      q('[data-rep-tone="negative"]').click();
       q('[data-rep-linedir="vertical"]').click();
       q('[data-rep-linespace="alternate"]').click();
       q('[data-rep-reflect="both"]').click();
       q('[data-grid-var="hexagonal"]').click();
       const r = rep();
-      assert(r.lineTone === "negative" && r.lineDirection === "vertical" && r.lineSpacing === "alternate" && r.reflection === "both" && r.gridType === "hexagonal", "A control did not reach the state");
-      assert(q('[data-rep-tone="negative"]').classList.contains("active") && !q('[data-rep-tone="guide"]').classList.contains("active"), "Tone tags out of sync");
+      assert(r.lineDirection === "vertical" && r.lineSpacing === "alternate" && r.reflection === "both" && r.gridType === "hexagonal", "A control did not reach the state");
+      const colorIn = q("#repline-accent-color"); colorIn.value = "#336699"; colorIn.dispatchEvent(new win.Event("input", { bubbles: true }));
+      assert(rep().lineColor === "#336699" && q("#repline-accent-hex").textContent === "#336699", "Line colour did not reach the state");
+      assert(q('[data-grid-var="hexagonal"]').classList.contains("active") && /Hexagonal/.test(q("#subpanel-repetition .ds-dropdown-current").textContent), "The grid dropdown should show the chosen variation");
       assert(q('[data-rep-linespace="alternate"]').classList.contains("active"), "Spacing group out of sync");
       app.addLayer(); await wait(80);
-      assert(rep().lineTone === "guide" && rep().reflection === "none", "A new layer should start with the default lines and no reflection");
+      assert(rep().lineColor === "" && rep().reflection === "none", "A new layer should start with the default lines and no reflection");
     });
 
     await test("Modifiers combine predictably: Anomaly wins shape and colour over Contrast, scales multiply, turns add", () => {
@@ -680,8 +679,9 @@
       const problems = [];
       const containers = [];
       d.querySelectorAll(".flyout-tab-content").forEach((tab) => {
-        if (tab.dataset.flyoutTab === "layout") { containers.push(["layout/repetition", tab.querySelector("#subpanel-repetition")]); containers.push(["layout/radiation", tab.querySelector("#subpanel-radiation")]); }
-        else containers.push([tab.dataset.flyoutTab, tab]);
+        // Layout is exempt on purpose: Columns and Rows sit right under the grid selector (design decision), and its dropdowns live in Advanced
+        if (tab.dataset.flyoutTab === "layout") return;
+        containers.push([tab.dataset.flyoutTab, tab]);
       });
       for (const [name, box] of containers) {
         if (!box) continue;
@@ -704,7 +704,7 @@
     await test("Icons match the Figma design (rail, shape grids, header)", () => {
       const d = win.document;
       const iconOf = (el) => { const i = el.querySelector("i"); return i ? Array.from(i.classList).find((c) => c.startsWith("ph-") && c !== "ph-fill") : null; };
-      const rail = { module: "shapes", layout: "circles-four", structure: "grid-four", similarity: "copy-simple", gradation: "angle", anomaly: "circles-three-plus", contrast: "circle-half", concentration: "radio-button", texture: "drop-half-bottom", space: "cube-transparent" };
+      const rail = { module: "shapes", layout: "circles-four", similarity: "copy-simple", gradation: "angle", anomaly: "circles-three-plus", contrast: "circle-half", concentration: "radio-button", texture: "drop-half-bottom", space: "cube-transparent" };
       for (const [tab, icon] of Object.entries(rail)) assert(iconOf(d.querySelector(`[data-rail-tab="${tab}"]`)) === "ph-" + icon, `Rail icon for ${tab} is ${iconOf(d.querySelector(`[data-rail-tab="${tab}"]`))}, expected ${icon}`);
       const expected = { circle: "circle", square: "square", triangle: "triangle", wave: "tilde", horseshoe: "circle-notch", hexagon: "hexagon", line: "minus", parallelogram: "parallelogram", hatch: "scribble", crescent: "subset-proper-of", teardrop: "drop-half-bottom", cross: "plus", digit1: "number-one", digit5: "number-five", digit9: "number-nine" };
       for (const attr of ["data-shape", "data-anom-shape", "data-contrast-shape", "data-grad-target"]) {
@@ -991,7 +991,7 @@
         Object.assign(L, { shape: "triangle", width: 400, height: 400, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false, containerW: 0, containerH: 0 }, layer);
         L.structure.enabled = true; L.structure.mode = mode;
         Object.assign(L.structure.repetition, { cols: 4, rows: 4, gridType: "basic", sizeMode: "fit", direction: "repeated" }, rep);
-        Object.assign(L.structure.radiation, { rays: 12, rings: 4, scheme: "concentric", orientation: "fixed", direction: "repeated", showRays: false, showRings: false, lineTone: "guide", lineWidth: 1 }, rad);
+        Object.assign(L.structure.radiation, { rays: 12, rings: 4, scheme: "concentric", orientation: "fixed", direction: "repeated", showRays: false, showRings: false, lineColor: "", lineWidth: 1 }, rad);
         app.state = st; drawRaw(app);
         return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
       };
@@ -1014,9 +1014,9 @@
       // Radial line tone and width (the rays and rings are drawn at 252 px from the centre at most)
       const lines = (o) => render({}, { showRings: true, showRays: false, rings: 4, ...o }, "radiation", { width: 10, height: 10 });
       const ringPixel = (d) => px(d, 300 + 252, 300); // outer ring, on its right
-      assert(ringPixel(lines({ lineTone: "positive", lineWidth: 3 })) < 100, "Positive radial lines are not drawn in ink");
-      assert(ringPixel(lines({ lineTone: "guide", lineWidth: 3 })) > 150, "Guide radial lines should stay faint");
-      let thin = 0, thick = 0; const t1 = lines({ lineTone: "positive", lineWidth: 1 }), t6 = lines({ lineTone: "positive", lineWidth: 6 });
+      assert(ringPixel(lines({ lineWidth: 3 })) < 100, "Positive radial lines are not drawn in ink");
+      assert(ringPixel(lines({ lineColor: "#ffffff", lineWidth: 3 })) > 200, "A white line colour should draw white rings");
+      let thin = 0, thick = 0; const t1 = lines({ lineWidth: 1 }), t6 = lines({ lineWidth: 6 });
       for (let x = 540; x < 560; x++) { if (px(t1, x, 300) < 128) thin++; if (px(t6, x, 300) < 128) thick++; }
       assert(thick > thin * 3, `Line width did not thicken the rings (${thin} against ${thick})`);
       // Inspector
@@ -1033,8 +1033,8 @@
       assert(q("#rad-lines-block").classList.contains("hidden"), "Radial line options should be hidden while the lines are off");
       q("#chk-rad-gridlines").click(); await wait(40);
       assert(!q("#rad-lines-block").classList.contains("hidden"), "Radial line options should show with the lines on");
-      q('[data-rad-tone="negative"]').click();
-      assert(rd().lineTone === "negative" && q('[data-rad-tone="negative"]').classList.contains("active"), "Radial line tone did not apply");
+      const rc = q("#radline-accent-color"); rc.value = "#336699"; rc.dispatchEvent(new win.Event("input", { bubbles: true }));
+      assert(rd().lineColor === "#336699", "Radial line colour did not apply");
     });
 
     await test("A failed draw shows a visible notice and recovers", () => {
@@ -1051,31 +1051,28 @@
       assert(win.document.getElementById("render-error").hidden, "Notice stays after a successful draw");
     });
 
-    await test("Guide lines are a 1px helper in their own colour and never reach the exports; Positive and Negative do", () => {
+    await test("Visible lines are part of the design: own colour and width, and they are exported", () => {
       reset();
       const cv = win.document.getElementById("studio-canvas");
-      const setup = (tone, mode) => {
+      const setup = (on, mode) => {
         const st = JSON.parse(JSON.stringify(app.state));
         st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
         const L = st.layers[0];
         Object.assign(L, { shape: "circle", width: 20, height: 20, offsetX: 0, offsetY: 0, rotation: 0 });
         L.structure.enabled = true; L.structure.mode = mode;
-        Object.assign(L.structure.repetition, { cols: 3, rows: 3, gridType: "basic", showGridLines: true, lineTone: tone, guideColor: "#00aa00", gridLineWidth: 3 });
-        Object.assign(L.structure.radiation, { rays: 8, rings: 3, showRays: true, showRings: true, lineTone: tone, guideColor: "#00aa00", lineWidth: 3 });
+        Object.assign(L.structure.repetition, { cols: 3, rows: 3, gridType: "basic", showGridLines: on, lineColor: "#00aa00", gridLineWidth: 3 });
+        Object.assign(L.structure.radiation, { rays: 8, rings: 3, showRays: on, showRings: on, lineColor: "#00aa00", lineWidth: 3 });
         app.state = st; app.engine.state = st; drawRaw(app);
       };
       const svg = () => win.StudioExporter.buildSVG(app.engine, cv, app.getActivePalette());
       for (const mode of ["repetition", "radiation"]) {
-        setup("guide", mode);
+        setup(true, mode);
         const screen = app.engine.canvas.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
         let green = 0; for (let i = 0; i < screen.length; i += 4) if (screen[i + 1] > 140 && screen[i] < 80) green++;
-        assert(green > 100, `${mode}: guide lines should show on screen in their own colour`);
-        assert(!/00aa00/i.test(svg()) && !/stroke="rgb\(0,\s*170,\s*0\)"/i.test(svg()), `${mode}: guide lines must not be exported`);
-        setup("positive", mode);
-        const withLines = svg().length;
-        setup("positive", mode);
-        app.state.layers[0].structure.repetition.showGridLines = false; app.state.layers[0].structure.radiation.showRays = false; app.state.layers[0].structure.radiation.showRings = false;
-        assert(withLines > svg().length, `${mode}: positive lines should be exported`);
+        assert(green > 100, `${mode}: the lines should show in their own colour`);
+        assert(/#00aa00/i.test(svg()), `${mode}: the lines should be exported`);
+        setup(false, mode);
+        assert(!/#00aa00/i.test(svg()), `${mode}: no lines should be exported while they are off`);
       }
     });
 

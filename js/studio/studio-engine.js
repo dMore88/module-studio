@@ -16,8 +16,7 @@ export const createDefaultLayerStructure = () => ({
     activeClipping: false,
     showGridLines: false,
     gridLineWidth: 1.5,
-    lineTone: "guide", // guide (1px helper in its own colour, never exported), positive (ink) or negative (ground colour, cuts the modules)
-    guideColor: "#f24822",
+        lineColor: "", // empty = the layer's ink colour
     lineDirection: "both", // both, horizontal, vertical
     lineSpacing: "all", // all, alternate (every other line)
     reflection: "none", // none, columns, rows, both: mirror the module in alternate cells
@@ -35,8 +34,7 @@ export const createDefaultLayerStructure = () => ({
     ringRotation: 0, // degrees each ring is rotated more than the previous one (-90 to 90)
     sizeMode: "fit", // fit (Fit to canvas) or actual (Actual size: each ring is as thick as the module)
     direction: "repeated", // repeated, alternated or undefined (see the repetition)
-    lineTone: "guide", // guide (1px helper in its own colour, never exported), positive (ink) or negative (ground colour) for the visible rays and rings
-    guideColor: "#f24822",
+        lineColor: "", // empty = the layer's ink colour
     lineWidth: 1, // thickness of the visible rays and rings, 0.5 to 6 px
     rays: 12,
     rings: 5,
@@ -1312,17 +1310,11 @@ export class StudioEngine {
     // Optional visible structure grid lines
     const showLines = !!(rep.showGridLines || (struct && (struct.showGridLines || (struct.enabled && struct.showBands))));
     const bandLines = !!(struct && struct.enabled && struct.showBands);
-    const repTone = rep.lineTone || "guide";
-    const isGuide = repTone === "guide" && !bandLines;
-    // Guide lines are an on-screen helper (like Figma guides): 1px, own colour, left out of exports
-    if (showLines && !(isGuide && this.exporting)) {
+    // Visible lines are part of the design (Wong): they have their own colour and width and are exported
+    if (showLines) {
       ctx.save();
-      // Tone: guide, positive (drawn in ink) or negative (drawn in the ground colour, cutting the modules)
-      const tone = repTone;
-      ctx.strokeStyle = tone === "positive" ? (targetMod.color || palette.fg)
-        : tone === "negative" ? palette.bg
-        : (isGuide ? (rep.guideColor || "#f24822") : (palette.isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(24, 24, 31, 0.35)"));
-      ctx.lineWidth = isGuide ? 1 : bandLines ? struct.bandThickness : (rep.gridLineWidth || 1.2);
+      ctx.strokeStyle = rep.lineColor || targetMod.color || palette.fg;
+      ctx.lineWidth = bandLines ? struct.bandThickness : (rep.gridLineWidth || 1.2);
       const dir = rep.lineDirection || "both";
       const showH = dir !== "vertical";
       const showV = dir !== "horizontal";
@@ -1669,12 +1661,11 @@ export class StudioEngine {
 
     ctx.restore(); // end outer clip
 
-    // Structural visible guides
-    const rtone = rad.lineTone || "guide";
-    if ((rad.showRings || rad.showRays) && !(rtone === "guide" && this.exporting)) {
+    // Visible rays and rings: part of the design, with their own colour and width
+    if (rad.showRings || rad.showRays) {
       ctx.save();
-      ctx.strokeStyle = rtone === "positive" ? (targetMod.color || palette.fg) : rtone === "negative" ? palette.bg : (rad.guideColor || "#f24822");
-      ctx.lineWidth = rtone === "guide" ? 1 : (rad.lineWidth || 1);
+      ctx.strokeStyle = rad.lineColor || targetMod.color || palette.fg;
+      ctx.lineWidth = rad.lineWidth || 1;
 
       centers.forEach(center => {
         if (rad.showRings) {
