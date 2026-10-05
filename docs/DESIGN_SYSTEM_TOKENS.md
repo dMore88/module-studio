@@ -167,6 +167,8 @@ Todas las tarjetas: fondo blanco, radio `border/radius/3` (20), relleno `spacing
 
 ---
 
+**Regla:** los controles nuevos se arman con este catálogo, eligiendo el que mejor encaje. Solo si ninguno sirve se pide un diseño nuevo en Figma.
+
 ### 5.1 Tarjeta flotante del inspector (`.inspector-flyout-card` + `.ds-card`)
 Ancho **340 px** (angosto a propósito: no debe tapar el lienzo mientras se edita), relleno `spacing/5` (16), radio `border/radius/3` (20), separación interna `spacing/5` (16), sombra `elevation/3x`, fondo `neutral/bg/light`. Flota sobre el borde derecho del espacio de trabajo, a 66 px del borde (a la izquierda del riel), alineada con la parte superior de la barra del lienzo. Se abre y cierra con el riel y con su botón de cierre.
 
@@ -247,7 +249,7 @@ Altura 40 (`sizing/7`), ancho mínimo 100, relleno horizontal `spacing/5`, radio
 | Pulsado | `neutral/interactive/active--inverted` |
 | Deshabilitado | `neutral/interactive/disabled` |
 
-> El botón **Open** de la cabecera sirve para reabrir un proyecto guardado con Config no tiene mockup en Figma; reutiliza `.ds-btn` con el icono `ph-folder-open`. Pendiente de diseño.
+> El botón **Open** de la cabecera sirve para reabrir un proyecto guardado con Config no tiene mockup en Figma; reutiliza `.ds-btn` con el icono `ph-folder-open` (catálogo).
 
 ### 5.16 Botón de icono (`.ds-icon-btn`)
 40×40, radio `border/radius/2`, icono de 16 px. Normal con `neutral/interactive/default--inverted`; **activo** (opciones de vista: guías de rejilla, inversión de tono) con `neutral/interactive/default` e icono `neutral/icon/inverted`.
@@ -312,11 +314,11 @@ Breadcrumbs, paginación, loaders, ribbon alert, modal, card, input de texto, b�
 | 3 | **Interruptor encendido** | La librería lo muestra con pista clara y borde oscuro; el diseño de la app, con pista oscura e indicador blanco | Unificar la librería con el diseño |
 | 4 | **Checkbox apagado** | La librería usa fondo `neutral/interactive/default--inverted`; el diseño de la app, fondo blanco | Unificar |
 | 5 | **Anillo de foco** | La librería usa `primary/interactive/focus` (`#97bcf5`), de poco contraste sobre blanco | La app usa un contorno de 2 px en la tinta; confirmar que se mantiene |
-| 6 | **Controles sin mockup** | Selector de forma y ángulo en Contrast, eje de línea en Concentration, color de acento en Anomaly y Contrast | Diseñarlos en Figma |
+| 6 | **Controles sin mockup** | Selector de forma y ángulo en Contrast, eje de línea en Concentration, color de acento, variaciones de Layout, Radiation y Gradation | Resuelto (2026-10-04): se arman con el catálogo; solo van a diseño si ningún componente encaja |
 | 7 | **Dos generaciones de mockups** | Los frames de Layout, Structure y Similarity usan los componentes tal como están en la librería: tags y casillas con fondo gris `#e1e2eb`, interruptor encendido con pista clara y bolita oscura. Los frames de Gradation a Space usan tags y casillas blancos (los tags ya se alinearon con el frame nuevo: fondo `#eeeef4`) y el interruptor encendido con pista oscura. La app aplica a todos los paneles el estilo de los frames recientes (blancos, interruptor oscuro) | Elegir uno y actualizar el otro en Figma. Cambiarlo en la app son unas pocas líneas de `css/studio-pro.css` |
 | 8 | **Etiqueta "Relleno / Trazo" en Layout** | En el mockup del selector Repetition / Radiation sobra el texto "Relleno / Trazo" (parece de otro control). En la app se llama *Structure mode* | Confirmar |
-| 9 | **Panel Module** | El mockup no muestra la etiqueta de capa (badge) ni el botón de cierre; la app los mantiene | Confirmar |
-| 9b | **Barra del lienzo** | En el mockup el selector de proporción y las opciones de vista van alineados con los bordes del lienzo; en la app están centrados sobre él | Confirmar |
+| 9 | **Panel Module** | El mockup no muestra la etiqueta de capa (badge) ni el botón de cierre | Resuelto: sin badge; el botón de cierre se añadió a petición |
+| 9b | **Barra del lienzo** | Selector y opciones de vista alineados con los bordes del lienzo | Resuelto (editor de Figma aplicado) |
 | 9c | **Zoom** | El mockup incluye un grupo de botones de zoom bajo el lienzo; el zoom está desactivado en la app a petición tuya | Quitado por ahora (2026-10-04), junto con el desplazamiento y los atajos Espacio y Cmd+0. Confirmar si vuelve |
 | 9d | **Línea de estado** | El mockup muestra "RETINA HiDPI"; la app muestra el tamaño del lienzo y el número de capas, como el frame actual | Resuelto: el texto sigue el frame del editor |
 | 10 | **Rampa de primitivos** | No se puede leer completa con las herramientas disponibles | Exportar la lista de variables desde Figma si se quiere documentar entera |

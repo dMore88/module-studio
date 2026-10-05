@@ -20,9 +20,18 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 | 4b | **Migrar los paneles Module, Layout, Structure y Similarity al diseño de Figma** (Q3b) | ✅ Hecho (2026-10-04). Q3d también hecho: toda la interfaz usa los tokens |
 | 5 | Gradation avanzada (G1 a G6) | ✅ Hecho (G7, gradación de estructura, sigue en P2) |
 | 6 | Radiación: centrípeta y centro abierto (R1, R2, R3, R5) | ✅ Hecho (R4, R6 y R7 siguen en P2) |
-| 7 | Resto de modificadores por capa (secciones 3 a 10) | P2 |
-| 8 | Interrelaciones entre capas (sección 2) | P2, después del 7 |
-| 9 | Supermódulos (RP6) | P3, al final de todo |
+| 7 | **Estructura y Repetición** (sección 9: E1, E3, RP1, RP3; E2 ya hecho) | **P1, siguiente.** Es la base de todo lo demás: cada modificador se dibuja sobre una retícula, y varias mejoras son baratas (líneas visibles, retícula hexagonal, reflexión) |
+| 8 | **Contraste** (sección 5: C8, C4, C2) | **P1.** C8 (qué manda cuando Contrast, Gradation, Concentration y Anomaly tocan lo mismo) es pedido explícito; C4 y C2 reutilizan Texture y figura/fondo, que ya existen |
+| 9 | Anomalía (sección 7: A1, A3) | P2 |
+| 10 | Similitud (sección 8: S1, S2) | P2. S2 se apoya en Line skipping de Texture |
+| 11 | Concentración (sección 6: K2, K1, K4) | P2 |
+| 12 | Interrelaciones entre capas (sección 2) | P2, después de los modificadores (7 a 11) |
+| 13 | Espacio (sección 10) | P3. Es el más complejo; SP5 depende de las interrelaciones |
+| 14 | Supermódulos (RP6) | P3, al final de todo |
+
+**Textura** (sección 11) está cerrada: lo propuesto quedó hecho y lo demás se descartó. Las prioridades de cada ítem están en su sección; los de P2 y P3 se mueven hacia arriba solo si el trabajo del paso anterior los hace baratos.
+
+**Regla de diseño:** los controles nuevos se arman con el catálogo de componentes existente (tags, grupo de botones, slider con caja de valor, rejilla de formas, casilla, selector de color, desplegable). Solo entran en el backlog de diseño los que no encajan en ninguno de ellos.
 
 ---
 
@@ -35,7 +44,7 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 | Q3 | **Mejor design system `.md` desde Figma** ✅ | Leer variables, estilos y componentes del archivo de Figma (tokens `neutral/…`, `primary/…`, `spacing/…`, `border/…`, `sizing/…`, tipografía y elevación) con el MCP de Figma. Reescribir `docs/DESIGN_SYSTEM_TOKENS.md` con los nombres reales, valores, componentes (switch, tag, slider, value box, toggle item, badge, buttonIcon, snackbar, btn-group) y sus estados. Alinear `css/studio-pro.css` con esos tokens (hoy hay colores y medidas fijos). Resultado: documento y variables CSS | ✅ |
 | Q3b | **Migrar los paneles antiguos al diseño de Figma** ✅ | Module, Layout (Repetition y Radiation), Structure y Similarity pasaron a los componentes `.ds-*` (nuevos: grupo de botones, snackbar, pila de campos, selector de color). Se retiraron 17 reglas de CSS antiguas | ✅ |
 | Q3d | **Barra superior, tarjetas de capas y riel de herramientas** ✅ | Migrados desde el nodo `5763:1692` de Figma (cabecera, botón, botón de icono, selector, panel de capas, tarjeta de capa, riel y línea de estado). `css/design-system.css` eliminado | ✅ |
-| Q3c | **Decisiones de diseño pendientes** | Ver la sección 8 de [DESIGN_SYSTEM_TOKENS.md](./DESIGN_SYSTEM_TOKENS.md): tokens para la caja de valor y la pista del slider, fuente monoespaciada (DM Mono o Roboto Mono), unificar interruptor y checkbox entre librería y diseño, y diseñar los controles sin mockup (O2, O3) | P1 |
+| Q3c | **Decisiones de diseño pendientes** | Ver la sección 8 de [DESIGN_SYSTEM_TOKENS.md](./DESIGN_SYSTEM_TOKENS.md): tokens para la caja de valor y la pista del slider, fuente monoespaciada (DM Mono o Roboto Mono), y unificar interruptor y checkbox entre librería y diseño | P2 |
 
 Los hallazgos de la revisión están en [REVISION_CODIGO.md](./REVISION_CODIGO.md), con su plan de arreglos F1 a F9.
 
@@ -95,13 +104,13 @@ Ya cubierto: dominancia de la mayoría y énfasis de la minoría, dimensiones Sc
 | ID | Ítem | Notas | Prioridad |
 | :-- | :--- | :--- | :-- |
 | C1 | Dimensión posición | Arriba/abajo, céntrico/excéntrico | P2 |
-| C2 | Dimensión espacio | Ocupado/vacío, positivo/negativo (figura y fondo invertidos en la minoría) | P2 |
+| C2 | Dimensión espacio | Ocupado/vacío, positivo/negativo (figura y fondo invertidos en la minoría) | **P1** |
 | C3 | Dimensión gravedad | Estable/inestable, ligero/pesado | P2 |
-| C4 | Dimensión textura | Aplicar Texture solo a la minoría | P2 |
-| C5 | Dimensión color | Más allá del acento | P2 |
-| C6 | Minoría por zonas y equilibrio | El libro reparte la mayoría sobre una zona mayor y la minoría tira desde el borde (fig. 61b) | P2 |
+| C4 | Dimensión textura | Aplicar Texture solo a la minoría | **P1** |
+| C5 | Dimensión color | Más allá del acento | P3 |
+| C6 | Minoría por zonas y equilibrio | El libro reparte la mayoría sobre una zona mayor y la minoría tira desde el borde (fig. 61b) | P3 |
 | C7 | Revisar "Tone" | Hoy es trazo contra relleno, más cercano a contraste de espacio que de color | P2 |
-| **C8** | **Revisar la interacción con otros modificadores** | **Pedido explícito.** Orden de aplicación y multiplicadores con Gradation, Concentration y Anomaly (todos tocan escala, dirección o color). Definir qué manda cuando coinciden | **P2** |
+| **C8** | **Revisar la interacción con otros modificadores** | **Pedido explícito, primero de Contraste.** Orden de aplicación y multiplicadores con Gradation, Concentration y Anomaly (todos tocan escala, dirección o color). Definir qué manda cuando coinciden | **P1** |
 
 ---
 
@@ -113,9 +122,9 @@ Ya cubierto: hacia un punto (Point), desde un punto (Void), hacia una línea (Li
 | :-- | :--- | :--- | :-- |
 | K1 | Desde una línea | Inverso de Line | P2 |
 | K2 | Superconcentración y desconcentración | Densidad alta o baja en todo el diseño, con o sin transición a los bordes | P2 |
-| K3 | Más de dos focos | Hoy Hotspots son dos focos simétricos | P2 |
+| K3 | Más de dos focos | Hoy Hotspots son dos focos simétricos | P3 |
 | K4 | Concentrar por ausencias | Módulos que desaparecen según un campo de densidad; es el mecanismo que el libro usa dentro de estructuras formales | P2 |
-| K5 | Varios módulos por celda | Cambios cuantitativos reales | P2 |
+| K5 | Varios módulos por celda | Cambios cuantitativos reales | P3 |
 
 ---
 
@@ -126,9 +135,9 @@ Ya cubierto: focal, rupture, swell, void, radio, severidad, resaltado con color 
 | ID | Ítem | Notas | Prioridad |
 | :-- | :--- | :--- | :-- |
 | A1 | Anomalías esparcidas | Aliviar la monotonía: distribuir anomalías por todo el diseño, de forma regular o aleatoria (fig. 56b) | P2 |
-| A2 | Zona con otra regularidad | "Transformar la regularidad" (fig. 56c) | P2 |
+| A2 | Zona con otra regularidad | "Transformar la regularidad" (fig. 56c) | P3 |
 | A3 | Elegir qué atributos se desvían | El libro: una anomalía puede desviarse en uno o dos elementos y respetar los demás | P2 |
-| A4 | Deformar las líneas de estructura visibles | Hoy solo se deforman los módulos | P2 |
+| A4 | Deformar las líneas de estructura visibles | Hoy solo se deforman los módulos | P3 |
 
 ---
 
@@ -140,8 +149,8 @@ Ya cubierto: Elastic (tensión/compresión), 3D tilt (distorsión espacial), Wob
 | :-- | :--- | :--- | :-- |
 | S1 | Asociación | Formas de una misma familia mezcladas | P2 |
 | S2 | Imperfección | Formas cortadas o quebradas. Puede apoyarse en Line skipping de Texture | P2 |
-| S3 | Retícula de celdas irregulares | "Subdivisiones estructurales similares" (fig. 33) | P2 |
-| S4 | Distribución visual libre | Sin retícula, con espacio similar para cada módulo | P2 |
+| S3 | Retícula de celdas irregulares | "Subdivisiones estructurales similares" (fig. 33) | P3 |
+| S4 | Distribución visual libre | Sin retícula, con espacio similar para cada módulo | P3 |
 
 ---
 
@@ -151,14 +160,14 @@ Ya cubierto: retícula básica, sliding, sheared, curved, zigzag, triangular; es
 
 | ID | Ítem | Notas | Prioridad |
 | :-- | :--- | :--- | :-- |
-| E1 | Líneas visibles positivas o negativas | Fig. 20b y 20c | P2 |
-| E2 | Grosor de las líneas | | P2 |
-| E3 | Horizontales y verticales por separado | Visibles o invisibles, alternadas (fig. 20d) | P2 |
+| E1 | Líneas visibles positivas o negativas | Fig. 20b y 20c | **P1** |
+| E2 | Grosor de las líneas | ✅ Hecho en la cuadrícula (*Line width*, F6); falta el radial | ✅ |
+| E3 | Horizontales y verticales por separado | Visibles o invisibles, alternadas (fig. 20d) | **P1** |
 | E4 | Estructura de múltiple repetición | Dos clases de subdivisión entretejidas (fig. 23) | P2 |
-| RP1 | Retícula hexagonal | | P2 |
+| RP1 | Retícula hexagonal | Un tag más en *Grid structure variation* | **P1** |
 | RP0 | Mostrar en pantalla las retículas triangular, zigzag y alternada | ✅ Hecho (F6), con el parámetro de cada variación y el grosor de líneas | ✅ |
 | RP2 | Subdivisión y combinación de celdas | | P2 |
-| RP3 | Reflexión | Espejar el módulo en celdas alternas | P2 |
+| RP3 | Reflexión | Espejar el módulo en celdas alternas | **P1** |
 | RP4 | Selector de dirección | Repetida, alternada o indefinida | P2 |
 | RP5 | Superposición de estructuras | Ya posible con capas | ✅ |
 | RP6 | **Supermódulos** | Un grupo de módulos que se repite como unidad. La app trabaja un módulo = una capa, así que hay que decidir cómo (por ejemplo, grupos de capas que comparten retícula) | **P3, al final de todo** |
@@ -169,15 +178,15 @@ Ya cubierto: retícula básica, sliding, sheared, curved, zigzag, triangular; es
 
 Ya cubierto: isométrico, 3D tilt, fluctuante, paradójico; profundidad, ángulo, contraste de facetas, guías isométricas; figura y fondo invertibles.
 
-Se considera complejo; entero en backlog.
+Se considera complejo; entero en backlog (P3).
 
 | ID | Ítem | Prioridad |
 | :-- | :--- | :-- |
-| SP1 | Perspectiva con disminución de tamaño | P2 |
-| SP2 | Sombra unida o separada | P2 |
-| SP3 | Pistas de profundidad: tamaño, tono y textura | P2 |
-| SP4 | Planos transparentes (marcos espaciales) | P2 |
-| SP5 | Profundidad por capa | P2, depende de INT |
+| SP1 | Perspectiva con disminución de tamaño | P3 |
+| SP2 | Sombra unida o separada | P3 |
+| SP3 | Pistas de profundidad: tamaño, tono y textura | P3 |
+| SP4 | Planos transparentes (marcos espaciales) | P3 |
+| SP5 | Profundidad por capa | P3, depende de INT |
 
 ---
 
@@ -197,6 +206,6 @@ Ya cubierto: textura espontánea mediante deformación de geometría (Jitter, Li
 | ID | Ítem | Notas | Prioridad |
 | :-- | :--- | :--- | :-- |
 | O1 | Exportar SVG vectorial real | ✅ Hecho (F9): el motor dibuja sobre un contexto que graba trazos SVG. También se puede reabrir el proyecto (botón Open) | ✅ |
-| O2 | Controles de Contrast sin diseño en Figma | Minority Shape y Clash Angle se añadieron sin mockup | Pendiente de diseño |
+| O2 | Controles de Contrast sin mockup | Minority Shape y Clash Angle usan la rejilla de formas y el slider con caja de valor del catálogo | ✅ Cerrado (regla de diseño) |
 | O4 | Aleatorizar parámetros (botón Random) | Se eliminaron los presets y el botón. Si se retoma, generar combinaciones válidas al azar de los controles de capa (la prueba de 400 combinaciones ya sabe hacerlo). Sin presets prediseñados | P3, baja prioridad |
-| O3 | Controles extra sin diseño en Figma | Eje de línea en Concentration; selector de color de acento en Anomaly y Contrast; en Layout: tags Zigzag, Triangular y Alternating, el control de parámetro de la variación y *Line width*; en Radiation: esquema Centripetal, *Module orientation*, *Open center* y *Ring rotation*; en Gradation: atributos Shape y Texture, rejilla *Becomes*, *Acceleration*, *Sequence*, *Alternate rows* y el camino Zigzag | Pendiente de diseño |
+| O3 | Controles extra sin mockup | Eje de línea, color de acento, variaciones de Layout, Radiation y Gradation: todos salen del catálogo de componentes existente | ✅ Cerrado (regla de diseño) |
