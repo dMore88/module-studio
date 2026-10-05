@@ -1251,22 +1251,23 @@ class StudioEngine {
   }
 
   // Draw a single shape module for an individual layer
-  drawSingleLayerShape(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false, colorOverride = null, widthMultiplier = null) {
+  drawSingleLayerShape(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false, colorOverride = null, widthMultiplier = null, stretch = null) {
     if (!mod) return;
     const shape = shapeOverride || mod.shape || "circle";
     const baseW = mod.width !== undefined ? mod.width : (mod.scale || 50);
     const baseH = mod.height !== undefined ? mod.height : (mod.scale || 50);
     // A line spans its cell width (widthMultiplier) instead of shrinking to the cell's short side.
-    const w = baseW * (widthMultiplier ?? sizeMultiplier);
-    const h = baseH * sizeMultiplier;
+    const kx = stretch ? stretch.x : 1, ky = stretch ? stretch.y : 1;
+    const w = baseW * (widthMultiplier ?? sizeMultiplier * kx);
+    const h = baseH * sizeMultiplier * ky;
     // Open-path shapes (lines, digits...) are strokes: a non-uniform scale would flatten their
     // thickness and deformation, so they keep a uniform scale. A line's length is its width.
     const isSkeleton = !!(Shapes[shape] && Shapes[shape].skeleton);
     const r = shape === "line" ? w : Math.max(w, h);
     const sx = !isSkeleton && r > 0 ? w / r : 1;
     const sy = !isSkeleton && r > 0 ? h / r : 1;
-    const ox = (mod.offsetX || 0) * sizeMultiplier;
-    const oy = (mod.offsetY || 0) * sizeMultiplier;
+    const ox = (mod.offsetX || 0) * sizeMultiplier * kx;
+    const oy = (mod.offsetY || 0) * sizeMultiplier * ky;
     const wire = wireframeOverride !== null ? wireframeOverride : (mod.wireframe !== false);
     const strokeW = mod.strokeWidth || 1.2;
 
@@ -1830,10 +1831,10 @@ class StudioEngine {
     const colStarts = [];
     const isColRhythmic = !isFixed && !!(struct && struct.enabled && (struct.colRatio !== undefined || struct.mode === "rhythmic"));
     if (isFixed) {
-      // Rhythm in Actual size: the B columns keep the container's width, the A columns are Col ratio times wider
+      // Rhythm in Actual size: the A columns are the container; the B columns are Col ratio times narrower
       const rhythmic = !!(struct && struct.enabled && rep.gridType !== "hexagonal");
-      const rA = rhythmic ? Math.max(0.1, Number(struct.colRatio) || 1) : 1;
-      const widths = Array.from({ length: cols }, (_, c) => fixedCW * (c % 2 === 0 ? rA : 1));
+      const rA = rhythmic ? Math.max(1, Number(struct.colRatio) || 1) : 1;
+      const widths = Array.from({ length: cols }, (_, c) => fixedCW / (c % 2 === 0 ? 1 : rA));
       const total = widths.reduce((a, b) => a + b, 0);
       let currX = margin + usableW / 2 - total / 2;
       for (let c = 0; c < cols; c++) {
@@ -1874,8 +1875,8 @@ class StudioEngine {
     if (isFixed) {
       const isHexRows = rep.gridType === "hexagonal";
       const rowRhythm = !!(struct && struct.enabled && !isHexRows);
-      const rB = rowRhythm ? Math.max(0.1, Number(struct.rowRatio) || 1) : 1;
-      const heights = Array.from({ length: rows }, (_, r) => (isHexRows ? hexFixedPitch : fixedCH) * (r % 2 === 0 ? rB : 1));
+      const rB = rowRhythm ? Math.max(1, Number(struct.rowRatio) || 1) : 1;
+      const heights = Array.from({ length: rows }, (_, r) => (isHexRows ? hexFixedPitch : fixedCH) / (r % 2 === 0 ? 1 : rB));
       const totalH = heights.reduce((a, b) => a + b, 0);
       let currY = margin + usableH / 2 - totalH / 2;
       for (let r = 0; r < rows; r++) {
@@ -1918,6 +1919,9 @@ class StudioEngine {
 
     // Hexagonal grid: rows interlock, so the row pitch is 0.866 of the cell width (squeezed if it does not fit)
     const isHex = rep.gridType === "hexagonal";
+    // Rhythm scales the space: the A column and row keep the module's size, the B ones squeeze it with them
+    const rhythmOn = !isHex && !!(struct && struct.enabled) && ((Number(struct.colRatio) || 1) !== 1 || (Number(struct.rowRatio) || 1) !== 1);
+    const refW = colWidths[0], refH = rowHeights[0];
     const hexPitch = isFixed ? hexFixedPitch : Math.min(colWidths[0] * 0.866, usableH / rows);
     // Far edges of the grid (the canvas edge in fit mode; past it in fixed mode)
     const colEdge = isFixed ? colStarts[cols - 1] + colWidths[cols - 1] : margin + usableW;
@@ -2052,7 +2056,8 @@ class StudioEngine {
         const cellScaleMul = cell.scaleMul;
 
         const scaleUnit = MODULE_UNIT;
-        const cellRatio = Math.min(cW / usableW, cH / usableH);
+        const cellRatio = rhythmOn ? Math.min(refW / usableW, refH / usableH) : Math.min(cW / usableW, cH / usableH);
+        const stretch = rhythmOn ? { x: cW / refW, y: rowHeights[r] / refH } : null;
         const normScale = isFixed
           ? scaleUnit * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k
           : scaleUnit * cellRatio * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k;
@@ -2064,7 +2069,7 @@ class StudioEngine {
         if ((refl === "columns" || refl === "both") && c % 2 === 1) ctx.scale(-1, 1);
         if ((refl === "rows" || refl === "both") && r % 2 === 1) ctx.scale(1, -1);
         const lineWidthMul = !isFixed && (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k : null;
-        this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor || flipped ? cellFg : null, lineWidthMul);
+        this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor || flipped ? cellFg : null, lineWidthMul, stretch);
         ctx.restore();
       };
 
