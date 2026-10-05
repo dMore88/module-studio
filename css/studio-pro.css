@@ -290,14 +290,14 @@ input[type="range"]:hover::-webkit-slider-thumb {
 }
 
 /* Tags (selector chips) */
-.ds-tags { display: flex; flex-wrap: wrap; gap: var(--spacing-2); }
+.ds-tags { display: flex; flex-wrap: wrap; gap: var(--spacing-3); }
 .ds-tag {
   box-sizing: border-box;
   height: var(--sizing-6);
   padding: 0 var(--spacing-4);
   border-radius: var(--border-radius-full);
   border: var(--border-weight-1) solid var(--neutral-interactive-default);
-  background: var(--neutral-bg-light);
+  background: var(--neutral-interactive-default-inverted);
   color: var(--neutral-text-main);
   font-family: inherit;
   font-size: var(--font-size-xs);

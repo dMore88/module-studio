@@ -64,7 +64,7 @@ La rampa completa de primitivos no se puede leer con la herramienta de Figma; so
 | | `neutral/interactive/hover` | `#4b4d5f` | |
 | | `neutral/interactive/active` | `#282a36` | |
 | | `neutral/interactive/disabled` | `#cfd0dd` | |
-| | `neutral/interactive/default--inverted` | `#e1e2eb` | Pista del interruptor apagado |
+| | `neutral/interactive/default--inverted` | `#eeeef4` | Fondo de tags en reposo, pista del interruptor apagado (en el frame «Contorls layout» de Figma, `5787:3471`, vale `#eeeef4`; antes `#e1e2eb`) |
 | | `neutral/interactive/hover--inverted` | `#cfd0dd` | Hover de tags, checkbox e interruptor |
 | | `neutral/interactive/active--inverted` | `#eeeef4` | |
 | **Icono** | `neutral/icon/main` | `#4b4d5f` | |
@@ -147,6 +147,26 @@ Otros estilos de la librería: Display, Heading 1 a 5 (normal y *Strong*), Subhe
 
 Cada componente indica su clase CSS y los tokens que usa.
 
+### 5.0 Guía: qué control usar para cada tipo de dato
+
+Fuente: frame «Contorls layout» de Figma (`5787:3471`), hecho con los componentes del sistema. Es la regla para cualquier control nuevo.
+
+| Tipo de dato | Control | Detalle |
+| :--- | :--- | :--- |
+| Un bloque que se enciende o apaga | Cabecera de tarjeta: título, badge y interruptor (5.2 a 5.4) | Una por sección |
+| Un modo excluyente de 2 opciones (Repetition / Radiation) | Grupo de botones (5.11) | |
+| Una forma entre las 15 | Rejilla de botones de icono de 40 px, separación 8 px (5.9) | 6 por fila |
+| Un número continuo | Deslizante con caja de valor (5.6), etiqueta encima en mayúsculas | Ancho 224 + 12 + 56 |
+| Un color | Muestra de 24 px y texto hex que coinciden (5.12), etiqueta encima | |
+| 2 a 5 variantes de una misma estructura | Tags (5.5) | Separación 8 px |
+| Más de 5 opciones, o listas largas | Desplegable (5.17, comportamiento en la página de componentes de Figma) | |
+| Opción de sí o no | Fila con casilla (5.8) | Altura 40 |
+| Un punto sobre el lienzo (epicentro, atractor) | Marcador de línea punteada sobre el lienzo; sin diseño propio, a revisar | Estilo actual de `drawAnomalyReticle` y `drawAttractorGuide` |
+
+Todas las tarjetas: fondo blanco, radio `border/radius/3` (20), relleno `spacing/6` (24), separación entre grupos `spacing/5` (16), elevación `elevation/3x`.
+
+---
+
 ### 5.1 Tarjeta flotante del inspector (`.inspector-flyout-card` + `.ds-card`)
 Ancho 400 px, relleno `spacing/6` (24), radio `border/radius/3` (20), separación interna `spacing/5` (16), sombra `elevation/3x`, fondo `neutral/bg/light`. Se sitúa a la izquierda del riel de herramientas.
 
@@ -169,11 +189,11 @@ Variante neutral: fondo `neutral/bg/strong`, radio `border/radius/1`, relleno ho
 El estado encendido sale del diseño de la aplicación; el apagado, de la librería. En la librería el estado encendido es una pista clara con borde oscuro; el diseño de la app usa la pista oscura (ver Pendientes).
 
 ### 5.5 Tag selector (`.ds-tag`)
-Altura 24 (`sizing/6`), relleno horizontal `spacing/4` (12), radio completo, borde `border/weight/1` en `neutral/interactive/default`, texto *Caption*.
+Separación entre tags `spacing/3` (8). Altura 24 (`sizing/6`), relleno horizontal `spacing/4` (12), radio completo, borde `border/weight/1` en `neutral/interactive/default`, texto *Caption*.
 
 | Estado | Fondo | Texto |
 | :--- | :--- | :--- |
-| Normal | `neutral/bg/light` | `neutral/text/main` |
+| Normal | `neutral/interactive/default--inverted` | `neutral/text/main` |
 | Hover | `neutral/interactive/hover--inverted` | `neutral/text/main` |
 | Activo | `neutral/interactive/default` | `neutral/text/main-inverted` |
 
@@ -277,7 +297,7 @@ Breadcrumbs, paginación, loaders, ribbon alert, modal, card, input de texto, b�
 | 4 | **Checkbox apagado** | La librería usa fondo `neutral/interactive/default--inverted`; el diseño de la app, fondo blanco | Unificar |
 | 5 | **Anillo de foco** | La librería usa `primary/interactive/focus` (`#97bcf5`), de poco contraste sobre blanco | La app usa un contorno de 2 px en la tinta; confirmar que se mantiene |
 | 6 | **Controles sin mockup** | Selector de forma y ángulo en Contrast, eje de línea en Concentration, color de acento en Anomaly y Contrast | Diseñarlos en Figma |
-| 7 | **Dos generaciones de mockups** | Los frames de Layout, Structure y Similarity usan los componentes tal como están en la librería: tags y casillas con fondo gris `#e1e2eb`, interruptor encendido con pista clara y bolita oscura. Los frames de Gradation a Space usan tags y casillas blancos y el interruptor encendido con pista oscura. La app aplica a todos los paneles el estilo de los frames recientes (blancos, interruptor oscuro) | Elegir uno y actualizar el otro en Figma. Cambiarlo en la app son unas pocas líneas de `css/studio-pro.css` |
+| 7 | **Dos generaciones de mockups** | Los frames de Layout, Structure y Similarity usan los componentes tal como están en la librería: tags y casillas con fondo gris `#e1e2eb`, interruptor encendido con pista clara y bolita oscura. Los frames de Gradation a Space usan tags y casillas blancos (los tags ya se alinearon con el frame nuevo: fondo `#eeeef4`) y el interruptor encendido con pista oscura. La app aplica a todos los paneles el estilo de los frames recientes (blancos, interruptor oscuro) | Elegir uno y actualizar el otro en Figma. Cambiarlo en la app son unas pocas líneas de `css/studio-pro.css` |
 | 8 | **Etiqueta "Relleno / Trazo" en Layout** | En el mockup del selector Repetition / Radiation sobra el texto "Relleno / Trazo" (parece de otro control). En la app se llama *Structure mode* | Confirmar |
 | 9 | **Panel Module** | El mockup no muestra la etiqueta de capa (badge) ni el botón de cierre; la app los mantiene | Confirmar |
 | 9b | **Barra del lienzo** | En el mockup el selector de proporción y las opciones de vista van alineados con los bordes del lienzo; en la app están centrados sobre él | Confirmar |
