@@ -556,33 +556,33 @@
       const dpr = () => cv.width / 600;
       const px = (d, x, y) => d[(Math.round(y * dpr()) * cv.width + Math.round(x * dpr())) * 4];
       const diff = (a, b) => { let n = 0; for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i] - b[i]) > 60) n++; return n; };
-      // Hexagonal: rows interlock (pitch 0.866 of the cell width = 78 px) and odd rows shift half a cell
+      // Hexagonal: rows interlock (pitch 0.866 of the cell width = 86.6 px) and odd rows shift half a cell
       const hex = render({ gridType: "hexagonal" });
       const rowsWithInk = [];
-      for (let y = 0; y < 600; y++) { let ink = 0; for (let x = 30; x < 570; x++) if (px(hex, x, y) < 128) ink++; if (ink > 0) rowsWithInk.push(y); }
+      for (let y = 0; y < 600; y++) { let ink = 0; for (let x = 0; x < 600; x++) if (px(hex, x, y) < 128) ink++; if (ink > 0) rowsWithInk.push(y); }
       const bands = []; for (const y of rowsWithInk) { if (!bands.length || y - bands[bands.length - 1].end > 3) bands.push({ start: y, end: y }); else bands[bands.length - 1].end = y; }
       const centers = bands.map(b => (b.start + b.end) / 2);
       assert(centers.length === 6, `Hexagonal grid shows ${centers.length} rows instead of 6`);
-      assert(Math.abs((centers[1] - centers[0]) - 77.9) < 3, `Hexagonal row pitch is ${(centers[1] - centers[0]).toFixed(1)} px`);
+      assert(Math.abs((centers[1] - centers[0]) - 86.6) < 3, `Hexagonal row pitch is ${(centers[1] - centers[0]).toFixed(1)} px`);
       assert(diff(hex, render({ gridType: "triangular" })) > 100 && diff(hex, render({})) > 100, "Hexagonal looks like another grid");
-      // Lines: boundary between rows 2 and 3 is y = 300; modules are small so nothing else is there
-      const ink = (o) => px(render({ showGridLines: true, ...o }), 100, 300);
+      // Lines: the boundary between rows 2 and 3 is y = 300 (100 px cells); modules are small so nothing else is there
+      const ink = (o) => px(render({ showGridLines: true, ...o }), 150, 300);
       assert(ink({ lineTone: "positive" }) < 100, "Positive lines are not drawn in ink");
       assert(ink({ lineTone: "guide" }) > 150, "Guide lines should stay faint");
-      const big = { width: 480, height: 480, shape: "square" }; // larger than the 90 px cell, so the lines cross it
-      const cut = px(render({ showGridLines: true, lineTone: "negative" }, big), 75, 300);
-      const uncut = px(render({}, big), 75, 300);
+      const big = { width: 600, height: 600, shape: "square" }; // larger than the 100 px cell, so the lines cross it
+      const cut = px(render({ showGridLines: true, lineTone: "negative" }, big), 150, 300);
+      const uncut = px(render({}, big), 150, 300);
       assert(uncut < 100 && cut > 200, "Negative lines do not cut the modules");
-      assert(px(render({ showGridLines: true, lineTone: "positive", lineDirection: "vertical" }), 100, 300) > 150 && px(render({ showGridLines: true, lineTone: "positive", lineDirection: "vertical" }), 120, 100) < 100, "Vertical-only lines wrong");
-      assert(px(render({ showGridLines: true, lineTone: "positive", lineDirection: "horizontal" }), 100, 300) < 100 && px(render({ showGridLines: true, lineTone: "positive", lineDirection: "horizontal" }), 120, 100) > 150, "Horizontal-only lines wrong");
+      assert(px(render({ showGridLines: true, lineTone: "positive", lineDirection: "vertical" }), 150, 300) > 150 && px(render({ showGridLines: true, lineTone: "positive", lineDirection: "vertical" }), 300, 150) < 100, "Vertical-only lines wrong");
+      assert(px(render({ showGridLines: true, lineTone: "positive", lineDirection: "horizontal" }), 150, 300) < 100 && px(render({ showGridLines: true, lineTone: "positive", lineDirection: "horizontal" }), 300, 150) > 150, "Horizontal-only lines wrong");
       const every = render({ showGridLines: true, lineTone: "positive", lineSpacing: "alternate" });
-      assert(px(every, 100, 120) > 150 && px(every, 100, 210) < 100, "Every-other spacing should skip the odd lines");
+      assert(px(every, 150, 100) > 150 && px(every, 150, 200) < 100, "Every-other spacing should skip the odd lines");
       // Reflection: row 1 is the mirror image of row 1 without reflection
       const plain = render({}), refl = render({ reflection: "rows" });
-      let off = 0; const cx0 = 30, cy0 = 120; // cell (row 1, col 0): 90 x 90
-      for (let yy = 0; yy < 90; yy++) for (let xx = 0; xx < 90; xx++) if (Math.abs(px(refl, cx0 + xx, cy0 + yy) - px(plain, cx0 + xx, cy0 + 89 - yy)) > 80) off++;
+      let off = 0; const cx0 = 0, cy0 = 100; // cell (row 1, col 0): 100 x 100
+      for (let yy = 0; yy < 100; yy++) for (let xx = 0; xx < 100; xx++) if (Math.abs(px(refl, cx0 + xx, cy0 + yy) - px(plain, cx0 + xx, cy0 + 99 - yy)) > 80) off++;
       assert(off < 60, `Row reflection is not a mirror image (${off} px differ)`);
-      let same = 0; for (let yy = 0; yy < 90; yy++) for (let xx = 0; xx < 90; xx++) if (Math.abs(px(refl, 30 + xx, 30 + yy) - px(plain, 30 + xx, 30 + yy)) > 80) same++;
+      let same = 0; for (let yy = 0; yy < 100; yy++) for (let xx = 0; xx < 100; xx++) if (Math.abs(px(refl, xx, yy) - px(plain, xx, yy)) > 80) same++;
       assert(same === 0, "Row 0 should not change with row reflection");
     });
 
@@ -660,10 +660,10 @@
       const cells = []; for (let r = 0; r < 6; r++) for (let c = 0; c < 6; c++) cells.push({ r, c, minority: e.isContrastMinority(con, r * 6 + c) });
       const minority = cells.find(k => k.minority), majority = cells.find(k => !k.minority);
       assert(minority && majority, "The test needs one minority and one majority cell");
-      const region = (a, b, k) => { let n = 0; for (let y = 0; y < 90; y++) for (let x = 0; x < 90; x++) if (Math.abs(at(a, 30 + k.c * 90 + x, 30 + k.r * 90 + y) - at(b, 30 + k.c * 90 + x, 30 + k.r * 90 + y)) > 80) n++; return n; };
+      const region = (a, b, k) => { let n = 0; for (let y = 0; y < 100; y++) for (let x = 0; x < 100; x++) if (Math.abs(at(a, k.c * 100 + x, k.r * 100 + y) - at(b, k.c * 100 + x, k.r * 100 + y)) > 80) n++; return n; };
       // Space: the minority cell is filled with ink (figure and ground reversed); the majority stays light
       const space = render({ dimension: "space" });
-      const corner = (k) => at(space, 30 + k.c * 90 + 6, 30 + k.r * 90 + 6);
+      const corner = (k) => at(space, k.c * 100 + 6, k.r * 100 + 6);
       assert(corner(minority) < 100 && corner(majority) > 200, "Space did not reverse figure and ground in the minority only");
       // Texture: the majority is untouched, the minority is deformed
       const plain = render({ enabled: false });
@@ -760,6 +760,66 @@
       assert(an().attrs.shape === false && q("#anom-shape-block").classList.contains("hidden") && !q('[data-anom-attr="shape"]').classList.contains("active"), "Switching Shape off should hide the intruder shape");
       q('[data-anom-type="swell"]').click();
       assert(q('[data-anom-attr="shape"]').classList.contains("hidden") && !q('[data-anom-attr="position"]').classList.contains("hidden"), "Swell should offer position and scale, not shape");
+    });
+
+    await test("Fixed size: the module keeps its real size, the cell size defines the grid, the pattern is centred and bleeds", async () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const render = (rep, layer = {}, mode = "repetition", rad = {}) => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        const L = st.layers[0];
+        Object.assign(L, { shape: "square", width: 100, height: 100, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false }, layer);
+        L.structure.enabled = true; L.structure.mode = mode;
+        Object.assign(L.structure.repetition, { cols: 4, rows: 4, gridType: "basic", sizeMode: "fit", cellW: 0, cellH: 0 }, rep);
+        Object.assign(L.structure.radiation, { rays: 12, rings: 4, scheme: "centrifugal", sizeMode: "fit", ringSpacing: 0 }, rad);
+        app.state = st; drawRaw(app);
+        return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      };
+      const dpr = cv.width / 600;
+      const px = (d, x, y) => d[(Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4];
+      const runs = (d, y) => { const out = []; let start = null; for (let x = 0; x < 600; x++) { const dark = px(d, x, y) < 128; if (dark && start === null) start = x; if (!dark && start !== null) { out.push([start, x - 1]); start = null; } } if (start !== null) out.push([start, 599]); return out; };
+      const diff = (a, b) => { let n = 0; for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i] - b[i]) > 60) n++; return n; };
+      // A 100 module is drawn 125 px wide; cells of 200 leave 75 px between modules, centred on the canvas
+      const fixed = render({ sizeMode: "fixed", cellW: 200, cellH: 200 });
+      const r300 = runs(fixed, 300);
+      assert(r300.length === 3, `Expected 3 modules on the middle row, found ${r300.length}`);
+      assert(r300.every(([a, b]) => Math.abs((b - a + 1) - 125) <= 2), `The module is not 125 px wide (${JSON.stringify(r300)})`);
+      assert([100, 300, 500].every((c, i) => Math.abs((r300[i][0] + r300[i][1]) / 2 - c) <= 2), `The pattern is not centred (${JSON.stringify(r300)})`);
+      // The cell, not the number of columns, defines the grid
+      assert(diff(fixed, render({ sizeMode: "fixed", cellW: 200, cellH: 200, cols: 9, rows: 9 })) === 0, "Columns and rows should not matter in fixed size");
+      assert(diff(render({ cols: 4, rows: 4 }), render({ cols: 4, rows: 4, cellW: 200, cellH: 200 })) === 0, "The cell size should not matter in fit mode");
+      // A cell smaller than the module makes the modules overlap
+      const tight = render({ sizeMode: "fixed", cellW: 90, cellH: 90 });
+      assert(runs(tight, 300).length === 1 && runs(tight, 300)[0][1] - runs(tight, 300)[0][0] > 590, "Modules should overlap when the cell is smaller than the module");
+      // By default the cell is as big as the module: modules sit side by side, not on top of each other
+      const side = render({ sizeMode: "fixed" });
+      const rs = runs(side, 300);
+      assert(rs.length === 1 || rs.every((r, i) => i === 0 || r[0] - rs[i - 1][1] <= 3), "Default fixed cells should leave the modules next to each other");
+      // The module keeps the same size when the structure changes
+      const small = render({ sizeMode: "fixed", cellW: 300, cellH: 300 });
+      assert(runs(small, 300).every(([a, b]) => Math.abs((b - a + 1) - 125) <= 2 || a === 0 || b === 599), "The module size changed with the cell");
+      // Radial: the module keeps its size, the rings run out to the canvas corners
+      const inkFar = (d) => { let n = 0; for (let y = 0; y < 600; y += 2) for (let x = 0; x < 600; x += 2) if (Math.hypot(x - 300, y - 300) > 330 && px(d, x, y) < 128) n++; return n; };
+      assert(inkFar(render({}, {}, "radiation")) === 0, "Fit radial should stay within its radius");
+      assert(inkFar(render({}, {}, "radiation", { sizeMode: "fixed", ringSpacing: 100 })) > 50, "Fixed radial should reach the canvas corners");
+      // Inspector
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      q('[data-rail-tab="layout"]').click(); await wait(80);
+      q("#toggle-layout-structure").click();
+      const rep = () => app.getActiveLayerStructure().repetition;
+      const own = Math.round(app.defaultCell().w); // the module as drawn: width x 1.25
+      assert(!q("#rep-cols-field").classList.contains("hidden") && q("#rep-cellw-field").classList.contains("hidden"), "Fit should show columns and rows, not the cell size");
+      q('[data-rep-size="fixed"]').click(); await wait(40);
+      assert(rep().sizeMode === "fixed" && rep().cellW === own && rep().cellH === own, `The cell should start as big as the module (${rep().cellW} x ${rep().cellH})`);
+      assert(q("#rep-cols-field").classList.contains("hidden") && !q("#rep-cellw-field").classList.contains("hidden") && q("#num-layout-cellw").value === `${own}px`, "Fixed should show the cell size and hide columns and rows");
+      const cw = q("#input-layout-cellw"); cw.value = 180; cw.dispatchEvent(new win.Event("input", { bubbles: true }));
+      assert(rep().cellW === 180 && q("#num-layout-cellw").value === "180px", "Cell width slider out of sync");
+      q("#btn-layout-radiation").click(); await wait(60);
+      q('[data-rad-size="fixed"]').click(); await wait(40);
+      const rd = () => app.getActiveLayerStructure().radiation;
+      assert(rd().sizeMode === "fixed" && rd().ringSpacing === own && q("#rad-rings-field").classList.contains("hidden") && !q("#rad-spacing-field").classList.contains("hidden"), "Radial fixed size controls wrong");
     });
 
     await test("A failed draw shows a visible notice and recovers", () => {

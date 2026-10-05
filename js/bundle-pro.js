@@ -816,6 +816,9 @@ const createDefaultLayerStructure = () => ({
     lineDirection: "both", // both, horizontal, vertical
     lineSpacing: "all", // all, alternate (every other line)
     reflection: "none", // none, columns, rows, both: mirror the module in alternate cells
+    sizeMode: "fit", // fit (the module scales to its cell) or fixed (the module keeps its real size; the cell size defines the grid)
+    cellW: 0, // cell width in px for the fixed size mode (0 = the module's own width)
+    cellH: 0, // cell height in px for the fixed size mode (0 = the module's own height)
     checkerInvert: false
   },
   radiation: {
@@ -823,6 +826,8 @@ const createDefaultLayerStructure = () => ({
     orientation: "auto", // auto (by scheme), outward, inward, tangent, fixed
     centerOpen: 0, // open center: hole radius as a percentage of the radius (0 to 70)
     ringRotation: 0, // degrees each ring is rotated more than the previous one (-90 to 90)
+    sizeMode: "fit", // fit (module scales to its sector) or fixed (real size; ring spacing defines the rings)
+    ringSpacing: 0, // distance between rings in px for the fixed size mode (0 = the module's own size)
     rays: 12,
     rings: 5,
     spiralTwist: 45,
@@ -1500,6 +1505,19 @@ class StudioEngine {
     }
   }
 
+  // The canvas margin where layouts stop. 0: the design runs to the edge of the canvas.
+  safeMargin(width, height) {
+    return 0;
+  }
+
+  // Size at which a module is drawn on its own: the default cell / ring spacing of the fixed size mode.
+  defaultCellSize(mod, width, height) {
+    const unit = 1.25 * Math.min(1.0, Math.min(width, height) / 600);
+    const w = (mod.width !== undefined ? mod.width : (mod.scale || 50)) * unit;
+    const h = (mod.height !== undefined ? mod.height : (mod.scale || 50)) * unit;
+    return { w: Math.max(10, w), h: Math.max(10, h) };
+  }
+
   // Epicenters of the anomaly: one, or several scattered in a regular or random layout.
   anomalySpots(anom, width, height) {
     const mode = anom.distribution || "single";
@@ -1658,19 +1676,35 @@ class StudioEngine {
     const contrast = targetMod.structure.contrast;
     const conc = targetMod.structure.concentration;
 
-    const cols = Math.max(1, rep.cols);
-    const rows = Math.max(1, rep.rows);
-
-    const margin = marginParam !== undefined ? marginParam : Math.round(Math.max(20, Math.min(width, height) * 0.05));
+    const margin = marginParam !== undefined ? marginParam : this.safeMargin(width, height);
     const usableW = usableWParam !== undefined ? usableWParam : width - margin * 2;
     const usableH = usableHParam !== undefined ? usableHParam : height - margin * 2;
+
+    // Fixed size: the module keeps its real size and the cell size defines the grid. The pattern is
+    // centred and runs past the canvas edges, so the outer cells are cut off (bleed).
+    const isFixed = rep.sizeMode === "fixed";
+    const defCell = this.defaultCellSize(targetMod, width, height);
+    const fixedCW = Math.max(10, rep.cellW || defCell.w);
+    const fixedCH = Math.max(10, rep.cellH || defCell.h);
+    const hexFixedPitch = fixedCW * 0.866;
+    const cols = isFixed ? Math.ceil(usableW / fixedCW) + 2 : Math.max(1, rep.cols);
+    const rows = isFixed
+      ? Math.ceil(usableH / (rep.gridType === "hexagonal" ? hexFixedPitch : fixedCH)) + 2
+      : Math.max(1, rep.rows);
 
     // Calculate column widths and x positions (Dual rhythmic interval support)
     const colWidths = [];
     const colX = [];
     const colStarts = [];
-    const isColRhythmic = !!(struct && struct.enabled && (struct.colRatio !== undefined || struct.mode === "rhythmic"));
-    if (isColRhythmic) {
+    const isColRhythmic = !isFixed && !!(struct && struct.enabled && (struct.colRatio !== undefined || struct.mode === "rhythmic"));
+    if (isFixed) {
+      const startX = margin + usableW / 2 - (cols * fixedCW) / 2;
+      for (let c = 0; c < cols; c++) {
+        colStarts.push(startX + c * fixedCW);
+        colWidths.push(fixedCW);
+        colX.push(startX + (c + 0.5) * fixedCW);
+      }
+    } else if (isColRhythmic) {
       const rA = Number(struct.colRatio) || 1.0;
       let weightSum = 0;
       for (let c = 0; c < cols; c++) {
@@ -1698,8 +1732,16 @@ class StudioEngine {
     const rowHeights = [];
     const rowY = [];
     const rowStarts = [];
-    const isRowRhythmic = !!(struct && struct.enabled && (struct.rowRatio !== undefined || struct.mode === "rhythmic"));
-    if (isRowRhythmic) {
+    const isRowRhythmic = !isFixed && !!(struct && struct.enabled && (struct.rowRatio !== undefined || struct.mode === "rhythmic"));
+    if (isFixed) {
+      const stepY = rep.gridType === "hexagonal" ? hexFixedPitch : fixedCH;
+      const startY = margin + usableH / 2 - (rows * stepY) / 2;
+      for (let r = 0; r < rows; r++) {
+        rowStarts.push(startY + r * stepY);
+        rowHeights.push(stepY);
+        rowY.push(startY + (r + 0.5) * stepY);
+      }
+    } else if (isRowRhythmic) {
       const rA = Number(struct.rowRatio) || 1.0;
       let weightSum = 0;
       for (let r = 0; r < rows; r++) {
@@ -1733,7 +1775,10 @@ class StudioEngine {
 
     // Hexagonal grid: rows interlock, so the row pitch is 0.866 of the cell width (squeezed if it does not fit)
     const isHex = rep.gridType === "hexagonal";
-    const hexPitch = Math.min(colWidths[0] * 0.866, usableH / rows);
+    const hexPitch = isFixed ? hexFixedPitch : Math.min(colWidths[0] * 0.866, usableH / rows);
+    // Far edges of the grid (the canvas edge in fit mode; past it in fixed mode)
+    const colEdge = isFixed ? colStarts[cols - 1] + fixedCW : margin + usableW;
+    const rowEdge = isFixed ? rowStarts[rows - 1] + rowHeights[rows - 1] : margin + usableH;
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -1843,7 +1888,9 @@ class StudioEngine {
 
         const scaleUnit = 1.25 * Math.min(1.0, Math.min(width, height) / 600);
         const cellRatio = Math.min(cW / usableW, cH / usableH);
-        const normScale = scaleUnit * cellRatio * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul);
+        const normScale = isFixed
+          ? scaleUnit * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul)
+          : scaleUnit * cellRatio * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul);
         if (cell.texScale) this.cellTexScale = Math.max(this.cellTexScale || 0, cell.texScale);
         this.cellSeed = r * cols + c + 1;
         this.cellAlt = (r + c) % 2 === 1;
@@ -1851,7 +1898,7 @@ class StudioEngine {
         const refl = rep.reflection || "none";
         if ((refl === "columns" || refl === "both") && c % 2 === 1) ctx.scale(-1, 1);
         if ((refl === "rows" || refl === "both") && r % 2 === 1) ctx.scale(1, -1);
-        const lineWidthMul = (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) : null;
+        const lineWidthMul = !isFixed && (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) : null;
         this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor ? cellFg : null, lineWidthMul);
         ctx.restore();
       };
@@ -1911,7 +1958,7 @@ class StudioEngine {
         if (showH) {
           for (let r = 0; r <= rows; r++) {
             if (alt && r % 2 === 1) continue;
-            const y = r === rows ? margin + usableH : rowStarts[r];
+            const y = r === rows ? rowEdge : rowStarts[r];
             ctx.beginPath();
             ctx.moveTo(margin, y);
             ctx.lineTo(margin + usableW, y);
@@ -1923,7 +1970,7 @@ class StudioEngine {
           // True running-bond staggered vertical brick joints
           for (let r = 0; r < rows; r++) {
             const yTop = rowStarts[r];
-            const yBot = r === rows - 1 ? margin + usableH : rowStarts[r + 1];
+            const yBot = r === rows - 1 ? rowEdge : rowStarts[r + 1];
             const isShifted = r % 2 === 1;
             const shift = isShifted ? colWidths[0] * (rep.slideOffset ?? 0.5) : 0;
 
@@ -1936,7 +1983,7 @@ class StudioEngine {
             // Internal vertical joints
             for (let c = 0; c <= cols; c++) {
               if (alt && c % 2 === 1) continue;
-              const rawX = (c === cols ? margin + usableW : colStarts[c]) + shift;
+              const rawX = (c === cols ? colEdge : colStarts[c]) + shift;
               let x = rawX;
               if (isShifted && x > margin + usableW + 0.1) {
                 x -= usableW;
@@ -1959,7 +2006,7 @@ class StudioEngine {
           // Draw vertical / deformed lines
           for (let c = 0; c <= cols; c++) {
             if (alt && c % 2 === 1) continue;
-            const baseX = c === cols ? margin + usableW : colStarts[c];
+            const baseX = c === cols ? colEdge : colStarts[c];
             ctx.beginPath();
 
             if (rep.gridType === "sheared") {
@@ -2016,20 +2063,32 @@ class StudioEngine {
     const contrast = targetMod.structure.contrast;
     const conc = targetMod.structure.concentration;
 
-    const margin = marginParam !== undefined ? marginParam : Math.round(Math.max(20, Math.min(width, height) * 0.05));
+    const margin = marginParam !== undefined ? marginParam : this.safeMargin(width, height);
     const usableW = usableWParam !== undefined ? usableWParam : width - margin * 2;
     const usableH = height - margin * 2;
     const isMultiCenter = rad.scheme === "multi_center";
-    const maxR = Math.min(usableW, usableH) * (isMultiCenter ? 0.32 : 0.42);
+    const refR = Math.min(usableW, usableH) * (isMultiCenter ? 0.32 : 0.42);
 
     const cx = width / 2 + (rad.centerX || 0);
     const cy = height / 2 + (rad.centerY || 0);
 
     const rays = Math.max(4, rad.rays);
-    const rings = Math.max(2, rad.rings);
     const twistRad = ((rad.spiralTwist || 0) * Math.PI) / 180;
     // Open center: the rings start at the hole radius instead of the centre
-    const openR = maxR * Math.max(0, Math.min(70, rad.centerOpen || 0)) / 100;
+    const openR = refR * Math.max(0, Math.min(70, rad.centerOpen || 0)) / 100;
+
+    // Fixed size: the module keeps its real size and the ring spacing defines the rings, which run
+    // out past the farthest corner of the canvas (bleed). In fit mode the rings divide a set radius.
+    const isFixed = rad.sizeMode === "fixed";
+    const defCell = this.defaultCellSize(targetMod, width, height);
+    const spacing = Math.max(10, rad.ringSpacing || Math.max(defCell.w, defCell.h));
+    let rings = Math.max(2, rad.rings);
+    let maxR = refR;
+    if (isFixed) {
+      const reach = Math.max(Math.hypot(cx, cy), Math.hypot(width - cx, cy), Math.hypot(cx, height - cy), Math.hypot(width - cx, height - cy)) + (isMultiCenter ? refR * 0.35 : 0);
+      rings = Math.max(2, Math.ceil(Math.max(0, reach - openR) / spacing) + 1);
+      maxR = openR + rings * spacing;
+    }
     const span = maxR - openR;
     // Each ring is turned a bit more than the one inside it, so their subdivisions do not line up
     const ringRotRad = ((rad.ringRotation || 0) * Math.PI) / 180;
@@ -2037,8 +2096,8 @@ class StudioEngine {
     // Centers list (if multi_center, we have two focal centers creating Moiré)
     const centers = isMultiCenter
       ? [
-          { x: cx - maxR * 0.35, y: cy },
-          { x: cx + maxR * 0.35, y: cy }
+          { x: cx - refR * 0.35, y: cy },
+          { x: cx + refR * 0.35, y: cy }
         ]
       : [{ x: cx, y: cy }];
 
@@ -2086,9 +2145,11 @@ class StudioEngine {
           }
 
           // Soft edge bounding so modules stay comfortably within the canvas
-          const safePad = Math.max(12, margin * 0.4);
-          posX = Math.max(safePad, Math.min(width - safePad, posX));
-          posY = Math.max(safePad, Math.min(height - safePad, posY));
+          if (!isFixed) {
+            const safePad = Math.max(12, margin * 0.4);
+            posX = Math.max(safePad, Math.min(width - safePad, posX));
+            posY = Math.max(safePad, Math.min(height - safePad, posY));
+          }
 
           ctx.save();
 
@@ -2198,7 +2259,9 @@ class StudioEngine {
           const sectorRatio = sectorSize / usableW;
           const growthFactor = 0.75 + (i / rings) * 0.45;
           const radScaleMul = isMultiCenter ? 0.7 : 1.0;
-          const normScale = scaleUnit * sectorRatio * growthFactor * radScaleMul * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul);
+          const normScale = isFixed
+            ? scaleUnit * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul)
+            : scaleUnit * sectorRatio * growthFactor * radScaleMul * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul);
           if (cell.texScale) this.cellTexScale = Math.max(this.cellTexScale || 0, cell.texScale);
           this.cellSeed = i * rays + j + 1;
           this.cellAlt = (i + j) % 2 === 1;
@@ -2344,7 +2407,7 @@ class StudioEngine {
     const bgColor = palette.bg;
 
     // 2. Architectural Guide Grid & Safe Bounds
-    const margin = Math.round(Math.max(20, Math.min(width, height) * 0.05));
+    const margin = this.safeMargin(width, height);
     const usableW = width - margin * 2;
     const usableH = height - margin * 2;
 
@@ -3584,6 +3647,18 @@ class StudioProApp {
       this.syncControlValue("num-layout-rings", rad.rings || 5);
       this.syncControlValue("input-layout-twist", rad.spiralTwist !== undefined ? rad.spiralTwist : 45);
       this.syncControlValue("num-layout-twist", rad.spiralTwist !== undefined ? rad.spiralTwist : 45);
+      const radFixed = rad.sizeMode === "fixed";
+      document.getElementById("rad-rings-field")?.classList.toggle("hidden", radFixed);
+      document.getElementById("rad-spacing-field")?.classList.toggle("hidden", !radFixed);
+      document.querySelectorAll("[data-rad-size]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.radSize === (rad.sizeMode || "fit"));
+      });
+      if (radFixed) {
+        const def = this.defaultCell();
+        const rs = Math.round(rad.ringSpacing || Math.max(def.w, def.h));
+        this.syncControlValue("input-layout-ringspace", rs);
+        this.syncControlValue("num-layout-ringspace", `${rs}px`);
+      }
       this.syncControlValue("input-layout-open", rad.centerOpen || 0);
       this.syncControlValue("num-layout-open", `${rad.centerOpen || 0}%`);
       this.syncControlValue("input-layout-ringrot", rad.ringRotation || 0);
@@ -3613,6 +3688,12 @@ class StudioProApp {
     };
   }
 
+  // Size a module is drawn at: where the cell and the ring spacing start in the fixed size mode
+  defaultCell() {
+    const cfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
+    return this.engine.defaultCellSize(this.getActiveModule(), cfg.w, cfg.h);
+  }
+
   syncRepetitionExtras(rep) {
     const spec = StudioProApp.REPETITION_PARAMS[rep.gridType];
     const block = document.getElementById("rep-param-block");
@@ -3627,11 +3708,26 @@ class StudioProApp {
       const num = document.getElementById("num-layout-param");
       if (num) num.value = `${val}${spec.suffix}`;
     }
+    // Module size: fit (columns and rows) or fixed (the cell size defines the grid)
+    const fixed = rep.sizeMode === "fixed";
+    document.getElementById("rep-cols-field")?.classList.toggle("hidden", fixed);
+    document.getElementById("rep-rows-field")?.classList.toggle("hidden", fixed);
+    document.getElementById("rep-cellw-field")?.classList.toggle("hidden", !fixed);
+    document.getElementById("rep-cellh-field")?.classList.toggle("hidden", !fixed);
+    if (fixed) {
+      const def = this.defaultCell();
+      const cw = Math.round(rep.cellW || def.w), ch = Math.round(rep.cellH || def.h);
+      this.syncControlValue("input-layout-cellw", cw);
+      this.syncControlValue("num-layout-cellw", `${cw}px`);
+      this.syncControlValue("input-layout-cellh", ch);
+      this.syncControlValue("num-layout-cellh", `${ch}px`);
+    }
     document.getElementById("rep-lines-block")?.classList.toggle("hidden", !rep.showGridLines);
     const mark = (attr, value) => document.querySelectorAll(`[${attr}]`).forEach(b => {
       const v = b.getAttribute(attr);
       b.classList.toggle("active", v === value);
     });
+    mark("data-rep-size", rep.sizeMode || "fit");
     mark("data-rep-tone", rep.lineTone || "guide");
     mark("data-rep-linedir", rep.lineDirection || "both");
     mark("data-rep-linespace", rep.lineSpacing || "all");
@@ -3671,6 +3767,12 @@ class StudioProApp {
         btn.addEventListener("click", () => {
           const r = rep(); if (!r) return;
           r[key] = btn.getAttribute(attr);
+          if (key === "sizeMode" && r.sizeMode === "fixed") {
+            // the cell starts as big as the module, so the modules sit side by side
+            const def = this.defaultCell();
+            if (!r.cellW) r.cellW = Math.round(def.w);
+            if (!r.cellH) r.cellH = Math.round(def.h);
+          }
           this.getActiveLayerStructure().mode = "repetition";
           this.syncRepetitionExtras(r);
           this.render();
@@ -3682,6 +3784,29 @@ class StudioProApp {
     bindTags("[data-rep-linedir]", "data-rep-linedir", "lineDirection", "Line Direction");
     bindTags("[data-rep-linespace]", "data-rep-linespace", "lineSpacing", "Line Spacing");
     bindTags("[data-rep-reflect]", "data-rep-reflect", "reflection", "Reflection");
+    bindTags("[data-rep-size]", "data-rep-size", "sizeMode", "Module Size");
+
+    // Cell width and height (fixed size mode)
+    const bindCell = (sliderId, numId, key, label) => {
+      const sl = document.getElementById(sliderId), nm = document.getElementById(numId);
+      const apply = (val, push) => {
+        const r = rep(); if (!r) return;
+        const v = Math.max(20, Math.min(400, Math.round(val)));
+        r[key] = v;
+        this.getActiveLayerStructure().mode = "repetition";
+        this.syncRepetitionExtras(r);
+        this.render();
+        if (push) this.pushHistory(`Layer ${this.activeLayerId} ${label}: ${v}px`);
+      };
+      sl?.addEventListener("input", (e) => apply(parseFloat(e.target.value), false));
+      sl?.addEventListener("change", (e) => apply(parseFloat(e.target.value), true));
+      nm?.addEventListener("change", (e) => {
+        const raw = parseFloat(e.target.value.replace(/[^0-9.]/g, ""));
+        apply(isNaN(raw) ? 100 : raw, true);
+      });
+    };
+    bindCell("input-layout-cellw", "num-layout-cellw", "cellW", "Cell Width");
+    bindCell("input-layout-cellh", "num-layout-cellh", "cellH", "Cell Height");
 
     // Line width of the visible grid lines
     const lw = document.getElementById("input-layout-linewidth");
@@ -3850,6 +3975,30 @@ class StudioProApp {
       struct.mode = "radiation";
       this.render();
     });
+
+    document.querySelectorAll("[data-rad-size]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const struct = this.getActiveLayerStructure();
+        if (!struct) return;
+        struct.radiation.sizeMode = btn.dataset.radSize;
+        if (struct.radiation.sizeMode === "fixed" && !struct.radiation.ringSpacing) {
+          const def = this.defaultCell();
+          struct.radiation.ringSpacing = Math.round(Math.max(def.w, def.h));
+        }
+        struct.mode = "radiation";
+        this.syncStructureInspectorWithActiveLayer();
+        this.render();
+        this.pushHistory(`Layer ${this.activeLayerId} Radiation Module Size: ${btn.dataset.radSize}`);
+      });
+    });
+
+    this.bindSliderWithNumber("input-layout-ringspace", "num-layout-ringspace", (val) => {
+      const struct = this.getActiveLayerStructure();
+      if (!struct) return;
+      struct.radiation.ringSpacing = Math.max(20, Math.min(300, val));
+      struct.mode = "radiation";
+      this.render();
+    }, "Ring Spacing", "px");
 
     this.bindSliderWithNumber("input-layout-open", "num-layout-open", (val) => {
       const struct = this.getActiveLayerStructure();

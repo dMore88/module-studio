@@ -60,7 +60,8 @@ Controla el soporte físico y los límites del plano gráfico.
 | `aspectRatio` | Grupo de Botones | `1:1`, `9:16`, `4:3`, `3:4`, `16:9` | Modifica dinámicamente las dimensiones del canvas (`width`, `height`) y recalcula márgenes de seguridad. Determina el tamaño de celda en retículas y el radio máximo en esquemas polares. |
 | `invertFigureGround` | Switch (Toggle) | `boolean` (`true` / `false`) | Invierte ópticamente los roles de figura y fondo: la figura asume el tono del papel y el fondo el de la tinta principal. |
 | `wireframe` | Switch (Toggle) | `boolean` (`true` / `false`) | Elimina los rellenos sólidos (`fill: none`) forzando un trazo de contorno (`stroke`). Permite auditar colisiones e intersecciones booleanas sin oclusión visual. |
-| `showSafeBounds` | Switch (Toggle) | `boolean` (`true` / `false`) | Renderiza una rejilla perimetral sutil de 48px que delimita el área viva de impresión y resguarda márgenes editoriales. |
+| `showSafeBounds` | Switch (Toggle) | `boolean` (`true` / `false`) | Renderiza una rejilla perimetral sutil que cubre el lienzo. |
+| Margen de seguridad | — | — | Retirado (2026-10-04): vale 0. Las estructuras llegan al borde del lienzo (antes dejaban un 5 %). Si se retoma, será un control. |
 | `zoomLevel` | — | — | Retirado (2026-10-04): el lienzo se ajusta solo al alto libre de la pantalla. |
 
 ---
@@ -104,6 +105,9 @@ Multiplica el módulo en una retícula ortogonal sobre el plano cartesiano $X, Y
   * **`lineSpacing`** (*Line spacing*, `all`): `alternate` dibuja una línea de cada dos.
   * **`gridLineWidth`** (*Line width*, 0.5 a 6 px).
   En la cuadrícula hexagonal se dibuja cada panal y la dirección y el espaciado no se aplican. Las líneas del esquema radial siguen con el estilo tenue de siempre (E2 pendiente para radial).
+* **`sizeMode`** (*Module size*, `fit` por defecto):
+  * `fit` (*Fit to cell*): el módulo se ajusta a su celda (ocupa siempre la misma fracción de ella) y *Columns* y *Rows* dividen el lienzo, como en la estructura de Wong. Es el comportamiento de siempre.
+  * `fixed` (*Fixed size*): el módulo **conserva su tamaño real** (el mismo con el que se ve solo) y el **tamaño de la celda define la retícula**. Aparecen **`cellW`** y **`cellH`** (*Cell width* y *Cell height*, 20 a 400 px) y se ocultan *Columns* y *Rows*, que se calculan solas. Al activarlo la celda arranca igual que el módulo, así que los módulos quedan uno al lado del otro; si la celda es menor que el módulo se solapan. El patrón queda **centrado** y llega más allá de los bordes del lienzo: las celdas de los bordes se cortan por igual en ambos lados (sangrado). Las proporciones rítmicas de Structure no se aplican en este modo.
 * **`reflection`** (*Reflection*, `none`): Espeja el módulo en las columnas impares (`columns`), en las filas impares (`rows`) o en ambas (`both`). El espejo se aplica al módulo ya transformado, así que las rotaciones de Gradation y los campos de Concentration no se invierten.
 * **`checkerInvert`** (`boolean`): Invierte el color de figura y fondo en casillas alternadas (tablero de ajedrez).
 
@@ -136,6 +140,7 @@ Genera el espacio desde uno o varios centros focales utilizando coordenadas pola
 * **`rings`** (2 a 10): Cantidad de capas o anillos a lo largo del radio.
 * **`spiralTwist`** (-180° a +180°): Torsión acumulada aplicada a cada rayo en el recorrido de la espiral.
 * **`centerOpen`** (*Open center*, 0% a 70%, por defecto 0): Radio del agujero central como porcentaje del radio total. Los anillos y rayos empiezan en el borde del agujero (fig. 48d, abrir el centro de radiación). Con las guías visibles se dibuja el círculo del agujero.
+* **`sizeMode`** (*Module size*, `fit`): `fixed` hace lo mismo que en la cuadrícula: el módulo conserva su tamaño real y **`ringSpacing`** (*Ring spacing*, 20 a 300 px) define la distancia entre anillos. Los anillos se calculan solos hasta pasar por la esquina más lejana del lienzo y se ocultan *Concentric rings*. Los rayos siguen siendo la división angular.
 * **`ringRotation`** (*Ring rotation*, -90° a 90°, por defecto 0): Grados que cada anillo gira más que el anillo interior (rotación gradual de capas concéntricas, fig. 49g). Sirve para que las subdivisiones de un anillo no se alineen con las del vecino. Las guías de rayos se dibujan por anillo.
 * **`centerX / centerY`**: Desplazamiento excéntrico del foco fuera del centro del lienzo.
 * **`showRays / showRings`** (`boolean`): Dibuja las líneas guía polares en la composición final.
