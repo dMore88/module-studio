@@ -888,6 +888,7 @@ const createDefaultLayerStructure = () => ({
     seed: 7, // random layout seed (1 to 99)
     attrs: { shape: true, scale: true, rotation: true, position: true }, // which attributes the anomaly deviates in
     anomalousShape: "triangle",
+    zoneGrid: "sliding", // type "regrid": the grid variation inside the zone (brick, diagonal, curved, zigzag, triangular, alternating)
     highlightColor: false,
     accentColor: "#f43f5e", // color applied to anomalous modules when highlighted
     showReticle: true // the focal point is visible by default (click the canvas to move it)
@@ -1733,6 +1734,9 @@ class StudioEngine {
         if (on("scale")) cell.scaleMul *= (1 + 0.35 * severity);
         if (anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
       }
+    } else if (anom.type === "regrid") {
+      // The change of grid is made by the layout itself; the zone can still be tinted
+      if (inZone && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
     } else if (anom.type === "fracture") {
       const corridor = anom.radius * 0.45;
       if (inZone && Math.abs(ex - epiX) < corridor) {
@@ -2030,19 +2034,28 @@ class StudioEngine {
         let startX = colStarts[c];
         if (isFree) { const fp = freePts[r * cols + c]; cW = freeW; cH = freeH; cx = fp.x; cy = fp.y; startX = cx - cW / 2; }
 
+        // Anomaly "Another grid": inside the zone the cells follow a different grid variation
+        let gt = rep.gridType;
+        if (anom && anom.enabled && anom.type === "regrid" && anom.zoneGrid && anom.zoneGrid !== gt && !isHex && !isFree && anom.zoneGrid !== "hexagonal") {
+          for (const spot of this.anomalySpots(anom, width, height)) {
+            if (Math.hypot(colX[c] - spot.x, rowY[r] - spot.y) < anom.radius) { gt = anom.zoneGrid; break; }
+          }
+        }
+        const repCell = gt === rep.gridType ? rep : Object.assign(Object.create(rep), { gridType: gt });
+
         // Apply grid deformations to center coordinates
-        if (rep.gridType === "sliding") {
+        if (gt === "sliding") {
           if (r % 2 === 1) cx += cW * rep.slideOffset;
-        } else if (rep.gridType === "sheared") {
+        } else if (gt === "sheared") {
           const rad = (rep.shearAngle * Math.PI) / 180;
           cx += (r - rows / 2) * Math.tan(rad) * (cH * 0.6);
-        } else if (rep.gridType === "curved") {
+        } else if (gt === "curved") {
           const wave = Math.sin((r / rows) * Math.PI * 2) * rep.curveIntensity;
           cx += wave;
-        } else if (rep.gridType === "zigzag") {
+        } else if (gt === "zigzag") {
           const zig = (r % 2 === 0 ? 1 : -1) * rep.curveIntensity;
           cx += zig;
-        } else if (rep.gridType === "triangular" || isHex) {
+        } else if (gt === "triangular" || isHex) {
           if (r % 2 === 1) cx += cW * 0.5;
         }
 
@@ -2084,7 +2097,7 @@ class StudioEngine {
           const spaceFlip = !!(contrast.enabled && contrast.dimension === "space" && this.isContrastMinority(contrast, r * cols + c));
           if (!extra && (rep.checkerInvert && isOddCell) !== spaceFlip) {
             ctx.save();
-            this.buildCellPath(ctx, r, c, rows, cols, cellCx, cellCy, cW, cH, rep, cellStartX);
+            this.buildCellPath(ctx, r, c, rows, cols, cellCx, cellCy, cW, cH, repCell, cellStartX);
             // The cell takes the module's own colour and the module is drawn in the ground colour
             const figColor = targetMod.color || palette.fg;
             ctx.fillStyle = figColor;
@@ -2103,7 +2116,7 @@ class StudioEngine {
               ctx.beginPath();
               ctx.rect(cellCx - bw / 2, cellCy - bh / 2, bw, bh);
             } else {
-              this.buildCellPath(ctx, r, c, rows, cols, cellCx, cellCy, cW, cH, rep, cellStartX);
+              this.buildCellPath(ctx, r, c, rows, cols, cellCx, cellCy, cW, cH, repCell, cellStartX);
             }
             ctx.clip();
           }
@@ -2116,11 +2129,11 @@ class StudioEngine {
         }
 
         // Alternating mirror / rotation
-        if (rep.gridType === "alternating" && isOddCell) {
+        if (gt === "alternating" && isOddCell) {
           ctx.rotate(Math.PI);
         }
         // Direction: repeated (as it is), alternated (alternate cells turn 180°) or undefined (each one different)
-        if (rep.direction === "alternated" && isOddCell && rep.gridType !== "alternating") {
+        if (rep.direction === "alternated" && isOddCell && gt !== "alternating") {
           ctx.rotate(Math.PI);
         } else if (rep.direction === "undefined") {
           ctx.rotate(this.cellDirection(r, c));
@@ -5188,7 +5201,8 @@ class StudioProApp {
       focal: ["shape", "scale", "rotation"],
       fracture: ["position", "rotation"],
       swell: ["position", "scale"],
-      tear: ["position", "rotation", "scale"]
+      tear: ["position", "rotation", "scale"],
+      regrid: []
     };
   }
 
@@ -5236,6 +5250,12 @@ class StudioProApp {
     });
     const shapeUsed = anom.type === "focal" && (anom.attrs || {}).shape !== false;
     document.getElementById("anom-shape-block")?.classList.toggle("hidden", !shapeUsed);
+    // "Another grid": the zone only needs its grid variation, position and radius
+    const regrid = anom.type === "regrid";
+    document.getElementById("anom-zonegrid-block")?.classList.toggle("hidden", !regrid);
+    document.getElementById("anom-attrs-block")?.classList.toggle("hidden", regrid);
+    document.getElementById("anom-severity-block")?.classList.toggle("hidden", regrid);
+    document.querySelectorAll("#card-anomaly [data-anom-zonegrid]").forEach(btn => btn.classList.toggle("active", btn.dataset.anomZonegrid === (anom.zoneGrid || "sliding")));
     document.getElementById("anom-position-block")?.classList.toggle("hidden", dist !== "single");
     document.getElementById("anom-count-block")?.classList.toggle("hidden", dist === "single");
     document.getElementById("anom-seed-block")?.classList.toggle("hidden", dist !== "random");
@@ -5276,6 +5296,11 @@ class StudioProApp {
     document.querySelectorAll("#card-anomaly [data-anom-type]").forEach(btn => {
       btn.addEventListener("click", () => {
         commit(a => { a.type = btn.dataset.anomType; }, `Anomaly Type: ${btn.dataset.anomType}`);
+      });
+    });
+    document.querySelectorAll("#card-anomaly [data-anom-zonegrid]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(a => { a.zoneGrid = btn.dataset.anomZonegrid; }, `Anomaly Zone Grid: ${btn.dataset.anomZonegrid}`);
       });
     });
     document.querySelectorAll("#card-anomaly [data-anom-shape]").forEach(btn => {

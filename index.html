@@ -928,7 +928,23 @@
             <button type="button" class="ds-tag" data-anom-type="fracture">Rupture</button>
             <button type="button" class="ds-tag" data-anom-type="swell">Swell</button>
             <button type="button" class="ds-tag" data-anom-type="tear">Void</button>
+            <button type="button" class="ds-tag" data-anom-type="regrid">Another grid</button>
           </div>
+        </div>
+
+        <div id="anom-zonegrid-block" class="ds-field hidden">
+          <div class="ds-label">Grid inside the zone</div>
+          <div class="ds-dropdown" data-select>
+          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Brick</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
+          <div class="ds-dropdown-menu hidden" role="listbox">
+            <button type="button" class="ds-dropdown-item active" role="option" data-anom-zonegrid="sliding"><span>Brick</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-anom-zonegrid="sheared"><span>Diagonal</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-anom-zonegrid="curved"><span>Curved</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-anom-zonegrid="zigzag"><span>Zigzag</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-anom-zonegrid="triangular"><span>Triangular</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-anom-zonegrid="alternating"><span>Alternating</span></button>
+          </div>
+        </div>
         </div>
 
         <div class="ds-field">
@@ -940,7 +956,7 @@
           </div>
         </div>
 
-        <div class="ds-field">
+        <div id="anom-attrs-block" class="ds-field">
           <div class="ds-label">Deviates in</div>
           <div class="ds-tags">
             <button type="button" class="ds-tag active" data-anom-attr="shape">Shape</button>
@@ -998,7 +1014,7 @@
               <input type="text" id="num-anom-radius" class="ds-value" value="160px" inputmode="numeric">
             </div>
           </div>
-          <div class="ds-field">
+          <div id="anom-severity-block" class="ds-field">
             <div class="ds-label">Severity</div>
             <div class="ds-slider">
               <input type="range" id="input-anom-intensity" min="10" max="100" step="1" value="65">
@@ -1369,7 +1385,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=e537eaa7"></script>
+  <script src="js/bundle-pro.js?v=d2f4de46"></script>
 
 </body>
 </html>

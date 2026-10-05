@@ -189,7 +189,7 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | :-- | :-- | :-- | :-- | :-: | :-- |
 | A1 | **Atraer la atención**: un centro de interés dentro de una zona restringida | Propósitos | Anomaly › Type `Focal` | ✅ |  |
 | A2 | **Aliviar la monotonía**: anomalías esparcidas, casual o sistemáticamente | Propósitos | Anomaly › Distribution (Scattered regular, Scattered random) con Count y Seed | ✅ |  |
-| A3 | **Transformar la regularidad**: una zona con otra clase de regularidad | Propósitos | — | ⏳ |  |
+| A3 | **Transformar la regularidad**: una zona con otra clase de regularidad | Propósitos | Anomaly › Type `Another grid` con Grid inside the zone | ✅ | Dentro de una zona circular (clic en el lienzo, Radius) la retícula cambia a Brick, Diagonal, Curved, Zigzag, Triangular o Alternating. Solo en retícula |
 | A4 | **Quebrar la regularidad**: zonas desordenadas, rasgadas o disueltas | Propósitos | Anomaly › Type `Rupture`, `Void` | ✅ |  |
 | A5 | **Anomalía entre módulos**: concentrada | Anomalía entre módulos | Anomaly › Distribution `Single` | ✅ |  |
 | A6 | **Anomalía entre módulos**: esparcida | Anomalía entre módulos | Anomaly › Distribution `Scattered` | ✅ |  |

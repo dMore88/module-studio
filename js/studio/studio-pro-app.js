@@ -1970,7 +1970,8 @@ export class StudioProApp {
       focal: ["shape", "scale", "rotation"],
       fracture: ["position", "rotation"],
       swell: ["position", "scale"],
-      tear: ["position", "rotation", "scale"]
+      tear: ["position", "rotation", "scale"],
+      regrid: []
     };
   }
 
@@ -2018,6 +2019,12 @@ export class StudioProApp {
     });
     const shapeUsed = anom.type === "focal" && (anom.attrs || {}).shape !== false;
     document.getElementById("anom-shape-block")?.classList.toggle("hidden", !shapeUsed);
+    // "Another grid": the zone only needs its grid variation, position and radius
+    const regrid = anom.type === "regrid";
+    document.getElementById("anom-zonegrid-block")?.classList.toggle("hidden", !regrid);
+    document.getElementById("anom-attrs-block")?.classList.toggle("hidden", regrid);
+    document.getElementById("anom-severity-block")?.classList.toggle("hidden", regrid);
+    document.querySelectorAll("#card-anomaly [data-anom-zonegrid]").forEach(btn => btn.classList.toggle("active", btn.dataset.anomZonegrid === (anom.zoneGrid || "sliding")));
     document.getElementById("anom-position-block")?.classList.toggle("hidden", dist !== "single");
     document.getElementById("anom-count-block")?.classList.toggle("hidden", dist === "single");
     document.getElementById("anom-seed-block")?.classList.toggle("hidden", dist !== "random");
@@ -2058,6 +2065,11 @@ export class StudioProApp {
     document.querySelectorAll("#card-anomaly [data-anom-type]").forEach(btn => {
       btn.addEventListener("click", () => {
         commit(a => { a.type = btn.dataset.anomType; }, `Anomaly Type: ${btn.dataset.anomType}`);
+      });
+    });
+    document.querySelectorAll("#card-anomaly [data-anom-zonegrid]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(a => { a.zoneGrid = btn.dataset.anomZonegrid; }, `Anomaly Zone Grid: ${btn.dataset.anomZonegrid}`);
       });
     });
     document.querySelectorAll("#card-anomaly [data-anom-shape]").forEach(btn => {

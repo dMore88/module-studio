@@ -17,7 +17,6 @@ Sale de las filas ⏳ del mapa de conceptos, más las mejoras de filas 🟡 que 
 ### P3 — ideas que parecen divertidas (probar primero)
 | ID | Concepto | Notas |
 | :-- | :-- | :-- |
-| A3 | Anomalía: una zona con otra clase de regularidad | Transformar la regularidad en una zona |
 
 ### P3 — por evaluar con el filtro de juego
 | ID | Concepto | Notas |

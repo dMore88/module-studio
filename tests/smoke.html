@@ -73,7 +73,7 @@
       const sm = st.similarity; sm.enabled = rb(); sm.kinshipType = pick(["distortion","foreshortening","rotation_wobble","scale_kinship","hybrid"]); sm.intensity = ri(0, 100); sm.cellJitter = ri(0, 30); sm.association = pick(["none","round","angular","lines","numbers"]); sm.assocMix = ri(0, 100); sm.imperfection = pick(["none","cut","broken"]); sm.imperfAmount = ri(0, 100);
       const g = st.gradation; g.enabled = rb(); g.type = pick(["rotation","scale","depth","drift","shape","texture"]); g.pathway = pick(["diagonal","horizontal","vertical","concentric","zigzag"]); g.range = ri(15, 360); g.steps = ri(1, 4); g.reverse = rb();
       g.sequence = pick(["restart","pingpong"]); g.easing = ri(-100, 100); g.alternate = rb(); g.targetShape = pick(SHAPES);
-      const an = st.anomaly; an.enabled = rb(); an.type = pick(["focal","fracture","swell","tear"]); an.epicenterX = 0.1 + rnd() * 0.8; an.epicenterY = 0.1 + rnd() * 0.8; an.radius = ri(50, 350); an.intensity = ri(10, 100); an.anomalousShape = pick(SHAPES); an.highlightColor = rb(); an.showReticle = rb(); an.distribution = pick(["single","regular","random"]); an.count = ri(2, 12); an.seed = ri(1, 99); an.attrs = { shape: rb(), scale: rb(), rotation: rb(), position: rb() };
+      const an = st.anomaly; an.enabled = rb(); an.type = pick(["focal","fracture","swell","tear","regrid"]); an.zoneGrid = pick(["sliding","sheared","curved","zigzag","triangular","alternating"]); an.epicenterX = 0.1 + rnd() * 0.8; an.epicenterY = 0.1 + rnd() * 0.8; an.radius = ri(50, 350); an.intensity = ri(10, 100); an.anomalousShape = pick(SHAPES); an.highlightColor = rb(); an.showReticle = rb(); an.distribution = pick(["single","regular","random"]); an.count = ri(2, 12); an.seed = ri(1, 99); an.attrs = { shape: rb(), scale: rb(), rotation: rb(), position: rb() };
       const co = st.contrast; co.enabled = rb(); co.dimension = pick(["scale","shape","direction","position","tone","texture","space"]); co.positionShift = ri(5, 50); co.positionAngle = ri(0, 360); co.dominanceRatio = ri(50, 95); co.scaleFactor = 0.2 + rnd() * 2.8; co.contrastShape = pick(SHAPES); co.angle = ri(15, 90); co.highlightContrast = rb();
       const cn = st.concentration; cn.enabled = rb(); cn.mode = pick(["point","void","line","line_void","free","dense","sparse"]); cn.method = pick(["move","absence"]); cn.edgeFade = rb(); cn.attractorX = 0.05 + rnd() * 0.9; cn.attractorY = 0.05 + rnd() * 0.9; cn.power = ri(20, 100); cn.radius = ri(80, 450); cn.lineAxis = pick(["horizontal","vertical"]); cn.alignToField = rb(); cn.densityScale = rb(); cn.showAttractor = rb(); cn.focusCount = ri(2, 6);
       const tx = st.texture; tx.enabled = rb(); tx.jitter = ri(0, 8); tx.skipChance = ri(0, 60); tx.crossing = ri(0, 60); tx.undulation = ri(0, 30);
@@ -1560,6 +1560,46 @@
       q('[data-grid-var="free"]').click(); await wait(40);
       assert(!q("#rep-param-block").classList.contains("hidden") && q("#rep-param-label").textContent === "Seed", "Free should offer the Seed slider");
       assert(q("#rep-placement-block").classList.contains("hidden"), "Module placement does not apply to the free distribution");
+      reset();
+    });
+
+    await test("Anomaly Another grid: inside the zone the cells follow a different grid variation", async () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const render = (an, rep = {}) => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        const L = st.layers[0];
+        Object.assign(L, { shape: "circle", width: 240, height: 240, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false, containerW: 0, containerH: 0 });
+        L.structure.enabled = true; L.structure.mode = "repetition";
+        Object.assign(L.structure.repetition, { cols: 6, rows: 6, gridType: "basic", sizeMode: "fit", showGridLines: false, placement: "centers", cellMix: "none", slideOffset: 0.5 }, rep);
+        Object.assign(L.structure.anomaly, { enabled: true, type: "regrid", zoneGrid: "sliding", epicenterX: 0.5, epicenterY: 0.5, radius: 250, distribution: "single", showReticle: false, highlightColor: false }, an);
+        app.state = st; drawRaw(app);
+        return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      };
+      const dpr = cv.width / 600;
+      const dark = (d, x, y) => d[(Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4] < 100;
+      // Cell (row 1, column 2) is at (250, 150), inside the zone: bricks push the odd rows half a cell to the right
+      const zone = render({});
+      assert(dark(zone, 300, 150) && !dark(zone, 250, 150), "Inside the zone the odd row should be shifted (brick)");
+      // Cell (row 1, column 0) is at (50, 150), outside the zone: it stays on the plain grid
+      assert(dark(zone, 50, 150), "Outside the zone the grid stays as it was");
+      // Without the anomaly the whole canvas is the plain grid
+      const plain = render({ enabled: false });
+      assert(dark(plain, 250, 150) && !dark(plain, 300, 150), "Without the anomaly the plain grid shows");
+      // A smaller radius leaves the first cell alone
+      assert(dark(render({ radius: 60 }), 250, 150), "A small zone should not reach that cell");
+      // Another variation inside the zone
+      assert(JSON.stringify(Array.from(render({ zoneGrid: "curved" }))) !== JSON.stringify(Array.from(zone)), "The zone grid should change the drawing");
+      // Inspector
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      q('[data-rail-tab="anomaly"]').click(); await wait(60);
+      q('[data-anom-type="regrid"]').click(); await wait(40);
+      assert(!q("#anom-zonegrid-block").classList.contains("hidden") && q("#anom-attrs-block").classList.contains("hidden") && q("#anom-severity-block").classList.contains("hidden"), "Another grid shows its grid dropdown and hides Deviates in and Severity");
+      q('[data-anom-zonegrid="zigzag"]').click();
+      assert(app.getActiveLayerStructure().anomaly.zoneGrid === "zigzag" && /Zigzag/.test(q("#anom-zonegrid-block .ds-dropdown-current").textContent), "The zone grid did not apply");
+      q('[data-anom-type="focal"]').click(); await wait(40);
+      assert(q("#anom-zonegrid-block").classList.contains("hidden"), "The grid dropdown is only for Another grid");
       reset();
     });
 
