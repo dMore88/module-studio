@@ -799,6 +799,9 @@ export class StudioProApp {
       this.syncControlValue("num-layout-rays", rad.rays || 12);
       this.syncControlValue("input-layout-rings", rad.rings || 5);
       this.syncControlValue("num-layout-rings", rad.rings || 5);
+      this.syncControlValue("input-layout-centers", rad.centerCount || 2);
+      this.syncControlValue("num-layout-centers", rad.centerCount || 2);
+      document.getElementById("rad-centers-block")?.classList.toggle("hidden", rad.scheme !== "multi_center");
       this.syncControlValue("input-layout-twist", rad.spiralTwist !== undefined ? rad.spiralTwist : 45);
       this.syncControlValue("num-layout-twist", rad.spiralTwist !== undefined ? rad.spiralTwist : 45);
       document.querySelectorAll("[data-rad-size]").forEach(btn => {
@@ -1153,6 +1156,14 @@ export class StudioProApp {
       struct.mode = "radiation";
       this.render();
     });
+
+    this.bindSliderWithNumber("input-layout-centers", "num-layout-centers", (val) => {
+      const struct = this.getActiveLayerStructure();
+      if (!struct) return;
+      struct.radiation.centerCount = Math.max(2, Math.min(6, Math.round(val)));
+      struct.mode = "radiation";
+      this.render();
+    }, "Centers");
 
     this.bindSliderWithNumber("input-layout-twist", "num-layout-twist", (val) => {
       const struct = this.getActiveLayerStructure();

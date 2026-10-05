@@ -828,6 +828,7 @@ const createDefaultLayerStructure = () => ({
     orientation: "auto", // auto (by scheme), outward, inward, tangent, fixed
     centerOpen: 0, // open center: hole radius as a percentage of the radius (0 to 70)
     ringRotation: 0,
+    centerCount: 2, // number of focal centres of the multi-center scheme (2 to 6)
     ringShape: "circle", // circle, triangle, square or hexagon: the shape of every ring (Wong, fig. 49) // degrees each ring is rotated more than the previous one (-90 to 90)
     sizeMode: "fit", // fit (Fit to canvas) or actual (Actual size: each ring is as thick as the module)
     direction: "repeated", // repeated, alternated or undefined (see the repetition)
@@ -2305,11 +2306,15 @@ class StudioEngine {
     };
 
     // Centers list (if multi_center, we have two focal centers creating Moiré)
+    // Multi-center: 2 to 6 foci spread evenly on a small circle (two foci sit left and right of the middle)
+    const centerCount = Math.max(2, Math.min(6, Math.round(rad.centerCount || 2)));
     const centers = isMultiCenter
-      ? [
-          { x: cx - refR * 0.35, y: cy },
-          { x: cx + refR * 0.35, y: cy }
-        ]
+      ? centerCount === 2
+        ? [{ x: cx - refR * 0.35, y: cy }, { x: cx + refR * 0.35, y: cy }]
+        : Array.from({ length: centerCount }, (_, k) => {
+            const a = Math.PI + (k * Math.PI * 2) / centerCount;
+            return { x: cx + refR * 0.35 * Math.cos(a), y: cy + refR * 0.35 * Math.sin(a) };
+          })
       : [{ x: cx, y: cy }];
 
     // Clip to master safe bounds area
@@ -3920,6 +3925,9 @@ class StudioProApp {
       this.syncControlValue("num-layout-rays", rad.rays || 12);
       this.syncControlValue("input-layout-rings", rad.rings || 5);
       this.syncControlValue("num-layout-rings", rad.rings || 5);
+      this.syncControlValue("input-layout-centers", rad.centerCount || 2);
+      this.syncControlValue("num-layout-centers", rad.centerCount || 2);
+      document.getElementById("rad-centers-block")?.classList.toggle("hidden", rad.scheme !== "multi_center");
       this.syncControlValue("input-layout-twist", rad.spiralTwist !== undefined ? rad.spiralTwist : 45);
       this.syncControlValue("num-layout-twist", rad.spiralTwist !== undefined ? rad.spiralTwist : 45);
       document.querySelectorAll("[data-rad-size]").forEach(btn => {
@@ -4274,6 +4282,14 @@ class StudioProApp {
       struct.mode = "radiation";
       this.render();
     });
+
+    this.bindSliderWithNumber("input-layout-centers", "num-layout-centers", (val) => {
+      const struct = this.getActiveLayerStructure();
+      if (!struct) return;
+      struct.radiation.centerCount = Math.max(2, Math.min(6, Math.round(val)));
+      struct.mode = "radiation";
+      this.render();
+    }, "Centers");
 
     this.bindSliderWithNumber("input-layout-twist", "num-layout-twist", (val) => {
       const struct = this.getActiveLayerStructure();

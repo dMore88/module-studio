@@ -93,8 +93,8 @@ Ya cubierto: centrífuga, concéntrica, espiral y doble centro, con rayos, anill
 | R3 | Anillos rotados entre sí | ✅ Hecho: slider *Ring rotation* | ✅ |
 | R4 | Anillos poligonales | ✅ Hecho: *Ring shape* (Circle, Triangle, Square, Hexagon) en Radiation > Advanced; no aplica a espiral ni centrípeta | ✅ |
 | R5 | Orientación del módulo | ✅ Hecho: tags *Module orientation* (Auto, Outward, Inward, Tangent, Fixed) | ✅ |
-| R6 | Separación de anillos en gradación | Hoy es lineal | P2 |
-| R7 | Más de dos centros | Hoy doble centro simétrico | P2 |
+| R6 | Separación de anillos en gradación | Descartado (oct 2026): casi no se notaría; no sirve para jugar | ➖ |
+| R7 | Más de dos centros | ✅ Hecho: slider *Centers* (2 a 6) en el esquema Multi-center | ✅ |
 
 ---
 

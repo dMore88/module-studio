@@ -139,7 +139,7 @@ Genera el espacio desde uno o varios centros focales utilizando coordenadas pola
   * `centripetal` (*Centripetal*, fig. 50): Estructura centrípeta de Wong: los ángulos de las líneas estructurales apuntan hacia el centro, que ya no es el punto donde convergen las líneas. Mismo reparto de módulos que la centrífuga, con la orientación automática hacia dentro; las guías son **chevrones anidados** (cada uno es el sector desplazado hacia fuera) en lugar de círculos.
   * `concentric`: Anillos o capas que se expanden concéntricamente desde el epicentro.
   * `spiral`: Rayos curvos continuos gobernados por torsión angular acumulada.
-  * `multi_center`: Dos focos virtuales concurrentes con interferencia mutua.
+  * `multi_center` (*Multi-center*): de 2 a 6 focos virtuales concurrentes con interferencia mutua; el slider **`centerCount`** (*Centers*, 2 por defecto) aparece solo con este esquema. Con 2 los focos quedan a izquierda y derecha; con más se reparten parejos en un círculo pequeño.
 * **`orientation`** (*Module orientation*, `auto` por defecto): Hacia dónde apunta la parte superior del módulo. `auto` depende del esquema (hacia fuera en centrífuga y doble centro, hacia dentro en centrípeta, tangente en concéntrica, ligeramente inclinada en espiral); `outward` hacia fuera, `inward` hacia el centro, `tangent` siguiendo el anillo y `fixed` sin giro (solo cuenta la rotación propia de la capa).
 * **`rays`** (4 a 28): Cantidad de divisiones o sectores angulares por vuelta de 360°.
 * **`rings`** (2 a 10): Cantidad de capas o anillos a lo largo del radio.
