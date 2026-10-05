@@ -812,7 +812,8 @@ const createDefaultLayerStructure = () => ({
     activeClipping: false,
     showGridLines: false,
     gridLineWidth: 1.5,
-    lineTone: "guide", // guide (faint), positive (ink) or negative (ground colour, cuts the modules)
+    lineTone: "guide", // guide (1px helper in its own colour, never exported), positive (ink) or negative (ground colour, cuts the modules)
+    guideColor: "#f24822",
     lineDirection: "both", // both, horizontal, vertical
     lineSpacing: "all", // all, alternate (every other line)
     reflection: "none", // none, columns, rows, both: mirror the module in alternate cells
@@ -827,7 +828,8 @@ const createDefaultLayerStructure = () => ({
     ringRotation: 0, // degrees each ring is rotated more than the previous one (-90 to 90)
     sizeMode: "fit", // fit (Fit to canvas) or actual (Actual size: each ring is as thick as the module)
     direction: "repeated", // repeated, alternated or undefined (see the repetition)
-    lineTone: "guide", // guide (faint), positive (ink) or negative (ground colour) for the visible rays and rings
+    lineTone: "guide", // guide (1px helper in its own colour, never exported), positive (ink) or negative (ground colour) for the visible rays and rings
+    guideColor: "#f24822",
     lineWidth: 1, // thickness of the visible rays and rings, 0.5 to 6 px
     rays: 12,
     rings: 5,
@@ -2063,14 +2065,18 @@ class StudioEngine {
 
     // Optional visible structure grid lines
     const showLines = !!(rep.showGridLines || (struct && (struct.showGridLines || (struct.enabled && struct.showBands))));
-    if (showLines) {
+    const bandLines = !!(struct && struct.enabled && struct.showBands);
+    const repTone = rep.lineTone || "guide";
+    const isGuide = repTone === "guide" && !bandLines;
+    // Guide lines are an on-screen helper (like Figma guides): 1px, own colour, left out of exports
+    if (showLines && !(isGuide && this.exporting)) {
       ctx.save();
-      // Tone: faint guide, positive (drawn in ink) or negative (drawn in the ground colour, cutting the modules)
-      const tone = rep.lineTone || "guide";
+      // Tone: guide, positive (drawn in ink) or negative (drawn in the ground colour, cutting the modules)
+      const tone = repTone;
       ctx.strokeStyle = tone === "positive" ? (targetMod.color || palette.fg)
         : tone === "negative" ? palette.bg
-        : (palette.isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(24, 24, 31, 0.35)");
-      ctx.lineWidth = struct && struct.enabled && struct.showBands ? struct.bandThickness : (rep.gridLineWidth || 1.2);
+        : (isGuide ? (rep.guideColor || "#f24822") : (palette.isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(24, 24, 31, 0.35)"));
+      ctx.lineWidth = isGuide ? 1 : bandLines ? struct.bandThickness : (rep.gridLineWidth || 1.2);
       const dir = rep.lineDirection || "both";
       const showH = dir !== "vertical";
       const showV = dir !== "horizontal";
@@ -2418,11 +2424,11 @@ class StudioEngine {
     ctx.restore(); // end outer clip
 
     // Structural visible guides
-    if (rad.showRings || rad.showRays) {
+    const rtone = rad.lineTone || "guide";
+    if ((rad.showRings || rad.showRays) && !(rtone === "guide" && this.exporting)) {
       ctx.save();
-      const rtone = rad.lineTone || "guide";
-      ctx.strokeStyle = rtone === "positive" ? (targetMod.color || palette.fg) : rtone === "negative" ? palette.bg : palette.grid;
-      ctx.lineWidth = rad.lineWidth || 1;
+      ctx.strokeStyle = rtone === "positive" ? (targetMod.color || palette.fg) : rtone === "negative" ? palette.bg : (rad.guideColor || "#f24822");
+      ctx.lineWidth = rtone === "guide" ? 1 : (rad.lineWidth || 1);
 
       centers.forEach(center => {
         if (rad.showRings) {
@@ -2946,8 +2952,8 @@ const StudioExporter = {
     // Temporarily attach engine to offscreen canvas
     const origCanvas = engine.canvas;
     engine.canvas = offscreen;
-    engine.render(palette);
-    engine.canvas = origCanvas;
+    engine.exporting = true;
+    try { engine.render(palette); } finally { engine.exporting = false; engine.canvas = origCanvas; }
 
     // Trigger download
     const link = document.createElement("a");
@@ -2983,9 +2989,11 @@ const StudioExporter = {
     const fake = { width: canvas.width, height: canvas.height, style: {}, getContext: () => rec };
     const origCanvas = engine.canvas;
     engine.canvas = fake;
+    engine.exporting = true;
     try {
       engine.render(palette);
     } finally {
+      engine.exporting = false;
       engine.canvas = origCanvas;
     }
     return rec.toSVG(canvas.width / dpr, canvas.height / dpr);
@@ -3806,6 +3814,10 @@ class StudioProApp {
       document.querySelectorAll("[data-rad-dir]").forEach(btn => btn.classList.toggle("active", btn.dataset.radDir === (rad.direction || "repeated")));
       document.querySelectorAll("[data-rad-tone]").forEach(btn => btn.classList.toggle("active", btn.dataset.radTone === (rad.lineTone || "guide")));
       document.getElementById("rad-lines-block")?.classList.toggle("hidden", !(rad.showRays || rad.showRings));
+      const radGuide = (rad.lineTone || "guide") === "guide";
+      document.getElementById("rad-linewidth-block")?.classList.toggle("hidden", radGuide);
+      this.syncAccentColorRow("radguide", rad.guideColor || "#f24822", true);
+      document.getElementById("radguide-accent-row")?.classList.toggle("hidden", !radGuide);
       this.syncControlValue("input-layout-radline", rad.lineWidth ?? 1);
       this.syncControlValue("num-layout-radline", `${rad.lineWidth ?? 1}px`);
       this.syncControlValue("input-layout-open", rad.centerOpen || 0);
@@ -3862,6 +3874,10 @@ class StudioProApp {
       if (num) num.value = `${val}${spec.suffix}`;
     }
     document.getElementById("rep-lines-block")?.classList.toggle("hidden", !rep.showGridLines);
+    const repGuide = (rep.lineTone || "guide") === "guide";
+    document.getElementById("rep-linewidth-block")?.classList.toggle("hidden", repGuide);
+    this.syncAccentColorRow("repguide", rep.guideColor || "#f24822", true);
+    document.getElementById("repguide-accent-row")?.classList.toggle("hidden", !repGuide);
     const mark = (attr, value) => document.querySelectorAll(`[${attr}]`).forEach(b => {
       const v = b.getAttribute(attr);
       b.classList.toggle("active", v === value);
@@ -3917,6 +3933,19 @@ class StudioProApp {
       });
     };
     bindTags("[data-rep-tone]", "data-rep-tone", "lineTone", "Line Tone");
+    const bindGuideColor = (id, getBlock, label) => {
+      const input = document.getElementById(id);
+      input?.addEventListener("input", (e) => {
+        const b = getBlock();
+        if (!b) return;
+        b.guideColor = e.target.value;
+        this.syncAccentColorRow(id.replace("-accent-color", ""), e.target.value, true);
+        this.render();
+      });
+      input?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${label}: ${e.target.value.toUpperCase()}`));
+    };
+    bindGuideColor("repguide-accent-color", () => this.getActiveLayerStructure()?.repetition, "Guide Color");
+    bindGuideColor("radguide-accent-color", () => this.getActiveLayerStructure()?.radiation, "Radiation Guide Color");
     bindTags("[data-rep-linedir]", "data-rep-linedir", "lineDirection", "Line Direction");
     bindTags("[data-rep-linespace]", "data-rep-linespace", "lineSpacing", "Line Spacing");
     bindTags("[data-rep-reflect]", "data-rep-reflect", "reflection", "Reflection");

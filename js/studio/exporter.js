@@ -179,8 +179,8 @@ export const StudioExporter = {
     // Temporarily attach engine to offscreen canvas
     const origCanvas = engine.canvas;
     engine.canvas = offscreen;
-    engine.render(palette);
-    engine.canvas = origCanvas;
+    engine.exporting = true;
+    try { engine.render(palette); } finally { engine.exporting = false; engine.canvas = origCanvas; }
 
     // Trigger download
     const link = document.createElement("a");
@@ -216,9 +216,11 @@ export const StudioExporter = {
     const fake = { width: canvas.width, height: canvas.height, style: {}, getContext: () => rec };
     const origCanvas = engine.canvas;
     engine.canvas = fake;
+    engine.exporting = true;
     try {
       engine.render(palette);
     } finally {
+      engine.exporting = false;
       engine.canvas = origCanvas;
     }
     return rec.toSVG(canvas.width / dpr, canvas.height / dpr);

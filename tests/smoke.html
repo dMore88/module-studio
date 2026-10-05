@@ -321,7 +321,7 @@
           randomizeState(app, rng);
           for (const L of app.state.layers) { L.structure.repetition.cols = Math.min(L.structure.repetition.cols, 12); L.structure.repetition.rows = Math.min(L.structure.repetition.rows, 12); L.structure.radiation.rays = Math.min(L.structure.radiation.rays, 16); L.structure.radiation.rings = Math.min(L.structure.radiation.rings, 6); }
         }
-        drawRaw(app);
+        app.engine.exporting = true; drawRaw(app); app.engine.exporting = false; // guide lines are on screen only
         const svg = win.StudioExporter.buildSVG(app.engine, cv, app.getActivePalette());
         bytes = Math.max(bytes, svg.length);
         const doc = new win.DOMParser().parseFromString(svg, "image/svg+xml");
@@ -392,7 +392,7 @@
         const tops = Array.from(tab.querySelectorAll(".ds-slider .ds-value")).filter(v => v.offsetParent).map(v => Math.round(v.getBoundingClientRect().top));
         assert(new Set(tops).size === tops.length, `${btn.dataset.railTab}: two sliders share a row`);
         assert(flyout.getBoundingClientRect().width === 340, `${btn.dataset.railTab}: the panel is not 340 px wide`);
-        for (const sw of tab.querySelectorAll(".ds-swatch")) assert(Math.round(sw.getBoundingClientRect().width) === 24, `${btn.dataset.railTab}: a color swatch is not 24 px`);
+        for (const sw of Array.from(tab.querySelectorAll(".ds-swatch")).filter(e => e.offsetParent)) assert(Math.round(sw.getBoundingClientRect().width) === 24, `${btn.dataset.railTab}: a color swatch is not 24 px`);
         const fields = Array.from(tab.querySelectorAll(".ds-field")).filter(e => e.offsetParent && e.querySelector(":scope > .ds-slider")).sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
         for (let i = 1; i < fields.length; i++) {
           const gap = fields[i].getBoundingClientRect().top - fields[i - 1].getBoundingClientRect().bottom;
@@ -1049,6 +1049,34 @@
       app.engine.render = original;
       app.render();
       assert(win.document.getElementById("render-error").hidden, "Notice stays after a successful draw");
+    });
+
+    await test("Guide lines are a 1px helper in their own colour and never reach the exports; Positive and Negative do", () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const setup = (tone, mode) => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        const L = st.layers[0];
+        Object.assign(L, { shape: "circle", width: 20, height: 20, offsetX: 0, offsetY: 0, rotation: 0 });
+        L.structure.enabled = true; L.structure.mode = mode;
+        Object.assign(L.structure.repetition, { cols: 3, rows: 3, gridType: "basic", showGridLines: true, lineTone: tone, guideColor: "#00aa00", gridLineWidth: 3 });
+        Object.assign(L.structure.radiation, { rays: 8, rings: 3, showRays: true, showRings: true, lineTone: tone, guideColor: "#00aa00", lineWidth: 3 });
+        app.state = st; app.engine.state = st; drawRaw(app);
+      };
+      const svg = () => win.StudioExporter.buildSVG(app.engine, cv, app.getActivePalette());
+      for (const mode of ["repetition", "radiation"]) {
+        setup("guide", mode);
+        const screen = app.engine.canvas.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+        let green = 0; for (let i = 0; i < screen.length; i += 4) if (screen[i + 1] > 140 && screen[i] < 80) green++;
+        assert(green > 100, `${mode}: guide lines should show on screen in their own colour`);
+        assert(!/00aa00/i.test(svg()) && !/stroke="rgb\(0,\s*170,\s*0\)"/i.test(svg()), `${mode}: guide lines must not be exported`);
+        setup("positive", mode);
+        const withLines = svg().length;
+        setup("positive", mode);
+        app.state.layers[0].structure.repetition.showGridLines = false; app.state.layers[0].structure.radiation.showRays = false; app.state.layers[0].structure.radiation.showRings = false;
+        assert(withLines > svg().length, `${mode}: positive lines should be exported`);
+      }
     });
 
     await test("Checkerboard reverses figure and ground, also with a coloured module", () => {

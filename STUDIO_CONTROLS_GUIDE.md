@@ -102,7 +102,7 @@ Multiplica el módulo en una retícula ortogonal sobre el plano cartesiano $X, Y
 * **`shearAngle`** (0° a 45°): Ángulo de inclinación oblicua (modo `sheared`).
 * **`curveIntensity`** (px): Amplitud de oscilación de la onda (modo `curved`).
 * **`showGridLines`** (`boolean`): Renderiza las líneas maestras de la retícula. Con las líneas visibles aparecen sus opciones:
-  * **`lineTone`** (*Line tone*, `guide` por defecto): `guide` es la línea tenue de siempre; `positive` se dibuja en tinta (el color de la capa); `negative` se dibuja con el color del fondo y corta los módulos que cruza (fig. 20b y 20c). Los módulos más grandes que la celda son los que muestran el corte.
+  * **`lineTone`** (*Line tone*, `guide` por defecto): `guide` es una guía de ayuda, como las de Figma: siempre 1 px, con un color a elegir (*Guide color*), y **no se exporta** al SVG ni al PNG; `positive` se dibuja en tinta (el color de la capa); `negative` se dibuja con el color del fondo y corta los módulos que cruza (fig. 20b y 20c). Los módulos más grandes que la celda son los que muestran el corte.
   * **`lineDirection`** (*Line direction*, `both`): solo líneas `horizontal`, solo `vertical` o ambas (fig. 20d).
   * **`lineSpacing`** (*Line spacing*, `all`): `alternate` dibuja una línea de cada dos.
   * **`gridLineWidth`** (*Line width*, 0.5 a 6 px).
@@ -145,7 +145,7 @@ Genera el espacio desde uno o varios centros focales utilizando coordenadas pola
 * **`centerOpen`** (*Open center*, 0% a 70%, por defecto 0): Radio del agujero central como porcentaje del radio total. Los anillos y rayos empiezan en el borde del agujero (fig. 48d, abrir el centro de radiación). Con las guías visibles se dibuja el círculo del agujero.
 * **`sizeMode`** (*Module size*, `fit`): `actual` hace lo mismo que en la cuadrícula: el módulo conserva su tamaño real y cada anillo tiene de grosor la *Container height* del módulo. *Concentric rings* y *Angular rays* siguen diciendo cuántos; la estructura puede salirse del lienzo.
 * **`direction`** (*Direction*, `repeated`): Igual que en la cuadrícula, encima de la orientación del módulo: `alternated` gira 180° las celdas alternas y `undefined` da a cada módulo un giro propio.
-* **`lineTone` / `lineWidth`** (*Line tone* y *Line width*, `guide` y 1 px): Con *Visible Grid Lines* encendido, los rayos y anillos pueden dibujarse tenues (`guide`), en tinta (`positive`) o con el color del fondo (`negative`), con un grosor de 0,5 a 6 px.
+* **`lineTone` / `lineWidth`** (*Line tone* y *Line width*, `guide` y 1 px): Con *Visible Grid Lines* encendido, los rayos y anillos pueden dibujarse como guía de 1 px con color propio y sin exportarse (`guide`), en tinta (`positive`) o con el color del fondo (`negative`), con un grosor de 0,5 a 6 px (el grosor solo aplica a `positive` y `negative`).
 * **`ringRotation`** (*Ring rotation*, -90° a 90°, por defecto 0): Grados que cada anillo gira más que el anillo interior (rotación gradual de capas concéntricas, fig. 49g). Sirve para que las subdivisiones de un anillo no se alineen con las del vecino. Las guías de rayos se dibujan por anillo.
 * **`centerX / centerY`**: Desplazamiento excéntrico del foco fuera del centro del lienzo.
 * **`showRays / showRings`** (`boolean`): Dibuja las líneas guía polares en la composición final.

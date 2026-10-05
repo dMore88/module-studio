@@ -794,6 +794,10 @@ export class StudioProApp {
       document.querySelectorAll("[data-rad-dir]").forEach(btn => btn.classList.toggle("active", btn.dataset.radDir === (rad.direction || "repeated")));
       document.querySelectorAll("[data-rad-tone]").forEach(btn => btn.classList.toggle("active", btn.dataset.radTone === (rad.lineTone || "guide")));
       document.getElementById("rad-lines-block")?.classList.toggle("hidden", !(rad.showRays || rad.showRings));
+      const radGuide = (rad.lineTone || "guide") === "guide";
+      document.getElementById("rad-linewidth-block")?.classList.toggle("hidden", radGuide);
+      this.syncAccentColorRow("radguide", rad.guideColor || "#f24822", true);
+      document.getElementById("radguide-accent-row")?.classList.toggle("hidden", !radGuide);
       this.syncControlValue("input-layout-radline", rad.lineWidth ?? 1);
       this.syncControlValue("num-layout-radline", `${rad.lineWidth ?? 1}px`);
       this.syncControlValue("input-layout-open", rad.centerOpen || 0);
@@ -850,6 +854,10 @@ export class StudioProApp {
       if (num) num.value = `${val}${spec.suffix}`;
     }
     document.getElementById("rep-lines-block")?.classList.toggle("hidden", !rep.showGridLines);
+    const repGuide = (rep.lineTone || "guide") === "guide";
+    document.getElementById("rep-linewidth-block")?.classList.toggle("hidden", repGuide);
+    this.syncAccentColorRow("repguide", rep.guideColor || "#f24822", true);
+    document.getElementById("repguide-accent-row")?.classList.toggle("hidden", !repGuide);
     const mark = (attr, value) => document.querySelectorAll(`[${attr}]`).forEach(b => {
       const v = b.getAttribute(attr);
       b.classList.toggle("active", v === value);
@@ -905,6 +913,19 @@ export class StudioProApp {
       });
     };
     bindTags("[data-rep-tone]", "data-rep-tone", "lineTone", "Line Tone");
+    const bindGuideColor = (id, getBlock, label) => {
+      const input = document.getElementById(id);
+      input?.addEventListener("input", (e) => {
+        const b = getBlock();
+        if (!b) return;
+        b.guideColor = e.target.value;
+        this.syncAccentColorRow(id.replace("-accent-color", ""), e.target.value, true);
+        this.render();
+      });
+      input?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${label}: ${e.target.value.toUpperCase()}`));
+    };
+    bindGuideColor("repguide-accent-color", () => this.getActiveLayerStructure()?.repetition, "Guide Color");
+    bindGuideColor("radguide-accent-color", () => this.getActiveLayerStructure()?.radiation, "Radiation Guide Color");
     bindTags("[data-rep-linedir]", "data-rep-linedir", "lineDirection", "Line Direction");
     bindTags("[data-rep-linespace]", "data-rep-linespace", "lineSpacing", "Line Spacing");
     bindTags("[data-rep-reflect]", "data-rep-reflect", "reflection", "Reflection");
