@@ -322,6 +322,15 @@
           </div>
         </div>
 
+        <div class="ds-field">
+          <div class="ds-label">Direction</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-rep-dir="repeated">Repeated</button>
+            <button type="button" class="ds-tag" data-rep-dir="alternated">Alternated</button>
+            <button type="button" class="ds-tag" data-rep-dir="undefined">Undefined</button>
+          </div>
+        </div>
+
           <div class="ds-field">
             <div class="ds-label">Module size</div>
             <div class="ds-tags">
@@ -430,6 +439,15 @@
         </div>
 
         <div class="ds-field">
+          <div class="ds-label">Direction</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-rad-dir="repeated">Repeated</button>
+            <button type="button" class="ds-tag" data-rad-dir="alternated">Alternated</button>
+            <button type="button" class="ds-tag" data-rad-dir="undefined">Undefined</button>
+          </div>
+        </div>
+
+        <div class="ds-field">
           <div class="ds-label">Module size</div>
           <div class="ds-tags">
             <button type="button" class="ds-tag active" data-rad-size="fit">Fit to canvas</button>
@@ -489,6 +507,25 @@
             <span class="ds-toggle-label">Checkerboard inversion</span>
             <input type="checkbox" id="chk-rad-checker" class="ds-checkbox">
           </label>
+        </div>
+
+        <!-- Options of the visible rays and rings (only while "Visible Grid Lines" is on) -->
+        <div id="rad-lines-block" class="ds-stack hidden">
+          <div class="ds-field">
+            <div class="ds-label">Line tone</div>
+            <div class="ds-tags">
+              <button type="button" class="ds-tag active" data-rad-tone="guide">Guide</button>
+              <button type="button" class="ds-tag" data-rad-tone="positive">Positive</button>
+              <button type="button" class="ds-tag" data-rad-tone="negative">Negative</button>
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Line width</div>
+            <div class="ds-slider">
+              <input type="range" id="input-layout-radline" min="0.5" max="6" step="0.5" value="1">
+              <input type="text" id="num-layout-radline" class="ds-value" value="1px" inputmode="decimal">
+            </div>
+          </div>
         </div>
         </div>
       </div>
@@ -1209,7 +1246,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=6ae92046"></script>
+  <script src="js/bundle-pro.js?v=512534a0"></script>
 
 </body>
 </html>

@@ -791,6 +791,11 @@ export class StudioProApp {
       document.querySelectorAll("[data-rad-size]").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.radSize === (rad.sizeMode || "fit"));
       });
+      document.querySelectorAll("[data-rad-dir]").forEach(btn => btn.classList.toggle("active", btn.dataset.radDir === (rad.direction || "repeated")));
+      document.querySelectorAll("[data-rad-tone]").forEach(btn => btn.classList.toggle("active", btn.dataset.radTone === (rad.lineTone || "guide")));
+      document.getElementById("rad-lines-block")?.classList.toggle("hidden", !(rad.showRays || rad.showRings));
+      this.syncControlValue("input-layout-radline", rad.lineWidth ?? 1);
+      this.syncControlValue("num-layout-radline", `${rad.lineWidth ?? 1}px`);
       this.syncControlValue("input-layout-open", rad.centerOpen || 0);
       this.syncControlValue("num-layout-open", `${rad.centerOpen || 0}%`);
       this.syncControlValue("input-layout-ringrot", rad.ringRotation || 0);
@@ -850,6 +855,7 @@ export class StudioProApp {
       b.classList.toggle("active", v === value);
     });
     mark("data-rep-size", rep.sizeMode || "fit");
+    mark("data-rep-dir", rep.direction || "repeated");
     mark("data-rep-tone", rep.lineTone || "guide");
     mark("data-rep-linedir", rep.lineDirection || "both");
     mark("data-rep-linespace", rep.lineSpacing || "all");
@@ -903,6 +909,7 @@ export class StudioProApp {
     bindTags("[data-rep-linespace]", "data-rep-linespace", "lineSpacing", "Line Spacing");
     bindTags("[data-rep-reflect]", "data-rep-reflect", "reflection", "Reflection");
     bindTags("[data-rep-size]", "data-rep-size", "sizeMode", "Module Size");
+    bindTags("[data-rep-dir]", "data-rep-dir", "direction", "Direction");
 
     // Line width of the visible grid lines
     const lw = document.getElementById("input-layout-linewidth");
@@ -1072,6 +1079,28 @@ export class StudioProApp {
       this.render();
     });
 
+    const bindRadTags = (selector, dataKey, prop, label) => {
+      document.querySelectorAll(selector).forEach(btn => {
+        btn.addEventListener("click", () => {
+          const struct = this.getActiveLayerStructure();
+          if (!struct) return;
+          struct.radiation[prop] = btn.dataset[dataKey];
+          struct.mode = "radiation";
+          this.syncStructureInspectorWithActiveLayer();
+          this.render();
+          this.pushHistory(`Layer ${this.activeLayerId} ${label}: ${btn.dataset[dataKey]}`);
+        });
+      });
+    };
+    bindRadTags("[data-rad-dir]", "radDir", "direction", "Radiation Direction");
+    bindRadTags("[data-rad-tone]", "radTone", "lineTone", "Radiation Line Tone");
+    this.bindSliderWithNumber("input-layout-radline", "num-layout-radline", (val) => {
+      const struct = this.getActiveLayerStructure();
+      if (!struct) return;
+      struct.radiation.lineWidth = Math.max(0.5, Math.min(6, val));
+      this.render();
+    }, "Radiation Line Width", "px");
+
     document.querySelectorAll("[data-rad-size]").forEach(btn => {
       btn.addEventListener("click", () => {
         const struct = this.getActiveLayerStructure();
@@ -1139,6 +1168,7 @@ export class StudioProApp {
           struct.radiation.showRays = e.target.checked;
           struct.radiation.showRings = e.target.checked;
         }
+        this.syncStructureInspectorWithActiveLayer();
         this.render();
       });
     }

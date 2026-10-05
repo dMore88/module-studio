@@ -66,9 +66,9 @@
       const st = L.structure; st.enabled = rnd() < 0.8; st.mode = pick(["repetition", "radiation"]);
       const rp = st.repetition; rp.gridType = pick(["basic","sliding","sheared","curved","zigzag","triangular","alternating","hexagonal"]); rp.lineTone = pick(["guide","positive","negative"]); rp.lineDirection = pick(["both","horizontal","vertical"]); rp.lineSpacing = pick(["all","alternate"]); rp.reflection = pick(["none","columns","rows","both"]);
       rp.cols = ri(1, 50); rp.rows = ri(1, 50); rp.spacing = ri(0, 40); rp.shearAngle = ri(0, 45); rp.slideOffset = rnd(); rp.curveIntensity = ri(0, 60);
-      rp.activeClipping = rb(); rp.showGridLines = rb(); rp.checkerInvert = rb();
+      rp.activeClipping = rb(); rp.showGridLines = rb(); rp.checkerInvert = rb(); rp.direction = pick(["repeated","alternated","undefined"]);
       const rd = st.radiation; rd.scheme = pick(["centrifugal","centripetal","concentric","spiral","multi_center"]); rd.orientation = pick(["auto","outward","inward","tangent","fixed"]); rd.centerOpen = ri(0, 70); rd.ringRotation = ri(-90, 90); rd.rays = ri(4, 28); rd.rings = ri(2, 10);
-      rd.spiralTwist = ri(-180, 180); rd.centerX = ri(-200, 200); rd.centerY = ri(-200, 200); rd.showRays = rb(); rd.showRings = rb(); rd.activeClipping = rb();
+      rd.spiralTwist = ri(-180, 180); rd.centerX = ri(-200, 200); rd.centerY = ri(-200, 200); rd.showRays = rb(); rd.showRings = rb(); rd.activeClipping = rb(); rd.direction = pick(["repeated","alternated","undefined"]); rd.lineTone = pick(["guide","positive","negative"]); rd.lineWidth = ri(1, 12) / 2;
       const fs = st.formalStructure; fs.enabled = rnd() < 0.4; fs.colRatio = 1 + rnd() * 2; fs.rowRatio = 1 + rnd() * 2; fs.showGridLines = rb();
       const sm = st.similarity; sm.enabled = rb(); sm.kinshipType = pick(["distortion","foreshortening","rotation_wobble","scale_kinship","hybrid"]); sm.intensity = ri(0, 100); sm.cellJitter = ri(0, 30); sm.association = pick(["none","round","angular","lines","numbers"]); sm.assocMix = ri(0, 100); sm.imperfection = pick(["none","cut","broken"]); sm.imperfAmount = ri(0, 100);
       const g = st.gradation; g.enabled = rb(); g.type = pick(["rotation","scale","depth","drift","shape","texture"]); g.pathway = pick(["diagonal","horizontal","vertical","concentric","zigzag"]); g.range = ri(15, 360); g.steps = ri(1, 4); g.reverse = rb();
@@ -685,7 +685,7 @@
       });
       for (const [name, box] of containers) {
         if (!box) continue;
-        const inLines = (el) => !!el.closest("#rep-lines-block");
+        const inLines = (el) => !!el.closest("#rep-lines-block, #rad-lines-block");
         const sliders = Array.from(box.querySelectorAll(".ds-slider")).filter((e) => !inLines(e));
         const selectors = Array.from(box.querySelectorAll(".ds-tags, .shape-grid")).filter((e) => !inLines(e));
         if (!sliders.length) continue;
@@ -979,6 +979,62 @@
       assert(q("#conc-method-block").classList.contains("hidden") && q("#conc-radius-field").classList.contains("hidden") && !q("#conc-fade-block").classList.contains("hidden"), "Dense should hide method and radius and offer the edge fade");
       q("#toggle-conc-fade").click();
       assert(cs().edgeFade === true, "Edge fade did not apply");
+    });
+
+    await test("Direction (repeated, alternated, undefined) and radial line tone and width", async () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const render = (rep, rad = {}, mode = "repetition", layer = {}) => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        const L = st.layers[0];
+        Object.assign(L, { shape: "triangle", width: 400, height: 400, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false, containerW: 0, containerH: 0 }, layer);
+        L.structure.enabled = true; L.structure.mode = mode;
+        Object.assign(L.structure.repetition, { cols: 4, rows: 4, gridType: "basic", sizeMode: "fit", direction: "repeated" }, rep);
+        Object.assign(L.structure.radiation, { rays: 12, rings: 4, scheme: "concentric", orientation: "fixed", direction: "repeated", showRays: false, showRings: false, lineTone: "guide", lineWidth: 1 }, rad);
+        app.state = st; drawRaw(app);
+        return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      };
+      const dpr = cv.width / 600;
+      const px = (d, x, y) => d[(Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4];
+      const diff = (a, b) => { let n = 0; for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i] - b[i]) > 60) n++; return n; };
+      // Cell (0,0) is x 0..150, y 0..150: the triangle points up when repeated, down when its cell turned 180°
+      const rep = render({});
+      const topWide = (d, r, c) => { let n = 0; for (let x = c * 150; x < c * 150 + 150; x++) if (px(d, x, r * 150 + 50) < 128) n++; return n; };
+      const botWide = (d, r, c) => { let n = 0; for (let x = c * 150; x < c * 150 + 150; x++) if (px(d, x, r * 150 + 100) < 128) n++; return n; };
+      assert(botWide(rep, 0, 0) > topWide(rep, 0, 0), "A repeated triangle is wider at the bottom");
+      const alt = render({ direction: "alternated" });
+      assert(botWide(alt, 0, 0) > topWide(alt, 0, 0) && botWide(alt, 0, 1) < topWide(alt, 0, 1), "Alternated cells should turn upside down every other cell");
+      const und = render({ direction: "undefined" });
+      assert(diff(rep, und) > 500 && diff(und, render({ direction: "undefined" })) === 0, "Undefined should differ from repeated and be the same on every draw");
+      assert(diff(rep, render({ direction: "repeated" })) === 0, "Repeated is the default");
+      // Radial
+      const rr = render({}, {}, "radiation"), ra = render({}, { direction: "alternated" }, "radiation"), ru = render({}, { direction: "undefined" }, "radiation");
+      assert(diff(rr, ra) > 100 && diff(rr, ru) > 100, "Radial direction should change the modules");
+      // Radial line tone and width (the rays and rings are drawn at 252 px from the centre at most)
+      const lines = (o) => render({}, { showRings: true, showRays: false, rings: 4, ...o }, "radiation", { width: 10, height: 10 });
+      const ringPixel = (d) => px(d, 300 + 252, 300); // outer ring, on its right
+      assert(ringPixel(lines({ lineTone: "positive", lineWidth: 3 })) < 100, "Positive radial lines are not drawn in ink");
+      assert(ringPixel(lines({ lineTone: "guide", lineWidth: 3 })) > 150, "Guide radial lines should stay faint");
+      let thin = 0, thick = 0; const t1 = lines({ lineTone: "positive", lineWidth: 1 }), t6 = lines({ lineTone: "positive", lineWidth: 6 });
+      for (let x = 540; x < 560; x++) { if (px(t1, x, 300) < 128) thin++; if (px(t6, x, 300) < 128) thick++; }
+      assert(thick > thin * 3, `Line width did not thicken the rings (${thin} against ${thick})`);
+      // Inspector
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      q('[data-rail-tab="layout"]').click(); await wait(80);
+      q("#toggle-layout-structure").click();
+      const rp = () => app.getActiveLayerStructure().repetition, rd = () => app.getActiveLayerStructure().radiation;
+      q('[data-rep-dir="alternated"]').click();
+      assert(rp().direction === "alternated" && q('[data-rep-dir="alternated"]').classList.contains("active"), "Direction chip did not apply");
+      q("#btn-layout-radiation").click(); await wait(60);
+      q('[data-rad-dir="undefined"]').click();
+      assert(rd().direction === "undefined" && q('[data-rad-dir="undefined"]').classList.contains("active"), "Radial direction chip did not apply");
+      assert(q("#rad-lines-block").classList.contains("hidden"), "Radial line options should be hidden while the lines are off");
+      q("#chk-rad-gridlines").click(); await wait(40);
+      assert(!q("#rad-lines-block").classList.contains("hidden"), "Radial line options should show with the lines on");
+      q('[data-rad-tone="negative"]').click();
+      assert(rd().lineTone === "negative" && q('[data-rad-tone="negative"]').classList.contains("active"), "Radial line tone did not apply");
     });
 
     await test("A failed draw shows a visible notice and recovers", () => {

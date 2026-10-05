@@ -162,14 +162,14 @@ Ya cubierto: retícula básica, sliding, sheared, curved, zigzag, triangular; es
 | ID | Ítem | Notas | Prioridad |
 | :-- | :--- | :--- | :-- |
 | E1 | Líneas visibles positivas o negativas | ✅ Hecho: tags *Line tone* (Guide, Positive, Negative) | ✅ |
-| E2 | Grosor de las líneas | ✅ Hecho en la cuadrícula (*Line width*, F6); falta el radial | P2 |
+| E2 | Grosor de las líneas | ✅ Hecho en la cuadrícula (F6) y en el radial (*Line tone* y *Line width*) | ✅ |
 | E3 | Horizontales y verticales por separado | ✅ Hecho: *Line direction* y *Line spacing* (Every other) | ✅ |
 | E4 | Estructura de múltiple repetición | Dos clases de subdivisión entretejidas (fig. 23) | P2 |
 | RP1 | Retícula hexagonal | ✅ Hecho: tag *Hexagonal* (panal con recorte y líneas hexagonales) | ✅ |
 | RP0 | Mostrar en pantalla las retículas triangular, zigzag y alternada | ✅ Hecho (F6), con el parámetro de cada variación y el grosor de líneas | ✅ |
 | RP2 | Subdivisión y combinación de celdas | | P2 |
 | RP3 | Reflexión | ✅ Hecho: tags *Reflection* (None, Columns, Rows, Both) | ✅ |
-| RP4 | Selector de dirección | Repetida, alternada o indefinida | P2 |
+| RP4 | Selector de dirección | ✅ Hecho: chips *Direction* (Repeated, Alternated, Undefined) en cuadrícula y radial | ✅ |
 | RP5 | Superposición de estructuras | Ya posible con capas | ✅ |
 | RP6 | **Supermódulos** | Un grupo de módulos que se repite como unidad. La app trabaja un módulo = una capa, así que hay que decidir cómo (por ejemplo, grupos de capas que comparten retícula) | **P3, al final de todo** |
 

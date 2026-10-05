@@ -20,6 +20,7 @@ export const createDefaultLayerStructure = () => ({
     lineDirection: "both", // both, horizontal, vertical
     lineSpacing: "all", // all, alternate (every other line)
     reflection: "none", // none, columns, rows, both: mirror the module in alternate cells
+    direction: "repeated", // repeated (every module the same way), alternated (alternate cells turn 180°) or undefined (every module faces a different way)
     sizeMode: "fit", // fit (Fit to canvas: columns and rows divide the canvas, the module scales to its cell) or actual (Actual size: the module keeps its real size and is repeated columns x rows times)
     checkerInvert: false
   },
@@ -29,6 +30,9 @@ export const createDefaultLayerStructure = () => ({
     centerOpen: 0, // open center: hole radius as a percentage of the radius (0 to 70)
     ringRotation: 0, // degrees each ring is rotated more than the previous one (-90 to 90)
     sizeMode: "fit", // fit (Fit to canvas) or actual (Actual size: each ring is as thick as the module)
+    direction: "repeated", // repeated, alternated or undefined (see the repetition)
+    lineTone: "guide", // guide (faint), positive (ink) or negative (ground colour) for the visible rays and rings
+    lineWidth: 1, // thickness of the visible rays and rings, 0.5 to 6 px
     rays: 12,
     rings: 5,
     spiralTwist: 45,
@@ -820,6 +824,12 @@ export class StudioEngine {
     return 0;
   }
 
+  // Direction "undefined": an angle (0..2π) that looks random but is always the same for a given cell
+  cellDirection(a, b) {
+    const h = Math.sin((a * 127.1 + b * 311.7 + 74.7) * 43758.5453);
+    return (h - Math.floor(h)) * Math.PI * 2;
+  }
+
   // The module's container: a frame centred on the canvas that the module is composed in.
   // Actual size repeats it as it is; 0 means the whole canvas.
   containerSize(mod, width, height) {
@@ -1184,6 +1194,12 @@ export class StudioEngine {
         // Alternating mirror / rotation
         if (rep.gridType === "alternating" && isOddCell) {
           ctx.rotate(Math.PI);
+        }
+        // Direction: repeated (as it is), alternated (alternate cells turn 180°) or undefined (each one different)
+        if (rep.direction === "alternated" && isOddCell && rep.gridType !== "alternating") {
+          ctx.rotate(Math.PI);
+        } else if (rep.direction === "undefined") {
+          ctx.rotate(this.cellDirection(r, c));
         }
 
         // Gradation kinematics across Cartesian pathways
@@ -1552,6 +1568,12 @@ export class StudioEngine {
               ctx.rotate(angle + Math.PI / 2 + (twistRad * 0.35));
             }
           } // "fixed": no turn, only the layer's own rotation applies
+          // Direction on top of the orientation: alternated (alternate cells turn 180°) or undefined (each one different)
+          if (rad.direction === "alternated" && (i + j) % 2 === 1) {
+            ctx.rotate(Math.PI);
+          } else if (rad.direction === "undefined") {
+            ctx.rotate(this.cellDirection(i + centerIdx * 100, j));
+          }
 
           // Gradation on polar radiation (drift slides along the module's local x axis, up to ~one ring)
           if (grad.enabled) {
@@ -1601,8 +1623,9 @@ export class StudioEngine {
     // Structural visible guides
     if (rad.showRings || rad.showRays) {
       ctx.save();
-      ctx.strokeStyle = palette.grid;
-      ctx.lineWidth = 1;
+      const rtone = rad.lineTone || "guide";
+      ctx.strokeStyle = rtone === "positive" ? (targetMod.color || palette.fg) : rtone === "negative" ? palette.bg : palette.grid;
+      ctx.lineWidth = rad.lineWidth || 1;
 
       centers.forEach(center => {
         if (rad.showRings) {
