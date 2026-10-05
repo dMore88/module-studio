@@ -720,7 +720,8 @@ input[type="range"]:hover::-webkit-slider-thumb {
   max-width: 100%;
   height: var(--sizing-7);
 }
-.ds-view-options { display: flex; gap: var(--spacing-4); }
+.ds-view-options { display: flex; align-items: center; gap: var(--spacing-4); }
+.ds-swatch-guide { width: var(--sizing-7); height: var(--sizing-7); border-radius: var(--border-radius-full); }
 
 /* Workspace: layers | canvas column | rail, with the controls panel floating over the right edge */
 .ds-workspace {

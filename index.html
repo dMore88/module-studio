@@ -104,6 +104,10 @@
           <button type="button" id="btn-toggle-invert" class="ds-icon-btn" title="Toggle Figure / Ground Tone" aria-label="Toggle figure and ground tone">
             <i class="ph ph-circle-half" aria-hidden="true"></i>
           </button>
+          <span class="ds-swatch ds-swatch-guide" title="Guide color">
+            <input type="color" id="input-guide-color" value="#f24822" aria-label="Guide color">
+            <span class="ds-swatch-fill" id="swatch-guide-color"></span>
+          </span>
         </div>
       </div>
 
@@ -902,20 +906,6 @@
         </div>
 
         <div id="anom-position-block" class="ds-stack">
-          <div class="ds-field">
-            <div class="ds-label">X position</div>
-            <div class="ds-slider">
-              <input type="range" id="input-anom-x" min="10" max="90" step="1" value="50">
-              <input type="text" id="num-anom-x" class="ds-value" value="50%" inputmode="numeric">
-            </div>
-          </div>
-          <div class="ds-field">
-            <div class="ds-label">Y position</div>
-            <div class="ds-slider">
-              <input type="range" id="input-anom-y" min="10" max="90" step="1" value="50">
-              <input type="text" id="num-anom-y" class="ds-value" value="50%" inputmode="numeric">
-            </div>
-          </div>
           <p class="ds-hint">Click anywhere on the canvas to set focal point</p>
         </div>
 
@@ -964,7 +954,7 @@
             </span>
           </div>
           <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Show Epicenter Reticle</span>
+            <span class="ds-toggle-label">Show focal point</span>
             <input type="checkbox" id="toggle-anom-reticle" class="ds-checkbox">
           </label>
         </div>
@@ -1290,7 +1280,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=66b6ea9c"></script>
+  <script src="js/bundle-pro.js?v=1f4a543a"></script>
 
 </body>
 </html>

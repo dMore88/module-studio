@@ -885,7 +885,7 @@ const createDefaultLayerStructure = () => ({
     anomalousShape: "triangle",
     highlightColor: false,
     accentColor: "#f43f5e", // color applied to anomalous modules when highlighted
-    showReticle: false
+    showReticle: true // the focal point is visible by default (click the canvas to move it)
   },
   contrast: {
     enabled: false,
@@ -957,7 +957,8 @@ const defaultStudioState = {
   invertFigureGround: false,
 
   // Mat / Canvas display settings
-  showSafeBounds: true
+  showSafeBounds: true,
+  guideColor: "#f24822" // colour of every on-screen guide (container frame, reticle, attractor, isometric grid)
 };
 
 // Shapes of the same family, mixed by Similarity > Association
@@ -1776,7 +1777,7 @@ class StudioEngine {
   // Anomaly reticle guide overlay
   drawAnomalyReticle(ctx, width, height, palette, anom) {
     ctx.save();
-    ctx.strokeStyle = palette.accent;
+    ctx.strokeStyle = this.guideColor();
     ctx.lineWidth = 1;
     for (const spot of this.anomalySpots(anom, width, height)) {
       const epiX = spot.x, epiY = spot.y;
@@ -2235,10 +2236,10 @@ class StudioEngine {
     }
 
     // Anomaly reticle guide overlay
-    if (anom.enabled && anom.showReticle) this.drawAnomalyReticle(ctx, width, height, palette, anom);
+    if (anom.enabled && anom.showReticle && !this.exporting) this.drawAnomalyReticle(ctx, width, height, palette, anom);
 
     // Concentration attractor guide overlay
-    if (conc && conc.enabled && conc.showAttractor) {
+    if (conc && conc.enabled && conc.showAttractor && !this.exporting) {
       this.drawAttractorGuide(ctx, width, height, palette, conc);
     }
   }
@@ -2566,10 +2567,10 @@ class StudioEngine {
     }
 
     // Anomaly reticle guide overlay on radiation
-    if (anom.enabled && anom.showReticle) this.drawAnomalyReticle(ctx, width, height, palette, anom);
+    if (anom.enabled && anom.showReticle && !this.exporting) this.drawAnomalyReticle(ctx, width, height, palette, anom);
 
     // Concentration attractor guide overlay on radiation
-    if (conc && conc.enabled && conc.showAttractor) {
+    if (conc && conc.enabled && conc.showAttractor && !this.exporting) {
       this.drawAttractorGuide(ctx, width, height, palette, conc);
     }
   }
@@ -2639,7 +2640,7 @@ class StudioEngine {
       ctx.strokeRect(margin, margin, usableW, usableH);
 
       // The container of each module that has one: a frame centred on the canvas
-      ctx.strokeStyle = palette.isDark ? "rgba(255, 255, 255, 0.55)" : "rgba(24, 24, 31, 0.45)";
+      ctx.strokeStyle = this.guideColor();
       for (const l of this.getLayers()) {
         if (l.visible === false || l.showContainer === false || !(l.containerW > 0 || l.containerH > 0)) continue;
         const cs = this.containerSize(l, width, height);
@@ -2651,7 +2652,7 @@ class StudioEngine {
 
     // 2.5 Isometric Drafting Guides (Space): drawn once if any visible layer asks for them
     const showIsoGuides = this.getLayers().some(l => l.visible !== false && l.structure?.space?.enabled && l.structure.space.showIsoGuides);
-    if (showIsoGuides) {
+    if (showIsoGuides && !this.exporting) {
       this.drawIsometricGuides(ctx, width, height, palette);
     }
 
@@ -2691,9 +2692,9 @@ class StudioEngine {
     ctx.restore(); // end master artboard clip
 
     // 4. Subtle center reference dot (only in single module mode, when no layer uses a layout)
-    if (!anyLayerStructure) {
+    if (!anyLayerStructure && !this.exporting) {
       ctx.save();
-      ctx.fillStyle = palette.accent;
+      ctx.fillStyle = this.guideColor();
       ctx.globalAlpha = 0.6;
       ctx.beginPath();
       ctx.arc(width / 2, height / 2, 2.5, 0, Math.PI * 2);
@@ -2703,6 +2704,11 @@ class StudioEngine {
 
   }
 
+  // One colour for every on-screen guide (Figma-style), chosen next to the canvas buttons
+  guideColor() {
+    return /^#[0-9a-f]{6}$/i.test(this.state.guideColor || "") ? this.state.guideColor : "#f24822";
+  }
+
   // Concentration Attractor Field Guide (Concentration)
   drawAttractorGuide(ctx, width, height, palette, conc) {
     const attX = (conc.attractorX ?? 0.5) * width;
@@ -2710,8 +2716,8 @@ class StudioEngine {
     const radius = conc.radius ?? 240;
 
     ctx.save();
-    ctx.strokeStyle = palette.accent;
-    ctx.fillStyle = palette.accent;
+    ctx.strokeStyle = this.guideColor();
+    ctx.fillStyle = this.guideColor();
 
     if (conc.mode === "line" || conc.mode === "line_void") {
       ctx.lineWidth = 1.2;
@@ -2783,7 +2789,7 @@ class StudioEngine {
   // 30° Isometric Construction Guide Grid (Space)
   drawIsometricGuides(ctx, width, height, palette) {
     ctx.save();
-    ctx.strokeStyle = palette.grid;
+    ctx.strokeStyle = this.guideColor();
     ctx.lineWidth = 0.8;
     ctx.globalAlpha = 0.35;
     ctx.setLineDash([2, 4]);
@@ -3156,6 +3162,7 @@ class StudioProApp {
     // Sync header button states
     const gridBtn = document.getElementById("btn-toggle-grid");
     if (gridBtn) gridBtn.classList.toggle("active", !!this.state.showSafeBounds);
+    this.syncGuideColor();
     const invertBtn = document.getElementById("btn-toggle-invert");
     if (invertBtn) invertBtn.classList.toggle("active", !!this.state.invertFigureGround);
   }
@@ -3321,6 +3328,15 @@ class StudioProApp {
       });
     }
 
+    // 2b. Guide color (one colour for every on-screen guide)
+    const guideInput = document.getElementById("input-guide-color");
+    guideInput?.addEventListener("input", (e) => {
+      this.state.guideColor = e.target.value;
+      this.syncGuideColor();
+      this.render();
+    });
+    guideInput?.addEventListener("change", (e) => this.pushHistory(`Guide Color: ${e.target.value.toUpperCase()}`));
+
     // 3. Toggle Invert Tone Button
     const invertBtn = document.getElementById("btn-toggle-invert");
     if (invertBtn) {
@@ -3424,11 +3440,13 @@ class StudioProApp {
       layers,
       layerOrder: order,
       invertFigureGround: !!raw.invertFigureGround,
-      showSafeBounds: raw.showSafeBounds !== false
+      showSafeBounds: raw.showSafeBounds !== false,
+      guideColor: /^#[0-9a-f]{6}$/i.test(raw.guideColor || "") ? raw.guideColor : "#f24822"
     };
     this.activeLayerId = layers[0].id;
     this.applyAspectRatio(this.state.aspectRatio);
     document.getElementById("btn-toggle-grid")?.classList.toggle("active", this.state.showSafeBounds);
+    this.syncGuideColor();
     document.getElementById("btn-toggle-invert")?.classList.toggle("active", this.state.invertFigureGround);
     this.updateActivePalette();
     this.render();
@@ -4930,6 +4948,14 @@ class StudioProApp {
   }
 
   // Accent color row (swatch + hex) shared by modifiers that can highlight elements.
+  syncGuideColor() {
+    const color = this.engine.guideColor();
+    const input = document.getElementById("input-guide-color");
+    if (input) input.value = color;
+    const swatch = document.getElementById("swatch-guide-color");
+    if (swatch) swatch.style.backgroundColor = color;
+  }
+
   syncAccentColorRow(prefix, color, active) {
     const hex = (color || "#f43f5e").toUpperCase();
     const input = document.getElementById(`${prefix}-accent-color`);
@@ -4990,8 +5016,6 @@ class StudioProApp {
       const num = document.getElementById(numId);
       if (num) num.value = `${value}${suffix}`;
     };
-    setPair("input-anom-x", "num-anom-x", Math.round((anom.epicenterX ?? 0.5) * 100), "%");
-    setPair("input-anom-y", "num-anom-y", Math.round((anom.epicenterY ?? 0.5) * 100), "%");
     setPair("input-anom-radius", "num-anom-radius", anom.radius ?? 160, "px");
     setPair("input-anom-count", "num-anom-count", anom.count ?? 5, "");
     setPair("input-anom-seed", "num-anom-seed", anom.seed ?? 7, "");
@@ -5092,8 +5116,6 @@ class StudioProApp {
         commit(a => { a[key] = toStored(val); }, `Anomaly ${label}: ${val}${suffix}`);
       });
     };
-    bindPair("input-anom-x", "num-anom-x", { min: 10, max: 90, suffix: "%", toStored: v => v / 100, label: "X", key: "epicenterX" });
-    bindPair("input-anom-y", "num-anom-y", { min: 10, max: 90, suffix: "%", toStored: v => v / 100, label: "Y", key: "epicenterY" });
     bindPair("input-anom-count", "num-anom-count", { min: 2, max: 12, suffix: "", toStored: v => v, label: "Count", key: "count" });
     bindPair("input-anom-seed", "num-anom-seed", { min: 1, max: 99, suffix: "", toStored: v => v, label: "Seed", key: "seed" });
     bindPair("input-anom-radius", "num-anom-radius", { min: 50, max: 350, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
@@ -5916,6 +5938,7 @@ class StudioProApp {
         this.activeLayerId = layers[0]?.id || "layer-1";
       }
       this.render();
+      this.syncGuideColor();
       this.syncAllInspectorsWithActiveLayer();
       this.updateLayerCardsUI();
     }
@@ -5930,6 +5953,7 @@ class StudioProApp {
         this.activeLayerId = layers[0]?.id || "layer-1";
       }
       this.render();
+      this.syncGuideColor();
       this.syncAllInspectorsWithActiveLayer();
       this.updateLayerCardsUI();
     }

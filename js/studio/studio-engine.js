@@ -89,7 +89,7 @@ export const createDefaultLayerStructure = () => ({
     anomalousShape: "triangle",
     highlightColor: false,
     accentColor: "#f43f5e", // color applied to anomalous modules when highlighted
-    showReticle: false
+    showReticle: true // the focal point is visible by default (click the canvas to move it)
   },
   contrast: {
     enabled: false,
@@ -163,7 +163,8 @@ export const defaultStudioState = {
   invertFigureGround: false,
 
   // Mat / Canvas display settings
-  showSafeBounds: true
+  showSafeBounds: true,
+  guideColor: "#f24822" // colour of every on-screen guide (container frame, reticle, attractor, isometric grid)
 };
 
 // Shapes of the same family, mixed by Similarity > Association
@@ -983,7 +984,7 @@ export class StudioEngine {
   // Anomaly reticle guide overlay
   drawAnomalyReticle(ctx, width, height, palette, anom) {
     ctx.save();
-    ctx.strokeStyle = palette.accent;
+    ctx.strokeStyle = this.guideColor();
     ctx.lineWidth = 1;
     for (const spot of this.anomalySpots(anom, width, height)) {
       const epiX = spot.x, epiY = spot.y;
@@ -1442,10 +1443,10 @@ export class StudioEngine {
     }
 
     // Anomaly reticle guide overlay
-    if (anom.enabled && anom.showReticle) this.drawAnomalyReticle(ctx, width, height, palette, anom);
+    if (anom.enabled && anom.showReticle && !this.exporting) this.drawAnomalyReticle(ctx, width, height, palette, anom);
 
     // Concentration attractor guide overlay
-    if (conc && conc.enabled && conc.showAttractor) {
+    if (conc && conc.enabled && conc.showAttractor && !this.exporting) {
       this.drawAttractorGuide(ctx, width, height, palette, conc);
     }
   }
@@ -1773,10 +1774,10 @@ export class StudioEngine {
     }
 
     // Anomaly reticle guide overlay on radiation
-    if (anom.enabled && anom.showReticle) this.drawAnomalyReticle(ctx, width, height, palette, anom);
+    if (anom.enabled && anom.showReticle && !this.exporting) this.drawAnomalyReticle(ctx, width, height, palette, anom);
 
     // Concentration attractor guide overlay on radiation
-    if (conc && conc.enabled && conc.showAttractor) {
+    if (conc && conc.enabled && conc.showAttractor && !this.exporting) {
       this.drawAttractorGuide(ctx, width, height, palette, conc);
     }
   }
@@ -1846,7 +1847,7 @@ export class StudioEngine {
       ctx.strokeRect(margin, margin, usableW, usableH);
 
       // The container of each module that has one: a frame centred on the canvas
-      ctx.strokeStyle = palette.isDark ? "rgba(255, 255, 255, 0.55)" : "rgba(24, 24, 31, 0.45)";
+      ctx.strokeStyle = this.guideColor();
       for (const l of this.getLayers()) {
         if (l.visible === false || l.showContainer === false || !(l.containerW > 0 || l.containerH > 0)) continue;
         const cs = this.containerSize(l, width, height);
@@ -1858,7 +1859,7 @@ export class StudioEngine {
 
     // 2.5 Isometric Drafting Guides (Space): drawn once if any visible layer asks for them
     const showIsoGuides = this.getLayers().some(l => l.visible !== false && l.structure?.space?.enabled && l.structure.space.showIsoGuides);
-    if (showIsoGuides) {
+    if (showIsoGuides && !this.exporting) {
       this.drawIsometricGuides(ctx, width, height, palette);
     }
 
@@ -1898,9 +1899,9 @@ export class StudioEngine {
     ctx.restore(); // end master artboard clip
 
     // 4. Subtle center reference dot (only in single module mode, when no layer uses a layout)
-    if (!anyLayerStructure) {
+    if (!anyLayerStructure && !this.exporting) {
       ctx.save();
-      ctx.fillStyle = palette.accent;
+      ctx.fillStyle = this.guideColor();
       ctx.globalAlpha = 0.6;
       ctx.beginPath();
       ctx.arc(width / 2, height / 2, 2.5, 0, Math.PI * 2);
@@ -1910,6 +1911,11 @@ export class StudioEngine {
 
   }
 
+  // One colour for every on-screen guide (Figma-style), chosen next to the canvas buttons
+  guideColor() {
+    return /^#[0-9a-f]{6}$/i.test(this.state.guideColor || "") ? this.state.guideColor : "#f24822";
+  }
+
   // Concentration Attractor Field Guide (Concentration)
   drawAttractorGuide(ctx, width, height, palette, conc) {
     const attX = (conc.attractorX ?? 0.5) * width;
@@ -1917,8 +1923,8 @@ export class StudioEngine {
     const radius = conc.radius ?? 240;
 
     ctx.save();
-    ctx.strokeStyle = palette.accent;
-    ctx.fillStyle = palette.accent;
+    ctx.strokeStyle = this.guideColor();
+    ctx.fillStyle = this.guideColor();
 
     if (conc.mode === "line" || conc.mode === "line_void") {
       ctx.lineWidth = 1.2;
@@ -1990,7 +1996,7 @@ export class StudioEngine {
   // 30° Isometric Construction Guide Grid (Space)
   drawIsometricGuides(ctx, width, height, palette) {
     ctx.save();
-    ctx.strokeStyle = palette.grid;
+    ctx.strokeStyle = this.guideColor();
     ctx.lineWidth = 0.8;
     ctx.globalAlpha = 0.35;
     ctx.setLineDash([2, 4]);

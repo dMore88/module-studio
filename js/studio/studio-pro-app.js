@@ -86,6 +86,7 @@ export class StudioProApp {
     // Sync header button states
     const gridBtn = document.getElementById("btn-toggle-grid");
     if (gridBtn) gridBtn.classList.toggle("active", !!this.state.showSafeBounds);
+    this.syncGuideColor();
     const invertBtn = document.getElementById("btn-toggle-invert");
     if (invertBtn) invertBtn.classList.toggle("active", !!this.state.invertFigureGround);
   }
@@ -251,6 +252,15 @@ export class StudioProApp {
       });
     }
 
+    // 2b. Guide color (one colour for every on-screen guide)
+    const guideInput = document.getElementById("input-guide-color");
+    guideInput?.addEventListener("input", (e) => {
+      this.state.guideColor = e.target.value;
+      this.syncGuideColor();
+      this.render();
+    });
+    guideInput?.addEventListener("change", (e) => this.pushHistory(`Guide Color: ${e.target.value.toUpperCase()}`));
+
     // 3. Toggle Invert Tone Button
     const invertBtn = document.getElementById("btn-toggle-invert");
     if (invertBtn) {
@@ -354,11 +364,13 @@ export class StudioProApp {
       layers,
       layerOrder: order,
       invertFigureGround: !!raw.invertFigureGround,
-      showSafeBounds: raw.showSafeBounds !== false
+      showSafeBounds: raw.showSafeBounds !== false,
+      guideColor: /^#[0-9a-f]{6}$/i.test(raw.guideColor || "") ? raw.guideColor : "#f24822"
     };
     this.activeLayerId = layers[0].id;
     this.applyAspectRatio(this.state.aspectRatio);
     document.getElementById("btn-toggle-grid")?.classList.toggle("active", this.state.showSafeBounds);
+    this.syncGuideColor();
     document.getElementById("btn-toggle-invert")?.classList.toggle("active", this.state.invertFigureGround);
     this.updateActivePalette();
     this.render();
@@ -1860,6 +1872,14 @@ export class StudioProApp {
   }
 
   // Accent color row (swatch + hex) shared by modifiers that can highlight elements.
+  syncGuideColor() {
+    const color = this.engine.guideColor();
+    const input = document.getElementById("input-guide-color");
+    if (input) input.value = color;
+    const swatch = document.getElementById("swatch-guide-color");
+    if (swatch) swatch.style.backgroundColor = color;
+  }
+
   syncAccentColorRow(prefix, color, active) {
     const hex = (color || "#f43f5e").toUpperCase();
     const input = document.getElementById(`${prefix}-accent-color`);
@@ -1920,8 +1940,6 @@ export class StudioProApp {
       const num = document.getElementById(numId);
       if (num) num.value = `${value}${suffix}`;
     };
-    setPair("input-anom-x", "num-anom-x", Math.round((anom.epicenterX ?? 0.5) * 100), "%");
-    setPair("input-anom-y", "num-anom-y", Math.round((anom.epicenterY ?? 0.5) * 100), "%");
     setPair("input-anom-radius", "num-anom-radius", anom.radius ?? 160, "px");
     setPair("input-anom-count", "num-anom-count", anom.count ?? 5, "");
     setPair("input-anom-seed", "num-anom-seed", anom.seed ?? 7, "");
@@ -2022,8 +2040,6 @@ export class StudioProApp {
         commit(a => { a[key] = toStored(val); }, `Anomaly ${label}: ${val}${suffix}`);
       });
     };
-    bindPair("input-anom-x", "num-anom-x", { min: 10, max: 90, suffix: "%", toStored: v => v / 100, label: "X", key: "epicenterX" });
-    bindPair("input-anom-y", "num-anom-y", { min: 10, max: 90, suffix: "%", toStored: v => v / 100, label: "Y", key: "epicenterY" });
     bindPair("input-anom-count", "num-anom-count", { min: 2, max: 12, suffix: "", toStored: v => v, label: "Count", key: "count" });
     bindPair("input-anom-seed", "num-anom-seed", { min: 1, max: 99, suffix: "", toStored: v => v, label: "Seed", key: "seed" });
     bindPair("input-anom-radius", "num-anom-radius", { min: 50, max: 350, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
@@ -2846,6 +2862,7 @@ export class StudioProApp {
         this.activeLayerId = layers[0]?.id || "layer-1";
       }
       this.render();
+      this.syncGuideColor();
       this.syncAllInspectorsWithActiveLayer();
       this.updateLayerCardsUI();
     }
@@ -2860,6 +2877,7 @@ export class StudioProApp {
         this.activeLayerId = layers[0]?.id || "layer-1";
       }
       this.render();
+      this.syncGuideColor();
       this.syncAllInspectorsWithActiveLayer();
       this.updateLayerCardsUI();
     }
