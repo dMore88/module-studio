@@ -158,3 +158,7 @@ Pasa de 6+6 controles a 4+4, con todo explicado.
   - Las guías de los **demás controles** (retículo de Anomaly, atractor de Concentration, retícula isométrica de Space...) son solo guías: **un control global de color de guías**, no se exportan.
 - **Sorpréndeme y presets:** prioridad **mínima**. Van al final de todo, cuando la herramienta esté afinada con todos los controles.
 - **Filtro del backlog P3:** aprobado (¿sirve para jugar o solo completa el libro?).
+
+### Avance
+Hecho: Layout reorganizado (esencial + Advanced, dropdowns), Structure unido a Layout, líneas visibles como diseño, ritmo A:B proporcional, contenedor en *Advanced* con *Show container*, color global de guías, Anomaly sin X/Y, color de acento sin casillas (Anomaly y Contrast) y chips mezclables en Concentration.
+Pendiente: Gradation, Similarity y el resto de la auditoría (secciones 3 y 5), Sorpréndeme y presets (al final de todo).

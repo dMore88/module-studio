@@ -4962,7 +4962,7 @@ class StudioProApp {
     const swatch = document.getElementById(`${prefix}-accent-swatch`);
     if (swatch) swatch.style.backgroundColor = hex;
     const label = document.getElementById(`${prefix}-accent-hex`);
-    if (label) label.textContent = hex;
+    if (label) label.textContent = prefix.endsWith("line") || active ? hex : "None";
     document.getElementById(`${prefix}-accent-row`)?.classList.toggle("is-dimmed", !active);
   }
 
@@ -5037,7 +5037,6 @@ class StudioProApp {
     document.getElementById("anom-seed-block")?.classList.toggle("hidden", dist !== "random");
     setPair("input-anom-intensity", "num-anom-intensity", anom.intensity ?? 65, "%");
 
-    this.syncCheckbox("toggle-anom-highlight", !!anom.highlightColor);
     this.syncAccentColorRow("anom", anom.accentColor, !!anom.highlightColor);
     this.syncCheckbox("toggle-anom-reticle", !!anom.showReticle);
 
@@ -5120,9 +5119,9 @@ class StudioProApp {
     bindPair("input-anom-radius", "num-anom-radius", { min: 50, max: 350, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
     bindPair("input-anom-intensity", "num-anom-intensity", { min: 10, max: 100, suffix: "%", toStored: v => v, label: "Severity", key: "intensity" });
 
-    document.getElementById("toggle-anom-highlight")?.addEventListener("change", (e) => {
-      const checked = e.target.checked;
-      commit(a => { a.highlightColor = checked; }, `Anomaly Highlight: ${checked ? "ON" : "OFF"}`);
+    // Removing the accent colour turns the highlight off
+    document.getElementById("anom-accent-clear")?.addEventListener("click", () => {
+      commit(a => { a.highlightColor = false; }, "Anomaly Accent: none");
     });
     // Picking an accent color also turns the highlight on.
     const anomColor = document.getElementById("anom-accent-color");
@@ -5202,7 +5201,6 @@ class StudioProApp {
     document.getElementById("contrast-scale-block")?.classList.toggle("hidden", con.dimension !== "scale");
     document.getElementById("contrast-angle-block")?.classList.toggle("hidden", con.dimension !== "direction");
 
-    this.syncCheckbox("toggle-contrast-highlight", !!con.highlightContrast);
     this.syncAccentColorRow("contrast", con.accentColor, !!con.highlightContrast);
 
     this.updateRailIndicatorDots();
@@ -5267,9 +5265,8 @@ class StudioProApp {
       });
     });
 
-    document.getElementById("toggle-contrast-highlight")?.addEventListener("change", (e) => {
-      const checked = e.target.checked;
-      commit(c => { c.highlightContrast = checked; }, `Contrast Accentuate Minority: ${checked ? "ON" : "OFF"}`);
+    document.getElementById("contrast-accent-clear")?.addEventListener("click", () => {
+      commit(c => { c.highlightContrast = false; }, "Contrast Accent: none");
     });
     // Picking an accent color also turns the accentuation on.
     const contrastColor = document.getElementById("contrast-accent-color");
@@ -5324,8 +5321,11 @@ class StudioProApp {
     document.querySelectorAll("#card-concentration [data-conc-method]").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.concMethod === (conc.method || "move"));
     });
-    const fadeBox = document.getElementById("toggle-conc-fade");
-    if (fadeBox) fadeBox.checked = !!conc.edgeFade;
+    document.querySelectorAll("#card-concentration [data-conc-flag]").forEach(chip => {
+      const on = !!conc[chip.dataset.concFlag];
+      chip.classList.toggle("active", on);
+      chip.setAttribute("aria-pressed", String(on));
+    });
 
     const setPair = (sliderId, numId, value, suffix) => {
       this.syncControlValue(sliderId, value);
@@ -5337,8 +5337,6 @@ class StudioProApp {
     setPair("input-conc-power", "num-conc-power", conc.power ?? 50, "%");
     setPair("input-conc-radius", "num-conc-radius", conc.radius ?? 240, "px");
 
-    this.syncCheckbox("toggle-conc-align", !!conc.alignToField);
-    this.syncCheckbox("toggle-conc-density", !!conc.densityScale);
     this.syncCheckbox("toggle-conc-guide", !!conc.showAttractor);
 
     this.updateRailIndicatorDots();
@@ -5375,9 +5373,13 @@ class StudioProApp {
         commit(c => { c.method = btn.dataset.concMethod; }, `Concentration Method: ${btn.dataset.concMethod}`);
       });
     });
-    document.getElementById("toggle-conc-fade")?.addEventListener("change", (e) => {
-      const checked = e.target.checked;
-      commit(c => { c.edgeFade = checked; }, `Concentration Edge Fade: ${checked ? "ON" : "OFF"}`);
+    // Field style: chips that can be mixed (each one switches on and off by itself)
+    document.querySelectorAll("#card-concentration [data-conc-flag]").forEach(chip => {
+      chip.addEventListener("click", () => {
+        const key = chip.dataset.concFlag;
+        const next = chip.getAttribute("aria-pressed") !== "true";
+        commit(c => { c[key] = next; }, `Concentration ${chip.textContent}: ${next ? "ON" : "OFF"}`);
+      });
     });
     document.querySelectorAll("#card-concentration [data-conc-mode]").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -5418,8 +5420,6 @@ class StudioProApp {
         commit(c => { c[key] = checked; }, `Concentration ${label}: ${checked ? "ON" : "OFF"}`);
       });
     };
-    bindCheck("toggle-conc-align", "alignToField", "Orient to Flow");
-    bindCheck("toggle-conc-density", "densityScale", "Density Scale");
     bindCheck("toggle-conc-guide", "showAttractor", "Attractor Guide");
 
     // Click on the canvas moves the attractor while the Concentration tab is open.

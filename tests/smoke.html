@@ -977,8 +977,13 @@
       assert(cs().mode === "line_void" && !q("#conc-axis-block").classList.contains("hidden"), "Away from line should offer the axis");
       q('[data-conc-mode="dense"]').click();
       assert(q("#conc-method-block").classList.contains("hidden") && q("#conc-radius-field").classList.contains("hidden") && !q("#conc-fade-block").classList.contains("hidden"), "Dense should hide method and radius and offer the edge fade");
-      q("#toggle-conc-fade").click();
-      assert(cs().edgeFade === true, "Edge fade did not apply");
+      q('[data-conc-flag="edgeFade"]').click();
+      assert(cs().edgeFade === true && q('[data-conc-flag="edgeFade"]').classList.contains("active"), "Edge fade chip did not apply");
+      // The style chips can be mixed
+      q('[data-conc-flag="alignToField"]').click(); q('[data-conc-flag="densityScale"]').click();
+      assert(cs().edgeFade && cs().alignToField && cs().densityScale && q('[data-conc-flag="densityScale"]').getAttribute("aria-pressed") === "true", "The three field-style chips should be combinable");
+      q('[data-conc-flag="alignToField"]').click();
+      assert(cs().alignToField === false && cs().edgeFade === true, "A chip should switch off by itself");
     });
 
     await test("Direction (repeated, alternated, undefined) and radial line tone and width", async () => {
@@ -1237,6 +1242,22 @@
       // Anomaly: the focal point is on by default and has no X / Y sliders
       reset(); assert(!q("#input-anom-x") && !q("#input-anom-y"), "The anomaly X / Y sliders should be gone (click the canvas instead)");
       assert(app.getActiveModule().structure.anomaly.showReticle === true, "The focal point should be visible by default");
+      reset();
+    });
+
+    await test("Accent colour replaces the Highlight checkbox in Anomaly and Contrast", async () => {
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      assert(!q("#toggle-anom-highlight") && !q("#toggle-contrast-highlight"), "The Highlight checkboxes should be gone");
+      for (const [tab, pre, key, enable] of [["anomaly", "anom", "anomaly", "#toggle-anomaly-active"], ["contrast", "contrast", "contrast", "#toggle-contrast-active"]]) {
+        q(`[data-rail-tab="${tab}"]`).click(); await wait(60);
+        const st = () => app.getActiveLayerStructure()[key], flag = key === "anomaly" ? "highlightColor" : "highlightContrast";
+        assert(st()[flag] === false && q(`#${pre}-accent-hex`).textContent === "None", `${tab}: no accent by default`);
+        const input = q(`#${pre}-accent-color`); input.value = "#118833"; input.dispatchEvent(new win.Event("input", { bubbles: true }));
+        assert(st()[flag] === true && st().accentColor === "#118833" && q(`#${pre}-accent-hex`).textContent === "#118833", `${tab}: choosing a colour should turn the accent on`);
+        q(`#${pre}-accent-clear`).click();
+        assert(st()[flag] === false && q(`#${pre}-accent-hex`).textContent === "None", `${tab}: the clear button should remove the accent`);
+      }
       reset();
     });
 

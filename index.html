@@ -941,10 +941,6 @@
           </div>
 
         <div class="ds-toggles">
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Highlight with accent color</span>
-            <input type="checkbox" id="toggle-anom-highlight" class="ds-checkbox">
-          </label>
           <div class="ds-color-row" id="anom-accent-row">
             <span class="ds-color-label">Accent color</span>
             <span class="ds-color-hex" id="anom-accent-hex">#F43F5E</span>
@@ -952,6 +948,7 @@
               <input type="color" id="anom-accent-color" value="#f43f5e">
               <span class="ds-swatch-fill" id="anom-accent-swatch"></span>
             </span>
+            <button type="button" class="ds-color-clear" id="anom-accent-clear" aria-label="Remove accent color" title="Remove accent color"><i class="ph ph-x" aria-hidden="true"></i></button>
           </div>
           <label class="ds-toggle-item">
             <span class="ds-toggle-label">Show focal point</span>
@@ -1041,10 +1038,6 @@
           </div>
 
         <div class="ds-toggles">
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Accentuate Minority Elements</span>
-            <input type="checkbox" id="toggle-contrast-highlight" class="ds-checkbox">
-          </label>
           <div class="ds-color-row" id="contrast-accent-row">
             <span class="ds-color-label">Accent color</span>
             <span class="ds-color-hex" id="contrast-accent-hex">#F43F5E</span>
@@ -1052,6 +1045,7 @@
               <input type="color" id="contrast-accent-color" value="#f43f5e">
               <span class="ds-swatch-fill" id="contrast-accent-swatch"></span>
             </span>
+            <button type="button" class="ds-color-clear" id="contrast-accent-clear" aria-label="Remove accent color" title="Remove accent color"><i class="ph ph-x" aria-hidden="true"></i></button>
           </div>
         </div>
       </div>
@@ -1110,6 +1104,15 @@
           </div>
         </div>
 
+        <div class="ds-field">
+          <div class="ds-label">Field style</div>
+          <div class="ds-tags" role="group" aria-label="Field style">
+            <button type="button" id="conc-fade-block" class="ds-tag hidden" data-conc-flag="edgeFade" aria-pressed="false">Soft edge</button>
+            <button type="button" class="ds-tag" data-conc-flag="alignToField" aria-pressed="false">Flowing</button>
+            <button type="button" class="ds-tag" data-conc-flag="densityScale" aria-pressed="false">Dynamic density</button>
+          </div>
+        </div>
+
         <div class="ds-stack">
           <div class="ds-field">
             <div class="ds-label ds-label-clip">X position</div>
@@ -1144,18 +1147,6 @@
           </div>
 
         <div class="ds-toggles">
-          <label id="conc-fade-block" class="ds-toggle-item hidden">
-            <span class="ds-toggle-label">Fade toward the edges</span>
-            <input type="checkbox" id="toggle-conc-fade" class="ds-checkbox">
-          </label>
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Orient Modules to Field Flow</span>
-            <input type="checkbox" id="toggle-conc-align" class="ds-checkbox">
-          </label>
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Dynamic Density Scale</span>
-            <input type="checkbox" id="toggle-conc-density" class="ds-checkbox">
-          </label>
           <label class="ds-toggle-item">
             <span class="ds-toggle-label">Display Attractor Guide</span>
             <input type="checkbox" id="toggle-conc-guide" class="ds-checkbox">
@@ -1280,7 +1271,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=48ccca5e"></script>
+  <script src="js/bundle-pro.js?v=7fa0ca5b"></script>
 
 </body>
 </html>
