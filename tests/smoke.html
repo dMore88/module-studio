@@ -200,6 +200,49 @@
       assert(app.state.layers.length === 1, `Expected 1 layer after deleting, got ${app.state.layers.length}`);
     });
 
+    await test("Inspector panels (Module, Layout, Structure, Similarity) drive the layer state", async () => {
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      const fire = (el, v) => { el.value = v; el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
+      const tab = async (t) => { q(`[data-rail-tab="${t}"]`).click(); await wait(80); };
+      const st = () => app.getActiveLayerStructure();
+
+      await tab("layout");
+      q("#toggle-layout-structure").click();
+      assert(st().enabled === true, "Layout switch did not enable the layout");
+      q('[data-grid-var="curved"]').click();
+      assert(st().repetition.gridType === "curved", "Grid variation tag did not apply");
+      fire(q("#input-layout-cols"), 7);
+      assert(st().repetition.cols === 7 && q("#num-layout-cols").value === "7", "Columns slider and value box out of sync");
+      q("#btn-layout-radiation").click(); await wait(60);
+      assert(st().mode === "radiation", "Radiation button did not switch the mode");
+      assert(q("#subpanel-repetition").classList.contains("hidden") && !q("#subpanel-radiation").classList.contains("hidden"), "Sub-panels did not swap");
+      assert(q("#btn-layout-radiation").classList.contains("active") && !q("#btn-layout-repetition").classList.contains("active"), "Button group active state wrong");
+
+      await tab("structure");
+      assert(!q("#warning-structure-radiation").classList.contains("hidden"), "Structure notice should show while Radiation is active");
+      await tab("layout"); q("#btn-layout-repetition").click(); await wait(60);
+      await tab("structure");
+      assert(q("#warning-structure-radiation").classList.contains("hidden"), "Structure notice should hide on Repetition");
+      fire(q("#input-struct-col-ratio"), 2.5);
+      assert(st().formalStructure.colRatio === 2.5, "Structure col ratio did not apply");
+
+      await tab("similarity");
+      q("#toggle-similarity-active").click();
+      q('[data-kinship-type="hybrid"]').click();
+      fire(q("#input-sim-intensity"), 80);
+      assert(st().similarity.enabled && st().similarity.kinshipType === "hybrid" && st().similarity.intensity === 80, "Similarity controls did not apply");
+      assert(q("#num-sim-intensity").value === "80%", "Similarity value box format wrong");
+
+      await tab("module");
+      q('[data-shape="hexagon"]').click();
+      fire(q("#input-active-width"), 120);
+      q("#btn-mode-fill").click();
+      const L = app.getActiveModule();
+      assert(L.shape === "hexagon" && L.width === 120 && L.wireframe === false, "Module controls did not apply");
+      assert(q("#btn-mode-fill").classList.contains("active") && !q("#btn-mode-stroke").classList.contains("active"), "Fill / Stroke group active state wrong");
+    });
+
     await test("A failed draw shows a visible notice and recovers", () => {
       reset();
       const original = app.engine.render;

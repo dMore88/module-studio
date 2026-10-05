@@ -145,24 +145,21 @@
     <div id="inspector-flyout" class="inspector-flyout-card z-30 pointer-events-auto select-none">
       
       <!-- ===================================================================
-           TAB 1: MODULE (EXACT MATCH REFERENCE 1)
+           TAB 1: MODULE (Figma: Web apps / Abstract studio editor, Module panel)
            =================================================================== -->
-      <div id="active-layer-inspector" class="flyout-tab-content space-y-4" data-flyout-tab="module">
-        <div class="flex items-center justify-between border-b border-[#eef0f4] pb-2">
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-semibold text-[#585b68]">Module</span>
-            <span id="active-layer-indicator-badge" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#18181f] text-white">Layer 2</span>
+      <div id="active-layer-inspector" class="flyout-tab-content ds-card" data-flyout-tab="module">
+        <div class="ds-card-header">
+          <div class="ds-card-title">
+            <span class="ds-card-title-text">Module</span>
+            <span id="active-layer-indicator-badge" class="ds-badge">Layer 1</span>
           </div>
           <button type="button" class="close-flyout-btn" title="Close Panel">
             <i class="ph ph-x text-[14px]"></i>
           </button>
         </div>
 
-        <!-- Section Title: SHAPE -->
-        <div>
-          <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-2">SHAPE</div>
-          
-          <!-- 15 shape glyphs (Figma shape grid). Phosphor fill icons. -->
+        <div class="ds-field">
+          <div class="ds-label">Shape</div>
           <div class="shape-grid">
             <button type="button" class="shape-circle-btn active" data-shape="circle" title="Circle"><i class="ph-fill ph-circle text-[16px]"></i></button>
             <button type="button" class="shape-circle-btn" data-shape="square" title="Square"><i class="ph-fill ph-square text-[16px]"></i></button>
@@ -182,334 +179,309 @@
           </div>
         </div>
 
-        <!-- WIDTH & HEIGHT Sliders -->
-        <div class="grid grid-cols-2 gap-4 pt-1">
-          <div>
-            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">WIDTH</div>
-            <div class="flex items-center gap-2">
-              <input type="range" id="input-active-width" min="5" max="400" value="50" class="flex-1">
-              <input type="text" id="num-active-width" class="val-box-input" value="50">
+        <div class="ds-row">
+          <div class="ds-field">
+            <div class="ds-label">Width</div>
+            <div class="ds-slider">
+              <input type="range" id="input-active-width" min="5" max="400" step="1" value="50">
+              <input type="text" id="num-active-width" class="ds-value" value="50" inputmode="decimal">
             </div>
           </div>
-          <div>
-            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">HEIGHT</div>
-            <div class="flex items-center gap-2">
-              <input type="range" id="input-active-height" min="5" max="250" value="50" class="flex-1">
-              <input type="text" id="num-active-height" class="val-box-input" value="50">
-            </div>
-          </div>
-        </div>
-
-        <!-- ROTATION (°) & STROKE WIDTH Sliders -->
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">ROTATION (°)</div>
-            <div class="flex items-center gap-2">
-              <input type="range" id="input-active-rotation" min="0" max="360" step="0.5" value="4.5" class="flex-1">
-              <input type="text" id="num-active-rotation" class="val-box-input" value="4,5">
-            </div>
-          </div>
-          <div>
-            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">STROKE WIDTH</div>
-            <div class="flex items-center gap-2">
-              <input type="range" id="input-active-stroke" min="0.2" max="10" step="0.1" value="1.2" class="flex-1">
-              <input type="text" id="num-active-stroke" class="val-box-input" value="1,2">
+          <div class="ds-field">
+            <div class="ds-label">Height</div>
+            <div class="ds-slider">
+              <input type="range" id="input-active-height" min="5" max="250" step="1" value="50">
+              <input type="text" id="num-active-height" class="ds-value" value="50" inputmode="decimal">
             </div>
           </div>
         </div>
 
-        <!-- OFFSET X & OFFSET Y Sliders (Position) -->
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">OFFSET X</div>
-            <div class="flex items-center gap-2">
-              <input type="range" id="input-active-offset-x" min="-250" max="250" step="1" value="0" class="flex-1">
-              <input type="text" id="num-active-offset-x" class="val-box-input" value="0">
+        <div class="ds-row">
+          <div class="ds-field">
+            <div class="ds-label">Rotation (°)</div>
+            <div class="ds-slider">
+              <input type="range" id="input-active-rotation" min="0" max="360" step="0.5" value="4.5">
+              <input type="text" id="num-active-rotation" class="ds-value" value="4.5" inputmode="decimal">
             </div>
           </div>
-          <div>
-            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">OFFSET Y</div>
-            <div class="flex items-center gap-2">
-              <input type="range" id="input-active-offset-y" min="-250" max="250" step="1" value="0" class="flex-1">
-              <input type="text" id="num-active-offset-y" class="val-box-input" value="0">
-            </div>
-          </div>
-        </div>
-
-        <!-- DRAW MODE & SHAPE COLOR -->
-        <div class="grid grid-cols-2 gap-4 pt-1">
-          <div>
-            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">DRAW MODE</div>
-            <div class="segmented-pill-bar">
-              <button type="button" id="btn-mode-stroke" class="segmented-pill-btn active">Stroke</button>
-              <button type="button" id="btn-mode-fill" class="segmented-pill-btn">Fill</button>
-            </div>
-          </div>
-          <div>
-            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">SHAPE COLOR</div>
-            <div class="flex items-center gap-2">
-              <div class="relative w-8 h-8 rounded-md border border-[#18181f] overflow-hidden flex items-center justify-center bg-white shadow-xs">
-                <input type="color" id="color-active-shape" value="#18181f" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                <div id="swatch-active-color" class="w-full h-full bg-[#18181f]"></div>
-              </div>
-              <span id="text-color-hex" class="text-xs font-mono font-medium text-[#121317]">#18181F</span>
+          <div class="ds-field">
+            <div class="ds-label">Stroke width</div>
+            <div class="ds-slider">
+              <input type="range" id="input-active-stroke" min="0.2" max="10" step="0.1" value="1.2">
+              <input type="text" id="num-active-stroke" class="ds-value" value="1.2" inputmode="decimal">
             </div>
           </div>
         </div>
 
+        <div class="ds-row">
+          <div class="ds-field">
+            <div class="ds-label">Offset X</div>
+            <div class="ds-slider">
+              <input type="range" id="input-active-offset-x" min="-250" max="250" step="1" value="0">
+              <input type="text" id="num-active-offset-x" class="ds-value" value="0" inputmode="decimal">
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Offset Y</div>
+            <div class="ds-slider">
+              <input type="range" id="input-active-offset-y" min="-250" max="250" step="1" value="0">
+              <input type="text" id="num-active-offset-y" class="ds-value" value="0" inputmode="decimal">
+            </div>
+          </div>
+        </div>
+
+        <div class="ds-row">
+          <div class="ds-field">
+            <div class="ds-label">Fill / Stroke</div>
+            <div class="ds-btn-group" role="group" aria-label="Fill or stroke">
+              <button type="button" id="btn-mode-stroke" class="ds-btn-group__button active">Stroke</button>
+              <button type="button" id="btn-mode-fill" class="ds-btn-group__button">Fill</button>
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Shape color</div>
+            <div class="ds-color-picker">
+              <span class="ds-swatch ds-swatch-lg">
+                <input type="color" id="color-active-shape" value="#18181f">
+                <span id="swatch-active-color" class="ds-swatch-fill"></span>
+              </span>
+              <span id="text-color-hex" class="ds-color-hex">#18181F</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ===================================================================
-           TAB 2: LAYOUT STRUCTURE (EXACT MATCH REFERENCE 2)
+           TAB 2: LAYOUT STRUCTURE (Figma nodes 5779:255 and 5779:2128)
            Unified Repetition + Radiation
            =================================================================== -->
-      <div id="card-layout-structure" class="flyout-tab-content space-y-4 hidden" data-flyout-tab="layout">
-        <div class="flex items-center justify-between border-b border-[#eef0f4] pb-2">
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-semibold text-[#585b68]">Layout structure</span>
-            <span id="badge-layout-layer" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#e2e5eb] text-[#4b4f5d] font-bold">Layer 1</span>
+      <div id="card-layout-structure" class="flyout-tab-content ds-card hidden" data-flyout-tab="layout">
+        <div class="ds-card-header">
+          <div class="ds-card-title">
+            <span class="ds-card-title-text">Layout structure</span>
+            <span id="badge-layout-layer" class="ds-badge">Layer 1</span>
           </div>
-          <div class="flex items-center gap-2.5">
-            <label class="switch cursor-pointer" title="Enable / Disable Layout Structure">
-              <input type="checkbox" id="toggle-layout-structure">
-              <span class="switch-slider"></span>
-            </label>
-            <button type="button" class="close-flyout-btn" title="Close Panel">
-              <i class="ph ph-x text-[14px]"></i>
-            </button>
-          </div>
+          <label class="ds-switch" title="Enable / Disable Layout Structure">
+            <input type="checkbox" id="toggle-layout-structure">
+            <span class="ds-switch-track"></span>
+          </label>
+          <button type="button" class="close-flyout-btn" title="Close Panel">
+            <i class="ph ph-x text-[14px]"></i>
+          </button>
         </div>
 
-        <!-- Structure Mode Selector: Repetition | Radiation -->
-        <div>
-          <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">STRUCTURE MODE</div>
-          <div class="segmented-pill-bar">
-            <button type="button" id="btn-layout-repetition" class="segmented-pill-btn active" data-layout-mode="repetition">Repetition</button>
-            <button type="button" id="btn-layout-radiation" class="segmented-pill-btn" data-layout-mode="radiation">Radiation</button>
+        <div class="ds-field">
+          <div class="ds-label">Structure mode</div>
+          <div class="ds-btn-group" role="group" aria-label="Structure mode">
+            <button type="button" id="btn-layout-repetition" class="ds-btn-group__button active" data-layout-mode="repetition">Repetition</button>
+            <button type="button" id="btn-layout-radiation" class="ds-btn-group__button" data-layout-mode="radiation">Radiation</button>
           </div>
         </div>
 
         <!-- SUB-PANEL A: REPETITION MODE -->
-        <div id="subpanel-repetition" class="space-y-3.5">
-          <div>
-            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">GRID STRUCTURE VARIATION</div>
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <button type="button" class="variation-pill-btn active" data-grid-var="basic">Grid</button>
-              <button type="button" class="variation-pill-btn" data-grid-var="curved">Curved</button>
-              <button type="button" class="variation-pill-btn" data-grid-var="sliding">Brick</button>
-              <button type="button" class="variation-pill-btn" data-grid-var="sheared">Diagonal</button>
-            </div>
+        <div id="subpanel-repetition" class="ds-stack">
+        <div class="ds-field">
+          <div class="ds-label">Grid structure variation</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-grid-var="basic">Grid</button>
+            <button type="button" class="ds-tag" data-grid-var="curved">Curved</button>
+            <button type="button" class="ds-tag" data-grid-var="sliding">Brick</button>
+            <button type="button" class="ds-tag" data-grid-var="sheared">Diagonal</button>
           </div>
+        </div>
 
-          <!-- COLUMNS & ROWS -->
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">COLUMNS</div>
-              <div class="flex items-center gap-2">
-                <input type="range" id="input-layout-cols" min="1" max="50" value="4" class="flex-1">
-                <input type="text" id="num-layout-cols" class="val-box-input" value="4">
-              </div>
-            </div>
-            <div>
-              <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">ROWS</div>
-              <div class="flex items-center gap-2">
-                <input type="range" id="input-layout-rows" min="1" max="50" value="4" class="flex-1">
-                <input type="text" id="num-layout-rows" class="val-box-input" value="4">
-              </div>
+        <div class="ds-row">
+          <div class="ds-field">
+            <div class="ds-label">Columns</div>
+            <div class="ds-slider">
+              <input type="range" id="input-layout-cols" min="1" max="50" step="1" value="4">
+              <input type="text" id="num-layout-cols" class="ds-value" value="4" inputmode="decimal">
             </div>
           </div>
+          <div class="ds-field">
+            <div class="ds-label">Rows</div>
+            <div class="ds-slider">
+              <input type="range" id="input-layout-rows" min="1" max="50" step="1" value="4">
+              <input type="text" id="num-layout-rows" class="ds-value" value="4" inputmode="decimal">
+            </div>
+          </div>
+        </div>
 
-          <!-- REPETITION CHECKBOXES (Exact Match Reference 2) -->
-          <div class="pt-2 border-t border-[#eef0f4] space-y-1">
-            <label class="toggle-check-row cursor-pointer">
-              <span>Clip cell</span>
-              <input type="checkbox" id="chk-rep-clip" class="custom-app-checkbox">
-            </label>
-            <label class="toggle-check-row cursor-pointer">
-              <span>Visible Grid Lines</span>
-              <input type="checkbox" id="chk-rep-gridlines" class="custom-app-checkbox">
-            </label>
-            <label class="toggle-check-row cursor-pointer">
-              <span>Checkerboard inversion</span>
-              <input type="checkbox" id="chk-rep-checker" class="custom-app-checkbox">
-            </label>
-          </div>
+        <div class="ds-toggles">
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Clip cell</span>
+            <input type="checkbox" id="chk-rep-clip" class="ds-checkbox">
+          </label>
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Visible Grid Lines</span>
+            <input type="checkbox" id="chk-rep-gridlines" class="ds-checkbox">
+          </label>
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Checkerboard inversion</span>
+            <input type="checkbox" id="chk-rep-checker" class="ds-checkbox">
+          </label>
+        </div>
         </div>
 
         <!-- SUB-PANEL B: RADIATION MODE -->
-        <div id="subpanel-radiation" class="space-y-3.5 hidden">
-          <div>
-            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1.5">RADIATION SCHEME</div>
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <button type="button" class="variation-pill-btn active" data-rad-scheme="centrifugal">Centrifugal</button>
-              <button type="button" class="variation-pill-btn" data-rad-scheme="concentric">Concentric</button>
-              <button type="button" class="variation-pill-btn" data-rad-scheme="spiral">Spiral</button>
-              <button type="button" class="variation-pill-btn" data-rad-scheme="multi_center">Dual-center</button>
+        <div id="subpanel-radiation" class="ds-stack hidden">
+        <div class="ds-field">
+          <div class="ds-label">Radiation scheme</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-rad-scheme="centrifugal">Centrifugal</button>
+            <button type="button" class="ds-tag" data-rad-scheme="concentric">Concentric</button>
+            <button type="button" class="ds-tag" data-rad-scheme="spiral">Spiral</button>
+            <button type="button" class="ds-tag" data-rad-scheme="multi_center">Dual-center</button>
+          </div>
+        </div>
+
+        <div class="ds-row">
+          <div class="ds-field">
+            <div class="ds-label">Angular rays</div>
+            <div class="ds-slider">
+              <input type="range" id="input-layout-rays" min="4" max="36" step="1" value="12">
+              <input type="text" id="num-layout-rays" class="ds-value" value="12" inputmode="decimal">
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Concentric rings</div>
+            <div class="ds-slider">
+              <input type="range" id="input-layout-rings" min="2" max="16" step="1" value="5">
+              <input type="text" id="num-layout-rings" class="ds-value" value="5" inputmode="decimal">
+            </div>
+          </div>
+        </div>
+
+          <div class="ds-field">
+            <div class="ds-label">Spiral twist</div>
+            <div class="ds-slider">
+              <input type="range" id="input-layout-twist" min="-180" max="180" step="1" value="12">
+              <input type="text" id="num-layout-twist" class="ds-value" value="12" inputmode="decimal">
             </div>
           </div>
 
-          <!-- ANGULAR RAYS & CONCENTRIC RINGS -->
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">ANGULAR RAYS</div>
-              <div class="flex items-center gap-2">
-                <input type="range" id="input-layout-rays" min="4" max="36" value="12" class="flex-1">
-                <input type="text" id="num-layout-rays" class="val-box-input" value="12">
-              </div>
-            </div>
-            <div>
-              <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">CONCENTRIC RINGS</div>
-              <div class="flex items-center gap-2">
-                <input type="range" id="input-layout-rings" min="2" max="16" value="5" class="flex-1">
-                <input type="text" id="num-layout-rings" class="val-box-input" value="5">
-              </div>
-            </div>
-          </div>
-
-          <!-- SPIRAL TWIST (Full Width) -->
-          <div>
-            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">SPIRAL TWIST</div>
-            <div class="flex items-center gap-2">
-              <input type="range" id="input-layout-twist" min="-180" max="180" value="12" class="flex-1">
-              <input type="text" id="num-layout-twist" class="val-box-input" value="12">
-            </div>
-          </div>
-
-          <!-- RADIATION CHECKBOXES (Exact Match Reference 2) -->
-          <div class="pt-2 border-t border-[#eef0f4] space-y-1">
-            <label class="toggle-check-row cursor-pointer">
-              <span>Clip cell</span>
-              <input type="checkbox" id="chk-rad-clip" class="custom-app-checkbox">
-            </label>
-            <label class="toggle-check-row cursor-pointer">
-              <span>Visible Grid Lines</span>
-              <input type="checkbox" id="chk-rad-gridlines" class="custom-app-checkbox">
-            </label>
-            <label class="toggle-check-row cursor-pointer">
-              <span>Checkerboard inversion</span>
-              <input type="checkbox" id="chk-rad-checker" class="custom-app-checkbox">
-            </label>
-          </div>
+        <div class="ds-toggles">
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Clip cell</span>
+            <input type="checkbox" id="chk-rad-clip" class="ds-checkbox">
+          </label>
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Visible Grid Lines</span>
+            <input type="checkbox" id="chk-rad-gridlines" class="ds-checkbox">
+          </label>
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Checkerboard inversion</span>
+            <input type="checkbox" id="chk-rad-checker" class="ds-checkbox">
+          </label>
+        </div>
         </div>
       </div>
 
       <!-- ===================================================================
-           TAB 3: STRUCTURE (EXACT MATCH MOCKUP media_1790991477208.png)
-           Rhythmic Cadence Proportions: Col Ratio, Row Ratio, Visible Grid Lines
+           TAB 3: STRUCTURE (Figma node 5779:2299)
+           Rhythmic cadence proportions: Col Ratio, Row Ratio, Visible Grid Lines
            =================================================================== -->
-      <div id="card-structure" class="flyout-tab-content space-y-4 hidden" data-flyout-tab="structure">
-        <div class="flex items-center justify-between border-b border-[#eef0f4] pb-2">
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-semibold text-[#585b68]">Structure</span>
-            <span id="badge-structure-layer" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#e2e5eb] text-[#4b4f5d] font-bold">Layer 1</span>
+      <div id="card-structure" class="flyout-tab-content ds-card hidden" data-flyout-tab="structure">
+        <div class="ds-card-header">
+          <div class="ds-card-title">
+            <span class="ds-card-title-text">Structure</span>
+            <span id="badge-structure-layer" class="ds-badge">Layer 1</span>
           </div>
-          <div class="flex items-center gap-2.5">
-            <label class="switch cursor-pointer" title="Enable / Disable Structure">
-              <input type="checkbox" id="toggle-structure-active">
-              <span class="switch-slider"></span>
-            </label>
-            <button type="button" class="close-flyout-btn" title="Close Panel">
-              <i class="ph ph-x text-[14px]"></i>
-            </button>
-          </div>
+          <label class="ds-switch" title="Enable / Disable Structure">
+            <input type="checkbox" id="toggle-structure-active">
+            <span class="ds-switch-track"></span>
+          </label>
+          <button type="button" class="close-flyout-btn" title="Close Panel">
+            <i class="ph ph-x text-[14px]"></i>
+          </button>
         </div>
 
-        <!-- Warning Alert Banner: Appears dynamically only when Radiation is active in Layout structure -->
-        <div id="warning-structure-radiation" class="warning-alert-box hidden">
-          <i class="ph ph-warning text-[16px] text-[#d97706] shrink-0 mt-0.5"></i>
-          <span>This control cannot be used when Radiation is active in Layout structure control.</span>
+        <div id="warning-structure-radiation" class="ds-snackbar hidden" role="status">
+          <i class="ph-fill ph-warning"></i>
+          <p>This control cannot be used when Radiation is active in Layout structure control.</p>
         </div>
 
-        <!-- Structure Controls Group -->
-        <div id="struct-controls-group" class="space-y-4">
-          <!-- Col Ratio & Row Ratio -->
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">COL RATIO [A:B]</div>
-              <div class="flex items-center gap-2">
-                <input type="range" id="input-struct-col-ratio" min="1" max="4" step="0.1" value="1" class="flex-1">
-                <input type="text" id="num-struct-col-ratio" class="val-box-input" value="1">
-              </div>
-            </div>
-            <div>
-              <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">ROW RATIO [A:B]</div>
-              <div class="flex items-center gap-2">
-                <input type="range" id="input-struct-row-ratio" min="1" max="4" step="0.1" value="1" class="flex-1">
-                <input type="text" id="num-struct-row-ratio" class="val-box-input" value="1">
-              </div>
+        <!-- Structure controls: dimmed and inert while Radiation is active -->
+        <div id="struct-controls-group" class="ds-stack">
+        <div class="ds-row">
+          <div class="ds-field">
+            <div class="ds-label ds-label-clip">Col ratio [A:B]</div>
+            <div class="ds-slider">
+              <input type="range" id="input-struct-col-ratio" min="1" max="4" step="0.1" value="1">
+              <input type="text" id="num-struct-col-ratio" class="ds-value" value="1" inputmode="decimal">
             </div>
           </div>
-
-          <!-- Visible Grid Lines -->
-          <div class="pt-2 border-t border-[#eef0f4]">
-            <label class="toggle-check-row cursor-pointer flex items-center justify-between text-xs text-[#121317]">
-              <span>Visible Grid Lines</span>
-              <input type="checkbox" id="chk-struct-gridlines" class="custom-app-checkbox">
-            </label>
+          <div class="ds-field">
+            <div class="ds-label ds-label-clip">Row ratio [A:B]</div>
+            <div class="ds-slider">
+              <input type="range" id="input-struct-row-ratio" min="1" max="4" step="0.1" value="1">
+              <input type="text" id="num-struct-row-ratio" class="ds-value" value="1" inputmode="decimal">
+            </div>
           </div>
         </div>
 
+        <div class="ds-toggles">
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Visible Grid Lines</span>
+            <input type="checkbox" id="chk-struct-gridlines" class="ds-checkbox">
+          </label>
+        </div>
+        </div>
       </div>
 
       <!-- ===================================================================
-           TAB 4: SIMILARITY (EXACT MATCH MOCKUP media_1790993276297.png)
-           Visual Kinship: Elastic, 3D tilt, Wobble, Scale, Hibrid
-           Fluctuation Intensity & Spatial Cell Jitter
+           TAB 4: SIMILARITY (Figma node 5779:2401)
+           Visual kinship: Elastic, 3D tilt, Wobble, Scale, Hibrid
+           Fluctuation intensity and spatial cell jitter
            =================================================================== -->
-      <div id="card-similarity" class="flyout-tab-content space-y-4 hidden" data-flyout-tab="similarity">
-        <div class="flex items-center justify-between border-b border-[#eef0f4] pb-2">
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-semibold text-[#585b68]">Similarity</span>
-            <span id="badge-similarity-layer" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#e2e5eb] text-[#4b4f5d] font-bold">Layer 1</span>
+      <div id="card-similarity" class="flyout-tab-content ds-card hidden" data-flyout-tab="similarity">
+        <div class="ds-card-header">
+          <div class="ds-card-title">
+            <span class="ds-card-title-text">Similarity</span>
+            <span id="badge-similarity-layer" class="ds-badge">Layer 1</span>
           </div>
-          <div class="flex items-center gap-2.5">
-            <label class="switch cursor-pointer" title="Enable / Disable Similarity">
-              <input type="checkbox" id="toggle-similarity-active">
-              <span class="switch-slider"></span>
-            </label>
-            <button type="button" class="close-flyout-btn" title="Close Panel">
-              <i class="ph ph-x text-[14px]"></i>
-            </button>
+          <label class="ds-switch" title="Enable / Disable Similarity">
+            <input type="checkbox" id="toggle-similarity-active">
+            <span class="ds-switch-track"></span>
+          </label>
+          <button type="button" class="close-flyout-btn" title="Close Panel">
+            <i class="ph ph-x text-[14px]"></i>
+          </button>
+        </div>
+
+        <div id="warning-similarity-grid" class="ds-snackbar hidden" role="status">
+          <i class="ph-fill ph-warning"></i>
+          <p>Requires Repetition or Radiation in Layout structure to display across a population of units.</p>
+        </div>
+
+        <div id="similarity-controls-group" class="ds-stack">
+        <div class="ds-field">
+          <div class="ds-label">Visual kinship type</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-kinship-type="distortion">Elastic</button>
+            <button type="button" class="ds-tag" data-kinship-type="foreshortening">3D tilt</button>
+            <button type="button" class="ds-tag" data-kinship-type="rotation_wobble">Wobble</button>
+            <button type="button" class="ds-tag" data-kinship-type="scale_kinship">Scale</button>
+            <button type="button" class="ds-tag" data-kinship-type="hybrid">Hibrid</button>
           </div>
         </div>
 
-        <!-- Dependency Warning Banner: Shown only when Similarity is ON but Layout Structure is OFF -->
-        <div id="warning-similarity-grid" class="warning-alert-box hidden">
-          <i class="ph ph-warning text-[16px] text-[#d97706] shrink-0 mt-0.5"></i>
-          <span>Requires Repetition or Radiation in Layout structure to display across a population of units.</span>
+        <div class="ds-row">
+          <div class="ds-field">
+            <div class="ds-label ds-label-clip">Fluctuation intensity</div>
+            <div class="ds-slider">
+              <input type="range" id="input-sim-intensity" min="0" max="100" step="1" value="50">
+              <input type="text" id="num-sim-intensity" class="ds-value" value="50%" inputmode="decimal">
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label ds-label-clip">Spatial cell jitter</div>
+            <div class="ds-slider">
+              <input type="range" id="input-sim-jitter" min="0" max="30" step="1" value="0">
+              <input type="text" id="num-sim-jitter" class="ds-value" value="0" inputmode="decimal">
+            </div>
+          </div>
         </div>
-
-        <!-- Similarity Controls Group -->
-        <div id="similarity-controls-group" class="space-y-4">
-          <!-- Visual Kinship Type -->
-          <div>
-            <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-2">VISUAL KINSHIP TYPE</div>
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <button type="button" class="variation-pill-btn active" data-kinship-type="distortion">Elastic</button>
-              <button type="button" class="variation-pill-btn" data-kinship-type="foreshortening">3D tilt</button>
-              <button type="button" class="variation-pill-btn" data-kinship-type="rotation_wobble">Wobble</button>
-              <button type="button" class="variation-pill-btn" data-kinship-type="scale_kinship">Scale</button>
-              <button type="button" class="variation-pill-btn" data-kinship-type="hybrid">Hibrid</button>
-            </div>
-          </div>
-
-          <!-- Fluctuation Intensity & Spatial Cell Jitter -->
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">FLUCTUATION INTENSITY</div>
-              <div class="flex items-center gap-2">
-                <input type="range" id="input-sim-intensity" min="0" max="100" step="1" value="50" class="flex-1">
-                <input type="text" id="num-sim-intensity" class="val-box-input" value="50%">
-              </div>
-            </div>
-            <div>
-              <div class="text-[10px] font-bold tracking-wider uppercase text-[#121317] mb-1">SPATIAL CELL JITTER</div>
-              <div class="flex items-center gap-2">
-                <input type="range" id="input-sim-jitter" min="0" max="30" step="1" value="0" class="flex-1">
-                <input type="text" id="num-sim-jitter" class="val-box-input" value="0">
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -533,9 +505,9 @@
         </div>
 
         <!-- Dependency banner: Gradation ON but no Repetition / Radiation in this layer -->
-        <div id="warning-gradation-grid" class="warning-alert-box hidden">
-          <i class="ph ph-warning text-[16px] text-[#d97706] shrink-0 mt-0.5"></i>
-          <span>Requires Repetition or Radiation in Layout structure to display across a population of units.</span>
+        <div id="warning-gradation-grid" class="ds-snackbar hidden" role="status">
+          <i class="ph-fill ph-warning"></i>
+          <p>Requires Repetition or Radiation in Layout structure to display across a population of units.</p>
         </div>
 
         <div class="ds-field">
@@ -601,9 +573,9 @@
         </div>
 
         <!-- Dependency banner: Anomaly ON but no Repetition / Radiation in this layer -->
-        <div id="warning-anomaly-grid" class="warning-alert-box hidden">
-          <i class="ph ph-warning text-[16px] text-[#d97706] shrink-0 mt-0.5"></i>
-          <span>Requires Repetition or Radiation in Layout structure to display across a population of units.</span>
+        <div id="warning-anomaly-grid" class="ds-snackbar hidden" role="status">
+          <i class="ph-fill ph-warning"></i>
+          <p>Requires Repetition or Radiation in Layout structure to display across a population of units.</p>
         </div>
 
         <div class="ds-field">
@@ -714,9 +686,9 @@
         </div>
 
         <!-- Dependency banner: Contrast ON but no Repetition / Radiation in this layer -->
-        <div id="warning-contrast-grid" class="warning-alert-box hidden">
-          <i class="ph ph-warning text-[16px] text-[#d97706] shrink-0 mt-0.5"></i>
-          <span>Requires Repetition or Radiation in Layout structure to display across a population of units.</span>
+        <div id="warning-contrast-grid" class="ds-snackbar hidden" role="status">
+          <i class="ph-fill ph-warning"></i>
+          <p>Requires Repetition or Radiation in Layout structure to display across a population of units.</p>
         </div>
 
         <div class="ds-field">
@@ -810,9 +782,9 @@
         </div>
 
         <!-- Dependency banner: Concentration ON but no Repetition / Radiation in this layer -->
-        <div id="warning-concentration-grid" class="warning-alert-box hidden">
-          <i class="ph ph-warning text-[16px] text-[#d97706] shrink-0 mt-0.5"></i>
-          <span>Requires Repetition or Radiation in Layout structure to display across a population of units.</span>
+        <div id="warning-concentration-grid" class="ds-snackbar hidden" role="status">
+          <i class="ph-fill ph-warning"></i>
+          <p>Requires Repetition or Radiation in Layout structure to display across a population of units.</p>
         </div>
 
         <div class="ds-field">

@@ -7,7 +7,7 @@ Fuente: archivo de Figma **Web apps**, con dos páginas:
 
 Este documento describe los tokens y componentes **tal como están en Figma** y cómo se usan en el código. Los tokens viven en `css/tokens.css`.
 
-> **Estado de la migración:** los paneles de **Gradation, Anomaly, Contrast, Concentration, Texture y Space** ya usan estos tokens (clases `.ds-*` en `css/studio-pro.css`). Los paneles **Module, Layout, Structure y Similarity** y la barra superior todavía usan el tema antiguo (`css/design-system.css`, variables `--bs-*`, ver el apartado 7). Su migración está en el backlog (Q3b).
+> **Estado de la migración:** los **diez paneles del inspector** (Module, Layout structure, Structure, Similarity, Gradation, Anomaly, Contrast, Concentration, Texture y Space) usan estos tokens y las clases `.ds-*` de `css/studio-pro.css`. Siguen con el tema antiguo (`css/design-system.css`, variables `--bs-*`, ver el apartado 7) la **barra superior, las tarjetas de capas y el riel de herramientas**, porque en Figma solo existen como una captura plana, sin componentes (backlog Q3d).
 
 ---
 
@@ -198,10 +198,19 @@ Texto *Body* a la izquierda, casilla 24×24 a la derecha, relleno vertical `spac
 ### 5.9 Botón de icono con forma (`.shape-circle-btn`)
 40×40, radio `border/radius/2` (16), borde 1 px en la tinta, icono de 16 px (Phosphor *fill*); activo con fondo `neutral/interactive/default`. Cuadrícula con separación 8 px (`.shape-grid`).
 
-### 5.10 Aviso (`.warning-alert-box`, `.render-error`)
-En la librería, el *snackbar* y el *toast-notification* usan fondos `…/bg/soft`, texto `…/text/default` e iconos `…/icon/main`. El aviso de dependencias (ámbar) sigue el estilo `warning`; el aviso de error de dibujo usa la tinta oscura con `elevation/3x`.
+### 5.10 Snackbar (`.ds-snackbar`) y aviso de error (`.render-error`)
+Snackbar de advertencia (nodo `5779:3233`): fondo `warning/bg/soft`, borde `border/weight/1` en `warning/border/main`, radio `border/radius/1`, relleno `spacing/5` vertical y `spacing/6` horizontal, separación `spacing/3`, icono de 20 px en `warning/icon/main` y texto *Body small* en `warning/text/default`. Lo usan los avisos de dependencia (Structure, Similarity, Gradation, Anomaly, Contrast y Concentration). El aviso de error de dibujo usa la tinta oscura con `elevation/3x`.
 
-### 5.11 Componentes de la librería que la app aún no usa
+### 5.11 Grupo de botones (`.ds-btn-group`)
+Altura 40 (`sizing/7`), borde `border/weight/1` en `neutral/border/strong`, radio `border/radius/2`, fondo `neutral/bg/light`. Botones de ancho igual (mínimo 80 px) con texto *Body small*, separados por una línea; el activo usa `neutral/interactive/active` con texto `neutral/text/main-inverted`. Se usa en *Structure mode* (Repetition / Radiation) y *Fill / Stroke*.
+
+### 5.12 Selector de color (`.ds-color-picker`)
+Cuadro de color de 40×40 (`sizing/7`), radio `border/radius/1`, borde en `neutral/border/strong`, y el valor hexadecimal al lado en fuente monoespaciada.
+
+### 5.13 Pila de campos (`.ds-stack`)
+Contenedor vertical con separación `spacing/6` (24) para los sub-paneles de Layout structure y para el grupo de controles de Structure y Similarity.
+
+### 5.14 Componentes de la librería que la app aún no usa
 Breadcrumbs, paginación, loaders, ribbon alert, modal, card, input de texto, búsqueda, select, textarea, input numérico, lista, tabla, botón, enlace, grupo de botones, grupo de botones de alternancia, tabs, acordeón y tooltip.
 
 ---
@@ -214,7 +223,7 @@ Breadcrumbs, paginación, loaders, ribbon alert, modal, card, input de texto, b�
 
 ## 7. Tema antiguo (`css/design-system.css`)
 
-Variables `--bs-*` (por ejemplo `--bs-accent-primary: #18181f`, `--bs-radius-card: 14px`), con una paleta propia que **no coincide con Figma** (la tinta antigua es `#18181f`, no `#282a36`). Siguen en uso en los paneles Module, Layout, Structure y Similarity, la barra superior, las tarjetas de capas y el riel. Se retirarán al migrar esos paneles al diseño de Figma (backlog **Q3b**).
+Variables `--bs-*` (por ejemplo `--bs-accent-primary: #18181f`, `--bs-radius-card: 14px`), con una paleta propia que **no coincide con Figma** (la tinta antigua es `#18181f`, no `#282a36`). Siguen en uso en la barra superior, las tarjetas de capas y el riel, que en Figma son una captura plana. Se retirarán cuando existan sus frames (backlog **Q3d**).
 
 ---
 
@@ -228,7 +237,10 @@ Variables `--bs-*` (por ejemplo `--bs-accent-primary: #18181f`, `--bs-radius-car
 | 4 | **Checkbox apagado** | La librería usa fondo `neutral/interactive/default--inverted`; el diseño de la app, fondo blanco | Unificar |
 | 5 | **Anillo de foco** | La librería usa `primary/interactive/focus` (`#97bcf5`), de poco contraste sobre blanco | La app usa un contorno de 2 px en la tinta; confirmar que se mantiene |
 | 6 | **Controles sin mockup** | Selector de forma y ángulo en Contrast, eje de línea en Concentration, color de acento en Anomaly y Contrast | Diseñarlos en Figma |
-| 7 | **Rampa de primitivos** | No se puede leer completa con las herramientas disponibles | Exportar la lista de variables desde Figma si se quiere documentar entera |
+| 7 | **Dos generaciones de mockups** | Los frames de Layout, Structure y Similarity usan los componentes tal como están en la librería: tags y casillas con fondo gris `#e1e2eb`, interruptor encendido con pista clara y bolita oscura. Los frames de Gradation a Space usan tags y casillas blancos y el interruptor encendido con pista oscura. La app aplica a todos los paneles el estilo de los frames recientes (blancos, interruptor oscuro) | Elegir uno y actualizar el otro en Figma. Cambiarlo en la app son unas pocas líneas de `css/studio-pro.css` |
+| 8 | **Etiqueta "Relleno / Trazo" en Layout** | En el mockup del selector Repetition / Radiation sobra el texto "Relleno / Trazo" (parece de otro control). En la app se llama *Structure mode* | Confirmar |
+| 9 | **Panel Module** | El mockup no muestra la etiqueta de capa (badge) ni el botón de cierre; la app los mantiene | Confirmar |
+| 10 | **Rampa de primitivos** | No se puede leer completa con las herramientas disponibles | Exportar la lista de variables desde Figma si se quiere documentar entera |
 
 ---
 
