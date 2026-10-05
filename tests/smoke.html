@@ -1164,6 +1164,21 @@
       // Fit: 4 columns of 225, 75, 225, 75 px (centres 112.5, 262.5...); a 100 px module is 37.5 px in A and a third of that in B
       const fit = render("fit", 3, 1, 4, 1, 100);
       assert(Math.abs(widthAt(fit, 112.5, 300) - 37.5) < 2.5 && Math.abs(widthAt(fit, 262.5, 300) - 12.5) < 2.5, `Fit: A and B module widths are ${widthAt(fit, 112.5, 300)} and ${widthAt(fit, 262.5, 300)}, expected 37.5 and 12.5`);
+      // Open-path shapes (hatch) are squeezed too, in columns and in rows
+      const extent = (d, cx, cy, half) => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (let y = cy - half; y < cy + half; y += 1) for (let x = cx - half; x < cx + half; x += 1) if (dark(d, x, y)) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } return { w: x1 - x0, h: y1 - y0 }; };
+      const st2 = JSON.parse(JSON.stringify(app.state));
+      st2.layers = [st2.layers[0]]; st2.layerOrder = [st2.layers[0].id]; st2.showSafeBounds = false; st2.aspectRatio = "1:1";
+      const H = st2.layers[0];
+      Object.assign(H, { shape: "hatch", width: 60, height: 60, offsetX: 0, offsetY: 0, rotation: 0, wireframe: true, strokeWidth: 1, containerW: 100, containerH: 100 });
+      H.structure.enabled = true; H.structure.mode = "repetition";
+      Object.assign(H.structure.repetition, { cols: 2, rows: 2, gridType: "basic", sizeMode: "actual", showGridLines: false, placement: "centers", cellMix: "none" });
+      H.structure.formalStructure = { enabled: true, colRatio: 4, rowRatio: 4, showGridLines: false };
+      app.state = st2; drawRaw(app);
+      const hd = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      // 2x2, ratio 4: columns 100 and 25 (total 125, starts at 237.5), rows the same: A cell centre (287.5, 287.5), B column centre (350, 287.5), B row centre (287.5, 350)
+      const eA = extent(hd, 287.5, 287.5, 40), eBc = extent(hd, 350, 287.5, 30), eBr = extent(hd, 287.5, 350, 30);
+      assert(eBc.w < eA.w * 0.5 && eBc.h > eA.h * 0.6, `Hatch in a B column should get narrower, not shorter (A ${eA.w}x${eA.h}, B ${eBc.w}x${eBc.h})`);
+      assert(eBr.h < eA.h * 0.5 && eBr.w > eA.w * 0.6, `Hatch in a B row should get lower, not narrower (A ${eA.w}x${eA.h}, B ${eBr.w}x${eBr.h})`);
       reset();
     });
 

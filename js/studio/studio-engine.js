@@ -471,8 +471,10 @@ export class StudioEngine {
     // thickness and deformation, so they keep a uniform scale. A line's length is its width.
     const isSkeleton = !!(Shapes[shape] && Shapes[shape].skeleton);
     const r = shape === "line" ? w : Math.max(w, h);
-    const sx = !isSkeleton && r > 0 ? w / r : 1;
-    const sy = !isSkeleton && r > 0 ? h / r : 1;
+    // Rhythm squeezes every shape with its column and row, open-path ones included (a line only changes its length)
+    const canStretch = !!stretch && shape !== "line";
+    const sx = (!isSkeleton || canStretch) && r > 0 ? w / r : 1;
+    const sy = (!isSkeleton || canStretch) && r > 0 ? h / r : 1;
     const ox = (mod.offsetX || 0) * sizeMultiplier * kx;
     const oy = (mod.offsetY || 0) * sizeMultiplier * ky;
     const wire = wireframeOverride !== null ? wireframeOverride : (mod.wireframe !== false);
