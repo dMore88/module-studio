@@ -1330,17 +1330,27 @@ class StudioEngine {
   }
 
   // Build the boundary path for a cell in the given grid variation
+  // Curved, zigzag and sheared grids: how far the vertical lines are pushed sideways at height y.
+  // Curved is one wave over the whole grid; zigzag goes through the middle of each row (alternately + and -).
+  gridShift(rep, y) {
+    const f = this.gridFrame;
+    const I = rep.curveIntensity || 0;
+    if (!f) return 0;
+    if (rep.gridType === "curved") return Math.sin(((y - f.top) / Math.max(1, f.h)) * Math.PI * 2) * I;
+    if (rep.gridType === "sheared") return (y - (f.top + f.h / 2)) * 0.6 * Math.tan(((rep.shearAngle || 0) * Math.PI) / 180);
+    const mids = f.rowY, n = mids.length;
+    const z = (r) => (r % 2 === 0 ? 1 : -1) * I;
+    if (y <= mids[0]) return z(0);
+    if (y >= mids[n - 1]) return z(n - 1);
+    let r = 0;
+    while (r < n - 2 && y > mids[r + 1]) r++;
+    const t = (y - mids[r]) / Math.max(1e-6, mids[r + 1] - mids[r]);
+    return z(r) + (z(r + 1) - z(r)) * t;
+  }
+
   buildCellPath(ctx, r, c, rows, cols, cx, cy, cW, cH, rep, startX) {
     ctx.beginPath();
-    if (rep.gridType === "sheared") {
-      const rad = (rep.shearAngle * Math.PI) / 180;
-      const dxTop = -(cH / 2) * Math.tan(rad);
-      const dxBot = (cH / 2) * Math.tan(rad);
-      ctx.moveTo(cx - cW / 2 + dxTop, cy - cH / 2);
-      ctx.lineTo(cx + cW / 2 + dxTop, cy - cH / 2);
-      ctx.lineTo(cx + cW / 2 + dxBot, cy + cH / 2);
-      ctx.lineTo(cx - cW / 2 + dxBot, cy + cH / 2);
-    } else if (rep.gridType === "hexagonal") {
+    if (rep.gridType === "hexagonal") {
       const s = cH / 1.5; // vertical radius of the hexagon
       ctx.moveTo(cx, cy - s);
       ctx.lineTo(cx + cW / 2, cy - s / 2);
@@ -1359,22 +1369,12 @@ class StudioEngine {
         ctx.lineTo(cx + cW * 0.55, cy - cH / 2);
         ctx.lineTo(cx - cW * 0.55, cy - cH / 2);
       }
-    } else if (rep.gridType === "curved") {
-      const wTop = Math.sin((r / rows) * Math.PI * 2) * rep.curveIntensity;
-      const wBot = Math.sin(((r + 1) / rows) * Math.PI * 2) * rep.curveIntensity;
-      const baseX = startX;
-      ctx.moveTo(baseX + wTop, cy - cH / 2);
-      ctx.lineTo(baseX + cW + wTop, cy - cH / 2);
-      ctx.lineTo(baseX + cW + wBot, cy + cH / 2);
-      ctx.lineTo(baseX + wBot, cy + cH / 2);
-    } else if (rep.gridType === "zigzag") {
-      const zTop = (r % 2 === 0 ? 1 : -1) * rep.curveIntensity;
-      const zBot = ((r + 1) % 2 === 0 ? 1 : -1) * rep.curveIntensity;
-      const baseX = startX;
-      ctx.moveTo(baseX + zTop, cy - cH / 2);
-      ctx.lineTo(baseX + cW + zTop, cy - cH / 2);
-      ctx.lineTo(baseX + cW + zBot, cy + cH / 2);
-      ctx.lineTo(baseX + zBot, cy + cH / 2);
+    } else if (rep.gridType === "curved" || rep.gridType === "zigzag" || rep.gridType === "sheared") {
+      // The cell's sides follow the very same line the grid draws (see gridShift), so what is clipped matches what is seen
+      const top = cy - cH / 2, steps = rep.gridType === "curved" ? 8 : rep.gridType === "sheared" ? 1 : 2;
+      const ys = Array.from({ length: steps + 1 }, (_, i) => top + (cH * i) / steps);
+      ys.forEach((y, i) => { const x = startX + this.gridShift(rep, y); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+      for (let i = steps; i >= 0; i--) ctx.lineTo(startX + cW + this.gridShift(rep, ys[i]), ys[i]);
     } else {
       // Basic orthogonal, sliding, alternating
       ctx.rect(cx - cW / 2, cy - cH / 2, cW, cH);
@@ -2055,6 +2055,7 @@ class StudioEngine {
     // Far edges of the grid (the canvas edge in fit mode; past it in fixed mode)
     const colEdge = isFixed ? colStarts[cols - 1] + colWidths[cols - 1] : margin + usableW;
     const rowEdge = isFixed ? rowStarts[rows - 1] + rowHeights[rows - 1] : margin + usableH;
+    this.gridFrame = { top: rowStarts[0], h: rowEdge - rowStarts[0], rowY };
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -2078,15 +2079,8 @@ class StudioEngine {
         // Apply grid deformations to center coordinates
         if (gt === "sliding") {
           if (r % 2 === 1) cx += cW * rep.slideOffset;
-        } else if (gt === "sheared") {
-          const rad = (rep.shearAngle * Math.PI) / 180;
-          cx += (r - rows / 2) * Math.tan(rad) * (cH * 0.6);
-        } else if (gt === "curved") {
-          const wave = Math.sin((r / rows) * Math.PI * 2) * rep.curveIntensity;
-          cx += wave;
-        } else if (gt === "zigzag") {
-          const zig = (r % 2 === 0 ? 1 : -1) * rep.curveIntensity;
-          cx += zig;
+        } else if (gt === "curved" || gt === "zigzag" || gt === "sheared") {
+          cx += this.gridShift(repCell, cy);
         } else if (gt === "triangular" || isHex) {
           if (r % 2 === 1) cx += cW * 0.5;
         }
@@ -2341,26 +2335,20 @@ class StudioEngine {
             ctx.beginPath();
 
             if (rep.gridType === "sheared") {
-              const rad = (rep.shearAngle * Math.PI) / 180;
-              const topX = baseX - (rows / 2) * Math.tan(rad) * (rowHeights[0] * 0.6);
-              const botX = baseX + (rows / 2) * Math.tan(rad) * (rowHeights[0] * 0.6);
-              ctx.moveTo(topX, margin);
-              ctx.lineTo(botX, margin + usableH);
+              const gt0 = this.gridFrame.top, gt1 = gt0 + this.gridFrame.h;
+              ctx.moveTo(baseX + this.gridShift(rep, gt0), gt0);
+              ctx.lineTo(baseX + this.gridShift(rep, gt1), gt1);
             } else if (rep.gridType === "curved") {
-              ctx.moveTo(baseX, margin);
-              const steps = 30;
-              for (let st = 1; st <= steps; st++) {
-                const frac = st / steps;
-                const y = margin + frac * usableH;
-                const wave = Math.sin(frac * Math.PI * 2) * rep.curveIntensity;
-                ctx.lineTo(baseX + wave, y);
+              const top = this.gridFrame.top, steps = 40;
+              for (let st = 0; st <= steps; st++) {
+                const y = top + (st / steps) * this.gridFrame.h;
+                if (st === 0) ctx.moveTo(baseX + this.gridShift(rep, y), y); else ctx.lineTo(baseX + this.gridShift(rep, y), y);
               }
             } else if (rep.gridType === "zigzag") {
-              ctx.moveTo(baseX, margin);
-              for (let r = 0; r < rows; r++) {
-                const zig = (r % 2 === 0 ? 1 : -1) * rep.curveIntensity;
-                ctx.lineTo(baseX + zig, margin + (r + 1) * rowHeights[r]);
-              }
+              // Through the top, the middle and the bottom of every row: the same line the cells are cut by
+              const ys = [rowStarts[0]];
+              for (let r = 0; r < rows; r++) ys.push(rowY[r], r === rows - 1 ? rowEdge : rowStarts[r + 1]);
+              ys.forEach((y, i) => { if (i === 0) ctx.moveTo(baseX + this.gridShift(rep, y), y); else ctx.lineTo(baseX + this.gridShift(rep, y), y); });
             } else {
               ctx.moveTo(baseX, margin);
               ctx.lineTo(baseX, margin + usableH);

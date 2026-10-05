@@ -1558,6 +1558,25 @@
       reset();
     });
 
+    await test("Curved, zigzag and sheared grids: cells, centres and lines follow one same line", () => {
+      const e = app.engine;
+      // Rows of different height (a rhythm): tops 0, 100, 150, 400
+      e.gridFrame = { top: 0, h: 400, rowY: [50, 125, 275] };
+      const curved = { gridType: "curved", curveIntensity: 20 };
+      assert(Math.abs(e.gridShift(curved, 0)) < 1e-9 && Math.abs(e.gridShift(curved, 100) - 20) < 1e-9 && Math.abs(e.gridShift(curved, 300) + 20) < 1e-9, "Curved: one wave over the whole grid height");
+      const zig = { gridType: "zigzag", curveIntensity: 20 };
+      assert(e.gridShift(zig, 50) === 20 && e.gridShift(zig, 125) === -20 && e.gridShift(zig, 275) === 20, "Zigzag: the line passes through the middle of every row, alternating");
+      assert(Math.abs(e.gridShift(zig, 87.5)) < 1e-9, "Zigzag: halfway between two rows the line is back at the middle");
+      const shear = { gridType: "sheared", curveIntensity: 20, shearAngle: 30 };
+      assert(Math.abs(e.gridShift(shear, 200)) < 1e-9 && e.gridShift(shear, 400) > 0 && e.gridShift(shear, 0) < 0, "Sheared: leans one way above the middle and the other below");
+      // The clip of a cell is made of those same lines: its sides at the middle of the cell sit at the cell's shifted centre
+      const pts = [];
+      const rec = { beginPath() {}, closePath() {}, moveTo: (x, y) => pts.push([x, y]), lineTo: (x, y) => pts.push([x, y]), rect() { pts.push("rect"); } };
+      e.buildCellPath(rec, 1, 0, 3, 1, 0, 125, 100, 100, curved, 0);
+      const left = pts.slice(0, pts.length / 2);
+      assert(left.every(([x, y]) => Math.abs(x - e.gridShift(curved, y)) < 1e-9), "The clip's left side is not the grid line");
+    });
+
     await test("Irregular sizes: every column and row gets its own size, the same for the same seed", async () => {
       reset();
       const cv = win.document.getElementById("studio-canvas");
