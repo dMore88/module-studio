@@ -1037,11 +1037,17 @@ export class StudioEngine {
     const colStarts = [];
     const isColRhythmic = !isFixed && !!(struct && struct.enabled && (struct.colRatio !== undefined || struct.mode === "rhythmic"));
     if (isFixed) {
-      const startX = margin + usableW / 2 - (cols * fixedCW) / 2;
+      // Rhythm in Actual size: the B columns keep the container's width, the A columns are Col ratio times wider
+      const rhythmic = !!(struct && struct.enabled && rep.gridType !== "hexagonal");
+      const rA = rhythmic ? Math.max(0.1, Number(struct.colRatio) || 1) : 1;
+      const widths = Array.from({ length: cols }, (_, c) => fixedCW * (c % 2 === 0 ? rA : 1));
+      const total = widths.reduce((a, b) => a + b, 0);
+      let currX = margin + usableW / 2 - total / 2;
       for (let c = 0; c < cols; c++) {
-        colStarts.push(startX + c * fixedCW);
-        colWidths.push(fixedCW);
-        colX.push(startX + (c + 0.5) * fixedCW);
+        colStarts.push(currX);
+        colWidths.push(widths[c]);
+        colX.push(currX + widths[c] / 2);
+        currX += widths[c];
       }
     } else if (isColRhythmic) {
       const rA = Number(struct.colRatio) || 1.0;
@@ -1073,12 +1079,17 @@ export class StudioEngine {
     const rowStarts = [];
     const isRowRhythmic = !isFixed && !!(struct && struct.enabled && (struct.rowRatio !== undefined || struct.mode === "rhythmic"));
     if (isFixed) {
-      const stepY = rep.gridType === "hexagonal" ? hexFixedPitch : fixedCH;
-      const startY = margin + usableH / 2 - (rows * stepY) / 2;
+      const isHexRows = rep.gridType === "hexagonal";
+      const rowRhythm = !!(struct && struct.enabled && !isHexRows);
+      const rB = rowRhythm ? Math.max(0.1, Number(struct.rowRatio) || 1) : 1;
+      const heights = Array.from({ length: rows }, (_, r) => (isHexRows ? hexFixedPitch : fixedCH) * (r % 2 === 0 ? rB : 1));
+      const totalH = heights.reduce((a, b) => a + b, 0);
+      let currY = margin + usableH / 2 - totalH / 2;
       for (let r = 0; r < rows; r++) {
-        rowStarts.push(startY + r * stepY);
-        rowHeights.push(stepY);
-        rowY.push(startY + (r + 0.5) * stepY);
+        rowStarts.push(currY);
+        rowHeights.push(heights[r]);
+        rowY.push(currY + heights[r] / 2);
+        currY += heights[r];
       }
     } else if (isRowRhythmic) {
       const rA = Number(struct.rowRatio) || 1.0;
@@ -1116,7 +1127,7 @@ export class StudioEngine {
     const isHex = rep.gridType === "hexagonal";
     const hexPitch = isFixed ? hexFixedPitch : Math.min(colWidths[0] * 0.866, usableH / rows);
     // Far edges of the grid (the canvas edge in fit mode; past it in fixed mode)
-    const colEdge = isFixed ? colStarts[cols - 1] + fixedCW : margin + usableW;
+    const colEdge = isFixed ? colStarts[cols - 1] + colWidths[cols - 1] : margin + usableW;
     const rowEdge = isFixed ? rowStarts[rows - 1] + rowHeights[rows - 1] : margin + usableH;
 
     for (let r = 0; r < rows; r++) {

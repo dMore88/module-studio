@@ -1131,6 +1131,37 @@
       reset();
     });
 
+    await test("Rhythm (Col and Row ratio) scales the grid in Fit and in Actual size", () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const render = (sizeMode, colRatio, rowRatio = 1) => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        const L = st.layers[0];
+        Object.assign(L, { shape: "square", width: 20, height: 20, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false, containerW: 100, containerH: 100 });
+        L.structure.enabled = true; L.structure.mode = "repetition";
+        Object.assign(L.structure.repetition, { cols: 4, rows: 1, gridType: "basic", sizeMode, showGridLines: false, placement: "centers", cellMix: "none" });
+        L.structure.formalStructure = { enabled: true, colRatio, rowRatio, showGridLines: false };
+        app.state = st; drawRaw(app);
+        return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      };
+      const dpr = cv.width / 600;
+      const dark = (d, x, y) => d[(Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4] < 100;
+      // Actual size, 100 px container, 4 columns: with ratio 1 the centres are 150, 250, 350, 450
+      const flat = render("actual", 1);
+      assert(dark(flat, 150, 300) && dark(flat, 250, 300) && dark(flat, 350, 300) && dark(flat, 450, 300), "Actual size without rhythm: modules every 100 px");
+      // ratio 3: columns 300, 100, 300, 100 wide, centred: centres at 50, 250, 450 (the 4th is past the canvas)
+      const rhythm = render("actual", 3);
+      assert(dark(rhythm, 50, 300) && dark(rhythm, 250, 300) && dark(rhythm, 450, 300) && !dark(rhythm, 150, 300), "Actual size: the A columns should be 3 times wider");
+      // Rows in Actual size: a single row of 100 px with ratio 3 becomes 300 px tall, still centred
+      const rows = render("actual", 1, 3);
+      assert(dark(rows, 150, 300), "Row ratio keeps the single row centred");
+      // Fit still works
+      const fit = render("fit", 3);
+      assert(JSON.stringify(Array.from(fit)) !== JSON.stringify(Array.from(render("fit", 1))), "Fit: the ratio should change the drawing");
+      reset();
+    });
+
     await test("Checkerboard reverses figure and ground, also with a coloured module", () => {
       reset();
       const cv = win.document.getElementById("studio-canvas");
