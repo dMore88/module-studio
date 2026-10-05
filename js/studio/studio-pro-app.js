@@ -1698,6 +1698,16 @@ export class StudioProApp {
     return struct ? struct.anomaly : null;
   }
 
+  // Attributes each anomaly type can deviate in
+  static get ANOMALY_ATTRS() {
+    return {
+      focal: ["shape", "scale", "rotation"],
+      fracture: ["position", "rotation"],
+      swell: ["position", "scale"],
+      tear: ["position", "rotation", "scale"]
+    };
+  }
+
   syncAnomalyInspectorWithActiveLayer() {
     const mod = this.getActiveModule();
     const anom = this.getActiveAnomaly();
@@ -1728,6 +1738,25 @@ export class StudioProApp {
     setPair("input-anom-x", "num-anom-x", Math.round((anom.epicenterX ?? 0.5) * 100), "%");
     setPair("input-anom-y", "num-anom-y", Math.round((anom.epicenterY ?? 0.5) * 100), "%");
     setPair("input-anom-radius", "num-anom-radius", anom.radius ?? 160, "px");
+    setPair("input-anom-count", "num-anom-count", anom.count ?? 5, "");
+    setPair("input-anom-seed", "num-anom-seed", anom.seed ?? 7, "");
+
+    // Distribution, the attributes it can deviate in and the controls each choice needs
+    const dist = anom.distribution || "single";
+    document.querySelectorAll("#card-anomaly [data-anom-dist]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.anomDist === dist);
+    });
+    const relevant = StudioProApp.ANOMALY_ATTRS[anom.type] || [];
+    document.querySelectorAll("#card-anomaly [data-anom-attr]").forEach(btn => {
+      const key = btn.dataset.anomAttr;
+      btn.classList.toggle("hidden", !relevant.includes(key));
+      btn.classList.toggle("active", (anom.attrs || {})[key] !== false);
+    });
+    const shapeUsed = anom.type === "focal" && (anom.attrs || {}).shape !== false;
+    document.getElementById("anom-shape-block")?.classList.toggle("hidden", !shapeUsed);
+    document.getElementById("anom-position-block")?.classList.toggle("hidden", dist !== "single");
+    document.getElementById("anom-count-block")?.classList.toggle("hidden", dist === "single");
+    document.getElementById("anom-seed-block")?.classList.toggle("hidden", dist !== "random");
     setPair("input-anom-intensity", "num-anom-intensity", anom.intensity ?? 65, "%");
 
     this.syncCheckbox("toggle-anom-highlight", !!anom.highlightColor);
@@ -1774,6 +1803,22 @@ export class StudioProApp {
       });
     });
 
+    document.querySelectorAll("#card-anomaly [data-anom-dist]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(a => { a.distribution = btn.dataset.anomDist; }, `Anomaly Distribution: ${btn.dataset.anomDist}`);
+      });
+    });
+    // Multi-select chips: each one switches an attribute on or off
+    document.querySelectorAll("#card-anomaly [data-anom-attr]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const key = btn.dataset.anomAttr;
+        commit(a => {
+          a.attrs = Object.assign({ shape: true, scale: true, rotation: true, position: true }, a.attrs);
+          a.attrs[key] = !a.attrs[key];
+        }, `Anomaly Deviates in ${key}`);
+      });
+    });
+
     // Slider + value box pairs. `toValue` maps the UI value to the stored value.
     const bindPair = (sliderId, numId, { min, max, suffix, toStored, label, key }) => {
       const slider = document.getElementById(sliderId);
@@ -1794,6 +1839,8 @@ export class StudioProApp {
     };
     bindPair("input-anom-x", "num-anom-x", { min: 10, max: 90, suffix: "%", toStored: v => v / 100, label: "X", key: "epicenterX" });
     bindPair("input-anom-y", "num-anom-y", { min: 10, max: 90, suffix: "%", toStored: v => v / 100, label: "Y", key: "epicenterY" });
+    bindPair("input-anom-count", "num-anom-count", { min: 2, max: 12, suffix: "", toStored: v => v, label: "Count", key: "count" });
+    bindPair("input-anom-seed", "num-anom-seed", { min: 1, max: 99, suffix: "", toStored: v => v, label: "Seed", key: "seed" });
     bindPair("input-anom-radius", "num-anom-radius", { min: 50, max: 350, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
     bindPair("input-anom-intensity", "num-anom-intensity", { min: 10, max: 100, suffix: "%", toStored: v => v, label: "Severity", key: "intensity" });
 
@@ -1817,6 +1864,7 @@ export class StudioProApp {
     // Click on the canvas sets the focal point while the Anomaly tab is open.
     this.canvas?.addEventListener("click", (e) => {
       if (!this.isFlyoutOpen || this.activeRailTab !== "anomaly") return;
+      if ((this.getActiveAnomaly()?.distribution || "single") !== "single") return; // scattered layouts have no single focal point
       const rect = this.canvas.getBoundingClientRect();
       const nx = Math.max(0.1, Math.min(0.9, (e.clientX - rect.left) / rect.width));
       const ny = Math.max(0.1, Math.min(0.9, (e.clientY - rect.top) / rect.height));

@@ -69,6 +69,10 @@ export const createDefaultLayerStructure = () => ({
     epicenterY: 0.5, // 0.1 to 0.9
     radius: 160, // 50 to 350 px
     intensity: 65, // severity, 10 to 100
+    distribution: "single", // single (one epicenter), regular or random (several scattered anomalies)
+    count: 5, // number of scattered anomalies (2 to 12)
+    seed: 7, // random layout seed (1 to 99)
+    attrs: { shape: true, scale: true, rotation: true, position: true }, // which attributes the anomaly deviates in
     anomalousShape: "triangle",
     highlightColor: false,
     accentColor: "#f43f5e", // color applied to anomalous modules when highlighted
@@ -703,14 +707,53 @@ export class StudioEngine {
     }
   }
 
-  // Anomaly: (ex, ey) is the module position compared with the epicenter.
+  // Epicenters of the anomaly: one, or several scattered in a regular or random layout.
+  anomalySpots(anom, width, height) {
+    const mode = anom.distribution || "single";
+    if (mode === "single") return [{ x: (anom.epicenterX ?? 0.5) * width, y: (anom.epicenterY ?? 0.5) * height }];
+    const n = Math.max(2, Math.min(12, anom.count || 5));
+    const key = `${mode}|${n}|${anom.seed}|${width}|${height}`;
+    if (this._spotsKey === key) return this._spots;
+    const spots = [];
+    if (mode === "regular") {
+      const cols = Math.max(1, Math.round(Math.sqrt(n * width / height)));
+      const rows = Math.ceil(n / cols);
+      for (let k = 0; k < n; k++) {
+        const r = Math.floor(k / cols), c = k % cols;
+        spots.push({ x: ((c + 0.5 + (r % 2 === 1 ? 0.5 : 0)) / (cols + 0.5)) * width, y: ((r + 0.5) / rows) * height });
+      }
+    } else {
+      // seeded random positions, kept apart from each other
+      let s = ((anom.seed || 7) * 2654435761) >>> 0;
+      const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+      const minGap = Math.min(width, height) * 0.2;
+      for (let k = 0; k < n; k++) {
+        let p;
+        for (let tries = 0; tries < 40; tries++) {
+          p = { x: width * (0.08 + 0.84 * rnd()), y: height * (0.08 + 0.84 * rnd()) };
+          if (spots.every(q => Math.hypot(q.x - p.x, q.y - p.y) >= minGap)) break;
+        }
+        spots.push(p);
+      }
+    }
+    this._spotsKey = key;
+    this._spots = spots;
+    return spots;
+  }
+
+  // Anomaly: (ex, ey) is the module position compared with the nearest epicenter.
   // Updates `cell` ({shape, fg, scaleMul}); returns false when the module vanishes (tear).
   // An anomaly is a local rupture, so it claims the shape and the accent colour (shapeLocked / fgLocked)
   // and Contrast, a statistical spread, does not override them.
   applyAnomaly(ctx, anom, ex, ey, width, height, palette, pRand, cell) {
-    const epiX = (anom.epicenterX ?? 0.5) * width;
-    const epiY = (anom.epicenterY ?? 0.5) * height;
-    const dist = Math.hypot(ex - epiX, ey - epiY);
+    let epiX = 0, epiY = 0, dist = Infinity;
+    for (const spot of this.anomalySpots(anom, width, height)) {
+      const d = Math.hypot(ex - spot.x, ey - spot.y);
+      if (d < dist) { dist = d; epiX = spot.x; epiY = spot.y; }
+    }
+    // The anomaly may deviate in some attributes only and respect the others
+    const attrs = anom.attrs || {};
+    const on = (k) => attrs[k] !== false;
     const inZone = dist < anom.radius;
     const factor = inZone ? (1 - dist / anom.radius) : 0;
     const severity = (anom.intensity ?? 65) / 100;
@@ -718,10 +761,12 @@ export class StudioEngine {
 
     if (anom.type === "focal") {
       if (inZone) {
-        cell.shape = anom.anomalousShape || "triangle";
-        cell.shapeLocked = true;
-        ctx.rotate((Math.PI / 4) * severity * factor);
-        cell.scaleMul *= (1 + 0.35 * severity);
+        if (on("shape")) {
+          cell.shape = anom.anomalousShape || "triangle";
+          cell.shapeLocked = true;
+        }
+        if (on("rotation")) ctx.rotate((Math.PI / 4) * severity * factor);
+        if (on("scale")) cell.scaleMul *= (1 + 0.35 * severity);
         if (anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
       }
     } else if (anom.type === "fracture") {
@@ -730,17 +775,17 @@ export class StudioEngine {
         const jag = Math.sin(ey * 0.08) * (18 * severity);
         const shearY = (ey > epiY ? 1 : -1) * (36 * severity) + jag;
         const shearX = (ex > epiX ? 1 : -1) * (10 * severity);
-        ctx.translate(shearX, shearY);
-        ctx.rotate((factor * severity * Math.PI) / 3.2);
+        if (on("position")) ctx.translate(shearX, shearY);
+        if (on("rotation")) ctx.rotate((factor * severity * Math.PI) / 3.2);
         if (factor > 0.4 && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
       }
     } else if (anom.type === "swell") {
       if (inZone) {
         const angle = Math.atan2(ey - epiY, ex - epiX);
         const push = Math.sin(factor * Math.PI) * (42 * severity);
-        ctx.translate(Math.cos(angle) * push, Math.sin(angle) * push);
+        if (on("position")) ctx.translate(Math.cos(angle) * push, Math.sin(angle) * push);
         const sFactor = 1 + factor * 0.55 * severity;
-        ctx.scale(sFactor, sFactor);
+        if (on("scale")) ctx.scale(sFactor, sFactor);
         if (factor > 0.65 && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
       }
     } else if (anom.type === "tear") {
@@ -748,10 +793,10 @@ export class StudioEngine {
         return false; // disintegrated void
       } else if (factor > 0.15) {
         // Shattered debris
-        ctx.translate(pRand(51) * 26 * severity, pRand(52) * 26 * severity);
-        ctx.rotate(pRand(53) * Math.PI * severity);
+        if (on("position")) ctx.translate(pRand(51) * 26 * severity, pRand(52) * 26 * severity);
+        if (on("rotation")) ctx.rotate(pRand(53) * Math.PI * severity);
         const shrink = Math.max(0.15, 1 - factor * 0.85);
-        ctx.scale(shrink, shrink);
+        if (on("scale")) ctx.scale(shrink, shrink);
         if (anom.highlightColor && factor > 0.3) { cell.fg = accent; cell.fgLocked = true; }
       }
     }
@@ -786,23 +831,24 @@ export class StudioEngine {
 
   // Anomaly reticle guide overlay
   drawAnomalyReticle(ctx, width, height, palette, anom) {
-    const epiX = (anom.epicenterX ?? 0.5) * width;
-    const epiY = (anom.epicenterY ?? 0.5) * height;
     ctx.save();
     ctx.strokeStyle = palette.accent;
     ctx.lineWidth = 1;
-    ctx.setLineDash([3, 3]);
-    ctx.beginPath();
-    ctx.arc(epiX, epiY, anom.radius, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.beginPath();
-    ctx.arc(epiX, epiY, 6, 0, Math.PI * 2);
-    ctx.moveTo(epiX - 14, epiY);
-    ctx.lineTo(epiX + 14, epiY);
-    ctx.moveTo(epiX, epiY - 14);
-    ctx.lineTo(epiX, epiY + 14);
-    ctx.stroke();
+    for (const spot of this.anomalySpots(anom, width, height)) {
+      const epiX = spot.x, epiY = spot.y;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.arc(epiX, epiY, anom.radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(epiX, epiY, 6, 0, Math.PI * 2);
+      ctx.moveTo(epiX - 14, epiY);
+      ctx.lineTo(epiX + 14, epiY);
+      ctx.moveTo(epiX, epiY - 14);
+      ctx.lineTo(epiX, epiY + 14);
+      ctx.stroke();
+    }
     ctx.restore();
   }
 

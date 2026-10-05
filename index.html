@@ -716,6 +716,25 @@
         </div>
 
         <div class="ds-field">
+          <div class="ds-label">Distribution</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-anom-dist="single">Single</button>
+            <button type="button" class="ds-tag" data-anom-dist="regular">Scattered regular</button>
+            <button type="button" class="ds-tag" data-anom-dist="random">Scattered random</button>
+          </div>
+        </div>
+
+        <div class="ds-field">
+          <div class="ds-label">Deviates in</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-anom-attr="shape">Shape</button>
+            <button type="button" class="ds-tag active" data-anom-attr="scale">Scale</button>
+            <button type="button" class="ds-tag active" data-anom-attr="rotation">Rotation</button>
+            <button type="button" class="ds-tag active" data-anom-attr="position">Position</button>
+          </div>
+        </div>
+
+        <div id="anom-shape-block" class="ds-field">
           <div class="ds-label">Focal Intruder Shape</div>
           <div class="shape-grid">
             <button type="button" class="shape-circle-btn active" data-anom-shape="circle" title="Circle"><i class="ph ph-circle text-[16px]"></i></button>
@@ -736,7 +755,7 @@
           </div>
         </div>
 
-        <div class="ds-stack">
+        <div id="anom-position-block" class="ds-stack">
           <div class="ds-field">
             <div class="ds-label">X position</div>
             <div class="ds-slider">
@@ -753,6 +772,22 @@
           </div>
           <p class="ds-hint">Click anywhere on the canvas to set focal point</p>
         </div>
+
+          <div id="anom-count-block" class="ds-field hidden">
+            <div class="ds-label">Count</div>
+            <div class="ds-slider">
+              <input type="range" id="input-anom-count" min="2" max="12" step="1" value="5">
+              <input type="text" id="num-anom-count" class="ds-value" value="5" inputmode="numeric">
+            </div>
+          </div>
+
+          <div id="anom-seed-block" class="ds-field hidden">
+            <div class="ds-label">Seed</div>
+            <div class="ds-slider">
+              <input type="range" id="input-anom-seed" min="1" max="99" step="1" value="7">
+              <input type="text" id="num-anom-seed" class="ds-value" value="7" inputmode="numeric">
+            </div>
+          </div>
 
           <div class="ds-field">
             <div class="ds-label">Radius</div>
@@ -1094,7 +1129,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=8e6df584"></script>
+  <script src="js/bundle-pro.js?v=0bb74b20"></script>
 
 </body>
 </html>

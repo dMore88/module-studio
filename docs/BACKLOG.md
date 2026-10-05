@@ -22,7 +22,7 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 | 6 | Radiación: centrípeta y centro abierto (R1, R2, R3, R5) | ✅ Hecho (R4, R6 y R7 siguen en P2) |
 | 7 | **Estructura y Repetición** (sección 9: E1, E3, RP1, RP3) | ✅ Hecho (E2 radial, E4, RP2 y RP4 siguen en P2) |
 | 8 | **Contraste** (sección 5: C8, C4, C2) | ✅ Hecho (C1, C3, C5, C6 y C7 siguen en P2 y P3). Siguiente: Anomalía |
-| 9 | Anomalía (sección 7: A1, A3) | P2 |
+| 9 | Anomalía (sección 7: A1, A3) | ✅ Hecho (A2 y A4 siguen en P3). Siguiente: Similitud |
 | 10 | Similitud (sección 8: S1, S2) | P2. S2 se apoya en Line skipping de Texture |
 | 11 | Concentración (sección 6: K2, K1, K4) | P2 |
 | 12 | Interrelaciones entre capas (sección 2) | P2, después de los modificadores (7 a 11) |
@@ -134,9 +134,9 @@ Ya cubierto: focal, rupture, swell, void, radio, severidad, resaltado con color 
 
 | ID | Ítem | Notas | Prioridad |
 | :-- | :--- | :--- | :-- |
-| A1 | Anomalías esparcidas | Aliviar la monotonía: distribuir anomalías por todo el diseño, de forma regular o aleatoria (fig. 56b) | P2 |
+| A1 | Anomalías esparcidas | ✅ Hecho: tags *Distribution* (Single, Scattered regular, Scattered random) con *Count* y *Seed* | ✅ |
 | A2 | Zona con otra regularidad | "Transformar la regularidad" (fig. 56c) | P3 |
-| A3 | Elegir qué atributos se desvían | El libro: una anomalía puede desviarse en uno o dos elementos y respetar los demás | P2 |
+| A3 | Elegir qué atributos se desvían | ✅ Hecho: chips *Deviates in* (forma, escala, rotación, posición según el tipo) | ✅ |
 | A4 | Deformar las líneas de estructura visibles | Hoy solo se deforman los módulos | P3 |
 
 ---

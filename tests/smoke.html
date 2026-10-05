@@ -73,7 +73,7 @@
       const sm = st.similarity; sm.enabled = rb(); sm.kinshipType = pick(["distortion","foreshortening","rotation_wobble","scale_kinship","hybrid"]); sm.intensity = ri(0, 100); sm.cellJitter = ri(0, 30);
       const g = st.gradation; g.enabled = rb(); g.type = pick(["rotation","scale","depth","drift","shape","texture"]); g.pathway = pick(["diagonal","horizontal","vertical","concentric","zigzag"]); g.range = ri(15, 360); g.steps = ri(1, 4); g.reverse = rb();
       g.sequence = pick(["restart","pingpong"]); g.easing = ri(-100, 100); g.alternate = rb(); g.targetShape = pick(SHAPES);
-      const an = st.anomaly; an.enabled = rb(); an.type = pick(["focal","fracture","swell","tear"]); an.epicenterX = 0.1 + rnd() * 0.8; an.epicenterY = 0.1 + rnd() * 0.8; an.radius = ri(50, 350); an.intensity = ri(10, 100); an.anomalousShape = pick(SHAPES); an.highlightColor = rb(); an.showReticle = rb();
+      const an = st.anomaly; an.enabled = rb(); an.type = pick(["focal","fracture","swell","tear"]); an.epicenterX = 0.1 + rnd() * 0.8; an.epicenterY = 0.1 + rnd() * 0.8; an.radius = ri(50, 350); an.intensity = ri(10, 100); an.anomalousShape = pick(SHAPES); an.highlightColor = rb(); an.showReticle = rb(); an.distribution = pick(["single","regular","random"]); an.count = ri(2, 12); an.seed = ri(1, 99); an.attrs = { shape: rb(), scale: rb(), rotation: rb(), position: rb() };
       const co = st.contrast; co.enabled = rb(); co.dimension = pick(["scale","shape","direction","tone","texture","space"]); co.dominanceRatio = ri(50, 95); co.scaleFactor = 0.2 + rnd() * 2.8; co.contrastShape = pick(SHAPES); co.angle = ri(15, 90); co.highlightContrast = rb();
       const cn = st.concentration; cn.enabled = rb(); cn.mode = pick(["point","void","line","free"]); cn.attractorX = 0.05 + rnd() * 0.9; cn.attractorY = 0.05 + rnd() * 0.9; cn.power = ri(20, 100); cn.radius = ri(80, 450); cn.lineAxis = pick(["horizontal","vertical"]); cn.alignToField = rb(); cn.densityScale = rb(); cn.showAttractor = rb();
       const tx = st.texture; tx.enabled = rb(); tx.jitter = ri(0, 8); tx.skipChance = ri(0, 60); tx.crossing = ri(0, 60); tx.undulation = ri(0, 30);
@@ -715,6 +715,51 @@
         }
       }
       assert(iconOf(d.querySelector("#btn-open-config")) === "ph-gear-six" && iconOf(d.querySelector("#btn-toggle-grid")) === "ph-grid-nine" && iconOf(d.querySelector(".ds-brand-icon").parentElement) === "ph-gradient", "Header or toolbar icons differ from Figma");
+    });
+
+    await test("Anomaly: scattered epicenters and the attributes it deviates in", async () => {
+      const e = app.engine;
+      const base = { epicenterX: 0.5, epicenterY: 0.5, radius: 60, intensity: 100, type: "focal", anomalousShape: "cross", highlightColor: false, accentColor: "#ff0000" };
+      // Layouts
+      assert(e.anomalySpots({ ...base, distribution: "single" }, 600, 600).length === 1, "Single should have one epicenter");
+      const reg = e.anomalySpots({ ...base, distribution: "regular", count: 7 }, 600, 600);
+      assert(reg.length === 7 && reg.every(p => p.x > 0 && p.x < 600 && p.y > 0 && p.y < 600), "Regular layout is not 7 points inside the canvas");
+      assert(new Set(reg.map(p => Math.round(p.x) + "," + Math.round(p.y))).size === 7, "Regular layout repeats a point");
+      const r1 = e.anomalySpots({ ...base, distribution: "random", count: 6, seed: 11 }, 600, 600).map(p => ({ ...p }));
+      const r1b = e.anomalySpots({ ...base, distribution: "random", count: 6, seed: 11 }, 600, 600);
+      const r2 = e.anomalySpots({ ...base, distribution: "random", count: 6, seed: 12 }, 600, 600);
+      assert(JSON.stringify(r1) === JSON.stringify(r1b), "The same seed should give the same layout");
+      assert(JSON.stringify(r1) !== JSON.stringify(r2), "A different seed should move the anomalies");
+      // The nearest epicenter rules a module
+      const mk = () => ({ calls: [], rotate(a) { this.calls.push(["rotate", a]); }, translate() { this.calls.push(["translate"]); }, scale() { this.calls.push(["scale"]); } });
+      const palette = { accent: "#aaaaaa" };
+      const zone = (anom, x, y) => { const c = { shape: null, fg: "#000", scaleMul: 1 }; const ctx = mk(); e.applyAnomaly(ctx, anom, x, y, 600, 600, palette, () => 0, c); return { c, ctx }; };
+      const spot = reg[3];
+      assert(zone({ ...base, distribution: "regular", count: 7 }, spot.x, spot.y).c.shape === "cross", "A module on a scattered epicenter was not affected");
+      assert(zone({ ...base, distribution: "single" }, spot.x, spot.y).c.shape === null || Math.hypot(spot.x - 300, spot.y - 300) < 60, "A far module should be left alone in single mode");
+      // Attributes
+      let z = zone({ ...base, attrs: { shape: false, scale: true, rotation: true, position: true } }, 300, 300);
+      assert(z.c.shape === null && z.c.scaleMul > 1 && z.ctx.calls.some(k => k[0] === "rotate"), "Focal without shape should still scale and rotate");
+      z = zone({ ...base, attrs: { shape: true, scale: false, rotation: false, position: true } }, 300, 300);
+      assert(z.c.shape === "cross" && z.c.scaleMul === 1 && !z.ctx.calls.some(k => k[0] === "rotate"), "Focal with only shape should not scale or rotate");
+      z = zone({ ...base, type: "swell", attrs: { position: false, scale: true } }, 330, 300);
+      assert(!z.ctx.calls.some(k => k[0] === "translate") && z.ctx.calls.some(k => k[0] === "scale"), "Swell without position should not push the module");
+      z = zone({ ...base, type: "fracture", attrs: { position: true, rotation: false } }, 300, 300);
+      assert(z.ctx.calls.some(k => k[0] === "translate") && !z.ctx.calls.some(k => k[0] === "rotate"), "Fracture with only position should not rotate");
+      // Inspector
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      q('[data-rail-tab="anomaly"]').click(); await wait(80);
+      const an = () => app.getActiveLayerStructure().anomaly;
+      assert(!q("#anom-position-block").classList.contains("hidden") && q("#anom-count-block").classList.contains("hidden"), "Single should show X/Y and hide the count");
+      q('[data-anom-dist="random"]').click();
+      assert(an().distribution === "random" && q("#anom-position-block").classList.contains("hidden") && !q("#anom-count-block").classList.contains("hidden") && !q("#anom-seed-block").classList.contains("hidden"), "Random should show count and seed, and hide X/Y");
+      q('[data-anom-dist="regular"]').click();
+      assert(q("#anom-seed-block").classList.contains("hidden") && !q("#anom-count-block").classList.contains("hidden"), "Regular should show the count but not the seed");
+      q('[data-anom-attr="shape"]').click();
+      assert(an().attrs.shape === false && q("#anom-shape-block").classList.contains("hidden") && !q('[data-anom-attr="shape"]').classList.contains("active"), "Switching Shape off should hide the intruder shape");
+      q('[data-anom-type="swell"]').click();
+      assert(q('[data-anom-attr="shape"]').classList.contains("hidden") && !q('[data-anom-attr="position"]').classList.contains("hidden"), "Swell should offer position and scale, not shape");
     });
 
     await test("A failed draw shows a visible notice and recovers", () => {
