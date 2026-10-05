@@ -111,6 +111,7 @@ Multiplica el módulo en una retícula ortogonal sobre el plano cartesiano $X, Y
   * `zigzag` (*Zigzag*): deformación angular de las filas. Mismo parámetro *Wave amount*.
   * `triangular` (*Triangular*): filas impares desplazadas media celda.
   * `alternating` (*Alternating*): las celdas impares giran 180º.
+  * `free` (*Free*): **distribución libre**, sin retícula. *Columns* × *Rows* dan la cantidad de módulos; se reparten dejando un espacio parecido alrededor de cada uno (reparto uniforme tipo ruido azul) y el parámetro **Seed** (`freeSeed`, 1 a 99) cambia la disposición. Los módulos se ordenan por filas para que Gradation, Contrast y los demás sigan teniendo un recorrido. No tiene líneas visibles, ni ritmo, ni Module placement ni Cell mix. En *Actual size* ocupa el bloque centrado de *Columns* × *Rows* contenedores.
   * `hexagonal` (*Hexagonal*): panal; las filas encajan (paso vertical de 0,866 del ancho de celda). El recorte de celda y las líneas visibles usan hexágonos.
 * **Parámetro de la variación**, justo debajo del dropdown y solo con Brick, Diagonal, Curved y Zigzag.
 * **`cols` / `rows`** (*Columns* y *Rows*, 1 a 50).
