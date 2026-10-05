@@ -71,7 +71,8 @@
       rd.spiralTwist = ri(-180, 180); rd.centerX = ri(-200, 200); rd.centerY = ri(-200, 200); rd.showRays = rb(); rd.showRings = rb(); rd.activeClipping = rb();
       const fs = st.formalStructure; fs.enabled = rnd() < 0.4; fs.colRatio = 1 + rnd() * 2; fs.rowRatio = 1 + rnd() * 2; fs.showGridLines = rb();
       const sm = st.similarity; sm.enabled = rb(); sm.kinshipType = pick(["distortion","foreshortening","rotation_wobble","scale_kinship","hybrid"]); sm.intensity = ri(0, 100); sm.cellJitter = ri(0, 30);
-      const g = st.gradation; g.enabled = rb(); g.type = pick(["rotation","scale","depth","drift"]); g.pathway = pick(["diagonal","horizontal","vertical","concentric"]); g.range = ri(15, 360); g.steps = ri(1, 4); g.reverse = rb();
+      const g = st.gradation; g.enabled = rb(); g.type = pick(["rotation","scale","depth","drift","shape","texture"]); g.pathway = pick(["diagonal","horizontal","vertical","concentric","zigzag"]); g.range = ri(15, 360); g.steps = ri(1, 4); g.reverse = rb();
+      g.sequence = pick(["restart","pingpong"]); g.easing = ri(-100, 100); g.alternate = rb(); g.targetShape = pick(SHAPES);
       const an = st.anomaly; an.enabled = rb(); an.type = pick(["focal","fracture","swell","tear"]); an.epicenterX = 0.1 + rnd() * 0.8; an.epicenterY = 0.1 + rnd() * 0.8; an.radius = ri(50, 350); an.intensity = ri(10, 100); an.anomalousShape = pick(SHAPES); an.highlightColor = rb(); an.showReticle = rb();
       const co = st.contrast; co.enabled = rb(); co.dimension = pick(["scale","shape","direction","tone"]); co.dominanceRatio = ri(50, 95); co.scaleFactor = 0.2 + rnd() * 2.8; co.contrastShape = pick(SHAPES); co.angle = ri(15, 90); co.highlightContrast = rb();
       const cn = st.concentration; cn.enabled = rb(); cn.mode = pick(["point","void","line","free"]); cn.attractorX = 0.05 + rnd() * 0.9; cn.attractorY = 0.05 + rnd() * 0.9; cn.power = ri(20, 100); cn.radius = ri(80, 450); cn.lineAxis = pick(["horizontal","vertical"]); cn.alignToField = rb(); cn.densityScale = rb(); cn.showAttractor = rb();
@@ -399,6 +400,90 @@
         }
       }
       sel.value = "1:1"; sel.dispatchEvent(new win.Event("change"));
+    });
+
+    await test("Gradation: zigzag path, alternate rows, ping-pong and acceleration", () => {
+      const e = app.engine;
+      const near = (a, b) => Math.abs(a - b) < 1e-9;
+      const g = (o) => Object.assign({ enabled: true, type: "scale", pathway: "horizontal", steps: 1, sequence: "restart", easing: 0, alternate: false, reverse: false }, o);
+      // Snake path on a 3 x 3 grid: 0 1 2 / 5 4 3 / 6 7 8
+      const snake = [];
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) snake.push(Math.round(e.gradationPathGrid(g({ pathway: "zigzag" }), r, c, 3, 3) * 8));
+      assert(JSON.stringify(snake) === "[0,1,2,5,4,3,6,7,8]", `Zigzag path order is ${snake}`);
+      // Alternate rows run the other way
+      assert(near(e.gradationPathGrid(g({ alternate: true }), 0, 0, 3, 4), 0) && near(e.gradationPathGrid(g({ alternate: true }), 1, 0, 3, 4), 1), "Alternate rows did not reverse the odd row");
+      assert(near(e.gradationPathGrid(g({ alternate: false }), 1, 0, 3, 4), 0), "Rows alternate without the option");
+      // Radial snake advances by one step at a time
+      let prev = -1;
+      for (let i = 1; i <= 3; i++) for (let k = 0; k < 5; k++) {
+        const j = i % 2 === 1 ? k : 4 - k;
+        const t = Math.round(e.gradationPathRadial(g({ pathway: "zigzag" }), i, j, 3, 5) * 14);
+        assert(t === prev + 1, `Radial zigzag jumps from ${prev} to ${t}`); prev = t;
+      }
+      // Restart against ping-pong
+      const pp = g({ sequence: "pingpong" });
+      assert(near(e.gradationValue(pp, 0), 0) && near(e.gradationValue(pp, 0.5), 1) && near(e.gradationValue(pp, 1), 0), "Ping-pong should go up and come back");
+      assert(Math.abs(e.gradationValue(g({ steps: 2 }), 0.25) - 0.5) < 1e-3 && Math.abs(e.gradationValue(g({ steps: 2 }), 0.75) - 0.5) < 1e-3, "Restart with 2 cycles should repeat the ramp");
+      assert(near(e.gradationValue(g({}), 0.3), 0.3), "The default sequence changed");
+      // Acceleration: positive starts slow, negative starts fast
+      assert(e.gradationValue(g({ easing: 100 }), 0.5) < 0.4 && e.gradationValue(g({ easing: -100 }), 0.5) > 0.6, "Acceleration does not bend the ramp");
+    });
+
+    await test("Gradation attributes Shape and Texture change the module along the path", () => {
+      const e = app.engine;
+      const cv = win.document.createElement("canvas"); cv.width = 200; cv.height = 200;
+      const ctx = cv.getContext("2d");
+      const ink = (setup) => {
+        ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, 200, 200);
+        ctx.translate(100, 100);
+        setup();
+        e.drawShape(ctx, "square", 120, "#000", true, 3, "#fff", false, true, null, null, 5);
+        e.cellMorph = null; e.cellTexScale = null;
+        return ctx.getImageData(0, 0, 200, 200).data;
+      };
+      const diff = (a, b) => { let n = 0; for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i] - b[i]) > 80) n++; return n; };
+      const plain = ink(() => {});
+      const same = ink(() => { e.cellMorph = { to: "circle", amount: 0 }; });
+      assert(diff(plain, same) === 0, "Morph amount 0 should draw the original shape");
+      const half = ink(() => { e.cellMorph = { to: "circle", amount: 0.5 }; });
+      assert(diff(plain, half) > 150, "Morph amount 0.5 looks like the original");
+      const full = ink(() => { e.cellMorph = { to: "circle", amount: 1 }; });
+      // drawing a real circle for reference
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, 200, 200); ctx.translate(100, 100);
+      e.drawShape(ctx, "circle", 120, "#000", true, 3, "#fff", false, true, null, null, 5);
+      const circle = ctx.getImageData(0, 0, 200, 200).data;
+      assert(diff(full, circle) < 400, `Morph amount 1 differs from the target shape (${diff(full, circle)} px)`);
+      // Texture: zero strength looks like the plain shape, full strength deforms it
+      const t0 = ink(() => { e.cellTexScale = 0; });
+      const t1 = ink(() => { e.cellTexScale = 1; });
+      assert(diff(plain, t0) < 400, "Texture strength 0 should look like the plain shape");
+      assert(diff(plain, t1) > 150, "Texture strength 1 did not deform the shape");
+    });
+
+    await test("Gradation inspector: new controls drive the layer state", async () => {
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      const fire = (el, v) => { el.value = v; el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
+      q('[data-rail-tab="gradation"]').click(); await wait(80);
+      const g = () => app.getActiveLayerStructure().gradation;
+      assert(q("#grad-target-block").classList.contains("hidden"), "The target shape should be hidden until the Shape attribute is chosen");
+      q('[data-grad-type="shape"]').click();
+      assert(g().type === "shape" && !q("#grad-target-block").classList.contains("hidden"), "Shape attribute did not show its target");
+      q('[data-grad-target="hexagon"]').click();
+      assert(g().targetShape === "hexagon" && q('[data-grad-target="hexagon"]').classList.contains("active"), "Target shape did not apply");
+      q('[data-grad-type="texture"]').click();
+      assert(g().type === "texture" && q("#grad-target-block").classList.contains("hidden"), "Texture attribute did not hide the target");
+      q('[data-grad-pathway="zigzag"]').click();
+      assert(g().pathway === "zigzag", "Zigzag pathway did not apply");
+      q('[data-grad-sequence="pingpong"]').click();
+      assert(g().sequence === "pingpong" && q('[data-grad-sequence="pingpong"]').classList.contains("active"), "Ping-pong did not apply");
+      fire(q("#input-grad-easing"), 40);
+      assert(g().easing === 40 && q("#num-grad-easing").value === "+40", `Acceleration value box shows ${q("#num-grad-easing").value}`);
+      q("#toggle-grad-alternate").click();
+      assert(g().alternate === true, "Alternate rows did not apply");
+      // each layer keeps its own settings
+      app.addLayer(); await wait(80);
+      assert(g().sequence === "restart" && g().easing === 0 && g().alternate === false, "A new layer should start with the default gradation");
     });
 
     await test("A failed draw shows a visible notice and recovers", () => {

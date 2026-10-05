@@ -18,7 +18,7 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 | 3b | **Arreglos de la revisión** (F1 a F9 del informe) | F1 a F9 ✅ (revisión de código completa) |
 | 4 | **Design system `.md` desde Figma** (sección 0, Q3) | ✅ Hecho: [DESIGN_SYSTEM_TOKENS.md](./DESIGN_SYSTEM_TOKENS.md) y `css/tokens.css` |
 | 4b | **Migrar los paneles Module, Layout, Structure y Similarity al diseño de Figma** (Q3b) | ✅ Hecho (2026-10-04). Q3d también hecho: toda la interfaz usa los tokens |
-| 5 | Gradation avanzada (G1 a G7) | P1 |
+| 5 | Gradation avanzada (G1 a G6) | ✅ Hecho (G7, gradación de estructura, sigue en P2) |
 | 6 | Radiación: centrípeta y centro abierto (R1, R2, y lo que acompaña) | P1 |
 | 7 | Resto de modificadores por capa (secciones 3 a 10) | P2 |
 | 8 | Interrelaciones entre capas (sección 2) | P2, después del 7 |
@@ -62,12 +62,12 @@ Ya cubierto: rotación en el plano (Rotate), progresión en el plano (Drift), ro
 
 | ID | Ítem | Notas | Prioridad |
 | :-- | :--- | :--- | :-- |
-| G1 | Camino en zigzag | Tercer modelo del libro (fig. 41) | P1 |
-| G2 | Ida y vuelta (1-2-3-4-5-4-3-2-1) frente a reinicio (1-2-3-4-5-1-2-3-4-5) | Hoy solo reinicia | P1 |
-| G3 | Gradación alternada | Filas pares e impares con sentidos opuestos (fig. 43) | P1 |
-| G4 | Velocidad de gradación | Número de pasos y aceleración o frenado a mitad de secuencia (fig. 38). Hoy *Cycles* es otra cosa | P1 |
-| G5 | Gradación de figura | Convertir una forma en otra por pasos (círculo a triángulo). Con las polilíneas de Texture, interpolar vértices es directo | P1 |
-| G6 | Atributo *Texture* | Gradación de textura: la deformación aumenta a lo largo del camino. Une Gradation con Texture (cap. 11) | P1 |
+| G1 | Camino en zigzag | ✅ Hecho: tag *Zigzag* en Pathway (cuadrícula y radial) | ✅ |
+| G2 | Ida y vuelta (1-2-3-4-5-4-3-2-1) frente a reinicio (1-2-3-4-5-1-2-3-4-5) | ✅ Hecho: grupo *Sequence* (Restart, Ping-pong) | ✅ |
+| G3 | Gradación alternada | ✅ Hecho: casilla *Alternate rows* | ✅ |
+| G4 | Velocidad de gradación | ✅ Hecho: slider *Acceleration* (-100 a 100); *Cycles* sigue siendo el número de repeticiones | ✅ |
+| G5 | Gradación de figura | ✅ Hecho: atributo *Shape* con la rejilla *Becomes*; interpola los contornos de cualquier pareja de formas | ✅ |
+| G6 | Atributo *Texture* | ✅ Hecho: atributo *Texture*; la deformación crece a lo largo del camino | ✅ |
 | G7 | Gradación de estructura | Celdas que cambian de tamaño progresivamente (fig. 44). Se relaciona con E4 | P2 |
 
 ---
@@ -199,4 +199,4 @@ Ya cubierto: textura espontánea mediante deformación de geometría (Jitter, Li
 | O1 | Exportar SVG vectorial real | ✅ Hecho (F9): el motor dibuja sobre un contexto que graba trazos SVG. También se puede reabrir el proyecto (botón Open) | ✅ |
 | O2 | Controles de Contrast sin diseño en Figma | Minority Shape y Clash Angle se añadieron sin mockup | Pendiente de diseño |
 | O4 | Aleatorizar parámetros (botón Random) | Se eliminaron los presets y el botón. Si se retoma, generar combinaciones válidas al azar de los controles de capa (la prueba de 400 combinaciones ya sabe hacerlo). Sin presets prediseñados | P3, baja prioridad |
-| O3 | Controles extra sin diseño en Figma | Eje de línea en Concentration; selector de color de acento en Anomaly y Contrast; en Layout: tags Zigzag, Triangular y Alternating, el control de parámetro de la variación y *Line width* | Pendiente de diseño |
+| O3 | Controles extra sin diseño en Figma | Eje de línea en Concentration; selector de color de acento en Anomaly y Contrast; en Layout: tags Zigzag, Triangular y Alternating, el control de parámetro de la variación y *Line width*; en Gradation: atributos Shape y Texture, rejilla *Becomes*, *Acceleration*, *Sequence*, *Alternate rows* y el camino Zigzag | Pendiente de diseño |

@@ -1,5 +1,5 @@
 // Studio Composition Engine: Unified Grammar Pipeline for Wucius Wong 2D Design
-import { Shapes, texturedShape } from './shapes.js';
+import { Shapes, texturedShape, morphedShape } from './shapes.js';
 import { CanvasUtils } from '../canvas-utils.js';
 
 export const createDefaultLayerStructure = () => ({
@@ -45,10 +45,14 @@ export const createDefaultLayerStructure = () => ({
   },
   gradation: {
     enabled: false,
-    type: "rotation", // rotation, scale, depth, drift
-    pathway: "diagonal", // diagonal, horizontal, vertical, concentric
-    range: 180, // degrees of total rotation (rotation type)
+    type: "rotation", // rotation, scale, depth, drift, shape, texture
+    pathway: "diagonal", // diagonal, horizontal, vertical, concentric, zigzag
+    range: 180, // degrees of total rotation (rotation type); 180 is the full reach for the other types
     steps: 1, // cycles (1 to 4)
+    sequence: "restart", // restart (1-2-3-1-2-3) or pingpong (1-2-3-2-1)
+    easing: 0, // -100 (starts fast, brakes) to 100 (starts slow, accelerates)
+    alternate: false, // alternate rows (or columns) run in opposite directions
+    targetShape: "triangle", // shape reached by the "shape" attribute
     reverse: false
   },
   anomaly: {
@@ -133,6 +137,9 @@ export const defaultStudioState = {
   showSafeBounds: true
 };
 
+// Texture strength used by Gradation > Texture when the layer's own Texture is off
+const GRADATION_TEXTURE = { jitter: 4, undulation: 14, skipChance: 25, crossing: 25 };
+
 export class StudioEngine {
   constructor(canvas) {
     this.canvas = canvas;
@@ -143,7 +150,24 @@ export class StudioEngine {
   drawShape(ctx, shapeId, size, fgColor, strokeOnly = false, lineWidth = 2, bgColor = null, isAlternating = false, skipSpace = false, spaceConfig = null, textureConfig = null, seed = 0) {
     let shapeDef = Shapes[shapeId] || Shapes.circle;
     const space = spaceConfig;
-    const texture = textureConfig;
+    let texture = textureConfig;
+
+    // Gradation > Shape: this module is part of the way to another shape
+    if (this.cellMorph && Shapes[this.cellMorph.to] && this.cellMorph.amount > 0) {
+      shapeDef = morphedShape(shapeDef, Shapes[this.cellMorph.to], this.cellMorph.amount);
+    }
+    // Gradation > Texture: the deformation grows along the path
+    if (this.cellTexScale !== null && this.cellTexScale !== undefined) {
+      const base = texture && texture.enabled ? texture : GRADATION_TEXTURE;
+      const k = this.cellTexScale;
+      texture = {
+        enabled: true,
+        jitter: (base.jitter || 0) * k,
+        undulation: (base.undulation || 0) * k,
+        skipChance: (base.skipChance || 0) * k,
+        crossing: (base.crossing || 0) * k
+      };
+    }
 
     // Texture deforms the geometry itself, so it applies before any space mode.
     if (texture && texture.enabled) {
@@ -420,6 +444,8 @@ export class StudioEngine {
     const layerNum = parseInt(String(mod.id || "").replace(/\D/g, ""), 10) || 1;
     const seed = (this.cellSeed || 0) * 7.13 + layerNum * 53.7;
     this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, !!this.cellAlt, isCutout, mod.structure?.space || null, mod.structure?.texture || null, seed);
+    this.cellMorph = null;
+    this.cellTexScale = null;
     targetCtx.restore();
   }
 
@@ -552,11 +578,64 @@ export class StudioEngine {
     return { x, y, angle, scaleMul };
   }
 
-  // Gradation: applies the transform for position t (0..1) along the pathway.
-  // `driftDistance` is the full slide length for the current layout.
-  applyGradation(ctx, grad, t, driftDistance) {
+  // Gradation: position along the pathway (0..1) of a grid cell.
+  gradationPathGrid(grad, r, c, rows, cols) {
+    let t = 0;
+    if (grad.pathway === "horizontal") {
+      t = cols > 1 ? c / (cols - 1) : 0;
+    } else if (grad.pathway === "vertical") {
+      t = rows > 1 ? r / (rows - 1) : 0;
+    } else if (grad.pathway === "diagonal") {
+      t = (cols + rows > 2) ? (c + r) / (cols + rows - 2) : 0;
+    } else if (grad.pathway === "concentric") {
+      const dc = c - (cols - 1) / 2;
+      const dr = r - (rows - 1) / 2;
+      const maxD = Math.sqrt(Math.pow((cols - 1) / 2, 2) + Math.pow((rows - 1) / 2, 2)) || 1;
+      t = Math.sqrt(dc * dc + dr * dr) / maxD;
+    } else if (grad.pathway === "zigzag") {
+      // Snake: even rows run left to right, odd rows right to left
+      const n = rows * cols;
+      t = n > 1 ? (r * cols + (r % 2 === 0 ? c : cols - 1 - c)) / (n - 1) : 0;
+      return t;
+    }
+    if (grad.alternate) {
+      const odd = grad.pathway === "vertical" ? c % 2 === 1 : r % 2 === 1;
+      if (odd) t = 1 - t;
+    }
+    return t;
+  }
+
+  // Same for a polar cell: ring i (1..rings), ray j (0..rays-1).
+  gradationPathRadial(grad, i, j, rings, rays) {
+    if (grad.pathway === "zigzag") {
+      const n = rings * rays;
+      const ring = i - 1;
+      return n > 1 ? (ring * rays + (ring % 2 === 0 ? j : rays - 1 - j)) / (n - 1) : 0;
+    }
+    const byRing = grad.pathway === "concentric" || grad.pathway === "diagonal";
+    let t = byRing ? i / rings : j / rays;
+    if (grad.alternate) {
+      const odd = byRing ? j % 2 === 1 : (i - 1) % 2 === 1;
+      if (odd) t = 1 - t;
+    }
+    return t;
+  }
+
+  // Gradation: turns the position t into the strength 0..1 of the effect for this cell
+  // (direction, number of cycles, restart or ping-pong, acceleration).
+  gradationValue(grad, t) {
     if (grad.reverse) t = 1 - t;
-    t = (t * (grad.steps || 1)) % 1.0001;
+    let u = (t * (grad.steps || 1)) % 1.0001;
+    if (grad.sequence === "pingpong") u = 1 - Math.abs(2 * u - 1);
+    const easing = grad.easing || 0;
+    if (easing !== 0) u = Math.pow(Math.max(u, 0), Math.pow(3, easing / 100));
+    return u;
+  }
+
+  // Gradation: applies the attribute for position t along the pathway.
+  // `driftDistance` is the full slide length for the current layout.
+  applyGradation(ctx, grad, pathT, driftDistance) {
+    const t = this.gradationValue(grad, pathT);
     const rangeK = (grad.range ?? 180) / 180;
 
     if (grad.type === "rotation") {
@@ -571,6 +650,10 @@ export class StudioEngine {
       ctx.rotate(-Math.PI / 6);
     } else if (grad.type === "drift") {
       ctx.translate(t * driftDistance * rangeK, 0);
+    } else if (grad.type === "shape") {
+      this.cellMorph = { to: grad.targetShape || "triangle", amount: Math.min(1, t * rangeK) };
+    } else if (grad.type === "texture") {
+      this.cellTexScale = Math.min(2, t * rangeK);
     }
   }
 
@@ -698,6 +781,8 @@ export class StudioEngine {
   // Render the repetition / structural grid with similarity and gradation kinematics
   renderRepetitionGrid(ctx, width, height, palette, marginParam, usableWParam, usableHParam, targetMod = null, repConfig = null) {
     if (!targetMod || !targetMod.structure) return;
+    this.cellMorph = null;
+    this.cellTexScale = null;
     const rep = repConfig || targetMod.structure.repetition;
     const struct = targetMod.structure.formalStructure;
     const sim = targetMod.structure.similarity;
@@ -864,20 +949,7 @@ export class StudioEngine {
 
         // Gradation kinematics across Cartesian pathways
         if (grad.enabled) {
-          let t = 0;
-          if (grad.pathway === "horizontal") {
-            t = cols > 1 ? c / (cols - 1) : 0;
-          } else if (grad.pathway === "vertical") {
-            t = rows > 1 ? r / (rows - 1) : 0;
-          } else if (grad.pathway === "diagonal") {
-            t = (cols + rows > 2) ? (c + r) / (cols + rows - 2) : 0;
-          } else if (grad.pathway === "concentric") {
-            const dc = c - (cols - 1) / 2;
-            const dr = r - (rows - 1) / 2;
-            const maxD = Math.sqrt(Math.pow((cols - 1) / 2, 2) + Math.pow((rows - 1) / 2, 2)) || 1;
-            t = Math.sqrt(dc * dc + dr * dr) / maxD;
-          }
-          this.applyGradation(ctx, grad, t, cW * 0.28);
+          this.applyGradation(ctx, grad, this.gradationPathGrid(grad, r, c, rows, cols), cW * 0.28);
         }
 
         // Similarity: Module Kinship & Fluctuation
@@ -1024,6 +1096,8 @@ export class StudioEngine {
   // Render the polar radiation layout (Radiation)
   renderRadiation(ctx, width, height, palette, marginParam, usableWParam, usableHParam, targetMod = null, radConfig = null) {
     if (!targetMod || !targetMod.structure) return;
+    this.cellMorph = null;
+    this.cellTexScale = null;
     const rad = radConfig || targetMod.structure.radiation;
     const grad = targetMod.structure.gradation;
     const sim = targetMod.structure.similarity;
@@ -1152,13 +1226,9 @@ export class StudioEngine {
             ctx.rotate(angle + Math.PI / 2 + (twistRad * 0.35));
           }
 
-          // Gradation on polar radiation
+          // Gradation on polar radiation (drift slides along the module's local x axis, up to ~one ring)
           if (grad.enabled) {
-            const t = (grad.pathway === "concentric" || grad.pathway === "diagonal")
-              ? (i / rings)
-              : (j / rays);
-            // Drift slides along the module's local x axis, up to ~one ring thickness
-            this.applyGradation(ctx, grad, t, (maxR / rings) * 0.9);
+            this.applyGradation(ctx, grad, this.gradationPathRadial(grad, i, j, rings, rays), (maxR / rings) * 0.9);
           }
 
           // Similarity on radiation

@@ -334,7 +334,7 @@ const flatCache = {};
 
 // Records a shape's draw() commands into dense polylines at the reference size.
 export function flattenShape(shapeDef) {
-  if (flatCache[shapeDef.id]) return flatCache[shapeDef.id];
+  if (!shapeDef.noCache && flatCache[shapeDef.id]) return flatCache[shapeDef.id];
 
   const subpaths = [];
   let cur = null;
@@ -428,8 +428,112 @@ export function flattenShape(shapeDef) {
     for (const pt of pts) pt.u /= len;
   }
 
-  flatCache[shapeDef.id] = subpaths;
+  if (!shapeDef.noCache) flatCache[shapeDef.id] = subpaths;
   return subpaths;
+}
+
+// ---- Shape morphing (Gradation > Shape) ----
+// Two shapes are flattened, resampled to the same number of points by arc length and
+// interpolated point by point. Closed outlines are rotated (and flipped) to line up best.
+const MORPH_POINTS = 96;
+const morphCache = {};
+
+function resampleSubpath(sp, n) {
+  const pts = sp.pts;
+  const out = [];
+  for (let k = 0; k < n; k++) {
+    const u = sp.closed ? k / n : k / (n - 1);
+    let i = 0;
+    while (i < pts.length - 1 && pts[i + 1].u <= u) i++;
+    const a = pts[i];
+    const b = pts[i + 1] || (sp.closed ? { x: pts[0].x, y: pts[0].y, u: 1 } : a);
+    const span = (b.u - a.u) || 1;
+    const t = Math.min(1, Math.max(0, (u - a.u) / span));
+    out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+  }
+  return out;
+}
+
+function alignClosed(a, b) {
+  const n = a.length;
+  let best = Infinity, bestPts = b;
+  for (const flip of [false, true]) {
+    const src = flip ? b.slice().reverse() : b;
+    for (let s = 0; s < n; s++) {
+      let d = 0;
+      for (let k = 0; k < n; k++) {
+        const q = src[(k + s) % n];
+        d += (a[k].x - q.x) ** 2 + (a[k].y - q.y) ** 2;
+      }
+      if (d < best) { best = d; bestPts = src.map((_, k) => src[(k + s) % n]); }
+    }
+  }
+  return bestPts;
+}
+
+function centroid(pts) {
+  let x = 0, y = 0;
+  for (const p of pts) { x += p.x; y += p.y; }
+  return { x: x / pts.length, y: y / pts.length };
+}
+
+function getMorphPairs(defA, defB) {
+  const key = defA.id + "|" + defB.id;
+  if (morphCache[key]) return morphCache[key];
+  const A = flattenShape(defA), B = flattenShape(defB);
+  const count = Math.max(A.length, B.length);
+  const pairs = [];
+  for (let i = 0; i < count; i++) {
+    const spA = A[i], spB = B[i];
+    let a, b, closedA, closedB;
+    if (spA && spB) {
+      closedA = spA.closed; closedB = spB.closed;
+      a = resampleSubpath(spA, MORPH_POINTS);
+      b = resampleSubpath(spB, MORPH_POINTS);
+      if (closedA && closedB) b = alignClosed(a, b);
+    } else if (spA) {
+      // only A has this part: it collapses to its centre as the shape changes
+      closedA = closedB = spA.closed;
+      a = resampleSubpath(spA, MORPH_POINTS);
+      const c = centroid(a);
+      b = a.map(() => ({ x: c.x, y: c.y }));
+    } else {
+      closedA = closedB = spB.closed;
+      b = resampleSubpath(spB, MORPH_POINTS);
+      const c = centroid(b);
+      a = b.map(() => ({ x: c.x, y: c.y }));
+    }
+    pairs.push({ a, b, closedA, closedB, onlyA: !spB, onlyB: !spA });
+  }
+  morphCache[key] = pairs;
+  return pairs;
+}
+
+// A shape that is `amount` (0..1) of the way from defA to defB.
+export function morphedShape(defA, defB, amount) {
+  const m = Math.max(0, Math.min(1, amount));
+  const pairs = getMorphPairs(defA, defB);
+  return {
+    id: `morph:${defA.id}:${defB.id}`,
+    noCache: true, // every amount is a different outline: do not keep it in the flatten cache
+    skeleton: m < 0.5 ? !!defA.skeleton : !!defB.skeleton,
+    textureRef: defA.textureRef,
+    draw(ctx, size) {
+      const f = size / FLAT_REF_SIZE;
+      ctx.beginPath();
+      for (const p of pairs) {
+        if (m === 0 && p.onlyB) continue;
+        if (m === 1 && p.onlyA) continue;
+        const closed = m < 0.5 ? p.closedA : p.closedB;
+        for (let k = 0; k < p.a.length; k++) {
+          const x = (p.a[k].x + (p.b[k].x - p.a[k].x) * m) * f;
+          const y = (p.a[k].y + (p.b[k].y - p.a[k].y) * m) * f;
+          if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        if (closed) ctx.closePath();
+      }
+    }
+  };
 }
 
 // Deforms a shape's polylines. Returns [{ segments: [[{x,y}...]], closed }] in local px at `size`.

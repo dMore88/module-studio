@@ -1482,6 +1482,21 @@ export class StudioProApp {
     this.syncControlValue("input-grad-steps", steps);
     this.syncControlValue("num-grad-steps", steps);
 
+    const easing = grad.easing ?? 0;
+    this.syncControlValue("input-grad-easing", easing);
+    this.syncControlValue("num-grad-easing", easing > 0 ? `+${easing}` : `${easing}`);
+
+    document.querySelectorAll("#card-gradation [data-grad-sequence]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.gradSequence === (grad.sequence || "restart"));
+    });
+    document.querySelectorAll("#card-gradation [data-grad-target]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.gradTarget === (grad.targetShape || "triangle"));
+    });
+    document.getElementById("grad-target-block")?.classList.toggle("hidden", grad.type !== "shape");
+
+    const alternate = document.getElementById("toggle-grad-alternate");
+    if (alternate) alternate.checked = !!grad.alternate;
+
     const reverse = document.getElementById("toggle-grad-reverse");
     if (reverse) reverse.checked = !!grad.reverse;
 
@@ -1557,6 +1572,39 @@ export class StudioProApp {
       const raw = parseInt(e.target.value, 10);
       const val = isNaN(raw) ? 1 : Math.max(1, Math.min(4, raw));
       commit(g => { g.steps = val; }, `Gradation Cycles: ${val}`);
+    });
+
+    // Acceleration (-100 brakes, 100 accelerates)
+    const inputEasing = document.getElementById("input-grad-easing");
+    const numEasing = document.getElementById("num-grad-easing");
+    const showEasing = (v) => { if (numEasing) numEasing.value = v > 0 ? `+${v}` : `${v}`; };
+    inputEasing?.addEventListener("input", (e) => {
+      const val = parseInt(e.target.value, 10);
+      commit(g => { g.easing = val; }, null, { resync: false });
+      showEasing(val);
+    });
+    inputEasing?.addEventListener("change", (e) => {
+      this.pushHistory(`Layer ${this.activeLayerId} Gradation Acceleration: ${e.target.value}`);
+    });
+    numEasing?.addEventListener("change", (e) => {
+      const raw = parseInt(e.target.value.replace(/[^0-9-]/g, ""), 10);
+      const val = isNaN(raw) ? 0 : Math.max(-100, Math.min(100, raw));
+      commit(g => { g.easing = val; }, `Gradation Acceleration: ${val}`);
+    });
+
+    document.querySelectorAll("#card-gradation [data-grad-sequence]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(g => { g.sequence = btn.dataset.gradSequence; }, `Gradation Sequence: ${btn.dataset.gradSequence}`);
+      });
+    });
+    document.querySelectorAll("#card-gradation [data-grad-target]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(g => { g.targetShape = btn.dataset.gradTarget; }, `Gradation Becomes: ${btn.dataset.gradTarget}`);
+      });
+    });
+    document.getElementById("toggle-grad-alternate")?.addEventListener("change", (e) => {
+      const checked = e.target.checked;
+      commit(g => { g.alternate = checked; }, `Gradation Alternate: ${checked ? "ON" : "OFF"}`);
     });
 
     document.getElementById("toggle-grad-reverse")?.addEventListener("change", (e) => {

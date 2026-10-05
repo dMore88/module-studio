@@ -539,7 +539,30 @@
             <button type="button" class="ds-tag" data-grad-type="scale">Scale</button>
             <button type="button" class="ds-tag" data-grad-type="depth">Depth</button>
             <button type="button" class="ds-tag" data-grad-type="drift">Drift</button>
+            <button type="button" class="ds-tag" data-grad-type="shape">Shape</button>
+            <button type="button" class="ds-tag" data-grad-type="texture">Texture</button>
           </div>
+        </div>
+
+        <div id="grad-target-block" class="ds-field hidden">
+          <div class="ds-label">Becomes</div>
+          <div class="shape-grid">
+              <button type="button" class="shape-circle-btn" data-grad-target="circle" title="Circle"><i class="ph-fill ph-circle text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="square" title="Square"><i class="ph-fill ph-square text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="triangle" title="Triangle"><i class="ph-fill ph-triangle text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="wave" title="Sine Wave"><i class="ph-fill ph-wave-sine text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="horseshoe" title="Horseshoe"><i class="ph-fill ph-circle-notch text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="hexagon" title="Hexagon"><i class="ph-fill ph-hexagon text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="line" title="Line"><i class="ph-fill ph-minus text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="parallelogram" title="Parallelogram"><i class="ph-fill ph-parallelogram text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="hatch" title="Diagonal Hatch"><i class="ph-fill ph-line-segments text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="crescent" title="Crescent"><i class="ph-fill ph-moon text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="teardrop" title="Teardrop"><i class="ph-fill ph-drop text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="cross" title="Cross"><i class="ph-fill ph-plus text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="digit1" title="Number 1"><i class="ph-fill ph-number-one text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="digit5" title="Number 5"><i class="ph-fill ph-number-five text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="digit9" title="Number 9"><i class="ph-fill ph-number-nine text-[16px]"></i></button>
+            </div>
         </div>
 
           <div class="ds-field">
@@ -556,6 +579,13 @@
               <input type="text" id="num-grad-steps" class="ds-value" value="1" inputmode="numeric">
             </div>
           </div>
+          <div class="ds-field">
+            <div class="ds-label">Acceleration</div>
+            <div class="ds-slider">
+              <input type="range" id="input-grad-easing" min="-100" max="100" step="5" value="0">
+              <input type="text" id="num-grad-easing" class="ds-value" value="0" inputmode="numeric">
+            </div>
+          </div>
 
         <div class="ds-field">
           <div class="ds-label">Pathway direction</div>
@@ -564,8 +594,22 @@
             <button type="button" class="ds-tag" data-grad-pathway="horizontal">Horizontal</button>
             <button type="button" class="ds-tag" data-grad-pathway="vertical">Vertical</button>
             <button type="button" class="ds-tag" data-grad-pathway="concentric">Concentric</button>
+            <button type="button" class="ds-tag" data-grad-pathway="zigzag">Zigzag</button>
           </div>
         </div>
+
+        <div class="ds-field">
+          <div class="ds-label">Sequence</div>
+          <div class="ds-btn-group" role="group" aria-label="Gradation sequence">
+            <button type="button" class="ds-btn-group__button active" data-grad-sequence="restart">Restart</button>
+            <button type="button" class="ds-btn-group__button" data-grad-sequence="pingpong">Ping-pong</button>
+          </div>
+        </div>
+
+        <label class="ds-toggle-item">
+          <span class="ds-toggle-label">Alternate rows</span>
+          <input type="checkbox" id="toggle-grad-alternate" class="ds-checkbox">
+        </label>
 
         <label class="ds-toggle-item">
           <span class="ds-toggle-label">Reverse Gradient Direction</span>
@@ -985,7 +1029,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=743c8566"></script>
+  <script src="js/bundle-pro.js?v=115075a5"></script>
 
 </body>
 </html>

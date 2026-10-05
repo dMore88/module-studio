@@ -154,16 +154,22 @@ Genera una ilusión de movimiento, velocidad o dimensión mediante una progresi�
   * `scale`: Los módulos aumentan o disminuyen progresivamente de masa.
   * `depth`: Gradación en el plano espacial (ilusión de avance o alejamiento).
   * `drift`: Desplazamiento horizontal progresivo y acumulativo del módulo a lo largo del recorrido.
+  * `shape` (*Shape*): La forma de la capa se convierte paso a paso en otra (`targetShape`, tags *Becomes*, las 15 formas). Los contornos de ambas formas se remuestrean a los mismos puntos y se interpolan, así que sirve entre cualquier pareja (círculo a triángulo, cuadrado a cruz...). *Range* 180 = llegar del todo a la forma destino.
+  * `texture` (*Texture*): La deformación de Texture crece a lo largo del recorrido: 0 en el primer módulo y la fuerza configurada en el último. Si Texture está apagado en la capa usa una fuerza propia (vibración 4, ondulación 14, salto 25, cruce 25). *Range* 180 = fuerza completa; 360 = el doble.
 * **`pathway`**:
   * `diagonal`: Progresión a lo largo del vector $i + j$.
   * `horizontal`: Progresión por filas de izquierda a derecha.
   * `vertical`: Progresión por columnas de arriba hacia abajo.
   * `concentric`: Progresión radial desde el centro hacia la periferia ($\sqrt{\Delta x^2 + \Delta y^2}$).
+  * `zigzag` (*Zigzag*): Camino en serpiente: las filas pares avanzan de izquierda a derecha y las impares de derecha a izquierda (en radial, los anillos alternan sentido). Es el tercer modelo del libro (fig. 41).
 * **`range`** (15° a 360°, pasos de 5°): Magnitud total de la transición. En `rotation` son los grados de giro. En `scale`, `depth` y `drift` escala la cantidad de cambio, y 180 equivale a la cantidad original (escala de 0.35x a 1.45x).
 * **`steps`** (1 a 4): Cantidad de ciclos o frecuencias completas en el recorrido (slider *Cycles*).
+* **`sequence`** (*Sequence*, `restart` por defecto): `restart` repite la rampa (1-2-3-1-2-3) y `pingpong` va y vuelve (1-2-3-2-1) dentro de cada ciclo.
+* **`easing`** (*Acceleration*, -100 a 100, por defecto 0): Velocidad del cambio a lo largo del recorrido. Positivo arranca lento y acelera; negativo arranca rápido y frena (fig. 38).
+* **`alternate`** (*Alternate rows*, por defecto apagado): Las filas impares (las columnas impares en `vertical`; los anillos o rayos impares en radial) corren en sentido contrario (fig. 43).
 * **`reverse`** (`boolean`): Invierte el sentido del gradiente (*Reverse Gradient Direction*).
 
-**UI (Figma, nodo `5779:2472`):** tags *Attribute* (Rotate, Scale, Depth, Drift), sliders *Range* y *Cycles* con caja de valor, tags *Pathway direction* (Diagonal, Horizontal, Vertical, Concentric) y checkbox de reverse. Estado por capa en `layer.structure.gradation`. En esquema polar, `drift` desplaza el módulo sobre su eje local hasta cerca de un anillo.
+**UI (Figma, nodo `5779:2472`):** tags *Attribute* (Rotate, Scale, Depth, Drift, Shape, Texture), la rejilla de formas *Becomes* (solo con Shape), sliders *Range*, *Cycles* y *Acceleration* con caja de valor, tags *Pathway direction* (Diagonal, Horizontal, Vertical, Concentric, Zigzag), grupo de botones *Sequence* (Restart, Ping-pong) y checkboxes *Alternate rows* y *Reverse*. Los controles nuevos (Shape, Texture, Becomes, Acceleration, Sequence, Alternate rows, Zigzag) no tienen mockup en Figma y usan los componentes existentes. Estado por capa en `layer.structure.gradation`. En esquema polar, `drift` desplaza el módulo sobre su eje local hasta cerca de un anillo.
 
 ---
 
