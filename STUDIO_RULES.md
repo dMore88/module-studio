@@ -153,7 +153,7 @@ Las reglas completas están en `STUDIO_CONTROLS_GUIDE.md`, sección 5. En resume
 ## 11. Proceso de trabajo
 
 * Se implementa, se prueba (`tests/smoke.html`, todas las pruebas en verde), se hace commit local y se informa en español claro. **Nunca se sube (`git push`) sin autorización explícita.**
-* Las interrelaciones entre capas (INT1 a INT4) y los supermódulos (RP6) van **al final** del backlog.
+* Las interrelaciones entre capas (INT2, INT5 a INT9) y los supermódulos (RP8 a RP10, E29, R26) van **al final** del backlog. Los IDs son los de `docs/design-concepts-in-app.md`.
 * Antes de añadir un control nuevo se aplica el filtro: *¿sirve para jugar o solo completa el libro?* Lo que solo completa el libro va a *Advanced* o se descarta.
 * El libro (`docs/*.pdf`) se queda **solo en local**; no se sube al repositorio.
 * El mapa de qué concepto de Wong cubre cada control está en `docs/design-concepts-in-app.md`; las prioridades, en `docs/BACKLOG.md`.

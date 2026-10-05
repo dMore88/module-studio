@@ -1,214 +1,111 @@
 # Backlog — Module Studio
 
-> **Mapa completo de cobertura** (qué concepto de Wong cubre cada control, y qué falta): [`design-concepts-in-app.md`](./design-concepts-in-app.md). Este backlog guarda solo las prioridades de lo pendiente; los IDs (E4, RP2, G7...) aparecen también en la columna *Notas* de ese mapa.
+> **Los IDs de este backlog son los de [`design-concepts-in-app.md`](./design-concepts-in-app.md)**, el mapa de conceptos de diseño. Un ID es un concepto (R12 es siempre "anillos poligonales"). Aquí solo se guardan las **prioridades** de lo pendiente y las decisiones de trabajo; lo que ya está hecho se ve en ese mapa.
 
-Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 12) contra los controles de la app, más las decisiones de Diego del 2026-10-04.
+**Prioridades:** **P2** siguiente · **P3** baja prioridad · **Al final** cuando todo lo demás esté afinado · **➖** descartado.
 
-**Prioridades:** **P1** siguiente · **P2** backlog · **P3** al final / baja prioridad · **✖** descartado por ahora.
+**Principio de trabajo:** primero dejar bien hechos los controles de modificación de cada capa (un módulo = una figura = una capa); lo que depende de relacionar capas entre sí va después. Antes de añadir un control nuevo, el filtro de siempre: *¿sirve para jugar o solo completa la teoría?* Lo que solo completa la teoría va a *Advanced* o se descarta.
 
-**Principio de trabajo:** primero revisar y consolidar (sección 0), luego dejar bien hechos los controles de modificación de cada capa (un módulo = una figura = una capa). Las funciones que dependen de relacionar capas entre sí van después.
-
----
-
-## 1. Cola de trabajo
-
-| # | Ítem | Estado |
-| :-- | :--- | :--- |
-| 1 | Fluctuating alterna la dirección entre celdas vecinas | ✅ Hecho (2026-10-04) |
-| 2 | Gradation: *Range* aplica a Scale, Depth y Drift (180 = cantidad original) | ✅ Hecho (2026-10-04) |
-| 3 | **Revisión de código y auditoría de lo propuesto** (sección 0, Q1 y Q2) | ✅ Informe hecho: [REVISION_CODIGO.md](./REVISION_CODIGO.md) |
-| 3b | **Arreglos de la revisión** (F1 a F9 del informe) | F1 a F9 ✅ (revisión de código completa) |
-| 4 | **Design system `.md` desde Figma** (sección 0, Q3) | ✅ Hecho: [DESIGN_SYSTEM_TOKENS.md](./DESIGN_SYSTEM_TOKENS.md) y `css/tokens.css` |
-| 4b | **Migrar los paneles Module, Layout, Structure y Similarity al diseño de Figma** (Q3b) | ✅ Hecho (2026-10-04). Q3d también hecho: toda la interfaz usa los tokens |
-| 5 | Gradation avanzada (G1 a G6) | ✅ Hecho (G1 a G7) |
-| 6 | Radiación: centrípeta y centro abierto (R1, R2, R3, R5) | ✅ Hecho (R1 a R5 y R7; R6 descartado) |
-| 7 | **Estructura y Repetición** (sección 9: E1, E3, RP1, RP3) | ✅ Hecho (E1 a E4, RP1 a RP5) |
-| 8 | **Contraste** (sección 5: C8, C4, C2) | ✅ Hecho (C1 y C7 hechos, C3 descartado; C5 y C6 siguen en P3) |
-| 9 | Anomalía (sección 7: A1, A3) | ✅ Hecho (A2 y A4 siguen en P3) |
-| 9b | **Tamaño del módulo, contenedor y sangrado** (petición de Diego) | ✅ Hecho: contenedor del módulo (*Container width / height*), *Module size* Fit to canvas / Actual size en cuadrícula y radial, bloque centrado con sangrado, margen de seguridad en 0 y tamaño exacto del módulo. Siguiente: Similitud |
-| 10 | Similitud (sección 8: S1, S2) | ✅ Hecho (S3 y S4 siguen en P3) |
-| 11 | Concentración (sección 6: K2, K1, K4) | ✅ Hecho (K3 y K5 siguen en P3) |
-| 12 | Interrelaciones entre capas (sección 2) | P2, después de los modificadores (7 a 11) |
-| 13 | Espacio (sección 10) | P3. Es el más complejo; SP5 depende de las interrelaciones |
-| 14 | Supermódulos (RP6) | P3, al final de todo |
-
-**Textura** (sección 11) está cerrada: lo propuesto quedó hecho y lo demás se descartó. Las prioridades de cada ítem están en su sección; los de P2 y P3 se mueven hacia arriba solo si el trabajo del paso anterior los hace baratos.
-
-**Regla de diseño:** los controles nuevos se arman con el catálogo de componentes existente (tags, grupo de botones, slider con caja de valor, rejilla de formas, casilla, selector de color, desplegable). Solo entran en el backlog de diseño los que no encajan en ninguno de ellos.
+**Regla de diseño:** los controles nuevos se arman con el catálogo de componentes existente (chips, dropdown, grupo de botones, slider con caja de valor, rejilla de formas, casilla, selector de color, sección *Advanced*). Solo entran en el backlog de diseño si ningún componente encaja.
 
 ---
 
-## 0. Calidad y fundamentos
+## 1. Pendientes por prioridad
 
-| ID | Ítem | Notas | Prioridad |
-| :-- | :--- | :--- | :-- |
-| Q1 | **Revisión de código como experto** ✅ | Informe en [REVISION_CODIGO.md](./REVISION_CODIGO.md). Calidad y funcionamiento de todo el código. Todavía no se ha hecho una revisión completa; solo se han corregido cosas sueltas al trabajar. Alcance: arquitectura y estado (global frente a por capa), código muerto, duplicación, rendimiento del render, accesibilidad de los controles, manejo de errores, dependencias por CDN, el flujo de build (`build-pro.py` y el bundle), pruebas y el protocolo de calidad de `STUDIO_RULES.md`. Resultado: informe con hallazgos por gravedad y un plan de arreglos | ✅ |
-| Q2 | **Auditoría de lo propuesto frente a lo que la app ya hace** | Varias ideas del backlog pueden existir ya, aunque no de la mejor forma. Antes de implementar cada ítem, comprobar qué hay hoy en el código y en la UI, y decidir si se reemplaza, se mejora o se descarta. Se hace junto con Q1 ✅ (tabla de auditoría en el informe) | P1 |
-| Q3 | **Mejor design system `.md` desde Figma** ✅ | Leer variables, estilos y componentes del archivo de Figma (tokens `neutral/…`, `primary/…`, `spacing/…`, `border/…`, `sizing/…`, tipografía y elevación) con el MCP de Figma. Reescribir `docs/DESIGN_SYSTEM_TOKENS.md` con los nombres reales, valores, componentes (switch, tag, slider, value box, toggle item, badge, buttonIcon, snackbar, btn-group) y sus estados. Alinear `css/studio-pro.css` con esos tokens (hoy hay colores y medidas fijos). Resultado: documento y variables CSS | ✅ |
-| Q3b | **Migrar los paneles antiguos al diseño de Figma** ✅ | Module, Layout (Repetition y Radiation), Structure y Similarity pasaron a los componentes `.ds-*` (nuevos: grupo de botones, snackbar, pila de campos, selector de color). Se retiraron 17 reglas de CSS antiguas | ✅ |
-| Q3d | **Barra superior, tarjetas de capas y riel de herramientas** ✅ | Migrados desde el nodo `5763:1692` de Figma (cabecera, botón, botón de icono, selector, panel de capas, tarjeta de capa, riel y línea de estado). `css/design-system.css` eliminado | ✅ |
-| Q3c | **Decisiones de diseño pendientes** | Ver la sección 8 de [DESIGN_SYSTEM_TOKENS.md](./DESIGN_SYSTEM_TOKENS.md): tokens para la caja de valor y la pista del slider, fuente monoespaciada (DM Mono o Roboto Mono), y unificar interruptor y checkbox entre librería y diseño | P2 |
+Sale de las filas ⏳ del mapa de conceptos, más las mejoras de filas 🟡 que ya habíamos priorizado.
 
-Los hallazgos de la revisión están en [REVISION_CODIGO.md](./REVISION_CODIGO.md), con su plan de arreglos F1 a F9.
+### P3 — ideas que parecen divertidas (probar primero)
+| ID | Concepto | Notas |
+| :-- | :-- | :-- |
+| K8 | Concentración libre con más de dos focos | Hoy *Hotspots* son dos focos simétricos |
+| S9 | Distribución visual libre, sin retícula | Cada módulo con un espacio similar, a ojo |
+| A3 | Anomalía: una zona con otra clase de regularidad | Transformar la regularidad en una zona |
 
----
+### P3 — por evaluar con el filtro de juego
+| ID | Concepto | Notas |
+| :-- | :-- | :-- |
+| K3 | Varios módulos por celda (cambios cuantitativos) | |
+| S8 | Retícula de celdas irregulares | Subdivisiones similares, no repetidas |
+| A8 | Deformar las líneas de estructura visibles | Hoy solo se deforman los módulos |
+| C4 | Contraste y gradación de color más allá del acento (también G3) | El tono ya está hecho |
+| C11, C14 | Estructura de contraste y equilibrio por zonas | La minoría tira desde el borde |
+| SP9 | Sombra unida o separada | |
+| SP11 | Perspectiva con disminución de tamaño | |
+| SP12 | Planos transparentes (marcos espaciales) | |
+| SP14, SP15 | Planos de textura uniforme y planos de color o textura en gradación | |
+| SP6 | Pistas de profundidad por tamaño, tono y textura | |
+| R8, R10, R13, R16, R19, R21 | Variantes de la radiación: centros múltiples ocultos, traslado de centros, capas reorganizadas, centrípeta con quiebres | Sin priorizar |
+| G9, S5 | Unión o sustracción dentro de la figura (en gradación y en similitud) | Ligado a las interrelaciones |
+| F5 | Formas rectilíneas e irregulares propias | La app trabaja con una biblioteca fija de 15 formas |
 
-## 2. Interrelaciones entre capas (capítulo 2, Forma)
-
-Las 8 interrelaciones del libro (distanciamiento, toque, superposición, penetración, unión, sustracción, intersección, coincidencia) se eliminaron junto con Form A / Form B. Sí encajan con capas: la relación se define **por capa, contra el resultado de las capas que tiene debajo**.
-
-| ID | Ítem | Notas |
-| :-- | :--- | :--- |
-| INT1 | Selector "relación con la capa inferior" | Se dibuja con composición en lienzos auxiliares. Sustracción e intersección se resuelven con operaciones de composición (`destination-out`, `destination-in`). |
-| INT2 | Modo trazo (contornos) | Unión, sustracción e intersección en trazo se resuelven recortando el contorno de cada capa con la silueta de la otra (cobertura de líneas ocultas). Penetración dibuja ambos contornos completos. |
-| INT3 | Toque, distanciamiento y coincidencia | No son composición sino posición: toque calcula la distancia para que las siluetas se rocen, coincidencia alinea centros. |
-| INT4 | Módulos mayores que la celda | El libro los usa con unión, penetración, etc. entre módulos vecinos (cap. 3 y 7). Depende de INT1. |
-
-Estado: **P2**, después de cerrar los controles de modificación. Abre decisiones de interfaz que conviene diseñar en Figma antes de implementar.
-
----
-
-## 3. Gradación (capítulo 6)
-
-Ya cubierto: rotación en el plano (Rotate), progresión en el plano (Drift), rotación espacial (Depth), progresión espacial (Scale), caminos paralelo y concéntrico, reverse, ciclos.
-
-| ID | Ítem | Notas | Prioridad |
-| :-- | :--- | :--- | :-- |
-| G1 | Camino en zigzag | ✅ Hecho: tag *Zigzag* en Pathway (cuadrícula y radial) | ✅ |
-| G2 | Ida y vuelta (1-2-3-4-5-4-3-2-1) frente a reinicio (1-2-3-4-5-1-2-3-4-5) | ✅ Hecho: grupo *Sequence* (Restart, Ping-pong) | ✅ |
-| G3 | Gradación alternada | ✅ Hecho: casilla *Alternate rows* | ✅ |
-| G4 | Velocidad de gradación | ✅ Hecho: slider *Acceleration* (-100 a 100); *Cycles* sigue siendo el número de repeticiones | ✅ |
-| G5 | Gradación de figura | ✅ Hecho: atributo *Shape* con la rejilla *Becomes*; interpola los contornos de cualquier pareja de formas | ✅ |
-| G6 | Atributo *Texture* | ✅ Hecho: atributo *Texture*; la deformación crece a lo largo del camino | ✅ |
-| G7 | Gradación de estructura | ✅ Hecho: sliders *Col gradation* y *Row gradation* (−30 a 30 %) en Layout > Advanced | ✅ |
+### Al final de todo
+| ID | Concepto | Notas |
+| :-- | :-- | :-- |
+| INT2, INT5 a INT9 | Interrelaciones entre capas: toque, unión, sustracción, intersección, coincidencia y sus efectos espaciales | Se resuelven con composición (`destination-out`, `destination-in`) y posición. Abren decisiones de interfaz que conviene diseñar antes en Figma |
+| RP7 | Módulos mayores que su celda, con unión o penetración entre vecinos | Depende de las interrelaciones |
+| RP8, RP9, RP10, E29, R26 | **Supermódulos** (y submódulos): un grupo de módulos que se repite como unidad | La app trabaja un módulo por capa; hay que decidir cómo (por ejemplo, grupos de capas que comparten retícula) |
+| SP18 | Profundidad por capa | Depende de las interrelaciones |
+| O4 | Botón Random («Sorpréndeme») y presets | Al final, cuando la herramienta esté afinada con todos los controles. Se eliminaron los presets anteriores; si se retoma, generar combinaciones válidas al azar sin presets prediseñados |
 
 ---
 
-## 4. Radiación (capítulo 7)
-
-Ya cubierto: centrífuga, concéntrica, espiral y doble centro, con rayos, anillos, torsión y centro excéntrico.
-
-| ID | Ítem | Notas | Prioridad |
-| :-- | :--- | :--- | :-- |
-| R1 | Estructura **centrípeta** | ✅ Hecho: esquema *Centripetal* (ángulos hacia el centro, guías en chevrones anidados) | ✅ |
-| R2 | Centro abierto | ✅ Hecho: slider *Open center* (las líneas tangentes al agujero poligonal quedan para R4) | ✅ |
-| R3 | Anillos rotados entre sí | ✅ Hecho: slider *Ring rotation* | ✅ |
-| R4 | Anillos poligonales | ✅ Hecho: *Ring shape* (Circle, Triangle, Square, Hexagon) en Radiation > Advanced; no aplica a espiral ni centrípeta | ✅ |
-| R5 | Orientación del módulo | ✅ Hecho: tags *Module orientation* (Auto, Outward, Inward, Tangent, Fixed) | ✅ |
-| R6 | Separación de anillos en gradación | Descartado (oct 2026): casi no se notaría; no sirve para jugar | ➖ |
-| R7 | Más de dos centros | ✅ Hecho: slider *Centers* (2 a 6) en el esquema Multi-center | ✅ |
+## 2. Descartados
+| ID | Concepto | Motivo |
+| :-- | :-- | :-- |
+| B12, C9 | Gravedad (elemento y contraste) | Se consigue con *Contrast › Position* a 90º |
+| T1, T3 | Texturas decorativa y mecánica (grano, semitono, estriado, tipografía) | Se eliminaron al reemplazar el control de textura; reabrir solo si aparece un uso claro |
+| — | Separación de anillos en gradación (antes R6) | Casi no se notaría; no sirve para jugar |
 
 ---
 
-## 5. Contraste (capítulo 9)
-
-Ya cubierto: dominancia de la mayoría y énfasis de la minoría, dimensiones Scale, Shape y Angle, color de acento elegible.
-
-| ID | Ítem | Notas | Prioridad |
-| :-- | :--- | :--- | :-- |
-| C1 | Dimensión posición | ✅ Hecho: dimensión *Position* con *Shift* (5 a 50 % de la celda) y *Shift direction* (0 a 360º) | ✅ |
-| C2 | Dimensión espacio | ✅ Hecho: dimensión *Space* (figura y fondo invertidos en la minoría, en cuadrícula y radial) | ✅ |
-| C3 | Dimensión gravedad | Descartado (oct 2026): se consigue con *Position* a 90º | ➖ |
-| C4 | Dimensión textura | ✅ Hecho: dimensión *Texture* (solo la minoría se deforma) | ✅ |
-| C5 | Dimensión color | Más allá del acento | P3 |
-| C6 | Minoría por zonas y equilibrio | El libro reparte la mayoría sobre una zona mayor y la minoría tira desde el borde (fig. 61b) | P3 |
-| C7 | Revisar "Tone" | ✅ Hecho: ahora es un tono más claro del color del módulo (slider *Tone*), en relleno y en contorno | ✅ |
-| **C8** | **Revisar la interacción con otros modificadores** | ✅ **Hecho.** Anomaly gana a Contrast en forma y color; las escalas se multiplican (tope 8x) y los giros se suman. Reglas en la guía (3b). **Pedido explícito.** Orden de aplicación y multiplicadores con Gradation, Concentration y Anomaly (todos tocan escala, dirección o color). Definir qué manda cuando coinciden | ✅ |
-
----
-
-## 6. Concentración (capítulo 10)
-
-Ya cubierto: hacia un punto (Point), desde un punto (Void), hacia una línea (Line), libre (Hotspots, 2 focos).
-
-| ID | Ítem | Notas | Prioridad |
-| :-- | :--- | :--- | :-- |
-| K1 | Desde una línea | ✅ Hecho: modo *Away from line* | ✅ |
-| K2 | Superconcentración y desconcentración | ✅ Hecho: modos *Dense* y *Sparse*, con *Fade toward the edges* | ✅ |
-| K3 | Más de dos focos | Hoy Hotspots son dos focos simétricos | P3 |
-| K4 | Concentrar por ausencias | ✅ Hecho: chips *Method* (Move, Absence) | ✅ |
-| K5 | Varios módulos por celda | Cambios cuantitativos reales | P3 |
-
----
-
-## 7. Anomalía (capítulo 8)
-
-Ya cubierto: focal, rupture, swell, void, radio, severidad, resaltado con color elegible, reticle.
-
-| ID | Ítem | Notas | Prioridad |
-| :-- | :--- | :--- | :-- |
-| A1 | Anomalías esparcidas | ✅ Hecho: tags *Distribution* (Single, Scattered regular, Scattered random) con *Count* y *Seed* | ✅ |
-| A2 | Zona con otra regularidad | "Transformar la regularidad" (fig. 56c) | P3 |
-| A3 | Elegir qué atributos se desvían | ✅ Hecho: chips *Deviates in* (forma, escala, rotación, posición según el tipo) | ✅ |
-| A4 | Deformar las líneas de estructura visibles | Hoy solo se deforman los módulos | P3 |
-
----
-
-## 8. Similitud (capítulo 5)
-
-Ya cubierto: Elastic (tensión/compresión), 3D tilt (distorsión espacial), Wobble, Scale, Hibrid, intensidad, jitter de celda.
-
-| ID | Ítem | Notas | Prioridad |
-| :-- | :--- | :--- | :-- |
-| S1 | Asociación | ✅ Hecho: chips *Association* (Round, Angular, Lines, Numbers) con *Association mix* | ✅ |
-| S2 | Imperfección | ✅ Hecho: chips *Imperfection* (Cut, Broken) con *Imperfect modules* | ✅ |
-| S3 | Retícula de celdas irregulares | "Subdivisiones estructurales similares" (fig. 33) | P3 |
-| S4 | Distribución visual libre | Sin retícula, con espacio similar para cada módulo | P3 |
-
----
-
-## 9. Estructura y Repetición (capítulos 3 y 4)
-
-Ya cubierto: retícula básica, sliding, sheared, curved, zigzag, triangular; estructura activa (recorte), visible (líneas) y alternancia positivo/negativo; proporción rítmica.
-
-| ID | Ítem | Notas | Prioridad |
-| :-- | :--- | :--- | :-- |
-| E1 | Líneas visibles positivas o negativas | ✅ Hecho: tags *Line tone* (Guide, Positive, Negative) | ✅ |
-| E2 | Grosor de las líneas | ✅ Hecho en la cuadrícula (F6) y en el radial (*Line tone* y *Line width*) | ✅ |
-| E3 | Horizontales y verticales por separado | ✅ Hecho: *Line direction* y *Line spacing* (Every other) | ✅ |
-| E4 | Estructura de múltiple repetición | ✅ Hecho: *Module placement* (Centers, Intersections, Both) con *Intersection size*; dos clases de módulo entretejidas (fig. 23) | ✅ |
-| RP1 | Retícula hexagonal | ✅ Hecho: tag *Hexagonal* (panal con recorte y líneas hexagonales) | ✅ |
-| RP0 | Mostrar en pantalla las retículas triangular, zigzag y alternada | ✅ Hecho (F6), con el parámetro de cada variación y el grosor de líneas | ✅ |
-| RP2 | Subdivisión y combinación de celdas | ✅ Hecho: *Cell mix* (None, Merged, Divided) en bloques de 2×2 alternados (fig. 22f-g). Solo en retícula básica y alternada | ✅ |
-| RP3 | Reflexión | ✅ Hecho: tags *Reflection* (None, Columns, Rows, Both) | ✅ |
-| RP4 | Selector de dirección | ✅ Hecho: chips *Direction* (Repeated, Alternated, Undefined) en cuadrícula y radial | ✅ |
-| RP5 | Superposición de estructuras | Ya posible con capas | ✅ |
-| RP6 | **Supermódulos** | Un grupo de módulos que se repite como unidad. La app trabaja un módulo = una capa, así que hay que decidir cómo (por ejemplo, grupos de capas que comparten retícula) | **P3, al final de todo** |
-
----
-
-## 10. Espacio (capítulo 12)
-
-Ya cubierto: isométrico, 3D tilt, fluctuante, paradójico; profundidad, ángulo, contraste de facetas, guías isométricas; figura y fondo invertibles.
-
-Se considera complejo; entero en backlog (P3).
-
-| ID | Ítem | Prioridad |
-| :-- | :--- | :-- |
-| SP1 | Perspectiva con disminución de tamaño | P3 |
-| SP2 | Sombra unida o separada | P3 |
-| SP3 | Pistas de profundidad: tamaño, tono y textura | P3 |
-| SP4 | Planos transparentes (marcos espaciales) | P3 |
-| SP5 | Profundidad por capa | P3, depende de INT |
-
----
-
-## 11. Textura (capítulo 11)
-
-Ya cubierto: textura espontánea mediante deformación de geometría (Jitter, Line skipping, Strand crossing, Perimeter undulation).
+## 3. Calidad y diseño
 
 | ID | Ítem | Estado |
-| :-- | :--- | :--- |
-| T1 | Texturas decorativa y mecánica (grano, semitono, estriado, tipografía) | ✖ Descartadas por ahora; se eliminaron al reemplazar el control. Reabrir solo si aparece un uso claro |
-| T2 | Gradación de textura | Ver G6 |
+| :-- | :-- | :-- |
+| Q1 | Revisión de código | ✅ Informe histórico en [REVISION_CODIGO.md](./REVISION_CODIGO.md); sus arreglos (F1 a F9) están hechos |
+| Q2 | Auditoría de lo propuesto frente a lo que la app ya hace | ✅ Hecha en cada ítem; el mapa de conceptos la formaliza |
+| Q3 | Design system desde Figma | ✅ [DESIGN_SYSTEM_TOKENS.md](./DESIGN_SYSTEM_TOKENS.md) y `css/tokens.css` |
+| Q3b, Q3d | Migrar paneles, barra superior, tarjetas de capas y riel al diseño de Figma | ✅ |
+| Q3c | Decisiones de diseño pendientes: tokens para la caja de valor y la pista del slider, fuente monoespaciada (DM Mono o Roboto Mono), unificar interruptor y checkbox entre librería y diseño | ⏳ **En espera**: Diego revisará el diseño en Figma (por ejemplo, reducir el alto de los campos para un estilo más de software) y lo pasará |
+| U1 | Reorganizar los controles: lo esencial visible, lo demás en *Advanced*, dropdowns, guías con color global | ✅ Ver [AUDITORIA_CONTROLES.md](./AUDITORIA_CONTROLES.md) |
+
+## 4. Otros
+| ID | Ítem | Estado |
+| :-- | :-- | :-- |
+| O1 | Exportar SVG vectorial real y reabrir el proyecto | ✅ |
+| O2, O3 | Controles de Contrast, eje de línea, color de acento y variaciones sin mockup | ✅ Cerrado (regla de diseño: salen del catálogo de componentes) |
 
 ---
 
-## 12. Otros
+## 5. Equivalencias con los IDs antiguos
+Hasta el 5 de octubre de 2026 el backlog numeraba **tareas** (R4, E2, G7...). Desde entonces los IDs son los de los conceptos. Para leer commits y conversaciones anteriores:
 
-| ID | Ítem | Notas | Prioridad |
-| :-- | :--- | :--- | :-- |
-| O1 | Exportar SVG vectorial real | ✅ Hecho (F9): el motor dibuja sobre un contexto que graba trazos SVG. También se puede reabrir el proyecto (botón Open) | ✅ |
-| O2 | Controles de Contrast sin mockup | Minority Shape y Clash Angle usan la rejilla de formas y el slider con caja de valor del catálogo | ✅ Cerrado (regla de diseño) |
-| O4 | Aleatorizar parámetros (botón Random) | Se eliminaron los presets y el botón. Si se retoma, generar combinaciones válidas al azar de los controles de capa (la prueba de 400 combinaciones ya sabe hacerlo). Sin presets prediseñados | P3, baja prioridad |
-| O3 | Controles extra sin mockup | Eje de línea, color de acento, variaciones de Layout, Radiation y Gradation: todos salen del catálogo de componentes existente | ✅ Cerrado (regla de diseño) |
+| ID antiguo | ID actual | | ID antiguo | ID actual |
+| :-- | :-- | :-- | :-- | :-- |
+| E1 | E11 | | R1 | R20 |
+| E2 | E10 | | R2 | R7 |
+| E3 | E12 | | R3 | R17 |
+| E4 | E24, E25 | | R4 | R12 |
+| RP1 | E23 | | R5 | R3 |
+| RP2 | E20, E21 | | R6 | descartado |
+| RP3 | RP11 | | R7 | R9 |
+| RP4 | RP2 a RP4 | | C1 | C7 |
+| RP5 | INT3, E28, R23 | | C2 | C8 |
+| RP6 | RP8 a RP10, E29, R26 | | C3 | B12, C9 (descartado) |
+| G1 | G15 | | C4 | C5 |
+| G2 | G16 | | C5 | C4, G3 |
+| G3 | G21 | | C6 | C11, C14 |
+| G4 | G12 | | C7 | C4 |
+| G5 | G1 | | K1 | K7 |
+| G6 | G4, T10 | | K2 | K9, K10 |
+| G7 | G17 | | K3 | K8 |
+| A1 | A2, A6 | | K4 | K1 |
+| A2 | A3 | | K5 | K3 |
+| A3 | A9 | | S1 | S2 |
+| A4 | A8 | | S2 | S3 |
+| S3 | S8 | | S4 | S9, E3 |
+| SP1 | SP5, SP11 | | SP2 | SP9 |
+| SP3 | SP6, SP14, SP15 | | SP4 | SP12 |
+| SP5 | SP18 | | T1, T2 | T1 y T3 (descartados), T10 |
+| INT1 | INT5 a INT7 | | INT2 | INT4 |
+| INT3 | INT2, INT8 | | INT4 | RP7, E7, R27 |
