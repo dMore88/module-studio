@@ -847,6 +847,27 @@
       }
     });
 
+    await test("Width and Height reach 2000 px for every shape; the line has no Height", async () => {
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      q('[data-rail-tab="module"]').click(); await wait(60);
+      const fire = (el, v) => { el.value = v; el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
+      assert(q("#input-active-width").max === "2000" && q("#input-active-height").max === "2000", "Width and Height should go up to 2000");
+      for (const shape of ["circle", "square", "triangle", "wave", "horseshoe", "hexagon", "parallelogram", "hatch", "crescent", "teardrop", "cross", "digit1", "digit5", "digit9"]) {
+        q(`[data-shape="${shape}"]`).click();
+        assert(!q("#input-active-height").closest(".ds-field").classList.contains("hidden"), `${shape}: Height should be available`);
+      }
+      q('[data-shape="circle"]').click();
+      fire(q("#input-active-width"), 1800); fire(q("#input-active-height"), 1800);
+      const m = app.getActiveModule();
+      assert(m.width === 1800 && m.height === 1800 && q("#num-active-width").value === "1800", "A 1800 module did not apply");
+      drawRaw(app); // a giant module must draw without errors
+      q('[data-shape="line"]').click();
+      assert(q("#input-active-height").closest(".ds-field").classList.contains("hidden"), "The line should not show Height");
+      q('[data-shape="square"]').click();
+      assert(!q("#input-active-height").closest(".ds-field").classList.contains("hidden"), "Height should come back for other shapes");
+    });
+
     await test("A failed draw shows a visible notice and recovers", () => {
       reset();
       const original = app.engine.render;

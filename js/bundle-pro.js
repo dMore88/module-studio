@@ -5236,6 +5236,11 @@ class StudioProApp {
      CONTEXTUAL SHAPE & STYLE INSPECTOR (Applies to currently active layer)
      ========================================================================= */
 
+  // A line has a length (Width) but no Height, so the Height control is hidden for it.
+  updateHeightVisibility(mod) {
+    document.getElementById("input-active-height")?.closest(".ds-field")?.classList.toggle("hidden", !!mod && mod.shape === "line");
+  }
+
   setupShapeInspector() {
     // 1. Shape Glyph Selection Grid (15 Shapes)
     document.querySelectorAll("[data-shape]").forEach(btn => {
@@ -5246,6 +5251,7 @@ class StudioProApp {
         
         document.querySelectorAll("[data-shape]").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
+        this.updateHeightVisibility(mod);
 
         this.render();
         this.updateLayerCardsUI();
@@ -5360,6 +5366,7 @@ class StudioProApp {
     document.querySelectorAll("[data-shape]").forEach(b => {
       b.classList.toggle("active", b.dataset.shape === mod.shape);
     });
+    this.updateHeightVisibility(mod);
 
     // Sync Dimensions
     this.syncControlValue("input-active-width", mod.width || mod.scale || 50);
