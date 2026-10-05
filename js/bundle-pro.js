@@ -4189,12 +4189,26 @@ class StudioProApp {
         const active = menu.querySelector(".ds-dropdown-item.active") || menu.querySelector(".ds-dropdown-item");
         if (active && current) current.innerHTML = active.innerHTML;
       };
+      // The menu floats above the panel (fixed), below the trigger, or above it when there is no room below
+      const place = () => {
+        const r = trigger.getBoundingClientRect();
+        const gap = 6, below = window.innerHeight - r.bottom - gap - 8, above = r.top - gap - 8;
+        const want = Math.min(320, menu.scrollHeight);
+        const up = below < want && above > below;
+        const room = Math.max(120, up ? above : below);
+        menu.style.left = `${r.left}px`;
+        menu.style.width = `${r.width}px`;
+        menu.style.maxHeight = `${Math.min(320, room)}px`;
+        const h = Math.min(want, room);
+        menu.style.top = `${up ? r.top - gap - h : r.bottom + gap}px`;
+      };
       trigger.addEventListener("click", (e) => {
         e.stopPropagation();
         const open = menu.classList.contains("hidden");
         closeAll(sel);
         menu.classList.toggle("hidden", !open);
         trigger.setAttribute("aria-expanded", String(open));
+        if (open) place();
       });
       menu.addEventListener("click", () => {
         menu.classList.add("hidden");
@@ -4207,6 +4221,9 @@ class StudioProApp {
     });
     document.addEventListener("click", () => closeAll(null));
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(null); });
+    // A floating menu would stay behind when the panel scrolls or the window changes size
+    window.addEventListener("resize", () => closeAll(null));
+    document.querySelectorAll(".inspector-flyout-card").forEach(card => card.addEventListener("scroll", () => closeAll(null), { passive: true }));
   }
 
   setupRepetitionExtras() {

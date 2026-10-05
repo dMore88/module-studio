@@ -491,7 +491,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .ds-dropdown-trigger:focus-visible, .ds-dropdown-item:focus-visible { outline: var(--border-weight-2) solid var(--neutral-interactive-default); outline-offset: var(--spacing-1); }
 .ds-dropdown-current { display: flex; align-items: center; gap: var(--spacing-3); min-width: 0; }
 .ds-dropdown-menu {
-  position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + var(--spacing-2));
+  position: fixed; z-index: 60; /* floats above the panel; its place is set when it opens */
   display: flex; flex-direction: column;
   padding: var(--spacing-2);
   background: var(--neutral-surface-main, #fff);
