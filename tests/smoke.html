@@ -762,64 +762,71 @@
       assert(q('[data-anom-attr="shape"]').classList.contains("hidden") && !q('[data-anom-attr="position"]').classList.contains("hidden"), "Swell should offer position and scale, not shape");
     });
 
-    await test("Fixed size: the module keeps its real size, the cell size defines the grid, the pattern is centred and bleeds", async () => {
+    await test("Actual size repeats the module's container as it is, centred; Fit to canvas stays proportional", async () => {
       reset();
       const cv = win.document.getElementById("studio-canvas");
-      const render = (rep, layer = {}, mode = "repetition", rad = {}) => {
+      const render = (rep, layer = {}, mode = "repetition", rad = {}, guides = false) => {
         const st = JSON.parse(JSON.stringify(app.state));
-        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = guides; st.aspectRatio = "1:1";
         const L = st.layers[0];
-        Object.assign(L, { shape: "square", width: 100, height: 100, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false }, layer);
+        Object.assign(L, { shape: "square", width: 100, height: 100, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false, containerW: 150, containerH: 150 }, layer);
         L.structure.enabled = true; L.structure.mode = mode;
-        Object.assign(L.structure.repetition, { cols: 4, rows: 4, gridType: "basic", sizeMode: "fit", cellW: 0, cellH: 0 }, rep);
-        Object.assign(L.structure.radiation, { rays: 12, rings: 4, scheme: "centrifugal", sizeMode: "fit", ringSpacing: 0 }, rad);
+        Object.assign(L.structure.repetition, { cols: 3, rows: 3, gridType: "basic", sizeMode: "actual", activeClipping: false }, rep);
+        Object.assign(L.structure.radiation, { rays: 12, rings: 4, scheme: "centrifugal", sizeMode: "fit" }, rad);
         app.state = st; drawRaw(app);
         return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
       };
       const dpr = cv.width / 600;
       const px = (d, x, y) => d[(Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4];
       const runs = (d, y) => { const out = []; let start = null; for (let x = 0; x < 600; x++) { const dark = px(d, x, y) < 128; if (dark && start === null) start = x; if (!dark && start !== null) { out.push([start, x - 1]); start = null; } } if (start !== null) out.push([start, 599]); return out; };
+      const near = (a, b, tol = 2) => Math.abs(a - b) <= tol;
       const diff = (a, b) => { let n = 0; for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i] - b[i]) > 60) n++; return n; };
-      // A 100 module is drawn exactly 100 px wide; cells of 200 leave 100 px between modules, centred on the canvas
-      const fixed = render({ sizeMode: "fixed", cellW: 200, cellH: 200 });
-      const r300 = runs(fixed, 300);
-      assert(r300.length === 3, `Expected 3 modules on the middle row, found ${r300.length}`);
-      assert(r300.every(([a, b]) => Math.abs((b - a + 1) - 100) <= 2), `The module is not 100 px wide (${JSON.stringify(r300)})`);
-      assert([100, 300, 500].every((c, i) => Math.abs((r300[i][0] + r300[i][1]) / 2 - c) <= 2), `The pattern is not centred (${JSON.stringify(r300)})`);
-      // The cell, not the number of columns, defines the grid
-      assert(diff(fixed, render({ sizeMode: "fixed", cellW: 200, cellH: 200, cols: 9, rows: 9 })) === 0, "Columns and rows should not matter in fixed size");
-      assert(diff(render({ cols: 4, rows: 4 }), render({ cols: 4, rows: 4, cellW: 200, cellH: 200 })) === 0, "The cell size should not matter in fit mode");
-      // A cell smaller than the module makes the modules overlap
-      const tight = render({ sizeMode: "fixed", cellW: 90, cellH: 90 });
-      assert(runs(tight, 300).length === 1 && runs(tight, 300)[0][1] - runs(tight, 300)[0][0] > 590, "Modules should overlap when the cell is smaller than the module");
-      // By default the cell is as big as the module: modules sit side by side, not on top of each other
-      const side = render({ sizeMode: "fixed" });
-      const rs = runs(side, 300);
-      assert(rs.length === 1 || rs.every((r, i) => i === 0 || r[0] - rs[i - 1][1] <= 3), "Default fixed cells should leave the modules next to each other");
-      // The module keeps the same size when the structure changes
-      const small = render({ sizeMode: "fixed", cellW: 300, cellH: 300 });
-      assert(runs(small, 300).every(([a, b]) => Math.abs((b - a + 1) - 100) <= 2 || a === 0 || b === 599), "The module size changed with the cell");
-      // Radial: the module keeps its size, the rings run out to the canvas corners
+      // 3 containers of 150 px: a block of 450 centred on the 600 canvas; a 100 px module sits in each
+      const r = runs(render({}), 300);
+      assert(r.length === 3 && r.every(([a, b]) => near(b - a + 1, 100)) && near(r[0][0], 100) && near(r[1][0], 250) && near(r[2][0], 400), `3 containers of 150 should hold modules at 100, 250 and 400 (${JSON.stringify(r)})`);
+      // The number of columns is the number of copies
+      const r5 = runs(render({ cols: 5, rows: 5 }), 300);
+      assert(r5.length === 5 && r5[0][0] === 0 && near(r5[0][1], 49) && near(r5[4][0], 550) && r5[4][1] === 599 && near(r5[2][0], 250), `5 columns should give 5 modules, the outer ones cut by the canvas (${JSON.stringify(r5)})`);
+      // The module can be bigger than its container: the copies overlap
+      const bigMod = runs(render({}, { width: 200, height: 200 }), 300);
+      assert(bigMod.length === 1 && near(bigMod[0][0], 50) && near(bigMod[0][1], 549), `A 200 module in 150 containers should overlap (${JSON.stringify(bigMod)})`);
+      // The offset is kept inside every container; Clip cell crops what leaves it
+      const ro = runs(render({ activeClipping: true }, { offsetX: 60 }), 300);
+      assert(ro.length === 3 && ro.every(([a, b]) => near(b - a + 1, 65)) && near(ro[0][0], 160), `Offset and clip should repeat in every container (${JSON.stringify(ro)})`);
+      // More containers than fit: the block runs past the edges of the canvas
+      const over = runs(render({ cols: 8, rows: 8 }, { containerW: 100, containerH: 100 }), 300);
+      assert(over.length === 1 && over[0][0] === 0 && over[0][1] === 599, "A block bigger than the canvas should cover it");
+      // Fit to canvas: proportional to the canvas (2 x 2 halves the module), whatever the container size
+      const fit2 = (layer) => runs(render({ sizeMode: "fit", cols: 2, rows: 2 }, layer), 150);
+      const f1 = fit2({ containerW: 0, containerH: 0 }), f2 = fit2({ containerW: 100, containerH: 100 });
+      assert(f1.length === 2 && f1.every(([a, b]) => near(b - a + 1, 50)), `Fit 2 x 2 should halve a 100 module (${JSON.stringify(f1)})`);
+      assert(JSON.stringify(f1) === JSON.stringify(f2), "Fit to canvas should not depend on the container size");
+      // The container is drawn as a guide, centred, when the guides are on
+      const g = render({ sizeMode: "fit", cols: 1, rows: 1 }, { containerW: 300, containerH: 200 }, "repetition", {}, true);
+      let edge = 0; for (let y = 200; y <= 400; y++) if (px(g, 150, y) < 215) edge++;
+      assert(edge > 20, "The container frame is not drawn on its left edge");
+      // Radial: each ring is as thick as the container's height
       const inkFar = (d) => { let n = 0; for (let y = 0; y < 600; y += 2) for (let x = 0; x < 600; x += 2) if (Math.hypot(x - 300, y - 300) > 330 && px(d, x, y) < 128) n++; return n; };
       assert(inkFar(render({}, {}, "radiation")) === 0, "Fit radial should stay within its radius");
-      assert(inkFar(render({}, {}, "radiation", { sizeMode: "fixed", ringSpacing: 100 })) > 50, "Fixed radial should reach the canvas corners");
+      assert(inkFar(render({}, { containerH: 100 }, "radiation", { sizeMode: "actual", rings: 5 })) > 50, "Actual size radial should reach as far as its rings");
       // Inspector
       reset();
       const d = win.document, q = (sel) => d.querySelector(sel);
+      q('[data-rail-tab="module"]').click(); await wait(60);
+      assert(q("#num-active-container-w").value === "600px" && q("#num-active-container-h").value === "600px", "The container should start as the whole canvas");
+      const cw = q("#input-active-container-w"); cw.value = 240; cw.dispatchEvent(new win.Event("input", { bubbles: true }));
+      assert(app.getActiveModule().containerW === 240 && q("#num-active-container-w").value === "240px", "Container width slider out of sync");
+      app.getActiveModule().containerW = 0; app.getActiveModule().containerH = 0;
       q('[data-rail-tab="layout"]').click(); await wait(80);
       q("#toggle-layout-structure").click();
       const rep = () => app.getActiveLayerStructure().repetition;
-      const own = Math.round(app.defaultCell().w); // the module as drawn: exactly its width
-      assert(!q("#rep-cols-field").classList.contains("hidden") && q("#rep-cellw-field").classList.contains("hidden"), "Fit should show columns and rows, not the cell size");
-      q('[data-rep-size="fixed"]').click(); await wait(40);
-      assert(rep().sizeMode === "fixed" && rep().cellW === own && rep().cellH === own, `The cell should start as big as the module (${rep().cellW} x ${rep().cellH})`);
-      assert(q("#rep-cols-field").classList.contains("hidden") && !q("#rep-cellw-field").classList.contains("hidden") && q("#num-layout-cellw").value === `${own}px`, "Fixed should show the cell size and hide columns and rows");
-      const cw = q("#input-layout-cellw"); cw.value = 180; cw.dispatchEvent(new win.Event("input", { bubbles: true }));
-      assert(rep().cellW === 180 && q("#num-layout-cellw").value === "180px", "Cell width slider out of sync");
+      assert(q('[data-rep-size="fit"]').textContent.trim() === "Fit to canvas" && q('[data-rep-size="actual"]').textContent.trim() === "Actual size", "The chips should read Fit to canvas and Actual size");
+      q('[data-rep-size="actual"]').click(); await wait(40);
+      assert(rep().sizeMode === "actual" && app.getActiveModule().containerW === Math.round(600 / rep().cols), "Actual size should start with a container as big as a Fit cell");
+      assert(!q("#input-layout-cols").closest(".ds-field").classList.contains("hidden"), "Actual size should keep the Columns and Rows controls");
       q("#btn-layout-radiation").click(); await wait(60);
-      q('[data-rad-size="fixed"]').click(); await wait(40);
-      const rd = () => app.getActiveLayerStructure().radiation;
-      assert(rd().sizeMode === "fixed" && rd().ringSpacing === own && q("#rad-rings-field").classList.contains("hidden") && !q("#rad-spacing-field").classList.contains("hidden"), "Radial fixed size controls wrong");
+      q('[data-rad-size="actual"]').click(); await wait(40);
+      assert(app.getActiveLayerStructure().radiation.sizeMode === "actual" && q('[data-rad-size="actual"]').classList.contains("active"), "Radial Actual size did not apply");
     });
 
     await test("A module measures exactly what its Width and Height say, on any canvas", () => {

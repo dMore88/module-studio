@@ -20,9 +20,7 @@ export const createDefaultLayerStructure = () => ({
     lineDirection: "both", // both, horizontal, vertical
     lineSpacing: "all", // all, alternate (every other line)
     reflection: "none", // none, columns, rows, both: mirror the module in alternate cells
-    sizeMode: "fit", // fit (the module scales to its cell) or fixed (the module keeps its real size; the cell size defines the grid)
-    cellW: 0, // cell width in px for the fixed size mode (0 = the module's own width)
-    cellH: 0, // cell height in px for the fixed size mode (0 = the module's own height)
+    sizeMode: "fit", // fit (Fit to canvas: columns and rows divide the canvas, the module scales to its cell) or actual (Actual size: the module keeps its real size and is repeated columns x rows times)
     checkerInvert: false
   },
   radiation: {
@@ -30,8 +28,7 @@ export const createDefaultLayerStructure = () => ({
     orientation: "auto", // auto (by scheme), outward, inward, tangent, fixed
     centerOpen: 0, // open center: hole radius as a percentage of the radius (0 to 70)
     ringRotation: 0, // degrees each ring is rotated more than the previous one (-90 to 90)
-    sizeMode: "fit", // fit (module scales to its sector) or fixed (real size; ring spacing defines the rings)
-    ringSpacing: 0, // distance between rings in px for the fixed size mode (0 = the module's own size)
+    sizeMode: "fit", // fit (Fit to canvas) or actual (Actual size: each ring is as thick as the module)
     rays: 12,
     rings: 5,
     spiralTwist: 45,
@@ -134,6 +131,8 @@ export const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "ci
   rotation,
   offsetX,
   offsetY,
+  containerW: 0, // width of the module's container in px (0 = the whole canvas)
+  containerH: 0, // height of the module's container in px (0 = the whole canvas)
   wireframe: true,
   strokeWidth: 1.2,
   color: "#18181f",
@@ -719,12 +718,13 @@ export class StudioEngine {
     return 0;
   }
 
-  // Size at which a module is drawn on its own: the default cell / ring spacing of the fixed size mode.
-  defaultCellSize(mod, width, height) {
-    const unit = MODULE_UNIT;
-    const w = (mod.width !== undefined ? mod.width : (mod.scale || 50)) * unit;
-    const h = (mod.height !== undefined ? mod.height : (mod.scale || 50)) * unit;
-    return { w: Math.max(10, w), h: Math.max(10, h) };
+  // The module's container: a frame centred on the canvas that the module is composed in.
+  // Actual size repeats it as it is; 0 means the whole canvas.
+  containerSize(mod, width, height) {
+    return {
+      w: mod && mod.containerW > 0 ? mod.containerW : width,
+      h: mod && mod.containerH > 0 ? mod.containerH : height
+    };
   }
 
   // Epicenters of the anomaly: one, or several scattered in a regular or random layout.
@@ -889,17 +889,17 @@ export class StudioEngine {
     const usableW = usableWParam !== undefined ? usableWParam : width - margin * 2;
     const usableH = usableHParam !== undefined ? usableHParam : height - margin * 2;
 
-    // Fixed size: the module keeps its real size and the cell size defines the grid. The pattern is
-    // centred and runs past the canvas edges, so the outer cells are cut off (bleed).
-    const isFixed = rep.sizeMode === "fixed";
-    const defCell = this.defaultCellSize(targetMod, width, height);
-    const fixedCW = Math.max(10, rep.cellW || defCell.w);
-    const fixedCH = Math.max(10, rep.cellH || defCell.h);
+    // Actual size: the container (a frame the module is composed in) is the cell and is repeated as it
+    // is, columns x rows times, in a block centred on the canvas. A block bigger than the canvas runs
+    // past its edges. Fit to canvas: the cell is the canvas divided by columns and rows.
+    const isFixed = rep.sizeMode === "actual" || rep.sizeMode === "fixed";
+    const cont = this.containerSize(targetMod, width, height);
+    const customContainer = targetMod.containerW > 0 || targetMod.containerH > 0;
+    const fixedCW = Math.max(10, cont.w);
+    const fixedCH = Math.max(10, cont.h);
     const hexFixedPitch = fixedCW * 0.866;
-    const cols = isFixed ? Math.ceil(usableW / fixedCW) + 2 : Math.max(1, rep.cols);
-    const rows = isFixed
-      ? Math.ceil(usableH / (rep.gridType === "hexagonal" ? hexFixedPitch : fixedCH)) + 2
-      : Math.max(1, rep.rows);
+    const cols = Math.max(1, rep.cols);
+    const rows = Math.max(1, rep.rows);
 
     // Calculate column widths and x positions (Dual rhythmic interval support)
     const colWidths = [];
@@ -1056,9 +1056,16 @@ export class StudioEngine {
             bgColor = palette.fg;
           }
 
-          // Active clipping: restrict drawing strictly to cell boundaries
+          // Active clipping: restrict drawing strictly to cell boundaries (in Fit to canvas, to the
+          // container scaled down with the module)
           if (rep.activeClipping) {
-            this.buildCellPath(ctx, r, c, rows, cols, cellCx, cellCy, cW, cH, rep, cellStartX);
+            if (!isFixed && customContainer) {
+              const bw = (cW * cont.w) / usableW, bh = (cH * cont.h) / usableH;
+              ctx.beginPath();
+              ctx.rect(cellCx - bw / 2, cellCy - bh / 2, bw, bh);
+            } else {
+              this.buildCellPath(ctx, r, c, rows, cols, cellCx, cellCy, cW, cH, rep, cellStartX);
+            }
             ctx.clip();
           }
 
@@ -1286,18 +1293,13 @@ export class StudioEngine {
     // Open center: the rings start at the hole radius instead of the centre
     const openR = refR * Math.max(0, Math.min(70, rad.centerOpen || 0)) / 100;
 
-    // Fixed size: the module keeps its real size and the ring spacing defines the rings, which run
-    // out past the farthest corner of the canvas (bleed). In fit mode the rings divide a set radius.
-    const isFixed = rad.sizeMode === "fixed";
-    const defCell = this.defaultCellSize(targetMod, width, height);
-    const spacing = Math.max(10, rad.ringSpacing || Math.max(defCell.w, defCell.h));
-    let rings = Math.max(2, rad.rings);
+    // Actual size: the module keeps its real size and each ring is as thick as the container's height, so the
+    // structure can run past the canvas. In fit mode the rings divide a set radius.
+    const isFixed = rad.sizeMode === "actual" || rad.sizeMode === "fixed";
+    const spacing = Math.max(10, this.containerSize(targetMod, width, height).h);
+    const rings = Math.max(2, rad.rings);
     let maxR = refR;
-    if (isFixed) {
-      const reach = Math.max(Math.hypot(cx, cy), Math.hypot(width - cx, cy), Math.hypot(cx, height - cy), Math.hypot(width - cx, height - cy)) + (isMultiCenter ? refR * 0.35 : 0);
-      rings = Math.max(2, Math.ceil(Math.max(0, reach - openR) / spacing) + 1);
-      maxR = openR + rings * spacing;
-    }
+    if (isFixed) maxR = openR + rings * spacing;
     const span = maxR - openR;
     // Each ring is turned a bit more than the one inside it, so their subdivisions do not line up
     const ringRotRad = ((rad.ringRotation || 0) * Math.PI) / 180;
@@ -1645,6 +1647,14 @@ export class StudioEngine {
       ctx.setLineDash([4, 4]);
       ctx.lineWidth = 1.2;
       ctx.strokeRect(margin, margin, usableW, usableH);
+
+      // The container of each module that has one: a frame centred on the canvas
+      ctx.strokeStyle = palette.isDark ? "rgba(255, 255, 255, 0.55)" : "rgba(24, 24, 31, 0.45)";
+      for (const l of this.getLayers()) {
+        if (l.visible === false || !(l.containerW > 0 || l.containerH > 0)) continue;
+        const cs = this.containerSize(l, width, height);
+        ctx.strokeRect(width / 2 - cs.w / 2, height / 2 - cs.h / 2, cs.w, cs.h);
+      }
 
       ctx.restore();
     }

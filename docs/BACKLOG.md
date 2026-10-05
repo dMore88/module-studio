@@ -23,7 +23,7 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 | 7 | **Estructura y Repetición** (sección 9: E1, E3, RP1, RP3) | ✅ Hecho (E2 radial, E4, RP2 y RP4 siguen en P2) |
 | 8 | **Contraste** (sección 5: C8, C4, C2) | ✅ Hecho (C1, C3, C5, C6 y C7 siguen en P2 y P3). Siguiente: Anomalía |
 | 9 | Anomalía (sección 7: A1, A3) | ✅ Hecho (A2 y A4 siguen en P3) |
-| 9b | **Tamaño del módulo y sangrado** (petición de Diego) | ✅ Hecho: *Module size* Fit to cell / Fixed size en cuadrícula y radial, tamaño de celda y separación de anillos, patrón centrado con sangrado, margen de seguridad en 0. Siguiente: Similitud |
+| 9b | **Tamaño del módulo, contenedor y sangrado** (petición de Diego) | ✅ Hecho: contenedor del módulo (*Container width / height*), *Module size* Fit to canvas / Actual size en cuadrícula y radial, bloque centrado con sangrado, margen de seguridad en 0 y tamaño exacto del módulo. Siguiente: Similitud |
 | 10 | Similitud (sección 8: S1, S2) | P2. S2 se apoya en Line skipping de Texture |
 | 11 | Concentración (sección 6: K2, K1, K4) | P2 |
 | 12 | Interrelaciones entre capas (sección 2) | P2, después de los modificadores (7 a 11) |
