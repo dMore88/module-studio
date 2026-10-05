@@ -19,7 +19,7 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 | 4 | **Design system `.md` desde Figma** (sección 0, Q3) | ✅ Hecho: [DESIGN_SYSTEM_TOKENS.md](./DESIGN_SYSTEM_TOKENS.md) y `css/tokens.css` |
 | 4b | **Migrar los paneles Module, Layout, Structure y Similarity al diseño de Figma** (Q3b) | ✅ Hecho (2026-10-04). Q3d también hecho: toda la interfaz usa los tokens |
 | 5 | Gradation avanzada (G1 a G6) | ✅ Hecho (G7, gradación de estructura, sigue en P2) |
-| 6 | Radiación: centrípeta y centro abierto (R1, R2, y lo que acompaña) | P1 |
+| 6 | Radiación: centrípeta y centro abierto (R1, R2, R3, R5) | ✅ Hecho (R4, R6 y R7 siguen en P2) |
 | 7 | Resto de modificadores por capa (secciones 3 a 10) | P2 |
 | 8 | Interrelaciones entre capas (sección 2) | P2, después del 7 |
 | 9 | Supermódulos (RP6) | P3, al final de todo |
@@ -78,11 +78,11 @@ Ya cubierto: centrífuga, concéntrica, espiral y doble centro, con rayos, anill
 
 | ID | Ítem | Notas | Prioridad |
 | :-- | :--- | :--- | :-- |
-| R1 | Estructura **centrípeta** | Falta entera: ángulos que apuntan al centro (fig. 50) | P1 |
-| R2 | Centro abierto | Agujero central con líneas tangentes (fig. 48d) | P1 |
-| R3 | Anillos rotados entre sí | Para que las subdivisiones de un anillo no se alineen con las del vecino | P1 |
+| R1 | Estructura **centrípeta** | ✅ Hecho: esquema *Centripetal* (ángulos hacia el centro, guías en chevrones anidados) | ✅ |
+| R2 | Centro abierto | ✅ Hecho: slider *Open center* (las líneas tangentes al agujero poligonal quedan para R4) | ✅ |
+| R3 | Anillos rotados entre sí | ✅ Hecho: slider *Ring rotation* | ✅ |
 | R4 | Anillos poligonales | Cuadrados, polígonos en lugar de círculos (fig. 49b, g) | P2 |
-| R5 | Orientación del módulo | Radial, tangente o ángulo fijo. Hoy es automática | P1 |
+| R5 | Orientación del módulo | ✅ Hecho: tags *Module orientation* (Auto, Outward, Inward, Tangent, Fixed) | ✅ |
 | R6 | Separación de anillos en gradación | Hoy es lineal | P2 |
 | R7 | Más de dos centros | Hoy doble centro simétrico | P2 |
 
@@ -199,4 +199,4 @@ Ya cubierto: textura espontánea mediante deformación de geometría (Jitter, Li
 | O1 | Exportar SVG vectorial real | ✅ Hecho (F9): el motor dibuja sobre un contexto que graba trazos SVG. También se puede reabrir el proyecto (botón Open) | ✅ |
 | O2 | Controles de Contrast sin diseño en Figma | Minority Shape y Clash Angle se añadieron sin mockup | Pendiente de diseño |
 | O4 | Aleatorizar parámetros (botón Random) | Se eliminaron los presets y el botón. Si se retoma, generar combinaciones válidas al azar de los controles de capa (la prueba de 400 combinaciones ya sabe hacerlo). Sin presets prediseñados | P3, baja prioridad |
-| O3 | Controles extra sin diseño en Figma | Eje de línea en Concentration; selector de color de acento en Anomaly y Contrast; en Layout: tags Zigzag, Triangular y Alternating, el control de parámetro de la variación y *Line width*; en Gradation: atributos Shape y Texture, rejilla *Becomes*, *Acceleration*, *Sequence*, *Alternate rows* y el camino Zigzag | Pendiente de diseño |
+| O3 | Controles extra sin diseño en Figma | Eje de línea en Concentration; selector de color de acento en Anomaly y Contrast; en Layout: tags Zigzag, Triangular y Alternating, el control de parámetro de la variación y *Line width*; en Radiation: esquema Centripetal, *Module orientation*, *Open center* y *Ring rotation*; en Gradation: atributos Shape y Texture, rejilla *Becomes*, *Acceleration*, *Sequence*, *Alternate rows* y el camino Zigzag | Pendiente de diseño |

@@ -788,6 +788,13 @@ export class StudioProApp {
       this.syncControlValue("num-layout-rings", rad.rings || 5);
       this.syncControlValue("input-layout-twist", rad.spiralTwist !== undefined ? rad.spiralTwist : 45);
       this.syncControlValue("num-layout-twist", rad.spiralTwist !== undefined ? rad.spiralTwist : 45);
+      this.syncControlValue("input-layout-open", rad.centerOpen || 0);
+      this.syncControlValue("num-layout-open", `${rad.centerOpen || 0}%`);
+      this.syncControlValue("input-layout-ringrot", rad.ringRotation || 0);
+      this.syncControlValue("num-layout-ringrot", `${rad.ringRotation || 0}º`);
+      document.querySelectorAll("[data-rad-orient]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.radOrient === (rad.orientation || "auto"));
+      });
       this.syncCheckbox("chk-rad-clip", !!rad.activeClipping);
       this.syncCheckbox("chk-rad-gridlines", !!(rad.showRays || rad.showRings));
       this.syncCheckbox("chk-rad-checker", !!rad.checkerInvert);
@@ -1020,6 +1027,34 @@ export class StudioProApp {
       struct.radiation.spiralTwist = val;
       struct.mode = "radiation";
       this.render();
+    });
+
+    this.bindSliderWithNumber("input-layout-open", "num-layout-open", (val) => {
+      const struct = this.getActiveLayerStructure();
+      if (!struct) return;
+      struct.radiation.centerOpen = val;
+      struct.mode = "radiation";
+      this.render();
+    }, "Open Center", "%");
+
+    this.bindSliderWithNumber("input-layout-ringrot", "num-layout-ringrot", (val) => {
+      const struct = this.getActiveLayerStructure();
+      if (!struct) return;
+      struct.radiation.ringRotation = val;
+      struct.mode = "radiation";
+      this.render();
+    }, "Ring Rotation", "º");
+
+    document.querySelectorAll("[data-rad-orient]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const struct = this.getActiveLayerStructure();
+        if (!struct) return;
+        struct.radiation.orientation = btn.dataset.radOrient;
+        struct.mode = "radiation";
+        this.syncStructureInspectorWithActiveLayer();
+        this.render();
+        this.pushHistory(`Layer ${this.activeLayerId} Module Orientation: ${btn.dataset.radOrient}`);
+      });
     });
 
     // Radiation Checkboxes

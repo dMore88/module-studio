@@ -815,7 +815,10 @@ const createDefaultLayerStructure = () => ({
     checkerInvert: false
   },
   radiation: {
-    scheme: "centrifugal", // centrifugal, concentric, spiral, multi_center
+    scheme: "centrifugal", // centrifugal, centripetal, concentric, spiral, multi_center
+    orientation: "auto", // auto (by scheme), outward, inward, tangent, fixed
+    centerOpen: 0, // open center: hole radius as a percentage of the radius (0 to 70)
+    ringRotation: 0, // degrees each ring is rotated more than the previous one (-90 to 90)
     rays: 12,
     rings: 5,
     spiralTwist: 45,
@@ -1910,6 +1913,11 @@ class StudioEngine {
     const rays = Math.max(4, rad.rays);
     const rings = Math.max(2, rad.rings);
     const twistRad = ((rad.spiralTwist || 0) * Math.PI) / 180;
+    // Open center: the rings start at the hole radius instead of the centre
+    const openR = maxR * Math.max(0, Math.min(70, rad.centerOpen || 0)) / 100;
+    const span = maxR - openR;
+    // Each ring is turned a bit more than the one inside it, so their subdivisions do not line up
+    const ringRotRad = ((rad.ringRotation || 0) * Math.PI) / 180;
 
     // Centers list (if multi_center, we have two focal centers creating Moiré)
     const centers = isMultiCenter
@@ -1929,13 +1937,14 @@ class StudioEngine {
 
     centers.forEach((center, centerIdx) => {
       for (let i = 1; i <= rings; i++) {
-        const rInner = ((i - 1) / rings) * maxR;
-        const rOuter = (i / rings) * maxR;
+        const rInner = openR + ((i - 1) / rings) * span;
+        const rOuter = openR + (i / rings) * span;
         const ringRadius = (rInner + rOuter) * 0.5;
+        const ringShift = (i - 1) * ringRotRad;
 
         for (let j = 0; j < rays; j++) {
-          const rayAngleStart = (j / rays) * Math.PI * 2;
-          const rayAngleEnd = ((j + 1) / rays) * Math.PI * 2;
+          const rayAngleStart = (j / rays) * Math.PI * 2 + ringShift;
+          const rayAngleEnd = ((j + 1) / rays) * Math.PI * 2 + ringShift;
           const baseAngle = (rayAngleStart + rayAngleEnd) * 0.5;
           let angle = baseAngle;
 
@@ -2010,18 +2019,29 @@ class StudioEngine {
             ctx.rotate(concAngle);
           }
 
-          // Base radiation orientation
-          if (rad.scheme === "centrifugal" || rad.scheme === "multi_center") {
+          // Base radiation orientation: where the top of the module points
+          const orient = rad.orientation || "auto";
+          if (orient === "outward") {
             ctx.rotate(angle + Math.PI / 2);
-          } else if (rad.scheme === "concentric") {
+          } else if (orient === "inward") {
+            ctx.rotate(angle - Math.PI / 2);
+          } else if (orient === "tangent") {
             ctx.rotate(angle);
-          } else if (rad.scheme === "spiral") {
-            ctx.rotate(angle + Math.PI / 2 + (twistRad * 0.35));
-          }
+          } else if (orient === "auto") {
+            if (rad.scheme === "centrifugal" || rad.scheme === "multi_center") {
+              ctx.rotate(angle + Math.PI / 2);
+            } else if (rad.scheme === "centripetal") {
+              ctx.rotate(angle - Math.PI / 2); // the angles of the structure point at the centre
+            } else if (rad.scheme === "concentric") {
+              ctx.rotate(angle);
+            } else if (rad.scheme === "spiral") {
+              ctx.rotate(angle + Math.PI / 2 + (twistRad * 0.35));
+            }
+          } // "fixed": no turn, only the layer's own rotation applies
 
           // Gradation on polar radiation (drift slides along the module's local x axis, up to ~one ring)
           if (grad.enabled) {
-            this.applyGradation(ctx, grad, this.gradationPathRadial(grad, i, j, rings, rays), (maxR / rings) * 0.9);
+            this.applyGradation(ctx, grad, this.gradationPathRadial(grad, i, j, rings, rays), (span / rings) * 0.9);
           }
 
           // Similarity on radiation
@@ -2042,7 +2062,7 @@ class StudioEngine {
 
           // Natural centrifugal growth scale: outer modules larger, inner smaller, proportional to sector size
           const scaleUnit = 1.25 * Math.min(1.0, Math.min(width, height) / 600);
-          const ringThickness = maxR / rings;
+          const ringThickness = span / rings;
           const arcWidth = (ringRadius * 2 * Math.PI) / rays;
           const sectorSize = Math.min(ringThickness, Math.max(ringThickness * 0.5, arcWidth));
           const sectorRatio = sectorSize / usableW;
@@ -2067,29 +2087,80 @@ class StudioEngine {
 
       centers.forEach(center => {
         if (rad.showRings) {
-          for (let i = 1; i <= rings; i++) {
-            const r = (i / rings) * maxR;
+          if (openR > 0.5) {
             ctx.beginPath();
-            ctx.arc(center.x, center.y, r, 0, Math.PI * 2);
+            ctx.arc(center.x, center.y, openR, 0, Math.PI * 2);
             ctx.stroke();
+          }
+          if (rad.scheme === "centripetal") {
+            // Nested chevrons: each is the sector wedge pushed outward, its point aimed at the centre
+            const delta = (Math.PI * 2) / rays;
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, maxR, 0, Math.PI * 2);
+            ctx.clip();
+            for (let i = 1; i <= rings; i++) {
+              const r = openR + (i / rings) * span;
+              for (let j = 0; j < rays; j++) {
+                const a0 = j * delta + (i - 1) * ringRotRad;
+                const mid = a0 + delta / 2;
+                const ax = r * Math.cos(mid), ay = r * Math.sin(mid);
+                const arm = (ang) => {
+                  const dx = Math.cos(ang), dy = Math.sin(ang);
+                  const dot = ax * dx + ay * dy;
+                  const disc = dot * dot - r * r + maxR * maxR;
+                  const t = disc > 0 ? -dot + Math.sqrt(disc) : 0;
+                  return [center.x + ax + dx * t, center.y + ay + dy * t];
+                };
+                const p1 = arm(a0), p2 = arm(a0 + delta);
+                ctx.beginPath();
+                ctx.moveTo(p1[0], p1[1]);
+                ctx.lineTo(center.x + ax, center.y + ay);
+                ctx.lineTo(p2[0], p2[1]);
+                ctx.stroke();
+              }
+            }
+            ctx.restore();
+          } else {
+            for (let i = 1; i <= rings; i++) {
+              const r = openR + (i / rings) * span;
+              ctx.beginPath();
+              ctx.arc(center.x, center.y, r, 0, Math.PI * 2);
+              ctx.stroke();
+            }
           }
         }
 
         if (rad.showRays) {
+          const f0 = openR / maxR;
           for (let j = 0; j < rays; j++) {
             const baseAngle = (j / rays) * Math.PI * 2;
+            if (ringRotRad !== 0) {
+              // Rotated rings: every ring has its own piece of the ray
+              for (let i = 1; i <= rings; i++) {
+                const shift = (i - 1) * ringRotRad;
+                const ra = openR + ((i - 1) / rings) * span, rb = openR + (i / rings) * span;
+                const aa = baseAngle + shift + (rad.scheme === "spiral" ? twistRad * (ra / maxR) : 0);
+                const ab = baseAngle + shift + (rad.scheme === "spiral" ? twistRad * (rb / maxR) : 0);
+                ctx.beginPath();
+                ctx.moveTo(center.x + ra * Math.cos(aa), center.y + ra * Math.sin(aa));
+                ctx.lineTo(center.x + rb * Math.cos(ab), center.y + rb * Math.sin(ab));
+                ctx.stroke();
+              }
+              continue;
+            }
             ctx.beginPath();
             if (rad.scheme === "spiral") {
-              ctx.moveTo(center.x, center.y);
+              ctx.moveTo(center.x + openR * Math.cos(baseAngle + twistRad * f0), center.y + openR * Math.sin(baseAngle + twistRad * f0));
               const steps = 24;
               for (let s = 1; s <= steps; s++) {
-                const frac = s / steps;
+                const frac = f0 + (1 - f0) * (s / steps);
                 const r = frac * maxR;
                 const a = baseAngle + twistRad * frac;
                 ctx.lineTo(center.x + r * Math.cos(a), center.y + r * Math.sin(a));
               }
             } else {
-              ctx.moveTo(center.x, center.y);
+              ctx.moveTo(center.x + openR * Math.cos(baseAngle), center.y + openR * Math.sin(baseAngle));
               ctx.lineTo(center.x + maxR * Math.cos(baseAngle), center.y + maxR * Math.sin(baseAngle));
             }
             ctx.stroke();
@@ -3382,6 +3453,13 @@ class StudioProApp {
       this.syncControlValue("num-layout-rings", rad.rings || 5);
       this.syncControlValue("input-layout-twist", rad.spiralTwist !== undefined ? rad.spiralTwist : 45);
       this.syncControlValue("num-layout-twist", rad.spiralTwist !== undefined ? rad.spiralTwist : 45);
+      this.syncControlValue("input-layout-open", rad.centerOpen || 0);
+      this.syncControlValue("num-layout-open", `${rad.centerOpen || 0}%`);
+      this.syncControlValue("input-layout-ringrot", rad.ringRotation || 0);
+      this.syncControlValue("num-layout-ringrot", `${rad.ringRotation || 0}º`);
+      document.querySelectorAll("[data-rad-orient]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.radOrient === (rad.orientation || "auto"));
+      });
       this.syncCheckbox("chk-rad-clip", !!rad.activeClipping);
       this.syncCheckbox("chk-rad-gridlines", !!(rad.showRays || rad.showRings));
       this.syncCheckbox("chk-rad-checker", !!rad.checkerInvert);
@@ -3614,6 +3692,34 @@ class StudioProApp {
       struct.radiation.spiralTwist = val;
       struct.mode = "radiation";
       this.render();
+    });
+
+    this.bindSliderWithNumber("input-layout-open", "num-layout-open", (val) => {
+      const struct = this.getActiveLayerStructure();
+      if (!struct) return;
+      struct.radiation.centerOpen = val;
+      struct.mode = "radiation";
+      this.render();
+    }, "Open Center", "%");
+
+    this.bindSliderWithNumber("input-layout-ringrot", "num-layout-ringrot", (val) => {
+      const struct = this.getActiveLayerStructure();
+      if (!struct) return;
+      struct.radiation.ringRotation = val;
+      struct.mode = "radiation";
+      this.render();
+    }, "Ring Rotation", "º");
+
+    document.querySelectorAll("[data-rad-orient]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const struct = this.getActiveLayerStructure();
+        if (!struct) return;
+        struct.radiation.orientation = btn.dataset.radOrient;
+        struct.mode = "radiation";
+        this.syncStructureInspectorWithActiveLayer();
+        this.render();
+        this.pushHistory(`Layer ${this.activeLayerId} Module Orientation: ${btn.dataset.radOrient}`);
+      });
     });
 
     // Radiation Checkboxes

@@ -120,12 +120,16 @@ Genera el espacio desde uno o varios centros focales utilizando coordenadas pola
 
 * **`scheme`**:
   * `centrifugal`: Rayos directos rectos que nacen del foco y se proyectan hacia el exterior.
+  * `centripetal` (*Centripetal*, fig. 50): Estructura centrípeta de Wong: los ángulos de las líneas estructurales apuntan hacia el centro, que ya no es el punto donde convergen las líneas. Mismo reparto de módulos que la centrífuga, con la orientación automática hacia dentro; las guías son **chevrones anidados** (cada uno es el sector desplazado hacia fuera) en lugar de círculos.
   * `concentric`: Anillos o capas que se expanden concéntricamente desde el epicentro.
   * `spiral`: Rayos curvos continuos gobernados por torsión angular acumulada.
   * `multi_center`: Dos focos virtuales concurrentes con interferencia mutua.
+* **`orientation`** (*Module orientation*, `auto` por defecto): Hacia dónde apunta la parte superior del módulo. `auto` depende del esquema (hacia fuera en centrífuga y doble centro, hacia dentro en centrípeta, tangente en concéntrica, ligeramente inclinada en espiral); `outward` hacia fuera, `inward` hacia el centro, `tangent` siguiendo el anillo y `fixed` sin giro (solo cuenta la rotación propia de la capa).
 * **`rays`** (4 a 28): Cantidad de divisiones o sectores angulares por vuelta de 360°.
 * **`rings`** (2 a 10): Cantidad de capas o anillos a lo largo del radio.
 * **`spiralTwist`** (-180° a +180°): Torsión acumulada aplicada a cada rayo en el recorrido de la espiral.
+* **`centerOpen`** (*Open center*, 0% a 70%, por defecto 0): Radio del agujero central como porcentaje del radio total. Los anillos y rayos empiezan en el borde del agujero (fig. 48d, abrir el centro de radiación). Con las guías visibles se dibuja el círculo del agujero.
+* **`ringRotation`** (*Ring rotation*, -90° a 90°, por defecto 0): Grados que cada anillo gira más que el anillo interior (rotación gradual de capas concéntricas, fig. 49g). Sirve para que las subdivisiones de un anillo no se alineen con las del vecino. Las guías de rayos se dibujan por anillo.
 * **`centerX / centerY`**: Desplazamiento excéntrico del foco fuera del centro del lienzo.
 * **`showRays / showRings`** (`boolean`): Dibuja las líneas guía polares en la composición final.
 

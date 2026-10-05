@@ -357,9 +357,21 @@
           <div class="ds-label">Radiation scheme</div>
           <div class="ds-tags">
             <button type="button" class="ds-tag active" data-rad-scheme="centrifugal">Centrifugal</button>
+            <button type="button" class="ds-tag" data-rad-scheme="centripetal">Centripetal</button>
             <button type="button" class="ds-tag" data-rad-scheme="concentric">Concentric</button>
             <button type="button" class="ds-tag" data-rad-scheme="spiral">Spiral</button>
             <button type="button" class="ds-tag" data-rad-scheme="multi_center">Dual-center</button>
+          </div>
+        </div>
+
+        <div class="ds-field">
+          <div class="ds-label">Module orientation</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-rad-orient="auto">Auto</button>
+            <button type="button" class="ds-tag" data-rad-orient="outward">Outward</button>
+            <button type="button" class="ds-tag" data-rad-orient="inward">Inward</button>
+            <button type="button" class="ds-tag" data-rad-orient="tangent">Tangent</button>
+            <button type="button" class="ds-tag" data-rad-orient="fixed">Fixed</button>
           </div>
         </div>
 
@@ -383,6 +395,22 @@
             <div class="ds-slider">
               <input type="range" id="input-layout-twist" min="-180" max="180" step="1" value="12">
               <input type="text" id="num-layout-twist" class="ds-value" value="12" inputmode="decimal">
+            </div>
+          </div>
+
+          <div class="ds-field">
+            <div class="ds-label">Open center</div>
+            <div class="ds-slider">
+              <input type="range" id="input-layout-open" min="0" max="70" step="1" value="0">
+              <input type="text" id="num-layout-open" class="ds-value" value="0%" inputmode="decimal">
+            </div>
+          </div>
+
+          <div class="ds-field">
+            <div class="ds-label">Ring rotation</div>
+            <div class="ds-slider">
+              <input type="range" id="input-layout-ringrot" min="-90" max="90" step="1" value="0">
+              <input type="text" id="num-layout-ringrot" class="ds-value" value="0º" inputmode="decimal">
             </div>
           </div>
 
@@ -1029,7 +1057,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=115075a5"></script>
+  <script src="js/bundle-pro.js?v=668d0c17"></script>
 
 </body>
 </html>

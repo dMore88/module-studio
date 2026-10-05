@@ -67,7 +67,7 @@
       const rp = st.repetition; rp.gridType = pick(["basic","sliding","sheared","curved","zigzag","triangular","alternating"]);
       rp.cols = ri(1, 50); rp.rows = ri(1, 50); rp.spacing = ri(0, 40); rp.shearAngle = ri(0, 45); rp.slideOffset = rnd(); rp.curveIntensity = ri(0, 60);
       rp.activeClipping = rb(); rp.showGridLines = rb(); rp.checkerInvert = rb();
-      const rd = st.radiation; rd.scheme = pick(["centrifugal","concentric","spiral","multi_center"]); rd.rays = ri(4, 28); rd.rings = ri(2, 10);
+      const rd = st.radiation; rd.scheme = pick(["centrifugal","centripetal","concentric","spiral","multi_center"]); rd.orientation = pick(["auto","outward","inward","tangent","fixed"]); rd.centerOpen = ri(0, 70); rd.ringRotation = ri(-90, 90); rd.rays = ri(4, 28); rd.rings = ri(2, 10);
       rd.spiralTwist = ri(-180, 180); rd.centerX = ri(-200, 200); rd.centerY = ri(-200, 200); rd.showRays = rb(); rd.showRings = rb(); rd.activeClipping = rb();
       const fs = st.formalStructure; fs.enabled = rnd() < 0.4; fs.colRatio = 1 + rnd() * 2; fs.rowRatio = 1 + rnd() * 2; fs.showGridLines = rb();
       const sm = st.similarity; sm.enabled = rb(); sm.kinshipType = pick(["distortion","foreshortening","rotation_wobble","scale_kinship","hybrid"]); sm.intensity = ri(0, 100); sm.cellJitter = ri(0, 30);
@@ -484,6 +484,60 @@
       // each layer keeps its own settings
       app.addLayer(); await wait(80);
       assert(g().sequence === "restart" && g().easing === 0 && g().alternate === false, "A new layer should start with the default gradation");
+    });
+
+    await test("Radiation: centripetal, open center, ring rotation and module orientation", () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const render = (o) => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        const L = st.layers[0];
+        L.shape = "triangle"; L.width = 60; L.height = 60; L.offsetX = 0; L.offsetY = 0; L.rotation = 0; L.wireframe = true;
+        L.structure.enabled = true; L.structure.mode = "radiation";
+        Object.assign(L.structure.radiation, { scheme: "centrifugal", rays: 10, rings: 4, orientation: "auto", centerOpen: 0, ringRotation: 0, showRays: false, showRings: false, spiralTwist: 45 }, o);
+        app.state = st; drawRaw(app);
+        return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      };
+      const diff = (a, b, thr = 60) => { let n = 0; for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i] - b[i]) > thr) n++; return n; };
+      const inkWithin = (data, radius) => {
+        const dpr = cv.width / 600; let n = 0;
+        for (let y = 0; y < cv.height; y++) for (let x = 0; x < cv.width; x++) {
+          if (Math.hypot(x / dpr - 300, y / dpr - 300) < radius && data[(y * cv.width + x) * 4] < 150) n++;
+        }
+        return n;
+      };
+      // Centripetal is the centrifugal layout with the angles pointing at the centre
+      assert(diff(render({ scheme: "centripetal" }), render({ scheme: "centrifugal", orientation: "inward" })) === 0, "Centripetal should equal an inward orientation");
+      assert(diff(render({}), render({ orientation: "outward" })) === 0, "Auto orientation on Centrifugal should be outward");
+      assert(diff(render({ orientation: "outward" }), render({ orientation: "inward" })) > 100, "Inward and outward look the same");
+      assert(diff(render({ orientation: "tangent" }), render({ orientation: "fixed" })) > 100, "Tangent and fixed look the same");
+      // Open center leaves a hole (the radius is 227 px; 50% opens about 113)
+      assert(inkWithin(render({ centerOpen: 0 }), 90) > 20, "The centre should have modules by default");
+      assert(inkWithin(render({ centerOpen: 50 }), 100) === 0, "Open center left modules inside the hole");
+      // Rings rotated against each other
+      assert(diff(render({}), render({ ringRotation: 12 })) > 100, "Ring rotation changed nothing");
+      // Centripetal draws chevrons instead of circles for the guides
+      assert(diff(render({ scheme: "centripetal", showRings: true }), render({ scheme: "centrifugal", orientation: "inward", showRings: true }), 5) > 100, "The centripetal guide lines should be chevrons");
+    });
+
+    await test("Radiation inspector: new controls drive the layer state", async () => {
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      const fire = (el, v) => { el.value = v; el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
+      q('[data-rail-tab="layout"]').click(); await wait(80);
+      q("#btn-layout-radiation").click(); await wait(60);
+      const rad = () => app.getActiveLayerStructure().radiation;
+      q('[data-rad-scheme="centripetal"]').click();
+      assert(rad().scheme === "centripetal" && q('[data-rad-scheme="centripetal"]').classList.contains("active"), "Centripetal tag did not apply");
+      q('[data-rad-orient="tangent"]').click();
+      assert(rad().orientation === "tangent" && q('[data-rad-orient="tangent"]').classList.contains("active") && !q('[data-rad-orient="auto"]').classList.contains("active"), "Orientation tag did not apply");
+      fire(q("#input-layout-open"), 30);
+      assert(rad().centerOpen === 30 && q("#num-layout-open").value === "30%", "Open center slider and value box out of sync");
+      fire(q("#input-layout-ringrot"), -20);
+      assert(rad().ringRotation === -20 && q("#num-layout-ringrot").value === "-20º", "Ring rotation slider and value box out of sync");
+      app.addLayer(); await wait(80);
+      assert(rad().centerOpen === 0 && rad().orientation === "auto" && rad().ringRotation === 0, "A new layer should start with the default radiation");
     });
 
     await test("A failed draw shows a visible notice and recovers", () => {
