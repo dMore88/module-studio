@@ -656,33 +656,16 @@
         <div id="similarity-controls-group" class="ds-stack">
         <div class="ds-field">
           <div class="ds-label">Visual kinship type</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-kinship-type="distortion">Elastic</button>
-            <button type="button" class="ds-tag" data-kinship-type="foreshortening">3D tilt</button>
-            <button type="button" class="ds-tag" data-kinship-type="rotation_wobble">Wobble</button>
-            <button type="button" class="ds-tag" data-kinship-type="scale_kinship">Scale</button>
-            <button type="button" class="ds-tag" data-kinship-type="hybrid">Hibrid</button>
+          <div class="ds-dropdown" data-select>
+          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Elastic</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
+          <div class="ds-dropdown-menu hidden" role="listbox">
+            <button type="button" class="ds-dropdown-item active" role="option" data-kinship-type="distortion"><span>Elastic</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-kinship-type="foreshortening"><span>3D tilt</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-kinship-type="rotation_wobble"><span>Wobble</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-kinship-type="scale_kinship"><span>Scale</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-kinship-type="hybrid"><span>Hibrid</span></button>
           </div>
         </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Association (family of shapes)</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-sim-assoc="none">None</button>
-            <button type="button" class="ds-tag" data-sim-assoc="round">Round</button>
-            <button type="button" class="ds-tag" data-sim-assoc="angular">Angular</button>
-            <button type="button" class="ds-tag" data-sim-assoc="lines">Lines</button>
-            <button type="button" class="ds-tag" data-sim-assoc="numbers">Numbers</button>
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Imperfection</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-sim-imperf="none">None</button>
-            <button type="button" class="ds-tag" data-sim-imperf="cut">Cut</button>
-            <button type="button" class="ds-tag" data-sim-imperf="broken">Broken</button>
-          </div>
         </div>
 
           <div class="ds-field">
@@ -692,6 +675,35 @@
               <input type="text" id="num-sim-intensity" class="ds-value" value="50%" inputmode="decimal">
             </div>
           </div>
+        <details id="sim-advanced" class="ds-advanced">
+          <summary><i class="ph ph-caret-right" aria-hidden="true"></i><span>Advanced</span></summary>
+          <div class="ds-stack">
+        <div class="ds-field">
+          <div class="ds-label">Association (family of shapes)</div>
+          <div class="ds-dropdown" data-select>
+          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>None</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
+          <div class="ds-dropdown-menu hidden" role="listbox">
+            <button type="button" class="ds-dropdown-item active" role="option" data-sim-assoc="none"><span>None</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-sim-assoc="round"><span>Round</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-sim-assoc="angular"><span>Angular</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-sim-assoc="lines"><span>Lines</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-sim-assoc="numbers"><span>Numbers</span></button>
+          </div>
+        </div>
+        </div>
+
+        <div class="ds-field">
+          <div class="ds-label">Imperfection</div>
+          <div class="ds-dropdown" data-select>
+          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>None</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
+          <div class="ds-dropdown-menu hidden" role="listbox">
+            <button type="button" class="ds-dropdown-item active" role="option" data-sim-imperf="none"><span>None</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-sim-imperf="cut"><span>Cut</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-sim-imperf="broken"><span>Broken</span></button>
+          </div>
+        </div>
+        </div>
+
           <div class="ds-field">
             <div class="ds-label ds-label-clip">Spatial cell jitter</div>
             <div class="ds-slider">
@@ -713,6 +725,8 @@
               <input type="text" id="num-sim-imperf-amount" class="ds-value" value="30%" inputmode="decimal">
             </div>
           </div>
+          </div>
+        </details>
         </div>
       </div>
 
@@ -743,14 +757,17 @@
 
         <div class="ds-field">
           <div class="ds-label">Attribute</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-grad-type="rotation">Rotate</button>
-            <button type="button" class="ds-tag" data-grad-type="scale">Scale</button>
-            <button type="button" class="ds-tag" data-grad-type="depth">Depth</button>
-            <button type="button" class="ds-tag" data-grad-type="drift">Drift</button>
-            <button type="button" class="ds-tag" data-grad-type="shape">Shape</button>
-            <button type="button" class="ds-tag" data-grad-type="texture">Texture</button>
+          <div class="ds-dropdown" data-select>
+          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Rotate</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
+          <div class="ds-dropdown-menu hidden" role="listbox">
+            <button type="button" class="ds-dropdown-item active" role="option" data-grad-type="rotation"><span>Rotate</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-grad-type="scale"><span>Scale</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-grad-type="depth"><span>Depth</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-grad-type="drift"><span>Drift</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-grad-type="shape"><span>Shape</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-grad-type="texture"><span>Texture</span></button>
           </div>
+        </div>
         </div>
 
         <div id="grad-target-block" class="ds-field hidden">
@@ -776,24 +793,17 @@
 
         <div class="ds-field">
           <div class="ds-label">Pathway direction</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-grad-pathway="diagonal">Diagonal</button>
-            <button type="button" class="ds-tag" data-grad-pathway="horizontal">Horizontal</button>
-            <button type="button" class="ds-tag" data-grad-pathway="vertical">Vertical</button>
-            <button type="button" class="ds-tag" data-grad-pathway="concentric">Concentric</button>
-            <button type="button" class="ds-tag" data-grad-pathway="zigzag">Zigzag</button>
+          <div class="ds-dropdown" data-select>
+          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Diagonal</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
+          <div class="ds-dropdown-menu hidden" role="listbox">
+            <button type="button" class="ds-dropdown-item active" role="option" data-grad-pathway="diagonal"><span>Diagonal</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-grad-pathway="horizontal"><span>Horizontal</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-grad-pathway="vertical"><span>Vertical</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-grad-pathway="concentric"><span>Concentric</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-grad-pathway="zigzag"><span>Zigzag</span></button>
           </div>
         </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Sequence</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-grad-sequence="restart">Restart</button>
-            <button type="button" class="ds-tag" data-grad-sequence="pingpong">Ping-pong</button>
-          </div>
         </div>
-
-
 
           <div class="ds-field">
             <div class="ds-label">Range</div>
@@ -809,6 +819,22 @@
               <input type="text" id="num-grad-steps" class="ds-value" value="1" inputmode="numeric">
             </div>
           </div>
+        <details id="grad-advanced" class="ds-advanced">
+          <summary><i class="ph ph-caret-right" aria-hidden="true"></i><span>Advanced</span></summary>
+          <div class="ds-stack">
+        <div class="ds-field">
+          <div class="ds-label">Sequence</div>
+          <div class="ds-dropdown" data-select>
+          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Restart</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
+          <div class="ds-dropdown-menu hidden" role="listbox">
+            <button type="button" class="ds-dropdown-item active" role="option" data-grad-sequence="restart"><span>Restart</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-grad-sequence="pingpong"><span>Ping-pong</span></button>
+          </div>
+        </div>
+        </div>
+
+
+
           <div class="ds-field">
             <div class="ds-label">Acceleration</div>
             <div class="ds-slider">
@@ -819,6 +845,8 @@
 
 
 
+
+        <div class="ds-toggles">
         <label class="ds-toggle-item">
           <span class="ds-toggle-label">Alternate rows</span>
           <input type="checkbox" id="toggle-grad-alternate" class="ds-checkbox">
@@ -828,6 +856,9 @@
           <span class="ds-toggle-label">Reverse Gradient Direction</span>
           <input type="checkbox" id="toggle-grad-reverse" class="ds-checkbox">
         </label>
+        </div>
+          </div>
+        </details>
       </div>
 
       <!-- ===================================================================

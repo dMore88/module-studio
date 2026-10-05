@@ -1261,6 +1261,23 @@
       reset();
     });
 
+    await test("Gradation and Similarity: essentials up front, the rest in Advanced, dropdowns follow the state", async () => {
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      q('[data-rail-tab="gradation"]').click(); await wait(60);
+      const gAdv = q("#grad-advanced");
+      assert(gAdv && gAdv.contains(q("#input-grad-easing")) && gAdv.contains(q("#toggle-grad-reverse")) && gAdv.contains(q('[data-grad-sequence="pingpong"]')), "Sequence, Acceleration and the checkboxes belong in Gradation > Advanced");
+      assert(!gAdv.contains(q("#input-grad-range")) && !gAdv.contains(q("#input-grad-steps")), "Range and Cycles stay up front");
+      q('[data-grad-type="scale"]').click();
+      assert(/Scale/.test(q('[data-grad-type="scale"]').closest(".ds-dropdown").querySelector(".ds-dropdown-current").textContent), "The Attribute dropdown should show the chosen attribute");
+      q('[data-rail-tab="similarity"]').click(); await wait(60);
+      const sAdv = q("#sim-advanced");
+      assert(sAdv && sAdv.contains(q('[data-sim-assoc="round"]')) && sAdv.contains(q("#input-sim-jitter")) && !sAdv.contains(q("#input-sim-intensity")), "Association, Imperfection and jitter belong in Similarity > Advanced; Fluctuation stays up front");
+      q('[data-kinship-type="hybrid"]').click();
+      assert(/Hibrid/.test(q('[data-kinship-type="hybrid"]').closest(".ds-dropdown").querySelector(".ds-dropdown-current").textContent), "The kinship dropdown should show the chosen type");
+      reset();
+    });
+
     await test("Checkerboard reverses figure and ground, also with a coloured module", () => {
       reset();
       const cv = win.document.getElementById("studio-canvas");
