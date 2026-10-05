@@ -1,5 +1,7 @@
 # Backlog — Module Studio
 
+> **Mapa completo de cobertura** (qué concepto de Wong cubre cada control, y qué falta): [`design-concepts-in-app.md`](./design-concepts-in-app.md). Este backlog guarda solo las prioridades de lo pendiente; los IDs (E4, RP2, G7...) aparecen también en la columna *Notas* de ese mapa.
+
 Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 12) contra los controles de la app, más las decisiones de Diego del 2026-10-04.
 
 **Prioridades:** **P1** siguiente · **P2** backlog · **P3** al final / baja prioridad · **✖** descartado por ahora.
@@ -18,14 +20,14 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 | 3b | **Arreglos de la revisión** (F1 a F9 del informe) | F1 a F9 ✅ (revisión de código completa) |
 | 4 | **Design system `.md` desde Figma** (sección 0, Q3) | ✅ Hecho: [DESIGN_SYSTEM_TOKENS.md](./DESIGN_SYSTEM_TOKENS.md) y `css/tokens.css` |
 | 4b | **Migrar los paneles Module, Layout, Structure y Similarity al diseño de Figma** (Q3b) | ✅ Hecho (2026-10-04). Q3d también hecho: toda la interfaz usa los tokens |
-| 5 | Gradation avanzada (G1 a G6) | ✅ Hecho (G7, gradación de estructura, sigue en P2) |
-| 6 | Radiación: centrípeta y centro abierto (R1, R2, R3, R5) | ✅ Hecho (R4, R6 y R7 siguen en P2) |
-| 7 | **Estructura y Repetición** (sección 9: E1, E3, RP1, RP3) | ✅ Hecho (E2 radial, E4, RP2 y RP4 siguen en P2) |
-| 8 | **Contraste** (sección 5: C8, C4, C2) | ✅ Hecho (C1, C3, C5, C6 y C7 siguen en P2 y P3). Siguiente: Anomalía |
+| 5 | Gradation avanzada (G1 a G6) | ✅ Hecho (G1 a G7) |
+| 6 | Radiación: centrípeta y centro abierto (R1, R2, R3, R5) | ✅ Hecho (R1 a R5 y R7; R6 descartado) |
+| 7 | **Estructura y Repetición** (sección 9: E1, E3, RP1, RP3) | ✅ Hecho (E1 a E4, RP1 a RP5) |
+| 8 | **Contraste** (sección 5: C8, C4, C2) | ✅ Hecho (C1 y C7 hechos, C3 descartado; C5 y C6 siguen en P3) |
 | 9 | Anomalía (sección 7: A1, A3) | ✅ Hecho (A2 y A4 siguen en P3) |
 | 9b | **Tamaño del módulo, contenedor y sangrado** (petición de Diego) | ✅ Hecho: contenedor del módulo (*Container width / height*), *Module size* Fit to canvas / Actual size en cuadrícula y radial, bloque centrado con sangrado, margen de seguridad en 0 y tamaño exacto del módulo. Siguiente: Similitud |
-| 10 | Similitud (sección 8: S1, S2) | ✅ Hecho (S3 y S4 siguen en P3). Siguiente: Concentración |
-| 11 | Concentración (sección 6: K2, K1, K4) | ✅ Hecho (K3 y K5 siguen en P3). Siguiente: interrelaciones entre capas |
+| 10 | Similitud (sección 8: S1, S2) | ✅ Hecho (S3 y S4 siguen en P3) |
+| 11 | Concentración (sección 6: K2, K1, K4) | ✅ Hecho (K3 y K5 siguen en P3) |
 | 12 | Interrelaciones entre capas (sección 2) | P2, después de los modificadores (7 a 11) |
 | 13 | Espacio (sección 10) | P3. Es el más complejo; SP5 depende de las interrelaciones |
 | 14 | Supermódulos (RP6) | P3, al final de todo |
