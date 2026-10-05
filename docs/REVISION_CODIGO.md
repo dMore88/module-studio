@@ -160,7 +160,7 @@ Orden sugerido, de lo más urgente a lo menos:
 | F4 | ✅ Hecho: página `tests/smoke.html` (7 pruebas, incluidas las 400 combinaciones) y aviso de error en pantalla (hallazgo 5) | — | — |
 | F5 | ✅ Hecho: nombres para campos y botones, estado de las etiquetas, teclado en las capas (hallazgo 7) | — | — |
 | F6 | ✅ Hecho: retículas Zigzag, Triangular y Alternating, parámetro de cada variación y grosor de líneas (Q2) | — | — |
-| F7 | Unificar cuadrícula y radial (hallazgo 4) | Alto | Medio, con F4 como red de seguridad |
+| F7 | ✅ Hecho (2026-10-04): Concentration, Gradation, Similarity, Anomaly, Contrast y la mira de Anomaly viven en una sola pieza que usan la cuadrícula y el radial (hallazgo 4). El motor bajó de 1645 a 1485 líneas | — | — |
 | F8 | Verificación del archivo generado y versión en la dirección (hallazgo 6) | Bajo | Bajo |
 | F9 | Importar proyecto y SVG vectorial (hallazgo 8) | Medio a alto | Medio |
 

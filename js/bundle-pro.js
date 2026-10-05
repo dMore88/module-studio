@@ -1169,6 +1169,221 @@ class StudioEngine {
     ctx.closePath();
   }
 
+  // ---- Shared modifier logic (used by both the grid and the radial layouts) ----
+
+  // Concentration: pulls/pushes a module position toward an attractor.
+  // Returns the new position, the flow angle and a density scale multiplier.
+  applyConcentration(conc, px, py, width, height) {
+    let x = px, y = py, angle = 0, scaleMul = 1.0;
+    const attX = (conc.attractorX ?? 0.5) * width;
+    const attY = (conc.attractorY ?? 0.5) * height;
+    const power = (conc.power ?? 65) / 100;
+    const radius = conc.radius ?? 240;
+
+    if (conc.mode === "point") {
+      const dist = Math.hypot(x - attX, y - attY);
+      if (dist < radius) {
+        const factor = Math.pow(1 - dist / radius, 1.4) * power;
+        const pull = factor * (radius * 0.45);
+        const a = Math.atan2(attY - y, attX - x);
+        x += Math.cos(a) * pull;
+        y += Math.sin(a) * pull;
+        angle = a;
+        if (conc.densityScale) scaleMul = 0.55 + (dist / radius) * 0.7;
+      }
+    } else if (conc.mode === "void") {
+      const dist = Math.hypot(x - attX, y - attY);
+      if (dist < radius) {
+        const factor = Math.pow(1 - dist / radius, 1.2) * power;
+        const push = factor * (radius * 0.55);
+        const a = Math.atan2(y - attY, x - attX);
+        x += Math.cos(a) * push;
+        y += Math.sin(a) * push;
+        angle = a + Math.PI / 2;
+        if (conc.densityScale) scaleMul = 0.4 + (dist / radius) * 0.8;
+      }
+    } else if (conc.mode === "line") {
+      if (conc.lineAxis === "vertical") {
+        const distX = Math.abs(x - attX);
+        if (distX < radius) {
+          const factor = Math.pow(1 - distX / radius, 1.4) * power;
+          x += (attX - x) * factor * 0.75;
+          angle = (attX >= x ? 0 : Math.PI);
+          if (conc.densityScale) scaleMul = 0.65 + (distX / radius) * 0.6;
+        }
+      } else {
+        const distY = Math.abs(y - attY);
+        if (distY < radius) {
+          const factor = Math.pow(1 - distY / radius, 1.4) * power;
+          y += (attY - y) * factor * 0.75;
+          angle = (attY >= y ? Math.PI / 2 : -Math.PI / 2);
+          if (conc.densityScale) scaleMul = 0.65 + (distY / radius) * 0.6;
+        }
+      }
+    } else if (conc.mode === "free") {
+      const att2X = width - attX;
+      const att2Y = height - attY;
+      const dist1 = Math.hypot(x - attX, y - attY);
+      const dist2 = Math.hypot(x - att2X, y - att2Y);
+      const nearestDist = Math.min(dist1, dist2);
+      const targetX = dist1 < dist2 ? attX : att2X;
+      const targetY = dist1 < dist2 ? attY : att2Y;
+      if (nearestDist < radius) {
+        const factor = Math.pow(1 - nearestDist / radius, 1.4) * power;
+        const pull = factor * (radius * 0.4);
+        const a = Math.atan2(targetY - y, targetX - x);
+        x += Math.cos(a) * pull;
+        y += Math.sin(a) * pull;
+        angle = a;
+        if (conc.densityScale) scaleMul = 0.65 + (nearestDist / radius) * 0.6;
+      }
+    }
+    return { x, y, angle, scaleMul };
+  }
+
+  // Gradation: applies the transform for position t (0..1) along the pathway.
+  // `driftDistance` is the full slide length for the current layout.
+  applyGradation(ctx, grad, t, driftDistance) {
+    if (grad.reverse) t = 1 - t;
+    t = (t * (grad.steps || 1)) % 1.0001;
+    const rangeK = (grad.range ?? 180) / 180;
+
+    if (grad.type === "rotation") {
+      ctx.rotate(t * (((grad.range ?? 180) * Math.PI) / 180));
+    } else if (grad.type === "scale") {
+      // Range scales the amount of change; 180 keeps the original 0.35x to 1.45x
+      const sFactor = Math.max(0.05, 0.9 + (t - 0.5) * 1.1 * rangeK);
+      ctx.scale(sFactor, sFactor);
+    } else if (grad.type === "depth") {
+      ctx.rotate(Math.PI / 6);
+      ctx.scale(1, Math.max(0.18, 1 - t * 0.82 * rangeK));
+      ctx.rotate(-Math.PI / 6);
+    } else if (grad.type === "drift") {
+      ctx.translate(t * driftDistance * rangeK, 0);
+    }
+  }
+
+  // Similarity: module kinship transform driven by the cell's PRNG.
+  applySimilarity(ctx, sim, pRand) {
+    const intensity = (sim.intensity ?? 50) / 100;
+    if (sim.kinshipType === "distortion") {
+      const sx = 1 + pRand(1) * intensity * 0.65;
+      const sy = 1 + pRand(2) * intensity * 0.65;
+      ctx.scale(sx, sy);
+    } else if (sim.kinshipType === "foreshortening") {
+      const rot = pRand(3) * Math.PI;
+      const tilt = Math.max(0.18, 1 - Math.abs(pRand(4)) * intensity * 0.82);
+      ctx.rotate(rot);
+      ctx.scale(1, tilt);
+      ctx.rotate(-rot);
+    } else if (sim.kinshipType === "rotation_wobble") {
+      const wobble = pRand(5) * intensity * (Math.PI / 2);
+      ctx.rotate(wobble);
+    } else if (sim.kinshipType === "scale_kinship") {
+      const sFactor = Math.max(0.2, 1 + pRand(6) * intensity * 0.7);
+      ctx.scale(sFactor, sFactor);
+    } else if (sim.kinshipType === "hybrid") {
+      const sx = 1 + pRand(1) * intensity * 0.35;
+      const sy = 1 + pRand(2) * intensity * 0.35;
+      const wobble = pRand(5) * intensity * 0.4;
+      ctx.rotate(wobble);
+      ctx.scale(sx, sy);
+    }
+  }
+
+  // Anomaly: (ex, ey) is the module position compared with the epicenter.
+  // Updates `cell` ({shape, fg, scaleMul}); returns false when the module vanishes (tear).
+  applyAnomaly(ctx, anom, ex, ey, width, height, palette, pRand, cell) {
+    const epiX = (anom.epicenterX ?? 0.5) * width;
+    const epiY = (anom.epicenterY ?? 0.5) * height;
+    const dist = Math.hypot(ex - epiX, ey - epiY);
+    const inZone = dist < anom.radius;
+    const factor = inZone ? (1 - dist / anom.radius) : 0;
+    const severity = (anom.intensity ?? 65) / 100;
+    const accent = anom.accentColor || palette.accent;
+
+    if (anom.type === "focal") {
+      if (inZone) {
+        cell.shape = anom.anomalousShape || "triangle";
+        ctx.rotate((Math.PI / 4) * severity * factor);
+        cell.scaleMul *= (1 + 0.35 * severity);
+        if (anom.highlightColor) cell.fg = accent;
+      }
+    } else if (anom.type === "fracture") {
+      const corridor = anom.radius * 0.45;
+      if (inZone && Math.abs(ex - epiX) < corridor) {
+        const jag = Math.sin(ey * 0.08) * (18 * severity);
+        const shearY = (ey > epiY ? 1 : -1) * (36 * severity) + jag;
+        const shearX = (ex > epiX ? 1 : -1) * (10 * severity);
+        ctx.translate(shearX, shearY);
+        ctx.rotate((factor * severity * Math.PI) / 3.2);
+        if (factor > 0.4 && anom.highlightColor) cell.fg = accent;
+      }
+    } else if (anom.type === "swell") {
+      if (inZone) {
+        const angle = Math.atan2(ey - epiY, ex - epiX);
+        const push = Math.sin(factor * Math.PI) * (42 * severity);
+        ctx.translate(Math.cos(angle) * push, Math.sin(angle) * push);
+        const sFactor = 1 + factor * 0.55 * severity;
+        ctx.scale(sFactor, sFactor);
+        if (factor > 0.65 && anom.highlightColor) cell.fg = accent;
+      }
+    } else if (anom.type === "tear") {
+      if (factor > 0.6) {
+        return false; // disintegrated void
+      } else if (factor > 0.15) {
+        // Shattered debris
+        ctx.translate(pRand(51) * 26 * severity, pRand(52) * 26 * severity);
+        ctx.rotate(pRand(53) * Math.PI * severity);
+        const shrink = Math.max(0.15, 1 - factor * 0.85);
+        ctx.scale(shrink, shrink);
+        if (anom.highlightColor && factor > 0.3) cell.fg = accent;
+      }
+    }
+    return true;
+  }
+
+  // Contrast: `k` is the module's running index, used to pick the minority.
+  applyContrast(ctx, contrast, k, palette, cell) {
+    const hash = Math.abs(Math.sin(k * 137.5 + 43.1) * 10000) % 100;
+    const isMinority = hash >= (contrast.dominanceRatio ?? 80);
+    if (!isMinority) return;
+    if (contrast.dimension === "scale") {
+      cell.scaleMul *= contrast.scaleFactor ?? 2.2;
+    } else if (contrast.dimension === "shape") {
+      cell.shape = contrast.contrastShape || "cross";
+    } else if (contrast.dimension === "direction") {
+      ctx.rotate(((contrast.angle ?? 45) * Math.PI) / 180);
+    } else if (contrast.dimension === "tone") {
+      cell.wireframe = true;
+    }
+    if (contrast.highlightContrast) {
+      cell.fg = contrast.accentColor || palette.accent;
+    }
+  }
+
+  // Anomaly reticle guide overlay
+  drawAnomalyReticle(ctx, width, height, palette, anom) {
+    const epiX = (anom.epicenterX ?? 0.5) * width;
+    const epiY = (anom.epicenterY ?? 0.5) * height;
+    ctx.save();
+    ctx.strokeStyle = palette.accent;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.arc(epiX, epiY, anom.radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.arc(epiX, epiY, 6, 0, Math.PI * 2);
+    ctx.moveTo(epiX - 14, epiY);
+    ctx.lineTo(epiX + 14, epiY);
+    ctx.moveTo(epiX, epiY - 14);
+    ctx.lineTo(epiX, epiY + 14);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   // Render the repetition / structural grid with similarity and gradation kinematics
   renderRepetitionGrid(ctx, width, height, palette, marginParam, usableWParam, usableHParam, targetMod = null, repConfig = null) {
     if (!targetMod || !targetMod.structure) return;
@@ -1289,75 +1504,15 @@ class StudioEngine {
           cy += pRand(11) * sim.cellJitter;
         }
 
-        // Concentration Field Displacement & Density Kinematics (Concentration)
+        // Concentration: field displacement and density
         let concAngle = 0;
         let concScaleMul = 1.0;
         if (conc && conc.enabled) {
-          const attX = (conc.attractorX ?? 0.5) * width;
-          const attY = (conc.attractorY ?? 0.5) * height;
-          const power = (conc.power ?? 65) / 100;
-          const radius = conc.radius ?? 240;
-
-          if (conc.mode === "point") {
-            const dist = Math.hypot(cx - attX, cy - attY);
-            if (dist < radius) {
-              const factor = Math.pow(1 - dist / radius, 1.4) * power;
-              const pull = factor * (radius * 0.45);
-              const angle = Math.atan2(attY - cy, attX - cx);
-              cx += Math.cos(angle) * pull;
-              cy += Math.sin(angle) * pull;
-              concAngle = angle;
-              if (conc.densityScale) concScaleMul = 0.55 + (dist / radius) * 0.7;
-            }
-          } else if (conc.mode === "void") {
-            const dist = Math.hypot(cx - attX, cy - attY);
-            if (dist < radius) {
-              const factor = Math.pow(1 - dist / radius, 1.2) * power;
-              const push = factor * (radius * 0.55);
-              const angle = Math.atan2(cy - attY, cx - attX);
-              cx += Math.cos(angle) * push;
-              cy += Math.sin(angle) * push;
-              concAngle = angle + Math.PI / 2;
-              if (conc.densityScale) concScaleMul = 0.4 + (dist / radius) * 0.8;
-            }
-          } else if (conc.mode === "line") {
-            if (conc.lineAxis === "vertical") {
-              const distX = Math.abs(cx - attX);
-              if (distX < radius) {
-                const factor = Math.pow(1 - distX / radius, 1.4) * power;
-                const pullX = (attX - cx) * factor * 0.75;
-                cx += pullX;
-                concAngle = (attX >= cx ? 0 : Math.PI);
-                if (conc.densityScale) concScaleMul = 0.65 + (distX / radius) * 0.6;
-              }
-            } else {
-              const distY = Math.abs(cy - attY);
-              if (distY < radius) {
-                const factor = Math.pow(1 - distY / radius, 1.4) * power;
-                const pullY = (attY - cy) * factor * 0.75;
-                cy += pullY;
-                concAngle = (attY >= cy ? Math.PI / 2 : -Math.PI / 2);
-                if (conc.densityScale) concScaleMul = 0.65 + (distY / radius) * 0.6;
-              }
-            }
-          } else if (conc.mode === "free") {
-            const att2X = width - attX;
-            const att2Y = height - attY;
-            const dist1 = Math.hypot(cx - attX, cy - attY);
-            const dist2 = Math.hypot(cx - att2X, cy - att2Y);
-            const nearestDist = Math.min(dist1, dist2);
-            const targetX = dist1 < dist2 ? attX : att2X;
-            const targetY = dist1 < dist2 ? attY : att2Y;
-            if (nearestDist < radius) {
-              const factor = Math.pow(1 - nearestDist / radius, 1.4) * power;
-              const pull = factor * (radius * 0.4);
-              const angle = Math.atan2(targetY - cy, targetX - cx);
-              cx += Math.cos(angle) * pull;
-              cy += Math.sin(angle) * pull;
-              concAngle = angle;
-              if (conc.densityScale) concScaleMul = 0.65 + (nearestDist / radius) * 0.6;
-            }
-          }
+          const f = this.applyConcentration(conc, cx, cy, width, height);
+          cx = f.x;
+          cy = f.y;
+          concAngle = f.angle;
+          concScaleMul = f.scaleMul;
         }
 
         const renderCell = (cellCx, cellCy, cellStartX) => {
@@ -1411,132 +1566,24 @@ class StudioEngine {
             const maxD = Math.sqrt(Math.pow((cols - 1) / 2, 2) + Math.pow((rows - 1) / 2, 2)) || 1;
             t = Math.sqrt(dc * dc + dr * dr) / maxD;
           }
-
-          if (grad.reverse) t = 1 - t;
-          t = (t * (grad.steps || 1)) % 1.0001;
-
-          if (grad.type === "rotation") {
-            const rotSpan = ((grad.range ?? 180) * Math.PI) / 180;
-            ctx.rotate(t * rotSpan);
-          } else if (grad.type === "scale") {
-            // Range scales the amount of change; 180 keeps the original 0.35x to 1.45x
-            const sFactor = Math.max(0.05, 0.9 + (t - 0.5) * 1.1 * (((grad.range ?? 180)) / 180));
-            ctx.scale(sFactor, sFactor);
-          } else if (grad.type === "depth") {
-            ctx.rotate(Math.PI / 6);
-            ctx.scale(1, Math.max(0.18, 1 - t * 0.82 * ((grad.range ?? 180) / 180)));
-            ctx.rotate(-Math.PI / 6);
-          } else if (grad.type === "drift") {
-            ctx.translate(t * (cW * 0.28) * ((grad.range ?? 180) / 180), 0);
-          }
+          this.applyGradation(ctx, grad, t, cW * 0.28);
         }
 
         // Similarity: Module Kinship & Fluctuation
-        if (sim.enabled) {
-          const intensity = (sim.intensity ?? 50) / 100;
-          if (sim.kinshipType === "distortion") {
-            const sx = 1 + pRand(1) * intensity * 0.65;
-            const sy = 1 + pRand(2) * intensity * 0.65;
-            ctx.scale(sx, sy);
-          } else if (sim.kinshipType === "foreshortening") {
-            const rot = pRand(3) * Math.PI;
-            const tilt = Math.max(0.18, 1 - Math.abs(pRand(4)) * intensity * 0.82);
-            ctx.rotate(rot);
-            ctx.scale(1, tilt);
-            ctx.rotate(-rot);
-          } else if (sim.kinshipType === "rotation_wobble") {
-            const wobble = pRand(5) * intensity * (Math.PI / 2);
-            ctx.rotate(wobble);
-          } else if (sim.kinshipType === "scale_kinship") {
-            const sFactor = Math.max(0.2, 1 + pRand(6) * intensity * 0.7);
-            ctx.scale(sFactor, sFactor);
-          } else if (sim.kinshipType === "hybrid") {
-            const sx = 1 + pRand(1) * intensity * 0.35;
-            const sy = 1 + pRand(2) * intensity * 0.35;
-            const wobble = pRand(5) * intensity * 0.4;
-            ctx.rotate(wobble);
-            ctx.scale(sx, sy);
-          }
-        }
+        if (sim.enabled) this.applySimilarity(ctx, sim, pRand);
 
         // Anomaly & Contrast Modifiers
-        let cellShapeA = null;
-        let cellWireframe = null;
-        let cellFg = fgColor;
-        let cellBg = bgColor;
-        let cellScaleMul = 1;
-
-        if (anom.enabled) {
-          const epiX = (anom.epicenterX ?? 0.5) * width;
-          const epiY = (anom.epicenterY ?? 0.5) * height;
-          const dist = Math.hypot(cx - epiX, cy - epiY);
-          const inZone = dist < anom.radius;
-          const factor = inZone ? (1 - dist / anom.radius) : 0;
-          const severity = (anom.intensity ?? 65) / 100;
-
-          if (anom.type === "focal") {
-            if (inZone) {
-              cellShapeA = anom.anomalousShape || "triangle";
-              ctx.rotate((Math.PI / 4) * severity * factor);
-              cellScaleMul *= (1 + 0.35 * severity);
-              if (anom.highlightColor) cellFg = anom.accentColor || palette.accent;
-            }
-          } else if (anom.type === "fracture") {
-            const corridor = anom.radius * 0.45;
-            if (inZone && Math.abs(cx - epiX) < corridor) {
-              const jag = Math.sin(cy * 0.08) * (18 * severity);
-              const shearY = (cy > epiY ? 1 : -1) * (36 * severity) + jag;
-              const shearX = (cx > epiX ? 1 : -1) * (10 * severity);
-              ctx.translate(shearX, shearY);
-              ctx.rotate((factor * severity * Math.PI) / 3.2);
-              if (factor > 0.4 && anom.highlightColor) cellFg = anom.accentColor || palette.accent;
-            }
-          } else if (anom.type === "swell") {
-            if (inZone) {
-              const angle = Math.atan2(cy - epiY, cx - epiX);
-              const push = Math.sin(factor * Math.PI) * (42 * severity);
-              ctx.translate(Math.cos(angle) * push, Math.sin(angle) * push);
-              const sFactor = 1 + factor * 0.55 * severity;
-              ctx.scale(sFactor, sFactor);
-              if (factor > 0.65 && anom.highlightColor) cellFg = anom.accentColor || palette.accent;
-            }
-          } else if (anom.type === "tear") {
-            if (factor > 0.6) {
-              // Disintegrated void
-              ctx.restore();
-              return;
-            } else if (factor > 0.15) {
-              // Shattered debris
-              ctx.translate(pRand(51) * 26 * severity, pRand(52) * 26 * severity);
-              ctx.rotate(pRand(53) * Math.PI * severity);
-              const shrink = Math.max(0.15, 1 - factor * 0.85);
-              ctx.scale(shrink, shrink);
-              if (anom.highlightColor && factor > 0.3) cellFg = anom.accentColor || palette.accent;
-            }
-          }
+        const cell = { shape: null, wireframe: null, fg: fgColor, scaleMul: 1 };
+        if (anom.enabled && !this.applyAnomaly(ctx, anom, cx, cy, width, height, palette, pRand, cell)) {
+          ctx.restore();
+          return;
         }
-
-        if (contrast.enabled) {
-          const k = r * cols + c;
-          const hash = Math.abs(Math.sin(k * 137.5 + 43.1) * 10000) % 100;
-          const isMinority = hash >= (contrast.dominanceRatio ?? 80);
-          if (isMinority) {
-            if (contrast.dimension === "scale") {
-              const sFactor = contrast.scaleFactor ?? 2.2;
-              cellScaleMul *= sFactor;
-            } else if (contrast.dimension === "shape") {
-              cellShapeA = contrast.contrastShape || "cross";
-            } else if (contrast.dimension === "direction") {
-              const clashAngle = ((contrast.angle ?? 45) * Math.PI) / 180;
-              ctx.rotate(clashAngle);
-            } else if (contrast.dimension === "tone") {
-              cellWireframe = true;
-            }
-            if (contrast.highlightContrast) {
-              cellFg = contrast.accentColor || palette.accent;
-            }
-          }
-        }
+        if (contrast.enabled) this.applyContrast(ctx, contrast, r * cols + c, palette, cell);
+        const cellShapeA = cell.shape;
+        const cellWireframe = cell.wireframe;
+        const cellFg = cell.fg;
+        const cellBg = bgColor;
+        const cellScaleMul = cell.scaleMul;
 
         const scaleUnit = 1.25 * Math.min(1.0, Math.min(width, height) / 600);
         const cellRatio = Math.min(cW / usableW, cH / usableH);
@@ -1655,30 +1702,7 @@ class StudioEngine {
     }
 
     // Anomaly reticle guide overlay
-    if (anom.enabled && anom.showReticle) {
-      const epiX = (anom.epicenterX ?? 0.5) * width;
-      const epiY = (anom.epicenterY ?? 0.5) * height;
-      ctx.save();
-      ctx.strokeStyle = palette.accent;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 3]);
-
-      // Influence radius boundary
-      ctx.beginPath();
-      ctx.arc(epiX, epiY, anom.radius, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Precision target reticle
-      ctx.setLineDash([]);
-      ctx.beginPath();
-      ctx.arc(epiX, epiY, 6, 0, Math.PI * 2);
-      ctx.moveTo(epiX - 14, epiY);
-      ctx.lineTo(epiX + 14, epiY);
-      ctx.moveTo(epiX, epiY - 14);
-      ctx.lineTo(epiX, epiY + 14);
-      ctx.stroke();
-      ctx.restore();
-    }
+    if (anom.enabled && anom.showReticle) this.drawAnomalyReticle(ctx, width, height, palette, anom);
 
     // Concentration attractor guide overlay
     if (conc && conc.enabled && conc.showAttractor) {
@@ -1752,69 +1776,11 @@ class StudioEngine {
           let concScaleMul = 1.0;
 
           if (conc && conc.enabled) {
-            const attX = (conc.attractorX ?? 0.5) * width;
-            const attY = (conc.attractorY ?? 0.5) * height;
-            const power = (conc.power ?? 65) / 100;
-            const radius = conc.radius ?? 240;
-
-            if (conc.mode === "point") {
-              const dist = Math.hypot(posX - attX, posY - attY);
-              if (dist < radius) {
-                const factor = Math.pow(1 - dist / radius, 1.4) * power;
-                const pull = factor * (radius * 0.45);
-                const a = Math.atan2(attY - posY, attX - posX);
-                posX += Math.cos(a) * pull;
-                posY += Math.sin(a) * pull;
-                concAngle = a;
-                if (conc.densityScale) concScaleMul = 0.55 + (dist / radius) * 0.7;
-              }
-            } else if (conc.mode === "void") {
-              const dist = Math.hypot(posX - attX, posY - attY);
-              if (dist < radius) {
-                const factor = Math.pow(1 - dist / radius, 1.2) * power;
-                const push = factor * (radius * 0.55);
-                const a = Math.atan2(posY - attY, posX - attX);
-                posX += Math.cos(a) * push;
-                posY += Math.sin(a) * push;
-                concAngle = a + Math.PI / 2;
-                if (conc.densityScale) concScaleMul = 0.4 + (dist / radius) * 0.8;
-              }
-            } else if (conc.mode === "line") {
-              if (conc.lineAxis === "vertical") {
-                const distX = Math.abs(posX - attX);
-                if (distX < radius) {
-                  const factor = Math.pow(1 - distX / radius, 1.4) * power;
-                  posX += (attX - posX) * factor * 0.75;
-                  concAngle = (attX >= posX ? 0 : Math.PI);
-                  if (conc.densityScale) concScaleMul = 0.65 + (distX / radius) * 0.6;
-                }
-              } else {
-                const distY = Math.abs(posY - attY);
-                if (distY < radius) {
-                  const factor = Math.pow(1 - distY / radius, 1.4) * power;
-                  posY += (attY - posY) * factor * 0.75;
-                  concAngle = (attY >= posY ? Math.PI / 2 : -Math.PI / 2);
-                  if (conc.densityScale) concScaleMul = 0.65 + (distY / radius) * 0.6;
-                }
-              }
-            } else if (conc.mode === "free") {
-              const att2X = width - attX;
-              const att2Y = height - attY;
-              const dist1 = Math.hypot(posX - attX, posY - attY);
-              const dist2 = Math.hypot(posX - att2X, posY - att2Y);
-              const nearestDist = Math.min(dist1, dist2);
-              const targetX = dist1 < dist2 ? attX : att2X;
-              const targetY = dist1 < dist2 ? attY : att2Y;
-              if (nearestDist < radius) {
-                const factor = Math.pow(1 - nearestDist / radius, 1.4) * power;
-                const pull = factor * (radius * 0.4);
-                const a = Math.atan2(targetY - posY, targetX - posX);
-                posX += Math.cos(a) * pull;
-                posY += Math.sin(a) * pull;
-                concAngle = a;
-                if (conc.densityScale) concScaleMul = 0.65 + (nearestDist / radius) * 0.6;
-              }
-            }
+            const f = this.applyConcentration(conc, posX, posY, width, height);
+            posX = f.x;
+            posY = f.y;
+            concAngle = f.angle;
+            concScaleMul = f.scaleMul;
           }
 
           // Soft edge bounding so modules stay comfortably within the canvas
@@ -1849,13 +1815,14 @@ class StudioEngine {
             ctx.clip();
           }
 
+          const pRand = (salt) => {
+            const val = Math.sin(seed * 997 + (i * 100 + j + centerIdx * 1000) * 31 + salt * 101) * 10000;
+            return (val - Math.floor(val)) * 2 - 1;
+          };
+
           if (sim && sim.enabled && sim.cellJitter > 0) {
-            const jRand = (salt) => {
-              const val = Math.sin((seed || 42) * 997 + (i * 100 + j + centerIdx * 1000) * 31 + salt * 101) * 10000;
-              return (val - Math.floor(val)) * 2 - 1;
-            };
-            posX += jRand(10) * sim.cellJitter;
-            posY += jRand(11) * sim.cellJitter;
+            posX += pRand(10) * sim.cellJitter;
+            posY += pRand(11) * sim.cellJitter;
           }
 
           ctx.translate(posX, posY);
@@ -1876,132 +1843,28 @@ class StudioEngine {
 
           // Gradation on polar radiation
           if (grad.enabled) {
-            let t = (grad.pathway === "concentric" || grad.pathway === "diagonal") 
-              ? (i / rings) 
+            const t = (grad.pathway === "concentric" || grad.pathway === "diagonal")
+              ? (i / rings)
               : (j / rays);
-            if (grad.reverse) t = 1 - t;
-            t = (t * (grad.steps || 1)) % 1.0001;
-
-            if (grad.type === "rotation") {
-              ctx.rotate(t * (((grad.range ?? 180) * Math.PI) / 180));
-            } else if (grad.type === "scale") {
-              const sFactor = Math.max(0.05, 0.9 + (t - 0.5) * 1.1 * ((grad.range ?? 180) / 180));
-              ctx.scale(sFactor, sFactor);
-            } else if (grad.type === "depth") {
-              ctx.rotate(0.3);
-              ctx.scale(1, Math.max(0.2, 1 - t * 0.75 * ((grad.range ?? 180) / 180)));
-              ctx.rotate(-0.3);
-            } else if (grad.type === "drift") {
-              // Slide along the module's local x axis, up to ~one ring thickness
-              ctx.translate(t * (maxR / rings) * 0.9 * ((grad.range ?? 180) / 180), 0);
-            }
+            // Drift slides along the module's local x axis, up to ~one ring thickness
+            this.applyGradation(ctx, grad, t, (maxR / rings) * 0.9);
           }
 
           // Similarity on radiation
-          if (sim.enabled) {
-            const pRand = (salt) => {
-              const val = Math.sin(seed * 997 + (i * 100 + j + centerIdx * 1000) * 31 + salt * 101) * 10000;
-              return (val - Math.floor(val)) * 2 - 1;
-            };
-            const intensity = (sim.intensity ?? 50) / 100;
-            if (sim.kinshipType === "distortion") {
-              ctx.scale(1 + pRand(1) * intensity * 0.5, 1 + pRand(2) * intensity * 0.5);
-            } else if (sim.kinshipType === "foreshortening") {
-              const rRot = pRand(3) * Math.PI;
-              ctx.rotate(rRot);
-              ctx.scale(1, Math.max(0.2, 1 - Math.abs(pRand(4)) * intensity * 0.8));
-              ctx.rotate(-rRot);
-            } else if (sim.kinshipType === "rotation_wobble") {
-              ctx.rotate(pRand(5) * intensity * (Math.PI / 2));
-            } else if (sim.kinshipType === "scale_kinship") {
-              const sFactor = Math.max(0.2, 1 + pRand(6) * intensity * 0.6);
-              ctx.scale(sFactor, sFactor);
-            } else if (sim.kinshipType === "hybrid") {
-              const sx = 1 + pRand(1) * intensity * 0.35;
-              const sy = 1 + pRand(2) * intensity * 0.35;
-              const wobble = pRand(5) * intensity * 0.4;
-              ctx.rotate(wobble);
-              ctx.scale(sx, sy);
-            }
-          }
+          if (sim.enabled) this.applySimilarity(ctx, sim, pRand);
 
           // Anomaly & Contrast on radiation module
-          let cellShapeA = null;
-          let cellWireframe = null;
-          let cellFg = palette.fg;
-          let cellBg = palette.bg;
-          let cellScaleMul = 1;
-
-          if (anom.enabled) {
-            const epiX = (anom.epicenterX ?? 0.5) * width;
-            const epiY = (anom.epicenterY ?? 0.5) * height;
-            const dist = Math.hypot(x - epiX, y - epiY);
-            const inZone = dist < anom.radius;
-            const factor = inZone ? (1 - dist / anom.radius) : 0;
-            const severity = (anom.intensity ?? 65) / 100;
-
-            if (anom.type === "focal") {
-              if (inZone) {
-                cellShapeA = anom.anomalousShape || "triangle";
-                ctx.rotate((Math.PI / 4) * severity * factor);
-                cellScaleMul *= (1 + 0.35 * severity);
-                if (anom.highlightColor) cellFg = anom.accentColor || palette.accent;
-              }
-            } else if (anom.type === "fracture") {
-              const corridor = anom.radius * 0.45;
-              if (inZone && Math.abs(x - epiX) < corridor) {
-                const jag = Math.sin(y * 0.08) * (18 * severity);
-                const shearY = (y > epiY ? 1 : -1) * (36 * severity) + jag;
-                const shearX = (x > epiX ? 1 : -1) * (10 * severity);
-                ctx.translate(shearX, shearY);
-                ctx.rotate((factor * severity * Math.PI) / 3.2);
-                if (factor > 0.4 && anom.highlightColor) cellFg = anom.accentColor || palette.accent;
-              }
-            } else if (anom.type === "swell") {
-              if (inZone) {
-                const angleToEpi = Math.atan2(y - epiY, x - epiX);
-                const push = Math.sin(factor * Math.PI) * (42 * severity);
-                ctx.translate(Math.cos(angleToEpi) * push, Math.sin(angleToEpi) * push);
-                const sFactor = 1 + factor * 0.55 * severity;
-                ctx.scale(sFactor, sFactor);
-                if (factor > 0.65 && anom.highlightColor) cellFg = anom.accentColor || palette.accent;
-              }
-            } else if (anom.type === "tear") {
-              if (factor > 0.6) {
-                ctx.restore();
-                continue;
-              } else if (factor > 0.15) {
-                const rRand = ((seed * 997 + i * 31 + j * 7) % 100) / 100;
-                ctx.translate((rRand - 0.5) * 26 * severity, (1 - rRand - 0.5) * 26 * severity);
-                ctx.rotate(rRand * Math.PI * severity);
-                const shrink = Math.max(0.15, 1 - factor * 0.85);
-                ctx.scale(shrink, shrink);
-                if (anom.highlightColor && factor > 0.3) cellFg = anom.accentColor || palette.accent;
-              }
-            }
+          const cell = { shape: null, wireframe: null, fg: palette.fg, scaleMul: 1 };
+          if (anom.enabled && !this.applyAnomaly(ctx, anom, x, y, width, height, palette, pRand, cell)) {
+            ctx.restore();
+            continue;
           }
-
-          if (contrast.enabled) {
-            const k = centerIdx * 1000 + i * rays + j;
-            const hash = Math.abs(Math.sin(k * 137.5 + 43.1) * 10000) % 100;
-            const isMinority = hash >= (contrast.dominanceRatio ?? 80);
-            if (isMinority) {
-              if (contrast.dimension === "scale") {
-                const sFactor = contrast.scaleFactor ?? 2.2;
-                cellScaleMul *= sFactor;
-              } else if (contrast.dimension === "shape") {
-                cellShapeA = contrast.contrastShape || "cross";
-              } else if (contrast.dimension === "direction") {
-                const clashAngle = ((contrast.angle ?? 45) * Math.PI) / 180;
-                ctx.rotate(clashAngle);
-              } else if (contrast.dimension === "tone") {
-                cellWireframe = true;
-              }
-              if (contrast.highlightContrast) {
-                cellFg = contrast.accentColor || palette.accent;
-              }
-            }
-          }
+          if (contrast.enabled) this.applyContrast(ctx, contrast, centerIdx * 1000 + i * rays + j, palette, cell);
+          const cellShapeA = cell.shape;
+          const cellWireframe = cell.wireframe;
+          const cellFg = cell.fg;
+          const cellBg = palette.bg;
+          const cellScaleMul = cell.scaleMul;
 
           // Natural centrifugal growth scale: outer modules larger, inner smaller, proportional to sector size
           const scaleUnit = 1.25 * Math.min(1.0, Math.min(width, height) / 600);
@@ -2064,30 +1927,7 @@ class StudioEngine {
     }
 
     // Anomaly reticle guide overlay on radiation
-    if (anom.enabled && anom.showReticle) {
-      const epiX = (anom.epicenterX ?? 0.5) * width;
-      const epiY = (anom.epicenterY ?? 0.5) * height;
-      ctx.save();
-      ctx.strokeStyle = palette.accent;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 3]);
-
-      // Influence radius boundary
-      ctx.beginPath();
-      ctx.arc(epiX, epiY, anom.radius, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Precision target reticle
-      ctx.setLineDash([]);
-      ctx.beginPath();
-      ctx.arc(epiX, epiY, 6, 0, Math.PI * 2);
-      ctx.moveTo(epiX - 14, epiY);
-      ctx.lineTo(epiX + 14, epiY);
-      ctx.moveTo(epiX, epiY - 14);
-      ctx.lineTo(epiX, epiY + 14);
-      ctx.stroke();
-      ctx.restore();
-    }
+    if (anom.enabled && anom.showReticle) this.drawAnomalyReticle(ctx, width, height, palette, anom);
 
     // Concentration attractor guide overlay on radiation
     if (conc && conc.enabled && conc.showAttractor) {
