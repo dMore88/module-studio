@@ -3146,6 +3146,9 @@ class StudioProApp {
         isActive = !!mod?.structure?.texture?.enabled;
       }
       btn.classList.toggle("has-modifier-active", isActive);
+      // The name says whether the modifier is on for this layer
+      const base = btn.dataset.railLabel || (btn.dataset.railLabel = btn.getAttribute("title") || tab);
+      btn.setAttribute("aria-label", `${base}, ${isActive ? "on" : "off"}`);
     });
   }
 
@@ -3772,12 +3775,13 @@ class StudioProApp {
     this.enhanceAccessibility(document);
 
     // Keep aria-pressed / aria-current in sync with the .active / .is-active classes
-    const toggleSel = ".ds-tag, .ds-btn-group__button, .shape-circle-btn, .ds-icon-btn, .rail-btn";
+    const toggleSel = ".ds-tag, .ds-btn-group__button, .shape-circle-btn, .ds-icon-btn";
     const syncState = (el) => {
       if (el.matches(".layer-card")) el.setAttribute("aria-current", el.classList.contains("is-active") ? "true" : "false");
+      else if (el.matches(".rail-btn")) el.setAttribute("aria-expanded", el.classList.contains("active") ? "true" : "false"); // is its panel open
       else el.setAttribute("aria-pressed", el.classList.contains("active") ? "true" : "false");
     };
-    const stateSel = toggleSel + ", .layer-card";
+    const stateSel = toggleSel + ", .layer-card, .rail-btn";
     document.querySelectorAll(stateSel).forEach(syncState);
 
     this.a11yObserver = new MutationObserver((mutations) => {

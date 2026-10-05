@@ -671,7 +671,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
 
 /* Workspace: layers | canvas column | rail, with the controls panel floating over the right edge */
 .ds-workspace {
-  --flyout-right: 66px;
+  --flyout-right: 98px; /* 16 margin + 72 rail + 10 air */
   position: relative;
   display: flex;
   flex: 1;
@@ -816,14 +816,20 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .layer-action-btn:focus-visible { outline: var(--border-weight-2) solid var(--neutral-interactive-default); outline-offset: var(--spacing-1); }
 .layer-card.is-active .layer-action-btn:focus-visible { outline-color: var(--neutral-bg-light); }
 
-/* Controls rail (Figma "View options" column): its own column, 40x40 dark buttons */
+/* Controls rail (Figma "View options"): white card with its own column. Buttons are secondary
+   (white, 1px border); filled dark = the modifier is ON for the layer; ring = its panel is open. */
 .controls-rail {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  align-self: flex-start;
-  gap: var(--spacing-3);
-  padding: 0 var(--spacing-5);
+  align-self: stretch;
+  gap: var(--spacing-4);
+  box-sizing: border-box;
+  margin: 0 var(--spacing-5) var(--spacing-6) 0;
+  padding: var(--spacing-5);
+  border-radius: var(--border-radius-2);
+  background: var(--neutral-bg-light);
+  box-shadow: var(--elevation-3x);
   z-index: 35;
 }
 .rail-btn {
@@ -833,28 +839,18 @@ input[type="range"]:hover::-webkit-slider-thumb {
   box-sizing: border-box;
   width: var(--sizing-7);
   height: var(--sizing-7);
-  border: none;
-  border-radius: var(--border-radius-2);
-  background: var(--neutral-interactive-default);
-  color: var(--neutral-icon-inverted);
-  cursor: pointer;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
-}
-.rail-btn:hover { background: var(--neutral-interactive-hover); }
-.rail-btn.active { box-shadow: 0 0 0 var(--border-weight-2) var(--neutral-bg-main), 0 0 0 var(--border-weight-3) var(--neutral-interactive-default); }
-.rail-btn:focus-visible { outline: var(--border-weight-2) solid var(--primary-interactive-focus); outline-offset: var(--spacing-1); }
-/* Dot: a modifier is ON in the composition */
-.rail-btn.has-modifier-active::after {
-  content: "";
-  position: absolute;
-  top: var(--spacing-2);
-  right: var(--spacing-2);
-  width: var(--spacing-3);
-  height: var(--spacing-3);
-  border-radius: 50%;
-  background: var(--primary-bg-main);
   border: var(--border-weight-1) solid var(--neutral-interactive-default);
+  border-radius: var(--border-radius-2);
+  background: var(--neutral-bg-light);
+  color: var(--neutral-icon-main);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
+.rail-btn:hover { background: var(--neutral-interactive-hover-inverted); }
+.rail-btn.has-modifier-active { background: var(--neutral-interactive-default); color: var(--neutral-icon-inverted); }
+.rail-btn.has-modifier-active:hover { background: var(--neutral-interactive-hover); }
+.rail-btn.active { box-shadow: 0 0 0 var(--border-weight-2) var(--neutral-bg-light), 0 0 0 var(--border-weight-3) var(--neutral-interactive-default); }
+.rail-btn:focus-visible { outline: var(--border-weight-2) solid var(--primary-interactive-focus); outline-offset: var(--spacing-1); }
 
 /* Status line (under the artboard) */
 .ds-status {

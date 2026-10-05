@@ -273,7 +273,15 @@ Primera fila de la columna del lienzo: el selector de proporción a la izquierda
 | Oculta | igual, con opacidad 45 % | | |
 
 ### 5.21 Riel de herramientas (`.controls-rail`, `.rail-btn`)
-**Columna propia del layout** (relleno horizontal `spacing/5`, a la derecha del lienzo, no flota). Botones de 40×40 con radio `border/radius/2` (no circulares), separación `spacing/3`, fondo `neutral/interactive/default` e icono `neutral/icon/inverted`. El botón del panel abierto lleva un anillo de 2 px; un punto de `primary/bg/main` indica que el modificador de esa capa está encendido.
+**Tarjeta blanca propia del layout** (72 px de ancho, relleno `spacing/5`, radio `border/radius/2`, sombra `elevation/3x`), pegada al borde derecho con 16 px de margen y tan alta como el espacio de trabajo. Botones de 40×40 con radio `border/radius/2` (no circulares), separación `spacing/4` (12) e icono de 16 px.
+
+| Estado | Aspecto | Significa |
+| :--- | :--- | :--- |
+| Normal | Botón secundario: fondo blanco, borde 1 px `neutral/interactive/default`, icono `neutral/icon/main` | El modificador está **apagado** en la capa activa |
+| Activo | Fondo `neutral/interactive/default`, icono `neutral/icon/inverted` | El modificador está **encendido** en la capa activa (Module siempre) |
+| Panel abierto | Anillo de 2 px alrededor del botón (se suma a cualquiera de los dos estados) | Es el panel que se ve a la izquierda del riel |
+
+El estado «activo» se recalcula al cambiar de capa. Accesibilidad: el nombre del botón termina en «, on» u «, off» y `aria-expanded` indica si su panel está abierto. El panel de controles queda a 10 px del riel (`--flyout-right: 98px`).
 
 ### 5.22 Línea de estado (`.ds-status`)
 Debajo del lienzo, a la izquierda: tamaño del lienzo **tal como se ve** (se calcula del espacio disponible) y número de capas, en mono 13 / 500 con `neutral/text/subtle`. Ya no muestra el zoom.
