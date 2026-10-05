@@ -1264,10 +1264,8 @@ class StudioEngine {
     // thickness and deformation, so they keep a uniform scale. A line's length is its width.
     const isSkeleton = !!(Shapes[shape] && Shapes[shape].skeleton);
     const r = shape === "line" ? w : Math.max(w, h);
-    // Rhythm squeezes every shape with its column and row, open-path ones included (a line only changes its length)
-    const canStretch = !!stretch && shape !== "line";
-    const sx = (!isSkeleton || canStretch) && r > 0 ? w / r : 1;
-    const sy = (!isSkeleton || canStretch) && r > 0 ? h / r : 1;
+    const sx = !isSkeleton && r > 0 ? w / r : 1;
+    const sy = !isSkeleton && r > 0 ? h / r : 1;
     const ox = (mod.offsetX || 0) * sizeMultiplier * kx;
     const oy = (mod.offsetY || 0) * sizeMultiplier * ky;
     const wire = wireframeOverride !== null ? wireframeOverride : (mod.wireframe !== false);
@@ -1921,7 +1919,7 @@ class StudioEngine {
 
     // Hexagonal grid: rows interlock, so the row pitch is 0.866 of the cell width (squeezed if it does not fit)
     const isHex = rep.gridType === "hexagonal";
-    // Rhythm scales the space: the A column and row keep the module's size, the B ones squeeze it with them
+    // Rhythm scales the space: the A column and row keep the module's size, the B ones shrink it in proportion
     const rhythmOn = !isHex && !!(struct && struct.enabled) && ((Number(struct.colRatio) || 1) !== 1 || (Number(struct.rowRatio) || 1) !== 1);
     const refW = colWidths[0], refH = rowHeights[0];
     const hexPitch = isFixed ? hexFixedPitch : Math.min(colWidths[0] * 0.866, usableH / rows);
@@ -2059,7 +2057,9 @@ class StudioEngine {
 
         const scaleUnit = MODULE_UNIT;
         const cellRatio = rhythmOn ? Math.min(refW / usableW, refH / usableH) : Math.min(cW / usableW, cH / usableH);
-        const stretch = rhythmOn ? { x: cW / refW, y: rowHeights[r] / refH } : null;
+        // A module keeps its proportions: it shrinks with the smaller side of its column and row (Wong: a repeated figure is not deformed)
+        const rhythmK = rhythmOn ? Math.min(cW / refW, rowHeights[r] / refH) : 1;
+        const stretch = rhythmOn ? { x: rhythmK, y: rhythmK } : null;
         const normScale = isFixed
           ? scaleUnit * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k
           : scaleUnit * cellRatio * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k;

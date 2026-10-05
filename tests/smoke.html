@@ -1131,7 +1131,7 @@
       reset();
     });
 
-    await test("Rhythm (Col and Row ratio) scales the space: A keeps the module, B squeezes it, in Fit and in Actual size", () => {
+    await test("Rhythm (Col and Row ratio) scales the space: A keeps the module, B shrinks it in proportion, in Fit and in Actual size", () => {
       reset();
       const cv = win.document.getElementById("studio-canvas");
       const render = (sizeMode, colRatio, rowRatio = 1, cols = 4, rows = 1, modW = 20) => {
@@ -1156,15 +1156,15 @@
       const rhythm = render("actual", 4);
       assert(Math.abs(widthAt(rhythm, 225, 300) - 20) < 2, "Column A keeps the module's width");
       assert(Math.abs(widthAt(rhythm, 287.5, 300) - 5) < 2, `Column B should squeeze the module to a quarter (${widthAt(rhythm, 287.5, 300)} px wide)`);
-      assert(Math.abs(heightAt(rhythm, 287.5, 300) - 20) < 2, "Squeezing a column does not change the height");
+      assert(Math.abs(heightAt(rhythm, 287.5, 300) - 5) < 2, "The module keeps its proportions: a quarter of the width means a quarter of the height");
       // Rows: 2 rows, ratio 2 -> heights 100 and 50 (total 150, starts at 225): centres 275 and 350
       const rows = render("actual", 1, 2, 1, 2);
-      assert(Math.abs(heightAt(rows, 300, 275) - 20) < 2 && Math.abs(heightAt(rows, 300, 350) - 10) < 2, "Row B should squeeze the module's height to a half");
+      assert(Math.abs(heightAt(rows, 300, 275) - 20) < 2 && Math.abs(heightAt(rows, 300, 350) - 10) < 2 && Math.abs(widthAt(rows, 300, 350) - 10) < 2, "Row B should shrink the module to a half, keeping its proportions");
       // Fit: the second (B) column's module is narrower than the first one
       // Fit: 4 columns of 225, 75, 225, 75 px (centres 112.5, 262.5...); a 100 px module is 37.5 px in A and a third of that in B
       const fit = render("fit", 3, 1, 4, 1, 100);
       assert(Math.abs(widthAt(fit, 112.5, 300) - 37.5) < 2.5 && Math.abs(widthAt(fit, 262.5, 300) - 12.5) < 2.5, `Fit: A and B module widths are ${widthAt(fit, 112.5, 300)} and ${widthAt(fit, 262.5, 300)}, expected 37.5 and 12.5`);
-      // Open-path shapes (hatch) are squeezed too, in columns and in rows
+      // Open-path shapes (hatch) shrink too, in columns and in rows, keeping their proportions
       const extent = (d, cx, cy, half) => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (let y = cy - half; y < cy + half; y += 1) for (let x = cx - half; x < cx + half; x += 1) if (dark(d, x, y)) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } return { w: x1 - x0, h: y1 - y0 }; };
       const st2 = JSON.parse(JSON.stringify(app.state));
       st2.layers = [st2.layers[0]]; st2.layerOrder = [st2.layers[0].id]; st2.showSafeBounds = false; st2.aspectRatio = "1:1";
@@ -1177,8 +1177,8 @@
       const hd = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
       // 2x2, ratio 4: columns 100 and 25 (total 125, starts at 237.5), rows the same: A cell centre (287.5, 287.5), B column centre (350, 287.5), B row centre (287.5, 350)
       const eA = extent(hd, 287.5, 287.5, 40), eBc = extent(hd, 350, 287.5, 30), eBr = extent(hd, 287.5, 350, 30);
-      assert(eBc.w < eA.w * 0.5 && eBc.h > eA.h * 0.6, `Hatch in a B column should get narrower, not shorter (A ${eA.w}x${eA.h}, B ${eBc.w}x${eBc.h})`);
-      assert(eBr.h < eA.h * 0.5 && eBr.w > eA.w * 0.6, `Hatch in a B row should get lower, not narrower (A ${eA.w}x${eA.h}, B ${eBr.w}x${eBr.h})`);
+      assert(eBc.w < eA.w * 0.5 && eBc.h < eA.h * 0.5, `Hatch in a B column should shrink in both directions (A ${eA.w}x${eA.h}, B ${eBc.w}x${eBc.h})`);
+      assert(eBr.h < eA.h * 0.5 && eBr.w < eA.w * 0.5, `Hatch in a B row should shrink in both directions (A ${eA.w}x${eA.h}, B ${eBr.w}x${eBr.h})`);
       reset();
     });
 
