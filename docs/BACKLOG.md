@@ -25,7 +25,7 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 | 9 | Anomalía (sección 7: A1, A3) | ✅ Hecho (A2 y A4 siguen en P3) |
 | 9b | **Tamaño del módulo, contenedor y sangrado** (petición de Diego) | ✅ Hecho: contenedor del módulo (*Container width / height*), *Module size* Fit to canvas / Actual size en cuadrícula y radial, bloque centrado con sangrado, margen de seguridad en 0 y tamaño exacto del módulo. Siguiente: Similitud |
 | 10 | Similitud (sección 8: S1, S2) | ✅ Hecho (S3 y S4 siguen en P3). Siguiente: Concentración |
-| 11 | Concentración (sección 6: K2, K1, K4) | P2 |
+| 11 | Concentración (sección 6: K2, K1, K4) | ✅ Hecho (K3 y K5 siguen en P3). Siguiente: interrelaciones entre capas |
 | 12 | Interrelaciones entre capas (sección 2) | P2, después de los modificadores (7 a 11) |
 | 13 | Espacio (sección 10) | P3. Es el más complejo; SP5 depende de las interrelaciones |
 | 14 | Supermódulos (RP6) | P3, al final de todo |
@@ -121,10 +121,10 @@ Ya cubierto: hacia un punto (Point), desde un punto (Void), hacia una línea (Li
 
 | ID | Ítem | Notas | Prioridad |
 | :-- | :--- | :--- | :-- |
-| K1 | Desde una línea | Inverso de Line | P2 |
-| K2 | Superconcentración y desconcentración | Densidad alta o baja en todo el diseño, con o sin transición a los bordes | P2 |
+| K1 | Desde una línea | ✅ Hecho: modo *Away from line* | ✅ |
+| K2 | Superconcentración y desconcentración | ✅ Hecho: modos *Dense* y *Sparse*, con *Fade toward the edges* | ✅ |
 | K3 | Más de dos focos | Hoy Hotspots son dos focos simétricos | P3 |
-| K4 | Concentrar por ausencias | Módulos que desaparecen según un campo de densidad; es el mecanismo que el libro usa dentro de estructuras formales | P2 |
+| K4 | Concentrar por ausencias | ✅ Hecho: chips *Method* (Move, Absence) | ✅ |
 | K5 | Varios módulos por celda | Cambios cuantitativos reales | P3 |
 
 ---

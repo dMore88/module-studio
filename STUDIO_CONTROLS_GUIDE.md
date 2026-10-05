@@ -241,11 +241,16 @@ Agrupa o dispersa los módulos según campos de fuerza invisibles, simulando gra
   * `point` (*Point*): Los módulos se atraen y concentran hacia un único punto de atracción.
   * `void` (*Void*): Los módulos huyen del centro generando un vacío circular despejado.
   * `line` (*Line*): Concentración hacia un eje lineal principal.
+  * `line_void` (*Away from line*): lo inverso de `line`: los módulos huyen del eje y queda un pasillo despejado a su alrededor.
   * `free` (*Hotspots*): Dos focos de densidad (el atractor y su simétrico respecto al centro del canvas).
-* **`lineAxis`** (*Line axis*, `horizontal` / `vertical`): Orientación del eje lineal. Solo se muestra en modo `line`.
+  * `dense` (*Dense*, superconcentración): **todo el diseño** se comprime hacia el centro (el atractor): los módulos quedan muy juntos.
+  * `sparse` (*Sparse*, desconcentración): todo el diseño se dispersa hacia fuera: los módulos quedan muy separados.
+* **`method`** (*Method*, `move` por defecto): `move` desplaza los módulos como siempre. `absence` **no mueve nada**: los módulos desaparecen según la densidad del campo (el mecanismo que el libro usa dentro de estructuras formales). En `point`, `line` y `free` se conservan los cercanos y desaparecen los lejanos; en `void` y `line_void`, al revés. *Gathering pull* es la proporción que desaparece en la zona más lejana (100% = ninguno sobrevive). Los mismos módulos desaparecen siempre. No se muestra en `dense` ni `sparse`.
+* **`edgeFade`** (*Fade toward the edges*, por defecto apagado): Solo en `dense` y `sparse`. Apagado, la compresión o dispersión es pareja en todo el lienzo; encendido, se debilita hacia los bordes (transición a los bordes).
+* **`lineAxis`** (*Line axis*, `horizontal` / `vertical`): Orientación del eje lineal. Solo se muestra en los modos `line` y `line_void`.
 * **`attractorX / attractorY`** (*X / Y position*, 5% a 95%, por defecto 50%): Ubicación del polo atractor. También se fijan haciendo clic en el canvas con la pestaña Concentration abierta.
 * **`power`** (*Gathering pull*, 20% a 100%, por defecto 50%): Intensidad de la fuerza atractiva o repulsiva.
-* **`radius`** (*Field radius*, 80 a 450 px, por defecto 240): Alcance o zona de influencia del campo gravitatorio.
+* **`radius`** (*Field radius*, 80 a 450 px, por defecto 240): Alcance o zona de influencia del campo gravitatorio. No se muestra en `dense` ni `sparse`.
 * **`alignToField`** (*Orient Modules to Field Flow*, por defecto apagado): Rota los módulos haciéndolos tangentes a las líneas de fuerza.
 * **`densityScale`** (*Dynamic Density Scale*, por defecto apagado): Reduce o agranda la escala del módulo en función de su proximidad al polo.
 * **`showAttractor`** (*Display Attractor Guide*, por defecto apagado): Dibuja los anillos del campo, el punto atractor y, en modo `line`, el eje.

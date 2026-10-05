@@ -75,7 +75,7 @@
       g.sequence = pick(["restart","pingpong"]); g.easing = ri(-100, 100); g.alternate = rb(); g.targetShape = pick(SHAPES);
       const an = st.anomaly; an.enabled = rb(); an.type = pick(["focal","fracture","swell","tear"]); an.epicenterX = 0.1 + rnd() * 0.8; an.epicenterY = 0.1 + rnd() * 0.8; an.radius = ri(50, 350); an.intensity = ri(10, 100); an.anomalousShape = pick(SHAPES); an.highlightColor = rb(); an.showReticle = rb(); an.distribution = pick(["single","regular","random"]); an.count = ri(2, 12); an.seed = ri(1, 99); an.attrs = { shape: rb(), scale: rb(), rotation: rb(), position: rb() };
       const co = st.contrast; co.enabled = rb(); co.dimension = pick(["scale","shape","direction","tone","texture","space"]); co.dominanceRatio = ri(50, 95); co.scaleFactor = 0.2 + rnd() * 2.8; co.contrastShape = pick(SHAPES); co.angle = ri(15, 90); co.highlightContrast = rb();
-      const cn = st.concentration; cn.enabled = rb(); cn.mode = pick(["point","void","line","free"]); cn.attractorX = 0.05 + rnd() * 0.9; cn.attractorY = 0.05 + rnd() * 0.9; cn.power = ri(20, 100); cn.radius = ri(80, 450); cn.lineAxis = pick(["horizontal","vertical"]); cn.alignToField = rb(); cn.densityScale = rb(); cn.showAttractor = rb();
+      const cn = st.concentration; cn.enabled = rb(); cn.mode = pick(["point","void","line","line_void","free","dense","sparse"]); cn.method = pick(["move","absence"]); cn.edgeFade = rb(); cn.attractorX = 0.05 + rnd() * 0.9; cn.attractorY = 0.05 + rnd() * 0.9; cn.power = ri(20, 100); cn.radius = ri(80, 450); cn.lineAxis = pick(["horizontal","vertical"]); cn.alignToField = rb(); cn.densityScale = rb(); cn.showAttractor = rb();
       const tx = st.texture; tx.enabled = rb(); tx.jitter = ri(0, 8); tx.skipChance = ri(0, 60); tx.crossing = ri(0, 60); tx.undulation = ri(0, 30);
       const sp = st.space; sp.enabled = rb(); sp.mode = pick(["isometric","foreshortening","fluctuating","conflicting"]); sp.depth = ri(10, 80); sp.angle = ri(-60, 60); sp.shading = ri(20, 100); sp.showIsoGuides = rb();
     }
@@ -919,6 +919,66 @@
       assert(sim().imperfection === "broken" && !q("#sim-imperf-block").classList.contains("hidden") && q('[data-sim-imperf="broken"]').classList.contains("active"), "Imperfection chip did not apply");
       const mix = q("#input-sim-assoc-mix"); mix.value = 80; mix.dispatchEvent(new win.Event("input", { bubbles: true }));
       assert(sim().assocMix === 80 && q("#num-sim-assoc-mix").value === "80%", "Association mix slider out of sync");
+    });
+
+    await test("Concentration: from a line, whole-design density and absence", async () => {
+      const e = app.engine;
+      const conc = (o) => Object.assign({ enabled: true, mode: "point", method: "move", attractorX: 0.5, attractorY: 0.5, power: 50, radius: 200, lineAxis: "vertical", edgeFade: false, densityScale: false }, o);
+      const dist = (p, q) => Math.hypot(p.x - q.x, p.y - q.y);
+      const c0 = { x: 300, y: 300 };
+      // Dense pulls toward the centre, Sparse pushes away
+      const far = { x: 100, y: 100 };
+      assert(dist(e.applyConcentration(conc({ mode: "dense" }), far.x, far.y, 600, 600), c0) < dist(far, c0), "Dense should pull modules toward the centre");
+      assert(dist(e.applyConcentration(conc({ mode: "sparse" }), far.x, far.y, 600, 600), c0) > dist(far, c0), "Sparse should push modules away from the centre");
+      // The edge fade keeps the corners nearly where they were
+      const corner = { x: 20, y: 20 };
+      const moveNoFade = dist(e.applyConcentration(conc({ mode: "dense" }), corner.x, corner.y, 600, 600), corner);
+      const moveFade = dist(e.applyConcentration(conc({ mode: "dense", edgeFade: true }), corner.x, corner.y, 600, 600), corner);
+      assert(moveFade < moveNoFade * 0.2, "With the edge fade the corners should barely move");
+      // From a line: the inverse of Line
+      const toward = e.applyConcentration(conc({ mode: "line" }), 340, 100, 600, 600).x;
+      const away = e.applyConcentration(conc({ mode: "line_void" }), 340, 100, 600, 600).x;
+      assert(toward < 340 && away > 340, `Line should pull (${toward}) and Away from line should push (${away})`);
+      assert(e.applyConcentration(conc({ mode: "line_void" }), 100, 100, 600, 600).x === 100, "Outside the field nothing should move");
+      // Absence: modules do not move; the chance of being drawn follows the density
+      const near = e.applyConcentration(conc({ method: "absence" }), 300, 300, 600, 600);
+      const faraway = e.applyConcentration(conc({ method: "absence" }), 20, 20, 600, 600);
+      assert(near.keep === 1 && near.x === 300 && Math.abs(faraway.keep - 0.5) < 1e-9 && faraway.x === 20, `Absence keep ${near.keep} near and ${faraway.keep} far`);
+      const hole = e.applyConcentration(conc({ method: "absence", mode: "void" }), 300, 300, 600, 600);
+      assert(hole.keep < 1 && e.applyConcentration(conc({ method: "absence", mode: "void" }), 20, 20, 600, 600).keep === 1, "Void by absence should empty the centre");
+      assert(e.applyConcentration(conc({ mode: "point" }), 300, 300, 600, 600).keep === 1, "Moving modules should always be drawn");
+      // Drawing: absence removes modules, the same ones on every draw
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const render = (c) => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        const L = st.layers[0];
+        Object.assign(L, { shape: "circle", width: 60, height: 60, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false, containerW: 0, containerH: 0 });
+        L.structure.enabled = true; L.structure.mode = "repetition";
+        Object.assign(L.structure.repetition, { cols: 10, rows: 10, gridType: "basic", sizeMode: "fit" });
+        Object.assign(L.structure.concentration, { enabled: true, mode: "point", method: "move", power: 100, radius: 150, attractorX: 0.5, attractorY: 0.5 }, c);
+        app.state = st; drawRaw(app);
+        return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      };
+      const ink = (d) => { let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] < 128) n++; return n; };
+      const none = render({ enabled: false });
+      const gone = render({ method: "absence" });
+      assert(ink(gone) < ink(none) * 0.7 && ink(gone) > 0, `Absence should remove modules (${ink(gone)} of ${ink(none)})`);
+      assert(JSON.stringify(Array.from(gone.slice(0, 4000))) === JSON.stringify(Array.from(render({ method: "absence" }).slice(0, 4000))), "Absence should remove the same modules every time");
+      // Inspector
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      q('[data-rail-tab="concentration"]').click(); await wait(80);
+      const cs = () => app.getActiveLayerStructure().concentration;
+      assert(!q("#conc-method-block").classList.contains("hidden") && q("#conc-fade-block").classList.contains("hidden"), "Point should offer the method and no fade");
+      q('[data-conc-method="absence"]').click();
+      assert(cs().method === "absence" && q('[data-conc-method="absence"]').classList.contains("active"), "Absence chip did not apply");
+      q('[data-conc-mode="line_void"]').click();
+      assert(cs().mode === "line_void" && !q("#conc-axis-block").classList.contains("hidden"), "Away from line should offer the axis");
+      q('[data-conc-mode="dense"]').click();
+      assert(q("#conc-method-block").classList.contains("hidden") && q("#conc-radius-field").classList.contains("hidden") && !q("#conc-fade-block").classList.contains("hidden"), "Dense should hide method and radius and offer the edge fade");
+      q("#toggle-conc-fade").click();
+      assert(cs().edgeFade === true, "Edge fade did not apply");
     });
 
     await test("A failed draw shows a visible notice and recovers", () => {

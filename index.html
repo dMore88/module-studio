@@ -1016,7 +1016,18 @@
             <button type="button" class="ds-tag active" data-conc-mode="point">Point</button>
             <button type="button" class="ds-tag" data-conc-mode="void">Void</button>
             <button type="button" class="ds-tag" data-conc-mode="line">Line</button>
+            <button type="button" class="ds-tag" data-conc-mode="line_void">Away from line</button>
             <button type="button" class="ds-tag" data-conc-mode="free">Hotspots</button>
+            <button type="button" class="ds-tag" data-conc-mode="dense">Dense</button>
+            <button type="button" class="ds-tag" data-conc-mode="sparse">Sparse</button>
+          </div>
+        </div>
+
+        <div id="conc-method-block" class="ds-field">
+          <div class="ds-label">Method</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-conc-method="move">Move</button>
+            <button type="button" class="ds-tag" data-conc-method="absence">Absence</button>
           </div>
         </div>
 
@@ -1053,7 +1064,7 @@
               <input type="text" id="num-conc-power" class="ds-value" value="50%" inputmode="numeric">
             </div>
           </div>
-          <div class="ds-field">
+          <div id="conc-radius-field" class="ds-field">
             <div class="ds-label ds-label-clip">Field radius</div>
             <div class="ds-slider">
               <input type="range" id="input-conc-radius" min="80" max="450" step="5" value="240">
@@ -1062,6 +1073,10 @@
           </div>
 
         <div class="ds-toggles">
+          <label id="conc-fade-block" class="ds-toggle-item hidden">
+            <span class="ds-toggle-label">Fade toward the edges</span>
+            <input type="checkbox" id="toggle-conc-fade" class="ds-checkbox">
+          </label>
           <label class="ds-toggle-item">
             <span class="ds-toggle-label">Orient Modules to Field Flow</span>
             <input type="checkbox" id="toggle-conc-align" class="ds-checkbox">
@@ -1194,7 +1209,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=4444feec"></script>
+  <script src="js/bundle-pro.js?v=6ae92046"></script>
 
 </body>
 </html>

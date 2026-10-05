@@ -2127,7 +2127,17 @@ export class StudioProApp {
       btn.classList.toggle("active", btn.dataset.concAxis === conc.lineAxis);
     });
     // The axis only matters for the line structure.
-    document.getElementById("conc-axis-block")?.classList.toggle("hidden", conc.mode !== "line");
+    document.getElementById("conc-axis-block")?.classList.toggle("hidden", conc.mode !== "line" && conc.mode !== "line_void");
+    // The whole-design modes (Dense, Sparse) have no field radius and no absence method; they can fade at the edges
+    const wholeDesign = conc.mode === "dense" || conc.mode === "sparse";
+    document.getElementById("conc-method-block")?.classList.toggle("hidden", wholeDesign);
+    document.getElementById("conc-radius-field")?.classList.toggle("hidden", wholeDesign);
+    document.getElementById("conc-fade-block")?.classList.toggle("hidden", !wholeDesign);
+    document.querySelectorAll("#card-concentration [data-conc-method]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.concMethod === (conc.method || "move"));
+    });
+    const fadeBox = document.getElementById("toggle-conc-fade");
+    if (fadeBox) fadeBox.checked = !!conc.edgeFade;
 
     const setPair = (sliderId, numId, value, suffix) => {
       this.syncControlValue(sliderId, value);
@@ -2172,6 +2182,15 @@ export class StudioProApp {
       this.pushHistory(`Layer ${this.activeLayerId} Concentration: ${conc.enabled ? "ON" : "OFF"}`);
     });
 
+    document.querySelectorAll("#card-concentration [data-conc-method]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(c => { c.method = btn.dataset.concMethod; }, `Concentration Method: ${btn.dataset.concMethod}`);
+      });
+    });
+    document.getElementById("toggle-conc-fade")?.addEventListener("change", (e) => {
+      const checked = e.target.checked;
+      commit(c => { c.edgeFade = checked; }, `Concentration Edge Fade: ${checked ? "ON" : "OFF"}`);
+    });
     document.querySelectorAll("#card-concentration [data-conc-mode]").forEach(btn => {
       btn.addEventListener("click", () => {
         commit(c => { c.mode = btn.dataset.concMode; }, `Concentration Structure: ${btn.dataset.concMode}`);

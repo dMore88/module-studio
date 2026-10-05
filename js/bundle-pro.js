@@ -892,7 +892,9 @@ const createDefaultLayerStructure = () => ({
   },
   concentration: {
     enabled: false,
-    mode: "point", // point, void, line, free (hotspots)
+    mode: "point", // point, void, line, line_void (away from a line), free (hotspots), dense, sparse (the whole design)
+    method: "move", // move (modules are displaced) or absence (modules vanish with the density)
+    edgeFade: false, // dense / sparse: the effect fades toward the edges of the canvas
     attractorX: 0.5, // 0.05 to 0.95
     attractorY: 0.5, // 0.05 to 0.95
     power: 50, // gathering pull, 20 to 100
@@ -1352,6 +1354,45 @@ class StudioEngine {
     const attY = (conc.attractorY ?? 0.5) * height;
     const power = (conc.power ?? 65) / 100;
     const radius = conc.radius ?? 240;
+    const vertical = conc.lineAxis === "vertical";
+
+    // Concentration by absence: modules stay where they are and vanish with the density field.
+    // `keep` is the chance (0..1) that this module is drawn; the caller rolls the dice.
+    if (conc.method === "absence" && conc.mode !== "dense" && conc.mode !== "sparse") {
+      let dist;
+      if (conc.mode === "line" || conc.mode === "line_void") dist = vertical ? Math.abs(x - attX) : Math.abs(y - attY);
+      else if (conc.mode === "free") dist = Math.min(Math.hypot(x - attX, y - attY), Math.hypot(x - (width - attX), y - (height - attY)));
+      else dist = Math.hypot(x - attX, y - attY);
+      const prox = Math.pow(Math.max(0, 1 - dist / radius), 1.4);
+      const repel = conc.mode === "void" || conc.mode === "line_void";
+      return { x, y, angle: 0, scaleMul: 1, keep: repel ? 1 - power * prox : 1 - power * (1 - prox) };
+    }
+
+    // The whole design: super-concentration pulls every module toward the centre, de-concentration
+    // pushes them away. With the edge fade the effect weakens toward the edges of the canvas.
+    if (conc.mode === "dense" || conc.mode === "sparse") {
+      const k = conc.mode === "dense" ? 1 - power * 0.6 : 1 + power * 0.8;
+      let t = 1;
+      if (conc.edgeFade) {
+        const reach = Math.hypot(Math.max(attX, width - attX), Math.max(attY, height - attY)) || 1;
+        t = Math.max(0, 1 - Math.hypot(x - attX, y - attY) / reach);
+      }
+      const kk = 1 + (k - 1) * t;
+      return { x: attX + (x - attX) * kk, y: attY + (y - attY) * kk, angle: 0, scaleMul: 1, keep: 1 };
+    }
+
+    // From a line: the inverse of Line, modules are pushed away from it
+    if (conc.mode === "line_void") {
+      const d = vertical ? x - attX : y - attY;
+      const dist = Math.abs(d);
+      if (dist < radius) {
+        const factor = Math.pow(1 - dist / radius, 1.2) * power;
+        const push = (d >= 0 ? 1 : -1) * factor * (radius * 0.55);
+        if (vertical) { x += push; angle = d >= 0 ? 0 : Math.PI; } else { y += push; angle = d >= 0 ? Math.PI / 2 : -Math.PI / 2; }
+        if (conc.densityScale) scaleMul = 0.4 + (dist / radius) * 0.8;
+      }
+      return { x, y, angle, scaleMul, keep: 1 };
+    }
 
     if (conc.mode === "point") {
       const dist = Math.hypot(x - attX, y - attY);
@@ -1411,7 +1452,7 @@ class StudioEngine {
         if (conc.densityScale) scaleMul = 0.65 + (nearestDist / radius) * 0.6;
       }
     }
-    return { x, y, angle, scaleMul };
+    return { x, y, angle, scaleMul, keep: 1 };
   }
 
   // Gradation: position along the pathway (0..1) of a grid cell.
@@ -1890,6 +1931,8 @@ class StudioEngine {
           cy = f.y;
           concAngle = f.angle;
           concScaleMul = f.scaleMul;
+          // Concentration by absence: this module vanishes with the density
+          if (f.keep < 1 && (pRand(70) + 1) / 2 >= f.keep) continue;
         }
 
         const renderCell = (cellCx, cellCy, cellStartX) => {
@@ -2211,6 +2254,10 @@ class StudioEngine {
             posY = f.y;
             concAngle = f.angle;
             concScaleMul = f.scaleMul;
+            if (f.keep < 1) {
+              const h = Math.sin(seed * 997 + (i * 100 + j + centerIdx * 1000) * 31 + 70 * 101) * 10000;
+              if ((h - Math.floor(h)) >= f.keep) continue;
+            }
           }
 
           // Soft edge bounding so modules stay comfortably within the canvas
@@ -2583,7 +2630,7 @@ class StudioEngine {
     ctx.strokeStyle = palette.accent;
     ctx.fillStyle = palette.accent;
 
-    if (conc.mode === "line") {
+    if (conc.mode === "line" || conc.mode === "line_void") {
       ctx.lineWidth = 1.2;
       ctx.setLineDash([6, 6]);
       ctx.globalAlpha = 0.5;
@@ -5065,7 +5112,17 @@ class StudioProApp {
       btn.classList.toggle("active", btn.dataset.concAxis === conc.lineAxis);
     });
     // The axis only matters for the line structure.
-    document.getElementById("conc-axis-block")?.classList.toggle("hidden", conc.mode !== "line");
+    document.getElementById("conc-axis-block")?.classList.toggle("hidden", conc.mode !== "line" && conc.mode !== "line_void");
+    // The whole-design modes (Dense, Sparse) have no field radius and no absence method; they can fade at the edges
+    const wholeDesign = conc.mode === "dense" || conc.mode === "sparse";
+    document.getElementById("conc-method-block")?.classList.toggle("hidden", wholeDesign);
+    document.getElementById("conc-radius-field")?.classList.toggle("hidden", wholeDesign);
+    document.getElementById("conc-fade-block")?.classList.toggle("hidden", !wholeDesign);
+    document.querySelectorAll("#card-concentration [data-conc-method]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.concMethod === (conc.method || "move"));
+    });
+    const fadeBox = document.getElementById("toggle-conc-fade");
+    if (fadeBox) fadeBox.checked = !!conc.edgeFade;
 
     const setPair = (sliderId, numId, value, suffix) => {
       this.syncControlValue(sliderId, value);
@@ -5110,6 +5167,15 @@ class StudioProApp {
       this.pushHistory(`Layer ${this.activeLayerId} Concentration: ${conc.enabled ? "ON" : "OFF"}`);
     });
 
+    document.querySelectorAll("#card-concentration [data-conc-method]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        commit(c => { c.method = btn.dataset.concMethod; }, `Concentration Method: ${btn.dataset.concMethod}`);
+      });
+    });
+    document.getElementById("toggle-conc-fade")?.addEventListener("change", (e) => {
+      const checked = e.target.checked;
+      commit(c => { c.edgeFade = checked; }, `Concentration Edge Fade: ${checked ? "ON" : "OFF"}`);
+    });
     document.querySelectorAll("#card-concentration [data-conc-mode]").forEach(btn => {
       btn.addEventListener("click", () => {
         commit(c => { c.mode = btn.dataset.concMode; }, `Concentration Structure: ${btn.dataset.concMode}`);
