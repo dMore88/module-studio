@@ -74,7 +74,7 @@
       const g = st.gradation; g.enabled = rb(); g.type = pick(["rotation","scale","depth","drift","shape","texture"]); g.pathway = pick(["diagonal","horizontal","vertical","concentric","zigzag"]); g.range = ri(15, 360); g.steps = ri(1, 4); g.reverse = rb();
       g.sequence = pick(["restart","pingpong"]); g.easing = ri(-100, 100); g.alternate = rb(); g.targetShape = pick(SHAPES);
       const an = st.anomaly; an.enabled = rb(); an.type = pick(["focal","fracture","swell","tear"]); an.epicenterX = 0.1 + rnd() * 0.8; an.epicenterY = 0.1 + rnd() * 0.8; an.radius = ri(50, 350); an.intensity = ri(10, 100); an.anomalousShape = pick(SHAPES); an.highlightColor = rb(); an.showReticle = rb();
-      const co = st.contrast; co.enabled = rb(); co.dimension = pick(["scale","shape","direction","tone"]); co.dominanceRatio = ri(50, 95); co.scaleFactor = 0.2 + rnd() * 2.8; co.contrastShape = pick(SHAPES); co.angle = ri(15, 90); co.highlightContrast = rb();
+      const co = st.contrast; co.enabled = rb(); co.dimension = pick(["scale","shape","direction","tone","texture","space"]); co.dominanceRatio = ri(50, 95); co.scaleFactor = 0.2 + rnd() * 2.8; co.contrastShape = pick(SHAPES); co.angle = ri(15, 90); co.highlightContrast = rb();
       const cn = st.concentration; cn.enabled = rb(); cn.mode = pick(["point","void","line","free"]); cn.attractorX = 0.05 + rnd() * 0.9; cn.attractorY = 0.05 + rnd() * 0.9; cn.power = ri(20, 100); cn.radius = ri(80, 450); cn.lineAxis = pick(["horizontal","vertical"]); cn.alignToField = rb(); cn.densityScale = rb(); cn.showAttractor = rb();
       const tx = st.texture; tx.enabled = rb(); tx.jitter = ri(0, 8); tx.skipChance = ri(0, 60); tx.crossing = ri(0, 60); tx.undulation = ri(0, 30);
       const sp = st.space; sp.enabled = rb(); sp.mode = pick(["isometric","foreshortening","fluctuating","conflicting"]); sp.depth = ri(10, 80); sp.angle = ri(-60, 60); sp.shading = ri(20, 100); sp.showIsoGuides = rb();
@@ -606,6 +606,73 @@
       assert(q('[data-rep-linespace="alternate"]').classList.contains("active"), "Spacing group out of sync");
       app.addLayer(); await wait(80);
       assert(rep().lineTone === "guide" && rep().reflection === "none", "A new layer should start with the default lines and no reflection");
+    });
+
+    await test("Modifiers combine predictably: Anomaly wins shape and colour over Contrast, scales multiply, turns add", () => {
+      const e = app.engine;
+      const mk = () => ({ rot: 0, rotate(a) { this.rot += a; }, translate() {}, scale() {} });
+      const palette = { accent: "#aaaaaa" };
+      const anom = { enabled: true, type: "focal", epicenterX: 0.5, epicenterY: 0.5, radius: 200, intensity: 100, anomalousShape: "cross", highlightColor: true, accentColor: "#ff0000" };
+      const contrast = (o) => Object.assign({ enabled: true, dominanceRatio: 0, dimension: "shape", contrastShape: "hexagon", highlightContrast: true, accentColor: "#0000ff", scaleFactor: 2, angle: 90 }, o);
+      const fresh = () => ({ shape: null, wireframe: null, fg: "#000000", scaleMul: 1 });
+      // Contrast alone sets the shape and the colour
+      let cell = fresh(), ctx = mk();
+      e.applyContrast(ctx, contrast({}), 0, palette, cell);
+      assert(cell.shape === "hexagon" && cell.fg === "#0000ff", "Contrast alone should set its shape and colour");
+      // Inside an anomaly, the anomaly keeps both
+      cell = fresh(); ctx = mk();
+      assert(e.applyAnomaly(ctx, anom, 300, 300, 600, 600, palette, () => 0, cell) === true, "The focal anomaly should keep the module");
+      e.applyContrast(ctx, contrast({}), 0, palette, cell);
+      assert(cell.shape === "cross" && cell.fg === "#ff0000", `Contrast overrode the anomaly (${cell.shape}, ${cell.fg})`);
+      // Outside the anomaly zone Contrast applies as usual
+      cell = fresh(); ctx = mk();
+      e.applyAnomaly(ctx, anom, 10, 10, 600, 600, palette, () => 0, cell);
+      e.applyContrast(ctx, contrast({}), 0, palette, cell);
+      assert(cell.shape === "hexagon" && cell.fg === "#0000ff", "Contrast should apply outside the anomaly");
+      // Scales multiply, turns add
+      cell = fresh(); ctx = mk();
+      e.applyAnomaly(ctx, anom, 300, 300, 600, 600, palette, () => 0, cell);
+      const afterAnomaly = ctx.rot;
+      e.applyContrast(ctx, contrast({ dimension: "scale", scaleFactor: 2 }), 0, palette, cell);
+      assert(Math.abs(cell.scaleMul - 1.35 * 2) < 1e-9, `Scales did not multiply (${cell.scaleMul})`);
+      e.applyContrast(ctx, contrast({ dimension: "direction", angle: 90 }), 0, palette, cell);
+      assert(Math.abs(ctx.rot - (afterAnomaly + Math.PI / 2)) < 1e-9, "Turns did not add up");
+    });
+
+    await test("Contrast dimensions Texture and Space affect only the minority", () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const render = (contrast, mode = "repetition", layer = {}) => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        const L = st.layers[0];
+        Object.assign(L, { shape: "square", width: 120, height: 120, offsetX: 0, offsetY: 0, rotation: 0, wireframe: true, strokeWidth: 2 }, layer);
+        L.structure.enabled = true; L.structure.mode = mode;
+        Object.assign(L.structure.repetition, { cols: 6, rows: 6, gridType: "basic", showGridLines: false });
+        Object.assign(L.structure.radiation, { rays: 12, rings: 4, scheme: "centrifugal" });
+        Object.assign(L.structure.contrast, { enabled: true, dominanceRatio: 70, highlightContrast: false }, contrast);
+        app.state = st; drawRaw(app);
+        return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      };
+      const dpr = cv.width / 600;
+      const at = (d, x, y) => d[(Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4];
+      const e = app.engine, con = { dominanceRatio: 70 };
+      const cells = []; for (let r = 0; r < 6; r++) for (let c = 0; c < 6; c++) cells.push({ r, c, minority: e.isContrastMinority(con, r * 6 + c) });
+      const minority = cells.find(k => k.minority), majority = cells.find(k => !k.minority);
+      assert(minority && majority, "The test needs one minority and one majority cell");
+      const region = (a, b, k) => { let n = 0; for (let y = 0; y < 90; y++) for (let x = 0; x < 90; x++) if (Math.abs(at(a, 30 + k.c * 90 + x, 30 + k.r * 90 + y) - at(b, 30 + k.c * 90 + x, 30 + k.r * 90 + y)) > 80) n++; return n; };
+      // Space: the minority cell is filled with ink (figure and ground reversed); the majority stays light
+      const space = render({ dimension: "space" });
+      const corner = (k) => at(space, 30 + k.c * 90 + 6, 30 + k.r * 90 + 6);
+      assert(corner(minority) < 100 && corner(majority) > 200, "Space did not reverse figure and ground in the minority only");
+      // Texture: the majority is untouched, the minority is deformed
+      const plain = render({ enabled: false });
+      const tex = render({ dimension: "texture" });
+      assert(region(plain, tex, majority) === 0, "Texture changed a majority cell");
+      assert(region(plain, tex, minority) > 20, "Texture did not change the minority");
+      // Radial layouts reverse figure and ground too
+      const inkOf = (d) => { let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] < 100) n++; return n; };
+      assert(inkOf(render({ dimension: "space" }, "radiation", { width: 20, height: 20 })) > 1.5 * inkOf(render({ dimension: "tone" }, "radiation", { width: 20, height: 20 })), "Space did not reverse the radial minority");
     });
 
     await test("A failed draw shows a visible notice and recovers", () => {

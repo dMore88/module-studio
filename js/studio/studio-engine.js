@@ -76,7 +76,7 @@ export const createDefaultLayerStructure = () => ({
   },
   contrast: {
     enabled: false,
-    dimension: "scale", // scale, shape, direction, tone
+    dimension: "scale", // scale, shape, direction, tone, texture, space
     dominanceRatio: 80, // % majority regular (50 to 95)
     contrastShape: "cross", // shape for shape contrast
     scaleFactor: 2.2, // scale multiplier for scale contrast (0.2 to 3.0)
@@ -143,6 +143,9 @@ export const defaultStudioState = {
   // Mat / Canvas display settings
   showSafeBounds: true
 };
+
+// Contrast, Anomaly and Concentration multiply the module scale; the product is capped so modules never explode
+const MAX_SCALE_MUL = 8;
 
 // Texture strength used by Gradation > Texture when the layer's own Texture is off
 const GRADATION_TEXTURE = { jitter: 4, undulation: 14, skipChance: 25, crossing: 25 };
@@ -702,6 +705,8 @@ export class StudioEngine {
 
   // Anomaly: (ex, ey) is the module position compared with the epicenter.
   // Updates `cell` ({shape, fg, scaleMul}); returns false when the module vanishes (tear).
+  // An anomaly is a local rupture, so it claims the shape and the accent colour (shapeLocked / fgLocked)
+  // and Contrast, a statistical spread, does not override them.
   applyAnomaly(ctx, anom, ex, ey, width, height, palette, pRand, cell) {
     const epiX = (anom.epicenterX ?? 0.5) * width;
     const epiY = (anom.epicenterY ?? 0.5) * height;
@@ -714,9 +719,10 @@ export class StudioEngine {
     if (anom.type === "focal") {
       if (inZone) {
         cell.shape = anom.anomalousShape || "triangle";
+        cell.shapeLocked = true;
         ctx.rotate((Math.PI / 4) * severity * factor);
         cell.scaleMul *= (1 + 0.35 * severity);
-        if (anom.highlightColor) cell.fg = accent;
+        if (anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
       }
     } else if (anom.type === "fracture") {
       const corridor = anom.radius * 0.45;
@@ -726,7 +732,7 @@ export class StudioEngine {
         const shearX = (ex > epiX ? 1 : -1) * (10 * severity);
         ctx.translate(shearX, shearY);
         ctx.rotate((factor * severity * Math.PI) / 3.2);
-        if (factor > 0.4 && anom.highlightColor) cell.fg = accent;
+        if (factor > 0.4 && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
       }
     } else if (anom.type === "swell") {
       if (inZone) {
@@ -735,7 +741,7 @@ export class StudioEngine {
         ctx.translate(Math.cos(angle) * push, Math.sin(angle) * push);
         const sFactor = 1 + factor * 0.55 * severity;
         ctx.scale(sFactor, sFactor);
-        if (factor > 0.65 && anom.highlightColor) cell.fg = accent;
+        if (factor > 0.65 && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
       }
     } else if (anom.type === "tear") {
       if (factor > 0.6) {
@@ -746,27 +752,34 @@ export class StudioEngine {
         ctx.rotate(pRand(53) * Math.PI * severity);
         const shrink = Math.max(0.15, 1 - factor * 0.85);
         ctx.scale(shrink, shrink);
-        if (anom.highlightColor && factor > 0.3) cell.fg = accent;
+        if (anom.highlightColor && factor > 0.3) { cell.fg = accent; cell.fgLocked = true; }
       }
     }
     return true;
   }
 
-  // Contrast: `k` is the module's running index, used to pick the minority.
-  applyContrast(ctx, contrast, k, palette, cell) {
+  // Contrast: is the module with running index `k` part of the minority?
+  isContrastMinority(contrast, k) {
     const hash = Math.abs(Math.sin(k * 137.5 + 43.1) * 10000) % 100;
-    const isMinority = hash >= (contrast.dominanceRatio ?? 80);
-    if (!isMinority) return;
+    return hash >= (contrast.dominanceRatio ?? 80);
+  }
+
+  // Contrast: `k` is the module's running index, used to pick the minority.
+  // The "space" dimension (figure and ground reversed) is drawn by the layouts, before the module.
+  applyContrast(ctx, contrast, k, palette, cell) {
+    if (!this.isContrastMinority(contrast, k)) return;
     if (contrast.dimension === "scale") {
       cell.scaleMul *= contrast.scaleFactor ?? 2.2;
     } else if (contrast.dimension === "shape") {
-      cell.shape = contrast.contrastShape || "cross";
+      if (!cell.shapeLocked) cell.shape = contrast.contrastShape || "cross";
     } else if (contrast.dimension === "direction") {
       ctx.rotate(((contrast.angle ?? 45) * Math.PI) / 180);
     } else if (contrast.dimension === "tone") {
       cell.wireframe = true;
+    } else if (contrast.dimension === "texture") {
+      cell.texScale = 1; // only the minority is textured
     }
-    if (contrast.highlightContrast) {
+    if (contrast.highlightContrast && !cell.fgLocked) {
       cell.fg = contrast.accentColor || palette.accent;
     }
   }
@@ -938,8 +951,9 @@ export class StudioEngine {
           let fgColor = palette.fg;
           let bgColor = palette.bg;
 
-          // Checkerboard inversion
-          if (rep.checkerInvert && isOddCell) {
+          // Checkerboard inversion; Contrast > Space reverses figure and ground in the minority (the two cancel out)
+          const spaceFlip = !!(contrast.enabled && contrast.dimension === "space" && this.isContrastMinority(contrast, r * cols + c));
+          if ((rep.checkerInvert && isOddCell) !== spaceFlip) {
             ctx.save();
             this.buildCellPath(ctx, r, c, rows, cols, cellCx, cellCy, cW, cH, rep, cellStartX);
             ctx.fillStyle = palette.fg;
@@ -990,14 +1004,15 @@ export class StudioEngine {
 
         const scaleUnit = 1.25 * Math.min(1.0, Math.min(width, height) / 600);
         const cellRatio = Math.min(cW / usableW, cH / usableH);
-        const normScale = scaleUnit * cellRatio * cellScaleMul * concScaleMul;
+        const normScale = scaleUnit * cellRatio * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul);
+        if (cell.texScale) this.cellTexScale = Math.max(this.cellTexScale || 0, cell.texScale);
         this.cellSeed = r * cols + c + 1;
         this.cellAlt = (r + c) % 2 === 1;
         // Reflection: mirror the module in alternate columns and/or rows
         const refl = rep.reflection || "none";
         if ((refl === "columns" || refl === "both") && c % 2 === 1) ctx.scale(-1, 1);
         if ((refl === "rows" || refl === "both") && r % 2 === 1) ctx.scale(1, -1);
-        const lineWidthMul = (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * cellScaleMul * concScaleMul : null;
+        const lineWidthMul = (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) : null;
         this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor ? cellFg : null, lineWidthMul);
         ctx.restore();
       };
@@ -1238,8 +1253,8 @@ export class StudioEngine {
 
           ctx.save();
 
-          // Active clipping: restrict drawing strictly to polar sector boundaries
-          if (rad.activeClipping) {
+          // The polar sector of this module (used to clip it and to reverse figure and ground)
+          const sectorPath = () => {
             ctx.beginPath();
             let aOuterStart = rayAngleStart;
             let aOuterEnd = rayAngleEnd;
@@ -1260,7 +1275,22 @@ export class StudioEngine {
               ctx.lineTo(center.x, center.y);
             }
             ctx.closePath();
+          };
+
+          // Active clipping: restrict drawing strictly to polar sector boundaries
+          if (rad.activeClipping) {
+            sectorPath();
             ctx.clip();
+          }
+
+          // Contrast > Space: the minority is drawn with figure and ground reversed
+          const spaceFlip = !!(contrast.enabled && contrast.dimension === "space" && this.isContrastMinority(contrast, centerIdx * 1000 + i * rays + j));
+          if (spaceFlip) {
+            ctx.save();
+            sectorPath();
+            ctx.fillStyle = palette.fg;
+            ctx.fill();
+            ctx.restore();
           }
 
           const pRand = (salt) => {
@@ -1309,7 +1339,7 @@ export class StudioEngine {
           if (sim.enabled) this.applySimilarity(ctx, sim, pRand);
 
           // Anomaly & Contrast on radiation module
-          const cell = { shape: null, wireframe: null, fg: palette.fg, scaleMul: 1 };
+          const cell = { shape: null, wireframe: null, fg: spaceFlip ? palette.bg : palette.fg, scaleMul: 1 };
           if (anom.enabled && !this.applyAnomaly(ctx, anom, x, y, width, height, palette, pRand, cell)) {
             ctx.restore();
             continue;
@@ -1318,7 +1348,7 @@ export class StudioEngine {
           const cellShapeA = cell.shape;
           const cellWireframe = cell.wireframe;
           const cellFg = cell.fg;
-          const cellBg = palette.bg;
+          const cellBg = spaceFlip ? palette.fg : palette.bg;
           const cellScaleMul = cell.scaleMul;
 
           // Natural centrifugal growth scale: outer modules larger, inner smaller, proportional to sector size
@@ -1329,7 +1359,8 @@ export class StudioEngine {
           const sectorRatio = sectorSize / usableW;
           const growthFactor = 0.75 + (i / rings) * 0.45;
           const radScaleMul = isMultiCenter ? 0.7 : 1.0;
-          const normScale = scaleUnit * sectorRatio * growthFactor * radScaleMul * cellScaleMul * concScaleMul;
+          const normScale = scaleUnit * sectorRatio * growthFactor * radScaleMul * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul);
+          if (cell.texScale) this.cellTexScale = Math.max(this.cellTexScale || 0, cell.texScale);
           this.cellSeed = i * rays + j + 1;
           this.cellAlt = (i + j) % 2 === 1;
           this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== palette.fg ? cellFg : null);

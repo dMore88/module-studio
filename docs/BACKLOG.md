@@ -21,7 +21,7 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 | 5 | Gradation avanzada (G1 a G6) | ✅ Hecho (G7, gradación de estructura, sigue en P2) |
 | 6 | Radiación: centrípeta y centro abierto (R1, R2, R3, R5) | ✅ Hecho (R4, R6 y R7 siguen en P2) |
 | 7 | **Estructura y Repetición** (sección 9: E1, E3, RP1, RP3) | ✅ Hecho (E2 radial, E4, RP2 y RP4 siguen en P2) |
-| 8 | **Contraste** (sección 5: C8, C4, C2) | **P1, siguiente.** C8 (qué manda cuando Contrast, Gradation, Concentration y Anomaly tocan lo mismo) es pedido explícito; C4 y C2 reutilizan Texture y figura/fondo, que ya existen |
+| 8 | **Contraste** (sección 5: C8, C4, C2) | ✅ Hecho (C1, C3, C5, C6 y C7 siguen en P2 y P3). Siguiente: Anomalía |
 | 9 | Anomalía (sección 7: A1, A3) | P2 |
 | 10 | Similitud (sección 8: S1, S2) | P2. S2 se apoya en Line skipping de Texture |
 | 11 | Concentración (sección 6: K2, K1, K4) | P2 |
@@ -104,13 +104,13 @@ Ya cubierto: dominancia de la mayoría y énfasis de la minoría, dimensiones Sc
 | ID | Ítem | Notas | Prioridad |
 | :-- | :--- | :--- | :-- |
 | C1 | Dimensión posición | Arriba/abajo, céntrico/excéntrico | P2 |
-| C2 | Dimensión espacio | Ocupado/vacío, positivo/negativo (figura y fondo invertidos en la minoría) | **P1** |
+| C2 | Dimensión espacio | ✅ Hecho: dimensión *Space* (figura y fondo invertidos en la minoría, en cuadrícula y radial) | ✅ |
 | C3 | Dimensión gravedad | Estable/inestable, ligero/pesado | P2 |
-| C4 | Dimensión textura | Aplicar Texture solo a la minoría | **P1** |
+| C4 | Dimensión textura | ✅ Hecho: dimensión *Texture* (solo la minoría se deforma) | ✅ |
 | C5 | Dimensión color | Más allá del acento | P3 |
 | C6 | Minoría por zonas y equilibrio | El libro reparte la mayoría sobre una zona mayor y la minoría tira desde el borde (fig. 61b) | P3 |
 | C7 | Revisar "Tone" | Hoy es trazo contra relleno, más cercano a contraste de espacio que de color | P2 |
-| **C8** | **Revisar la interacción con otros modificadores** | **Pedido explícito, primero de Contraste.** Orden de aplicación y multiplicadores con Gradation, Concentration y Anomaly (todos tocan escala, dirección o color). Definir qué manda cuando coinciden | **P1** |
+| **C8** | **Revisar la interacción con otros modificadores** | ✅ **Hecho.** Anomaly gana a Contrast en forma y color; las escalas se multiplican (tope 8x) y los giros se suman. Reglas en la guía (3b). **Pedido explícito.** Orden de aplicación y multiplicadores con Gradation, Concentration y Anomaly (todos tocan escala, dirección o color). Definir qué manda cuando coinciden | ✅ |
 
 ---
 

@@ -212,12 +212,14 @@ Establece disparidad formal estructurada en una relación matemática de **mayor
   * `shape` (*Shape*): Mayoría regular vs. minoría con glifo completamente discordante (`contrastShape`, selector *Minority Shape* con las 15 formas, por defecto `cross`).
   * `direction` (*Angle*): Mayoría alineada vs. minoría rotada en un ángulo de choque (`angle`, slider *Clash Angle* de 15° a 90°, por defecto 45°).
   * `tone` (*Tone*): Mayoría en línea/tinta vs. minoría en masa rellena o invertida.
+  * `texture` (*Texture*): Solo la minoría recibe la deformación de Texture (la fuerza de la capa si Texture está encendido; si no, una fuerza propia). Se lee mejor con Texture apagado en la capa, porque encendido afecta también a la mayoría.
+  * `space` (*Space*): La minoría se dibuja con figura y fondo invertidos: la celda (o el sector, en radial) se rellena de tinta y el módulo va en el color del fondo. Con *Checkerboard inversion* se combinan por exclusión: una celda invertida por los dos queda normal.
 * **`dominanceRatio`** (*Dominance ratio*, 50% a 95%, por defecto 80%): Proporción que ocupa la mayoría regular. El techo del 95% garantiza que siempre exista una minoría.
 * **`scaleFactor`** (*Contrast Scale Multiplier*, 0.2x a 3.0x, por defecto 2.2x): Multiplicador de la minoría en la dimensión `scale`.
 * **`highlightContrast`** (*Accentuate Minority Elements*, por defecto apagado): Destaca la minoría discordante con un color de acento.
 * **`accentColor`** (*Accent color*, selector de color, por defecto `#f43f5e`): Color de la minoría resaltada. Elegir un color enciende el resaltado.
 
-**UI (Figma, nodo `5779:2773`).** Cada dimensión muestra solo los controles que la gobiernan: *Scale* → multiplicador de escala, *Shape* → selector de forma, *Angle* → ángulo de choque, *Tone* → ninguno (*Dominance ratio* y *Accentuate Minority Elements* siempre visibles). El selector de color de acento, los controles de forma y los de ángulo se añadieron a lo que muestra el mockup. A diferencia de Anomaly, Contrast no tiene puntero en el canvas: la minoría se reparte por distribución, no por posición. Requiere retícula (Repetition o Radiation) en la capa; sin ella se muestra el banner ámbar del contrato Opción B.
+**UI (Figma, nodo `5779:2773`).** Cada dimensión muestra solo los controles que la gobiernan: *Scale* → multiplicador de escala, *Shape* → selector de forma, *Angle* → ángulo de choque, *Tone*, *Texture* y *Space* → ninguno (*Dominance ratio* y *Accentuate Minority Elements* siempre visibles). El selector de color de acento, los controles de forma y los de ángulo se añadieron a lo que muestra el mockup. A diferencia de Anomaly, Contrast no tiene puntero en el canvas: la minoría se reparte por distribución, no por posición. Requiere retícula (Repetition o Radiation) en la capa; sin ella se muestra el banner ámbar del contrato Opción B.
 
 ---
 
@@ -311,6 +313,12 @@ El motor de Studio implementa el modelo de **Contrato Asistido (Opción B)**, ap
 * En modo de módulo único (sin `Repetition` ni `Radiation`), el usuario puede encender y calibrar libremente sus sliders. La interfaz despliega un aviso pedagógico no intrusivo:
   > *Requires Repetition or Radiation matrix to display across a population of units.*
 * Si el usuario desactiva temporalmente la retícula, los modificadores cualitativos **no pierden su calibración ni se apagan destructivamente**; quedan listos para manifestarse apenas se reactive una matriz.
+
+### Regla 3b: Precedencia cuando varios modificadores tocan lo mismo (C8)
+Sobre un mismo módulo, los efectos se aplican en este orden: Concentration (posición y densidad), Gradation, Similarity, Anomaly y Contrast. Cuando coinciden:
+* **Escala:** se **multiplican** (Concentration, Anomaly y Contrast); el producto se limita a 8x para que ningún módulo se desborde. Gradation escala aparte, sobre el lienzo.
+* **Giros:** se **suman** (Gradation, Similarity, Anomaly y el ángulo de Contrast).
+* **Forma y color de acento:** **gana Anomaly** sobre Contrast. Una anomalía es una ruptura local y Contrast un reparto estadístico, así que dentro de la zona de la anomalía Contrast no cambia la forma ni el color. Fuera de ella, Contrast actúa con normalidad.
 
 ### Regla 4: Modificadores Autónomos Omnipresentes
 * `Texture` y `Space` operan tanto a nivel del módulo único como sobre cientos de instancias en retícula cartesiana o polar.
