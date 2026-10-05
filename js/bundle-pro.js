@@ -3190,6 +3190,7 @@ class StudioProApp {
     this.setupControlsRail();
     this.setupLayoutStructure();
     this.setupSelects();
+    this.setupValueSteppers();
     this.setupRepetitionExtras();
     this.setupFormalStructure();
     this.setupSimilarity();
@@ -4019,6 +4020,27 @@ class StudioProApp {
     this.syncControlValue("input-layout-linewidth", w);
     const nw = document.getElementById("num-layout-linewidth");
     if (nw) nw.value = `${w}px`;
+  }
+
+  // Value boxes: the up and down arrow keys nudge the number by the slider's step (Shift = ten steps, Alt = a tenth of a step)
+  setupValueSteppers() {
+    document.addEventListener("keydown", (e) => {
+      const box = e.target;
+      if (!box || !box.classList || !box.classList.contains("ds-value")) return;
+      if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+      const slider = box.closest(".ds-slider")?.querySelector('input[type="range"]');
+      const m = String(box.value).match(/^\s*(-?\d*\.?\d+)(.*)$/);
+      if (!slider || !m) return;
+      e.preventDefault();
+      const step = parseFloat(slider.step) || 1;
+      const mult = e.shiftKey ? 10 : e.altKey ? 0.1 : 1;
+      const decimals = Math.max((String(step).split(".")[1] || "").length, e.altKey ? 2 : 0);
+      const min = slider.min !== "" ? parseFloat(slider.min) : -Infinity, max = slider.max !== "" ? parseFloat(slider.max) : Infinity;
+      let next = parseFloat(m[1]) + (e.key === "ArrowUp" ? 1 : -1) * step * mult;
+      next = Math.max(min, Math.min(max, parseFloat(next.toFixed(decimals))));
+      box.value = `${next}${m[2]}`;
+      box.dispatchEvent(new Event("change", { bubbles: true }));
+    });
   }
 
   // Dropdowns (.ds-select): the items are the same buttons the controllers already listen to, so a click

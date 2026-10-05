@@ -1357,6 +1357,27 @@
       reset();
     });
 
+    await test("Value boxes: arrow keys nudge the number (Shift x10, limits respected)", async () => {
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      q('[data-rail-tab="module"]').click(); await wait(60); app.syncAllInspectorsWithActiveLayer();
+      const key = (el, k, extra = {}) => el.dispatchEvent(new win.KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...extra }));
+      const box = q("#num-active-width");
+      const before = app.getActiveModule().width;
+      key(box, "ArrowUp");
+      assert(app.getActiveModule().width === before + 1 && box.value === String(before + 1), `ArrowUp should add 1 (${before} -> ${app.getActiveModule().width})`);
+      key(box, "ArrowDown", { shiftKey: true });
+      assert(app.getActiveModule().width === before + 1 - 10, "Shift + ArrowDown should take off 10");
+      // with a suffix and a decimal step: stroke width 1.2px, step 0.1
+      const sb = q("#num-active-stroke"); sb.value = "1.2px";
+      key(sb, "ArrowUp");
+      assert(app.getActiveModule().strokeWidth === 1.3 && sb.value === "1.3px", `Stroke width: ${app.getActiveModule().strokeWidth} / ${sb.value}`);
+      // limits: width cannot go under the slider's minimum
+      const wb = q("#num-active-width"); wb.value = "5"; key(wb, "ArrowDown", { shiftKey: true });
+      assert(app.getActiveModule().width === 5 || app.getActiveModule().width >= 5, "The value should stop at the slider's minimum");
+      reset();
+    });
+
     await test("Checkerboard reverses figure and ground, also with a coloured module", () => {
       reset();
       const cv = win.document.getElementById("studio-canvas");
