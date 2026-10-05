@@ -15,11 +15,10 @@ En una herramienta pedagógica para diseño gráfico, la experiencia de usuario 
 Para cumplir esto, el editor implementa 3 reglas mecánicas:
 
 1. **Exclusión Mutua Topológica Estricta (Cartesiano vs. Polar):**  
-   La retícula cartesiana (*Repetition* / *Structure*) y el esquema polar (*Radiation*) representan geometrías de coordenadas mutuamente excluyentes.  
-   - Al encender **Radiation**, se apagan automáticamente **Repetition** y **Structure** (cerrando sus acordeones y desmarcando sus switches).  
-   - Al encender **Repetition**, se apaga automáticamente **Radiation**.  
-   - Al encender **Structure**, se apaga **Radiation** y se activa **Repetition** (pues la estructura rítmica dual es una subdivisión intrínseca de la retícula cartesiana).  
-   - Al apagar **Repetition**, se apaga **Structure**.
+   La retícula cartesiana (*Repetition*) y el esquema polar (*Radiation*) representan geometrías de coordenadas mutuamente excluyentes. Ambas viven en el panel *Layout*, y el selector *Structure mode* elige una u otra.  
+   - Al elegir **Radiation**, la retícula cartesiana deja de dibujarse.  
+   - Al elegir **Repetition**, el esquema polar deja de dibujarse.  
+   - El **ritmo A:B** y la **gradación de estructura** (antes el panel *Structure*, hoy *Layout › Repetition › Advanced*) son propiedades de la retícula cartesiana: solo existen en *Repetition*, y mover sus sliders enciende la estructura rítmica de la capa.
 
 2. **Independencia Pedagógica y Advertencias Asistidas (Opción B):**  
    Los modificadores cualitativos (*Similarity*, *Gradation*, *Anomaly*, *Contrast*, *Concentration*) pueden encenderse y calibrarse libremente en cualquier momento:
@@ -28,7 +27,7 @@ Para cumplir esto, el editor implementa 3 reglas mecánicas:
    - Cuando el usuario apaga la retícula para inspeccionar el módulo central, los modificadores cualitativos activos **no se apagan en cascada ni pierden sus parámetros**. Quedan listos para volver a manifestarse en cuanto se active cualquier retícula.
 
 3. **Preservación Integral de Módulos en el Canvas:**  
-   - Los márgenes del canvas se calculan dinámicamente según la proporción activa (1:1, 9:16, 4:3, 3:4, 16:9).  
+   - El lienzo se calcula según la proporción activa (1:1, 9:16, 4:3, 3:4, 16:9). **No hay margen de seguridad** (vale 0): las estructuras llegan al borde.  
    - El radio máximo en *Radiation* (`maxR`) se adapta automáticamente (0.42 para foco único, 0.32 para foco múltiple) garantizando que los anillos exteriores, el desplazamiento de Form B y las proyecciones 3D (*Space*) permanezcan íntegramente visibles sin ser amputados ni arrojados fuera del canvas.  
    - Ningún módulo se descarta ni se oculta arbitrariamente por filtros de posición.
 
@@ -39,9 +38,8 @@ Para cumplir esto, el editor implementa 3 reglas mecánicas:
 | Modificador | Régimen / Dependencia | Razón según el libro de Wucius Wong | Comportamiento Mecánico en la Interfaz (Opción B) |
 | :--- | :--- | :--- | :--- |
 | **Layer / Module** | **Autónomo (Base)** | Es la unidad visual fundamental del diseño. Cada capa es un módulo independiente (hasta 5); lo que antes eran Form A y Form B son ahora capas. | **Siempre activo** en el canvas. Base sobre la que operan los modificadores de cada capa. |
-| **Repetition** | **Cartesiano (Incompatible con Radiation)** | Multiplica el módulo en una retícula ortogonal regular cartesiana ($X, Y$). | **Al activar:** Si *Radiation* estaba activo, lo apaga automáticamente. Notifica cambio a retícula cartesiana.<br>**Al desactivar:** Apaga *Structure*. Mantiene encendidos los modificadores cualitativos mostrando su banner pedagógico asistido. |
-| **Radiation** | **Polar (Incompatible con Repetition & Structure)** | Estructura el espacio mediante coordenadas polares (rayos y anillos concéntricos desde un foco). | **Al activar:** Apaga automáticamente *Repetition* y *Structure* (eliminando controles fantasma). Notifica cambio a esquema polar.<br>**Al desactivar:** Regresa al modo base sin apagar en cascada las calibraciones de modificadores cualitativos. |
-| **Structure** | **Requiere Repetition (Exclusivo Cartesiano)** | Regula las líneas estructurales y los intervalos rítmicos duales ($A : B$) que gobiernan las celdas ortogonales. No tiene sentido físico en rayos polares. | **Al activar:** Si *Radiation* estaba encendido, lo apaga y asegura *Repetition* activo.<br>**Al desactivar Repetition:** *Structure* se apaga automáticamente. |
+| **Layout › Repetition** | **Cartesiano (excluyente con Radiation)** | Multiplica el módulo en una retícula ortogonal regular cartesiana ($X, Y$) y la subdivide: intervalos rítmicos A:B, gradación de estructura, líneas visibles. | **Al elegirlo:** el esquema polar deja de dibujarse. Mantiene encendidos los modificadores cualitativos. El ritmo A:B y la gradación de estructura viven en su sección *Advanced*. |
+| **Layout › Radiation** | **Polar (excluyente con Repetition)** | Estructura el espacio mediante coordenadas polares (rayos y anillos desde uno o varios focos). | **Al elegirlo:** la retícula cartesiana deja de dibujarse, sin apagar en cascada las calibraciones de los modificadores cualitativos. |
 | **Similarity** | **Colectivo (Población de Módulos)** | Define variaciones de parentesco genético en una familia de formas. Requiere una población para comparar el parentesco. | **Al activar:** Se enciende libremente. Si no hay retícula activa, muestra advertencia ámbar asistida sin forzar switches. Se manifiesta en cuanto se active *Repetition* o *Radiation*. |
 | **Gradation** | **Colectivo (Población de Módulos)** | Es una secuencia gradual de pasos ordenados a lo largo de un camino espacial. Requiere una progresión de módulos para manifestar el cambio. | **Al activar:** Se enciende libremente. Si no hay retícula, muestra advertencia ámbar asistida indicando la necesidad de un camino modular. |
 | **Anomaly** | **Colectivo (Población de Módulos)** | Es la presencia de irregularidad *donde prevalece una regularidad*. Sin una base regular previa, no existe concepto de anomalía. | **Al activar:** Se enciende libremente. Muestra advertencia ámbar si no hay campo regular activo. |
@@ -59,12 +57,13 @@ Para cumplir esto, el editor implementa 3 reglas mecánicas:
 
 ```
 [1] Fondo (Color de papel según paleta activa e inversión Figura/Fondo)
- └── [2] Guías arquitectónicas & Safe Bounds (grilla tenue roja 48px)
-      └── [2.5] Guías isométricas si Space está activo
-           └── [3] Estructura espacial principal:
-                ├── Si Radiation.enabled === true  ──> renderRadiation() (esquema polar seguro)
-                ├── Else if Repetition.enabled    ──> renderRepetitionGrid() (grilla cartesiana con Structure)
-                └── Else                          ──> renderSingleModule() (módulo central adaptado a aspect ratio)
+ └── [2] Guías de pantalla (solo en pantalla, NUNCA en una exportación):
+ │        retícula de coordenadas, límites, marco de contenedor (color de guías), retícula isométrica
+ └── [3] Estructura espacial principal, por capa visible:
+      ├── Si la capa está en Radiation     ──> renderRadiation() (esquema polar; anillos circulares o poligonales)
+      ├── Else si hay Layout/Repetition    ──> renderRepetitionGrid() (retícula con ritmo y gradación de estructura)
+      └── Else                             ──> renderSingleLayerModule() (módulo central)
+ └── [4] Guías de modificadores (punto focal de Anomaly, atractor de Concentration): solo en pantalla
 ```
 
 ---
@@ -123,4 +122,38 @@ Para comprobar sin regenerar: `python3 build-pro.py --check`. El hook de git `.g
    Cada modificador debe implementarse y probarse tanto en la retícula cartesiana (`renderRepetitionGrid`) como en el esquema polar (`renderRadiation`).
 
 7. **Pruebas de humo:**  
-   Antes de entregar, abrir `tests/smoke.html` a través de un servidor (`python3 -m http.server`, luego `/tests/smoke.html`). Debe terminar en **"All tests passed"**. Prueba el dibujo de las 15 formas, 400 combinaciones al azar de todos los controles, la textura determinista, deshacer y rehacer, el alta y baja de capas y el aviso de error en pantalla. Si se añade un control o modificador nuevo, ampliar `randomizeState` en esa página para que lo incluya.
+   Antes de entregar, abrir `tests/smoke.html` a través de un servidor (`python3 -m http.server`, luego `/tests/smoke.html`). Debe terminar en **"All tests passed"** (hoy 47 pruebas). Prueba el dibujo de las 15 formas, 400 combinaciones al azar de todos los controles, la textura determinista, deshacer y rehacer, el alta y baja de capas y el aviso de error en pantalla. Si se añade un control o modificador nuevo, ampliar `randomizeState` en esa página para que lo incluya.
+
+---
+
+## 8. Modelo del Módulo: celda → contenedor → módulo
+
+1. La **celda** es el espacio de la retícula. El ritmo A:B y la gradación de estructura actúan sobre ella (la fila y columna A son la base; la B mide A ÷ ratio).
+2. El **contenedor** (*Container width / height*, panel Module › Advanced) es un marco dentro de la celda. En *Fit to canvas* se escala con ella; en *Actual size* **manda** y la celda toma su tamaño.
+3. El **módulo** vive dentro del contenedor y se escala con él **en proporción, sin deformarse**: toma la escala del lado más pequeño de su celda. Según Wong, una figura repetida no se deforma; deformar es cosa de *Similarity*. En una figura estirada por el usuario (ancho distinto del alto), el trazo conserva un grosor uniforme.
+4. El tamaño del módulo es **exactamente el de los sliders** (px del lienzo), sin factores ocultos.
+
+## 9. Diseño frente a guías (exportación)
+
+* **Es diseño** y se exporta: los módulos y las **líneas visibles** de Layout (con su color y su grosor, porque en Wong las líneas de estructura visibles son parte de la composición).
+* **Es guía** y **nunca se exporta** (ni SVG ni PNG): la retícula de coordenadas de fondo, los límites del lienzo, el marco del contenedor, el punto focal de Anomaly, la guía del atractor de Concentration y la retícula isométrica de Space. Todas usan el **color global de guías** (botón de paleta junto a los botones del lienzo), salvo la retícula de fondo y los límites, que son grises neutros.
+* Al añadir cualquier ayuda visual nueva, hay que decidir cuál de las dos es. Si es guía, se dibuja con `engine.guideColor()` y se omite cuando `engine.exporting` es verdadero.
+
+## 10. Reglas de interfaz
+
+Las reglas completas están en `STUDIO_CONTROLS_GUIDE.md`, sección 5. En resumen:
+* Los controles nuevos salen del **catálogo de componentes** existente; si ninguno encaja, van al backlog de diseño. No se inventa diseño: se sigue Figma.
+* **Chips** para 2 o 3 opciones frecuentes, **dropdown** para 4 o más o para lo que se toca poco, chips múltiples para opciones que se mezclan.
+* **Lo esencial visible, lo demás en *Advanced*.** Meta: 5 a 7 controles visibles por panel.
+* Orden dentro de un panel: selectores, sliders, casillas. Una sola columna de 340 px, con 24 px entre sliders. Grupos de botones solo para Stroke/Fill y Repetition/Radiation.
+* Color de acento sin casilla: elegir color enciende, la **×** apaga.
+* Cada caja de valor responde a **↑ ↓** (Shift ×10, Alt ×0,1).
+* Iconos Phosphor, peso *regular*. El sistema de diseño visual (`docs/DESIGN_SYSTEM_TOKENS.md`) está **en revisión** (por ejemplo, altura de los campos) y se actualizará con el Figma de Diego.
+
+## 11. Proceso de trabajo
+
+* Se implementa, se prueba (`tests/smoke.html`, todas las pruebas en verde), se hace commit local y se informa en español claro. **Nunca se sube (`git push`) sin autorización explícita.**
+* Las interrelaciones entre capas (INT1 a INT4) y los supermódulos (RP6) van **al final** del backlog.
+* Antes de añadir un control nuevo se aplica el filtro: *¿sirve para jugar o solo completa el libro?* Lo que solo completa el libro va a *Advanced* o se descarta.
+* El libro (`docs/*.pdf`) se queda **solo en local**; no se sube al repositorio.
+* El mapa de qué concepto de Wong cubre cada control está en `docs/design-concepts-in-app.md`; las prioridades, en `docs/BACKLOG.md`.

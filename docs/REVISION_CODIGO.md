@@ -1,5 +1,7 @@
 # Revisión de código y auditoría de lo propuesto
 
+> **Documento histórico (4 de octubre de 2026).** Se conserva como registro de la revisión inicial y **no se mantiene al día**: desde entonces cambiaron, entre otras cosas, el panel Structure (ahora vive en Layout › Advanced), las líneas visibles, las guías, el contenedor y la mayoría de los paneles. Para el estado actual mira `STUDIO_CONTROLS_GUIDE.md`, `STUDIO_RULES.md` y `docs/BACKLOG.md`.
+
 Fecha: 2026-10-04. Cubre los ítems **Q1** (revisión de código) y **Q2** (auditoría contra el backlog).
 
 > **Actualización (2026-10-04, misma jornada):** se eliminaron los presets y el botón Random, lo que resuelve el hallazgo 1 de raíz (repetida la prueba de 400 combinaciones: **0 fallos**). El PDF del libro (hallazgo 2) se quitó del repositorio y se añadió a `.gitignore`; sigue existiendo en tu disco como base de conocimiento local. El historial de git se reescribió para quitarlo de todos los commits y se hizo push forzado. Pendiente: pedir a GitHub que purgue las copias en caché (ver el mensaje de la sesión).
