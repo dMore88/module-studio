@@ -95,11 +95,13 @@ export const createDefaultLayerStructure = () => ({
   },
   contrast: {
     enabled: false,
-    dimension: "scale", // scale, shape, direction, tone, texture, space
+    dimension: "scale", // scale, shape, direction, position, tone, texture, space
     dominanceRatio: 80, // % majority regular (50 to 95)
     contrastShape: "cross", // shape for shape contrast
     scaleFactor: 2.2, // scale multiplier for scale contrast (0.2 to 3.0)
     angle: 45, // clash angle for direction contrast
+    positionShift: 25, // position contrast: how far the minority moves inside its cell (% of the cell)
+    positionAngle: 45, // position contrast: the direction of that move (0 to 360 degrees)
     highlightContrast: false, // accentuate minority elements
     accentColor: "#f43f5e" // color applied to the minority when accentuated
   },
@@ -973,6 +975,10 @@ export class StudioEngine {
       if (!cell.shapeLocked) cell.shape = contrast.contrastShape || "cross";
     } else if (contrast.dimension === "direction") {
       ctx.rotate(((contrast.angle ?? 45) * Math.PI) / 180);
+    } else if (contrast.dimension === "position") {
+      // The minority sits off-centre in its cell (a share of the cell's smaller side, in the chosen direction)
+      const a = ((contrast.positionAngle ?? 45) * Math.PI) / 180, d = ((contrast.positionShift ?? 25) / 100) * (cell.unit || 0);
+      ctx.translate(Math.cos(a) * d, Math.sin(a) * d);
     } else if (contrast.dimension === "tone") {
       cell.wireframe = true;
     } else if (contrast.dimension === "texture") {
@@ -1254,7 +1260,7 @@ export class StudioEngine {
         this.cellImperf = sim.enabled ? this.similarityImperfection(sim, pRand) : null;
 
         // Anomaly & Contrast Modifiers
-        const cell = { shape: simShape, wireframe: null, fg: fgColor, scaleMul: 1 };
+        const cell = { shape: simShape, wireframe: null, fg: fgColor, scaleMul: 1, unit: Math.min(cW, cH) * k };
         if (anom.enabled && !this.applyAnomaly(ctx, anom, cx, cy, width, height, palette, pRand, cell)) {
           ctx.restore();
           return;
@@ -1695,7 +1701,7 @@ export class StudioEngine {
           this.cellImperf = sim.enabled ? this.similarityImperfection(sim, pRand) : null;
 
           // Anomaly & Contrast on radiation module
-          const cell = { shape: simShape, wireframe: null, fg: spaceFlip ? palette.bg : palette.fg, scaleMul: 1 };
+          const cell = { shape: simShape, wireframe: null, fg: spaceFlip ? palette.bg : palette.fg, scaleMul: 1, unit: span / rings };
           if (anom.enabled && !this.applyAnomaly(ctx, anom, x, y, width, height, palette, pRand, cell)) {
             ctx.restore();
             continue;

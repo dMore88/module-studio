@@ -1035,14 +1035,18 @@
 
         <div class="ds-field">
           <div class="ds-label">Dimension</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-contrast-dimension="scale">Scale</button>
-            <button type="button" class="ds-tag" data-contrast-dimension="shape">Shape</button>
-            <button type="button" class="ds-tag" data-contrast-dimension="direction">Angle</button>
-            <button type="button" class="ds-tag" data-contrast-dimension="tone">Tone</button>
-            <button type="button" class="ds-tag" data-contrast-dimension="texture">Texture</button>
-            <button type="button" class="ds-tag" data-contrast-dimension="space">Space</button>
+          <div class="ds-dropdown" data-select>
+          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Scale</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
+          <div class="ds-dropdown-menu hidden" role="listbox">
+            <button type="button" class="ds-dropdown-item active" role="option" data-contrast-dimension="scale"><span>Scale</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-contrast-dimension="shape"><span>Shape</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-contrast-dimension="direction"><span>Angle</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-contrast-dimension="position"><span>Position</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-contrast-dimension="tone"><span>Tone</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-contrast-dimension="texture"><span>Texture</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-contrast-dimension="space"><span>Space</span></button>
           </div>
+        </div>
         </div>
 
         <div class="ds-field" id="contrast-shape-block">
@@ -1078,6 +1082,20 @@
             <div class="ds-slider">
               <input type="range" id="input-contrast-scale" min="0.2" max="3" step="0.1" value="2.2">
               <input type="text" id="num-contrast-scale" class="ds-value" value="2.2x" inputmode="decimal">
+            </div>
+          </div>
+          <div id="contrast-shift-block" class="ds-field hidden">
+            <div class="ds-label ds-label-clip">Shift</div>
+            <div class="ds-slider">
+              <input type="range" id="input-contrast-shift" min="5" max="50" step="1" value="25">
+              <input type="text" id="num-contrast-shift" class="ds-value" value="25%" inputmode="decimal">
+            </div>
+          </div>
+          <div id="contrast-shiftangle-block" class="ds-field hidden">
+            <div class="ds-label ds-label-clip">Shift direction</div>
+            <div class="ds-slider">
+              <input type="range" id="input-contrast-shiftangle" min="0" max="360" step="5" value="45">
+              <input type="text" id="num-contrast-shiftangle" class="ds-value" value="45º" inputmode="decimal">
             </div>
           </div>
           <div id="contrast-angle-block" class="ds-field hidden">
@@ -1322,7 +1340,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=71ff5c40"></script>
+  <script src="js/bundle-pro.js?v=e8acde13"></script>
 
 </body>
 </html>

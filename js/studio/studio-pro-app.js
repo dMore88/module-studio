@@ -2148,6 +2148,15 @@ export class StudioProApp {
     const numScale = document.getElementById("num-contrast-scale");
     if (numScale) numScale.value = `${scale}x`;
 
+    const shift = con.positionShift ?? 25, shiftAngle = con.positionAngle ?? 45;
+    this.syncControlValue("input-contrast-shift", shift);
+    const numShift = document.getElementById("num-contrast-shift");
+    if (numShift) numShift.value = `${shift}%`;
+    this.syncControlValue("input-contrast-shiftangle", shiftAngle);
+    const numShiftAngle = document.getElementById("num-contrast-shiftangle");
+    if (numShiftAngle) numShiftAngle.value = `${shiftAngle}º`;
+    document.getElementById("contrast-shift-block")?.classList.toggle("hidden", con.dimension !== "position");
+    document.getElementById("contrast-shiftangle-block")?.classList.toggle("hidden", con.dimension !== "position");
     const angle = con.angle ?? 45;
     this.syncControlValue("input-contrast-angle", angle);
     const numAngle = document.getElementById("num-contrast-angle");
@@ -2219,6 +2228,8 @@ export class StudioProApp {
     bindPair("input-contrast-dominance", "num-contrast-dominance", { min: 50, max: 95, suffix: "%", label: "Dominance", key: "dominanceRatio" });
     bindPair("input-contrast-scale", "num-contrast-scale", { min: 0.2, max: 3, suffix: "x", label: "Scale", key: "scaleFactor" });
     bindPair("input-contrast-angle", "num-contrast-angle", { min: 15, max: 90, suffix: "º", label: "Angle", key: "angle" });
+    bindPair("input-contrast-shift", "num-contrast-shift", { min: 5, max: 50, suffix: "%", label: "Shift", key: "positionShift" });
+    bindPair("input-contrast-shiftangle", "num-contrast-shiftangle", { min: 0, max: 360, suffix: "º", label: "Shift direction", key: "positionAngle" });
 
     document.querySelectorAll("#card-contrast [data-contrast-shape]").forEach(btn => {
       btn.addEventListener("click", () => {

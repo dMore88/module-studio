@@ -104,7 +104,7 @@ Ya cubierto: dominancia de la mayoría y énfasis de la minoría, dimensiones Sc
 
 | ID | Ítem | Notas | Prioridad |
 | :-- | :--- | :--- | :-- |
-| C1 | Dimensión posición | Arriba/abajo, céntrico/excéntrico | P2 |
+| C1 | Dimensión posición | ✅ Hecho: dimensión *Position* con *Shift* (5 a 50 % de la celda) y *Shift direction* (0 a 360º) | ✅ |
 | C2 | Dimensión espacio | ✅ Hecho: dimensión *Space* (figura y fondo invertidos en la minoría, en cuadrícula y radial) | ✅ |
 | C3 | Dimensión gravedad | Estable/inestable, ligero/pesado | P2 |
 | C4 | Dimensión textura | ✅ Hecho: dimensión *Texture* (solo la minoría se deforma) | ✅ |
