@@ -339,6 +339,24 @@
             </div>
           </div>
 
+          <div id="rep-placement-block" class="ds-field">
+            <div class="ds-label">Module placement</div>
+            <div class="ds-tags">
+              <button type="button" class="ds-tag active" data-rep-place="centers">Centers</button>
+              <button type="button" class="ds-tag" data-rep-place="intersections">Intersections</button>
+              <button type="button" class="ds-tag" data-rep-place="both">Both</button>
+            </div>
+          </div>
+
+          <div id="rep-mix-block" class="ds-field">
+            <div class="ds-label">Cell mix</div>
+            <div class="ds-tags">
+              <button type="button" class="ds-tag active" data-rep-mix="none">None</button>
+              <button type="button" class="ds-tag" data-rep-mix="merge">Merged</button>
+              <button type="button" class="ds-tag" data-rep-mix="divide">Divided</button>
+            </div>
+          </div>
+
           <div class="ds-field">
             <div class="ds-label">Columns</div>
             <div class="ds-slider">
@@ -363,6 +381,14 @@
           </div>
         </div>
 
+
+        <div id="rep-inter-block" class="ds-field hidden">
+          <div class="ds-label">Intersection size</div>
+          <div class="ds-slider">
+            <input type="range" id="input-layout-inter" min="10" max="100" step="5" value="50">
+            <input type="text" id="num-layout-inter" class="ds-value" value="50%" inputmode="decimal">
+          </div>
+        </div>
 
         <div class="ds-toggles">
           <label class="ds-toggle-item">
@@ -1262,7 +1288,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=bc14f858"></script>
+  <script src="js/bundle-pro.js?v=689ac856"></script>
 
 </body>
 </html>

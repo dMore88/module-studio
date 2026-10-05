@@ -164,10 +164,10 @@ Ya cubierto: retícula básica, sliding, sheared, curved, zigzag, triangular; es
 | E1 | Líneas visibles positivas o negativas | ✅ Hecho: tags *Line tone* (Guide, Positive, Negative) | ✅ |
 | E2 | Grosor de las líneas | ✅ Hecho en la cuadrícula (F6) y en el radial (*Line tone* y *Line width*) | ✅ |
 | E3 | Horizontales y verticales por separado | ✅ Hecho: *Line direction* y *Line spacing* (Every other) | ✅ |
-| E4 | Estructura de múltiple repetición | Dos clases de subdivisión entretejidas (fig. 23) | P2 |
+| E4 | Estructura de múltiple repetición | ✅ Hecho: *Module placement* (Centers, Intersections, Both) con *Intersection size*; dos clases de módulo entretejidas (fig. 23) | ✅ |
 | RP1 | Retícula hexagonal | ✅ Hecho: tag *Hexagonal* (panal con recorte y líneas hexagonales) | ✅ |
 | RP0 | Mostrar en pantalla las retículas triangular, zigzag y alternada | ✅ Hecho (F6), con el parámetro de cada variación y el grosor de líneas | ✅ |
-| RP2 | Subdivisión y combinación de celdas | | P2 |
+| RP2 | Subdivisión y combinación de celdas | ✅ Hecho: *Cell mix* (None, Merged, Divided) en bloques de 2×2 alternados (fig. 22f-g). Solo en retícula básica y alternada | ✅ |
 | RP3 | Reflexión | ✅ Hecho: tags *Reflection* (None, Columns, Rows, Both) | ✅ |
 | RP4 | Selector de dirección | ✅ Hecho: chips *Direction* (Repeated, Alternated, Undefined) en cuadrícula y radial | ✅ |
 | RP5 | Superposición de estructuras | Ya posible con capas | ✅ |

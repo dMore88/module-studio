@@ -21,6 +21,9 @@ export const createDefaultLayerStructure = () => ({
     lineDirection: "both", // both, horizontal, vertical
     lineSpacing: "all", // all, alternate (every other line)
     reflection: "none", // none, columns, rows, both: mirror the module in alternate cells
+    placement: "centers", // modules at the cell centres, at the line intersections or both (two classes interwoven, fig. 23)
+    interScale: 50, // size (%) of the modules placed at the intersections
+    cellMix: "none", // none, merge (some blocks of 2x2 cells become one big cell) or divide (some blocks split into smaller ones), fig. 22f-g
     direction: "repeated", // repeated (every module the same way), alternated (alternate cells turn 180°) or undefined (every module faces a different way)
     sizeMode: "fit", // fit (Fit to canvas: columns and rows divide the canvas, the module scales to its cell) or actual (Actual size: the module keeps its real size and is repeated columns x rows times)
     checkerInvert: false
@@ -1154,8 +1157,9 @@ export class StudioEngine {
           if (f.keep < 1 && (pRand(70) + 1) / 2 >= f.keep) continue;
         }
 
-        const renderCell = (cellCx, cellCy, cellStartX) => {
+        const renderCell = (cellCx, cellCy, cellStartX, k = 1) => {
           ctx.save();
+          const extra = k !== 1; // an interwoven, merged or divided module: it keeps the cell's look but not its frame
 
           const isOddCell = (r + c) % 2 === 1;
           let fgColor = palette.fg;
@@ -1164,7 +1168,7 @@ export class StudioEngine {
 
           // Checkerboard inversion; Contrast > Space reverses figure and ground in the minority (the two cancel out)
           const spaceFlip = !!(contrast.enabled && contrast.dimension === "space" && this.isContrastMinority(contrast, r * cols + c));
-          if ((rep.checkerInvert && isOddCell) !== spaceFlip) {
+          if (!extra && (rep.checkerInvert && isOddCell) !== spaceFlip) {
             ctx.save();
             this.buildCellPath(ctx, r, c, rows, cols, cellCx, cellCy, cW, cH, rep, cellStartX);
             // The cell takes the module's own colour and the module is drawn in the ground colour
@@ -1179,7 +1183,7 @@ export class StudioEngine {
 
           // Active clipping: restrict drawing strictly to cell boundaries (in Fit to canvas, to the
           // container scaled down with the module)
-          if (rep.activeClipping) {
+          if (rep.activeClipping && !extra) {
             if (!isFixed && customContainer) {
               const bw = (cW * cont.w) / usableW, bh = (cH * cont.h) / usableH;
               ctx.beginPath();
@@ -1234,8 +1238,8 @@ export class StudioEngine {
         const scaleUnit = MODULE_UNIT;
         const cellRatio = Math.min(cW / usableW, cH / usableH);
         const normScale = isFixed
-          ? scaleUnit * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul)
-          : scaleUnit * cellRatio * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul);
+          ? scaleUnit * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k
+          : scaleUnit * cellRatio * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k;
         if (cell.texScale) this.cellTexScale = Math.max(this.cellTexScale || 0, cell.texScale);
         this.cellSeed = r * cols + c + 1;
         this.cellAlt = (r + c) % 2 === 1;
@@ -1243,21 +1247,42 @@ export class StudioEngine {
         const refl = rep.reflection || "none";
         if ((refl === "columns" || refl === "both") && c % 2 === 1) ctx.scale(-1, 1);
         if ((refl === "rows" || refl === "both") && r % 2 === 1) ctx.scale(1, -1);
-        const lineWidthMul = !isFixed && (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) : null;
+        const lineWidthMul = !isFixed && (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k : null;
         this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor || flipped ? cellFg : null, lineWidthMul);
         ctx.restore();
       };
 
-      // Draw primary cell
-      renderCell(cx, cy, startX);
+      // Placement: centres, intersections or both; mixed sizes: some 2x2 blocks merged or divided
+      const place = isHex ? "centers" : (rep.placement || "centers");
+      const mix = rep.gridType === "basic" || rep.gridType === "alternating" ? (rep.cellMix || "none") : "none";
+      const bigBlock = mix !== "none" && ((r >> 1) + (c >> 1)) % 2 === 0 && 2 * (r >> 1) + 1 < rows && 2 * (c >> 1) + 1 < cols;
+      if (place !== "intersections") {
+        if (bigBlock && mix === "merge") {
+          if (r % 2 === 0 && c % 2 === 0) {
+            renderCell((colX[c] + colX[c + 1]) / 2 + (cx - colX[c]), (rowY[r] + rowY[r + 1]) / 2 + (cy - rowY[r]), startX, 2);
+          }
+        } else if (bigBlock && mix === "divide") {
+          for (const dy of [-1, 1]) for (const dx of [-1, 1]) renderCell(cx + dx * cW / 4, cy + dy * cH / 4, startX, 0.5);
+        } else {
+          renderCell(cx, cy, startX);
+        }
+      }
+      if (place !== "centers") {
+        const interK = Math.max(0.05, (rep.interScale ?? 50) / 100);
+        const left = cx - cW / 2, top = cy - cH / 2, right = cx + cW / 2, bottom = cy + cH / 2;
+        renderCell(left, top, startX, interK);
+        if (c === cols - 1) renderCell(right, top, startX, interK);
+        if (r === rows - 1) renderCell(left, bottom, startX, interK);
+        if (c === cols - 1 && r === rows - 1) renderCell(right, bottom, startX, interK);
+      }
 
       // Hexagonal grid: the half-cell shift pushes the last cell out, so it also appears at the left edge
-      if (isHex && r % 2 === 1 && c === cols - 1) {
+      if (place !== "intersections" && isHex && r % 2 === 1 && c === cols - 1) {
         renderCell(cx - usableW, cy, startX - usableW);
       }
 
       // Seamless repeat wrapping in sliding (brick) grid
-      if (rep.gridType === "sliding" && r % 2 === 1) {
+      if (place !== "intersections" && rep.gridType === "sliding" && r % 2 === 1) {
         const slide = rep.slideOffset ?? 0.5;
         if (slide > 0 && c === cols - 1) {
           renderCell(cx - usableW, cy, startX - usableW);

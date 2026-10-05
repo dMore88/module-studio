@@ -1079,6 +1079,42 @@
       }
     });
 
+    await test("Structure: modules at intersections, interwoven classes and merged or divided cell blocks", () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const render = (rep, layer = {}) => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        const L = st.layers[0];
+        Object.assign(L, { shape: "square", width: 60, height: 60, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false, containerW: 0, containerH: 0 }, layer);
+        L.structure.enabled = true; L.structure.mode = "repetition";
+        Object.assign(L.structure.repetition, { cols: 4, rows: 4, gridType: "basic", sizeMode: "fit", showGridLines: false, placement: "centers", interScale: 50, cellMix: "none" }, rep);
+        app.state = st; drawRaw(app);
+        return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      };
+      const dpr = cv.width / 600;
+      const dark = (d, x, y) => d[(Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4] < 100;
+      const inkOf = (d) => { let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] < 100) n++; return n; };
+      // 4x4 on 600px: cells of 150, centres at 75, 225... intersections at 150, 300...
+      const centers = render({});
+      assert(dark(centers, 75, 75) && !dark(centers, 150, 150), "Centers: modules sit in the cell centres only");
+      const inter = render({ placement: "intersections", interScale: 100 });
+      assert(dark(inter, 150, 150) && dark(inter, 300, 300) && !dark(inter, 75, 75), "Intersections: modules sit on the line crossings");
+      assert(dark(inter, 3, 3) && dark(inter, 597, 597), "Intersections include the outer corners of the grid");
+      const both = render({ placement: "both", interScale: 50 });
+      assert(dark(both, 75, 75) && dark(both, 150, 150), "Both: the two classes are interwoven");
+      const smallArea = inkOf(render({ placement: "intersections", interScale: 40 })), bigArea = inkOf(render({ placement: "intersections", interScale: 100 }));
+      assert(smallArea < bigArea * 0.5, "Intersection size should scale the interwoven modules");
+      // Merged: the first 2x2 block (top-left) becomes one module twice as big, centred on x,y = 150
+      const merged = render({ cellMix: "merge" });
+      assert(dark(merged, 150, 150) && !dark(merged, 75, 75), "Merged: the top-left block should be one big centred module");
+      assert(dark(merged, 375, 75) && dark(merged, 525, 75), "Merged: the other blocks keep their four cells");
+      // Divided: the same block holds smaller modules, four per cell
+      const divided = render({ cellMix: "divide" });
+      assert(inkOf(divided) !== inkOf(centers) && dark(divided, 75 - 37, 75 - 37), "Divided: the top-left block should hold smaller modules");
+      reset();
+    });
+
     await test("Checkerboard reverses figure and ground, also with a coloured module", () => {
       reset();
       const cv = win.document.getElementById("studio-canvas");

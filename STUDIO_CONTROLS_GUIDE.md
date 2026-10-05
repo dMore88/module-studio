@@ -102,7 +102,9 @@ Multiplica el módulo en una retícula ortogonal sobre el plano cartesiano $X, Y
 * **`shearAngle`** (0° a 45°): Ángulo de inclinación oblicua (modo `sheared`).
 * **`curveIntensity`** (px): Amplitud de oscilación de la onda (modo `curved`).
 * **`showGridLines`** (`boolean`): Renderiza las líneas maestras de la retícula. Con las líneas visibles aparecen sus opciones:
-  * **`lineTone`** (*Line tone*, `guide` por defecto): `guide` es una guía de ayuda, como las de Figma: siempre 1 px, con un color a elegir (*Guide color*), y **no se exporta** al SVG ni al PNG; `positive` se dibuja en tinta (el color de la capa); `negative` se dibuja con el color del fondo y corta los módulos que cruza (fig. 20b y 20c). Los módulos más grandes que la celda son los que muestran el corte.
+  *   * **`placement`** (*Module placement*, `centers`): dónde se colocan los módulos. `centers` en el centro de cada celda, `intersections` en los cruces de las líneas, `both` los dos a la vez (dos clases de módulo entretejidas, fig. 23). **`interScale`** (*Intersection size*, 50 %) es el tamaño de los módulos de los cruces. No aplica a la retícula hexagonal.
+  * **`cellMix`** (*Cell mix*, `none`): `merge` convierte bloques alternos de 2×2 celdas en un módulo grande; `divide` parte esos bloques en módulos más pequeños (fig. 22f y 22g). Solo en retícula básica y alternada.
+**`lineTone`** (*Line tone*, `guide` por defecto): `guide` es una guía de ayuda, como las de Figma: siempre 1 px, con un color a elegir (*Guide color*), y **no se exporta** al SVG ni al PNG; `positive` se dibuja en tinta (el color de la capa); `negative` se dibuja con el color del fondo y corta los módulos que cruza (fig. 20b y 20c). Los módulos más grandes que la celda son los que muestran el corte.
   * **`lineDirection`** (*Line direction*, `both`): solo líneas `horizontal`, solo `vertical` o ambas (fig. 20d).
   * **`lineSpacing`** (*Line spacing*, `all`): `alternate` dibuja una línea de cada dos.
   * **`gridLineWidth`** (*Line width*, 0.5 a 6 px).

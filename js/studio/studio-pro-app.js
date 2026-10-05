@@ -864,6 +864,16 @@ export class StudioProApp {
     });
     mark("data-rep-size", rep.sizeMode || "fit");
     mark("data-rep-dir", rep.direction || "repeated");
+    mark("data-rep-place", rep.placement || "centers");
+    mark("data-rep-mix", rep.cellMix || "none");
+    // Placement does not apply to the honeycomb; mixed sizes only to the plain and alternating grids
+    document.getElementById("rep-placement-block")?.classList.toggle("hidden", rep.gridType === "hexagonal");
+    document.getElementById("rep-mix-block")?.classList.toggle("hidden", !(rep.gridType === "basic" || rep.gridType === "alternating"));
+    const interOn = rep.gridType !== "hexagonal" && (rep.placement || "centers") !== "centers";
+    document.getElementById("rep-inter-block")?.classList.toggle("hidden", !interOn);
+    this.syncControlValue("input-layout-inter", rep.interScale ?? 50);
+    const ni = document.getElementById("num-layout-inter");
+    if (ni) ni.value = `${rep.interScale ?? 50}%`;
     mark("data-rep-tone", rep.lineTone || "guide");
     mark("data-rep-linedir", rep.lineDirection || "both");
     mark("data-rep-linespace", rep.lineSpacing || "all");
@@ -931,6 +941,14 @@ export class StudioProApp {
     bindTags("[data-rep-reflect]", "data-rep-reflect", "reflection", "Reflection");
     bindTags("[data-rep-size]", "data-rep-size", "sizeMode", "Module Size");
     bindTags("[data-rep-dir]", "data-rep-dir", "direction", "Direction");
+    bindTags("[data-rep-place]", "data-rep-place", "placement", "Module Placement");
+    bindTags("[data-rep-mix]", "data-rep-mix", "cellMix", "Cell Mix");
+    this.bindSliderWithNumber("input-layout-inter", "num-layout-inter", (val) => {
+      const r = rep(); if (!r) return;
+      r.interScale = Math.max(10, Math.min(100, val));
+      this.getActiveLayerStructure().mode = "repetition";
+      this.render();
+    }, "Intersection Size", "%");
 
     // Line width of the visible grid lines
     const lw = document.getElementById("input-layout-linewidth");
