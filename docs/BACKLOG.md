@@ -106,7 +106,7 @@ Ya cubierto: dominancia de la mayoría y énfasis de la minoría, dimensiones Sc
 | :-- | :--- | :--- | :-- |
 | C1 | Dimensión posición | ✅ Hecho: dimensión *Position* con *Shift* (5 a 50 % de la celda) y *Shift direction* (0 a 360º) | ✅ |
 | C2 | Dimensión espacio | ✅ Hecho: dimensión *Space* (figura y fondo invertidos en la minoría, en cuadrícula y radial) | ✅ |
-| C3 | Dimensión gravedad | Estable/inestable, ligero/pesado | P2 |
+| C3 | Dimensión gravedad | Descartado (oct 2026): se consigue con *Position* a 90º | ➖ |
 | C4 | Dimensión textura | ✅ Hecho: dimensión *Texture* (solo la minoría se deforma) | ✅ |
 | C5 | Dimensión color | Más allá del acento | P3 |
 | C6 | Minoría por zonas y equilibrio | El libro reparte la mayoría sobre una zona mayor y la minoría tira desde el borde (fig. 61b) | P3 |
