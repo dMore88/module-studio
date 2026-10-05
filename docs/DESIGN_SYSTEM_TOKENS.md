@@ -264,7 +264,7 @@ Primera fila de la columna del lienzo: el selector de proporción a la izquierda
 320 px de ancho. Barra superior de 40 px con el título *LAYERS* (12 / 600, espaciado 0,24), el contador (badge, solo el número) y el botón **ADD MODULE**. Lista con separación `spacing/3` (8) y relleno `spacing/5` (16) arriba, abajo y a la izquierda, sin relleno a la derecha (las tarjetas llegan al borde de la columna).
 
 ### 5.20 Tarjeta de capa (`.layer-card`)
-72 de alto, radio `border/radius/1`, relleno izquierdo `spacing/3` y derecho `spacing/5`, separación `spacing/4`. Contiene una vista previa de 56×56 sin fondo ni borde, con el icono de la forma en trazo (`ph`, regular) de 40 px, el nombre en 16 / 600, una línea secundaria en `DM Mono` 14 / 500 con `neutral/text/subtle`, y las acciones (visibilidad, borrar, arrastrar) con separación `spacing/4`.
+72 de alto, radio `border/radius/1`, relleno izquierdo `spacing/3` y derecho `spacing/5`, separación `spacing/4`. Contiene una vista previa de 56×56 sin fondo ni borde, con el icono de la forma en trazo (`ph`, regular) de 40 px, el nombre en Inter 14 / 400 y una línea secundaria en Inter 12 / 400 con `neutral/text/subtle` (interlineado 1,7, separación 2 px; ya no usa la fuente monoespaciada), y las acciones (visibilidad, borrar, arrastrar) con separación `spacing/4`.
 
 | Estado | Fondo | Borde | Texto |
 | :--- | :--- | :--- | :--- |

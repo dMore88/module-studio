@@ -777,11 +777,12 @@ input[type="range"]:hover::-webkit-slider-thumb {
   font-size: var(--sizing-7);
 }
 .layer-card.is-active .layer-preview-box { color: var(--neutral-icon-inverted); }
-.layer-copy { display: flex; flex-direction: column; gap: var(--spacing-1); flex: 1; min-width: 0; line-height: var(--line-height-body); }
+.layer-copy { display: flex; flex-direction: column; gap: var(--spacing-1); flex: 1; min-width: 0; line-height: var(--line-height-small); }
 .layer-title {
   overflow: hidden;
-  font-size: var(--font-size-md);
-  font-weight: var(--typography-weight-600);
+  font-size: var(--font-size-sm);
+  font-weight: var(--typography-weight-400);
+  line-height: var(--line-height-small);
   color: var(--neutral-text-main);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -789,9 +790,9 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .layer-card.is-active .layer-title { color: var(--neutral-text-main-inverted); }
 .layer-subtitle {
   overflow: hidden;
-  font-family: var(--typography-family-mono);
-  font-size: var(--font-size-sm);
-  font-weight: var(--typography-weight-500);
+  font-size: var(--font-size-xs);
+  font-weight: var(--typography-weight-400);
+  line-height: var(--line-height-small);
   color: var(--neutral-text-subtle);
   text-overflow: ellipsis;
   white-space: nowrap;
