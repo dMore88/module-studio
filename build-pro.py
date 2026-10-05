@@ -3,9 +3,18 @@
 Zero-dependency bundler for Module Studio.
 Concatenates ES modules into a clean standalone js/bundle-pro.js that runs
 flawlessly on both http:// and file:/// protocols.
+
+Usage:
+  python3 build-pro.py          rebuild js/bundle-pro.js and stamp index.html
+  python3 build-pro.py --check  only verify the bundle is up to date (exit 1 if not)
+
+The script tag in index.html carries ?v=<hash of the bundle>, so browsers never
+serve a stale copy after a rebuild.
 """
 import re
 import os
+import sys
+import hashlib
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -21,38 +30,31 @@ def strip_es6_modules(content):
     content = re.sub(r'^\s*export\s*\{[\s\S]*?\}\s*;?', '', content, flags=re.MULTILINE)
     return content
 
-def build():
+def read_sources():
     js_dir = os.path.join(BASE_DIR, 'js')
-    
-    with open(os.path.join(js_dir, 'canvas-utils.js')) as f:
-        c_utils = strip_es6_modules(f.read())
+    parts = {}
+    for key, rel in (('utils', 'canvas-utils.js'), ('shapes', 'studio/shapes.js'), ('engine', 'studio/studio-engine.js'),
+                     ('exporter', 'studio/exporter.js'), ('app', 'studio/studio-pro-app.js')):
+        with open(os.path.join(js_dir, rel)) as f:
+            parts[key] = strip_es6_modules(f.read())
+    return parts
 
-    with open(os.path.join(js_dir, 'studio', 'shapes.js')) as f:
-        c_shapes = strip_es6_modules(f.read())
-
-    with open(os.path.join(js_dir, 'studio', 'studio-engine.js')) as f:
-        c_engine = strip_es6_modules(f.read())
-
-    with open(os.path.join(js_dir, 'studio', 'exporter.js')) as f:
-        c_exporter = strip_es6_modules(f.read())
-
-    with open(os.path.join(js_dir, 'studio', 'studio-pro-app.js')) as f:
-        c_app = strip_es6_modules(f.read())
-
-    bundle = f"""// Standalone self-contained script for Module Studio
+def make_bundle():
+    p = read_sources()
+    return f"""// Standalone self-contained script for Module Studio
 // Runs on both http:// (web server) and file:/// (local direct open)
 (function() {{
   'use strict';
 
-  {c_utils}
+  {p['utils']}
 
-  {c_shapes}
+  {p['shapes']}
 
-  {c_engine}
+  {p['engine']}
 
-  {c_exporter}
+  {p['exporter']}
 
-  {c_app}
+  {p['app']}
 
   if (typeof window !== 'undefined') {{
     window.StudioEngine = StudioEngine;
@@ -64,11 +66,34 @@ def build():
 }})();
 """
 
-    bundle_path = os.path.join(js_dir, 'bundle-pro.js')
+def stamp(bundle):
+    """Return index.html with the bundle's version in the script tag."""
+    version = hashlib.sha256(bundle.encode()).hexdigest()[:8]
+    with open(os.path.join(BASE_DIR, 'index.html')) as f:
+        html = f.read()
+    return re.sub(r'js/bundle-pro\.js(\?v=[0-9a-f]+)?', f'js/bundle-pro.js?v={version}', html)
+
+def build(check=False):
+    bundle = make_bundle()
+    bundle_path = os.path.join(BASE_DIR, 'js', 'bundle-pro.js')
+    index_path = os.path.join(BASE_DIR, 'index.html')
+    html = stamp(bundle)
+
+    if check:
+        current = open(bundle_path).read() if os.path.exists(bundle_path) else ''
+        current_html = open(index_path).read()
+        if current != bundle or current_html != html:
+            print("js/bundle-pro.js (or the version in index.html) is out of date. Run: python3 build-pro.py")
+            return 1
+        print("Bundle is up to date.")
+        return 0
+
     with open(bundle_path, 'w') as f:
         f.write(bundle)
-
+    with open(index_path, 'w') as f:
+        f.write(html)
     print(f"Built {bundle_path} successfully ({len(bundle):,} bytes)")
+    return 0
 
 if __name__ == '__main__':
-    build()
+    sys.exit(build(check='--check' in sys.argv))

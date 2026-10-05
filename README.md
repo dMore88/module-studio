@@ -81,11 +81,20 @@ open http://localhost:5173
 ```bash
 python3 build-pro.py
 ```
-This bundles all modular ES components into `js/bundle-pro.js` with zero dependencies.
+This bundles all modular ES components into `js/bundle-pro.js` with zero dependencies, and stamps the bundle's version into the `<script>` tag of `index.html` (`?v=<hash>`) so browsers never serve a stale copy.
+
+`python3 build-pro.py --check` only verifies that the bundle is up to date. To make git run this check before every commit (it blocks the commit when the bundle is stale), enable the versioned hook once per clone:
+```bash
+git config core.hooksPath .githooks
+```
+
+### Save, open and export
+- **Config** saves the project as `.json`; **Open** loads it back. Damaged files are cleaned up (missing values fall back to defaults) or refused with a message.
+- **Download SVG** and **Copy SVG** produce a real vector SVG (paths, not an embedded image), drawn by the same engine as the canvas.
 
 ### Tests
 ```bash
 python3 -m http.server 5173
 # open http://localhost:5173/tests/smoke.html
 ```
-The smoke page draws all 15 shapes, runs 400 random combinations of every control, and checks determinism, undo/redo, layers and the on-screen error notice. It must end in **All tests passed**.
+The smoke page draws all 15 shapes, runs 400 random combinations of every control, and checks determinism, undo/redo, layers, the vector SVG against the canvas, project save/open and the on-screen error notice. It must end in **All tests passed**.

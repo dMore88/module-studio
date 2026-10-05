@@ -243,6 +243,8 @@ Altura 40 (`sizing/7`), ancho mínimo 100, relleno horizontal `spacing/5`, radio
 | Pulsado | `neutral/interactive/active--inverted` |
 | Deshabilitado | `neutral/interactive/disabled` |
 
+> El botón **Open** de la cabecera (junto a Config) no tiene mockup en Figma; reutiliza `.ds-btn` con el icono `ph-folder-open`. Pendiente de diseño.
+
 ### 5.16 Botón de icono (`.ds-icon-btn`)
 40×40, radio `border/radius/2`, icono de 16 px. Normal con `neutral/interactive/default--inverted`; **activo** (opciones de vista: guías de rejilla, inversión de tono) con `neutral/interactive/default` e icono `neutral/icon/inverted`.
 

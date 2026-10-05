@@ -161,7 +161,7 @@ Orden sugerido, de lo más urgente a lo menos:
 | F5 | ✅ Hecho: nombres para campos y botones, estado de las etiquetas, teclado en las capas (hallazgo 7) | — | — |
 | F6 | ✅ Hecho: retículas Zigzag, Triangular y Alternating, parámetro de cada variación y grosor de líneas (Q2) | — | — |
 | F7 | ✅ Hecho (2026-10-04): Concentration, Gradation, Similarity, Anomaly, Contrast y la mira de Anomaly viven en una sola pieza que usan la cuadrícula y el radial (hallazgo 4). El motor bajó de 1645 a 1485 líneas | — | — |
-| F8 | Verificación del archivo generado y versión en la dirección (hallazgo 6) | Bajo | Bajo |
-| F9 | Importar proyecto y SVG vectorial (hallazgo 8) | Medio a alto | Medio |
+| F8 | ✅ Hecho: `build-pro.py --check`, hook de git `.githooks/pre-commit` y versión (`?v=hash`) en la dirección del bundle (hallazgo 6) | — | — |
+| F9 | ✅ Hecho: SVG vectorial real (probado contra el lienzo, 0,01 % de diferencia) y botón Open para reabrir proyectos, con validación de archivos dañados (hallazgo 8) | — | — |
 
 F1 y F4 conviene hacerlos antes de añadir funciones nuevas: F1 porque es un error visible y F4 porque protege todo lo que viene después.

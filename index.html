@@ -49,7 +49,12 @@
     </div>
 
     <div class="ds-export-actions">
-      <button type="button" id="btn-open-config" class="ds-btn" title="Studio Configuration">
+      <button type="button" id="btn-open-project" class="ds-btn" title="Open a saved project (.json)">
+        <span>Open</span>
+        <i class="ph ph-folder-open" aria-hidden="true"></i>
+      </button>
+      <input type="file" id="file-open-project" accept=".json,application/json" aria-label="Project file to open" hidden>
+      <button type="button" id="btn-open-config" class="ds-btn" title="Save the project (.json)">
         <span>Config</span>
         <i class="ph ph-gear" aria-hidden="true"></i>
       </button>
@@ -1008,7 +1013,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js"></script>
+  <script src="js/bundle-pro.js?v=d79fb219"></script>
 
 </body>
 </html>

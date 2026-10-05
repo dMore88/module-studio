@@ -15,7 +15,7 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 | 1 | Fluctuating alterna la dirección entre celdas vecinas | ✅ Hecho (2026-10-04) |
 | 2 | Gradation: *Range* aplica a Scale, Depth y Drift (180 = cantidad original) | ✅ Hecho (2026-10-04) |
 | 3 | **Revisión de código y auditoría de lo propuesto** (sección 0, Q1 y Q2) | ✅ Informe hecho: [REVISION_CODIGO.md](./REVISION_CODIGO.md) |
-| 3b | **Arreglos de la revisión** (F1 a F9 del informe) | F1 a F7 ✅. Siguen F8 y F9 |
+| 3b | **Arreglos de la revisión** (F1 a F9 del informe) | F1 a F9 ✅ (revisión de código completa) |
 | 4 | **Design system `.md` desde Figma** (sección 0, Q3) | ✅ Hecho: [DESIGN_SYSTEM_TOKENS.md](./DESIGN_SYSTEM_TOKENS.md) y `css/tokens.css` |
 | 4b | **Migrar los paneles Module, Layout, Structure y Similarity al diseño de Figma** (Q3b) | ✅ Hecho (2026-10-04). Q3d también hecho: toda la interfaz usa los tokens |
 | 5 | Gradation avanzada (G1 a G7) | P1 |
@@ -196,7 +196,7 @@ Ya cubierto: textura espontánea mediante deformación de geometría (Jitter, Li
 
 | ID | Ítem | Notas | Prioridad |
 | :-- | :--- | :--- | :-- |
-| O1 | Exportar SVG vectorial real | Hoy incrusta un PNG. Ya no hay texturas de píxeles, así que es posible, pero requiere reescribir el export | P2, por decidir |
+| O1 | Exportar SVG vectorial real | ✅ Hecho (F9): el motor dibuja sobre un contexto que graba trazos SVG. También se puede reabrir el proyecto (botón Open) | ✅ |
 | O2 | Controles de Contrast sin diseño en Figma | Minority Shape y Clash Angle se añadieron sin mockup | Pendiente de diseño |
 | O4 | Aleatorizar parámetros (botón Random) | Se eliminaron los presets y el botón. Si se retoma, generar combinaciones válidas al azar de los controles de capa (la prueba de 400 combinaciones ya sabe hacerlo). Sin presets prediseñados | P3, baja prioridad |
 | O3 | Controles extra sin diseño en Figma | Eje de línea en Concentration; selector de color de acento en Anomaly y Contrast; en Layout: tags Zigzag, Triangular y Alternating, el control de parámetro de la variación y *Line width* | Pendiente de diseño |

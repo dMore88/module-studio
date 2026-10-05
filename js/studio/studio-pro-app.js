@@ -4,7 +4,7 @@
  */
 
 import { StudioEngine, defaultStudioState, createDefaultLayerStructure, createDefaultLayer } from './studio-engine.js';
-import { Shapes } from './shapes.js';
+import { Shapes, STUDIO_SHAPE_KEYS } from './shapes.js';
 import { CanvasUtils } from '../canvas-utils.js';
 import { StudioExporter } from './exporter.js';
 
@@ -277,20 +277,16 @@ export class StudioProApp {
     const copySvgBtn = document.getElementById("btn-copy-svg-code");
     if (copySvgBtn) {
       copySvgBtn.addEventListener("click", async () => {
+        const label = copySvgBtn.querySelector("span");
+        const origText = label.textContent;
         try {
-          const width = this.canvas.width / (window.devicePixelRatio || 1);
-          const height = this.canvas.height / (window.devicePixelRatio || 1);
-          const bg = this.state.invertFigureGround ? "#18181f" : "#ffffff";
-          const imgData = this.canvas.toDataURL("image/png", 1.0);
-          const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}"><rect width="100%" height="100%" fill="${bg}"/><image href="${imgData}" width="${width}" height="${height}"/></svg>`;
+          const svgString = StudioExporter.buildSVG(this.engine, this.canvas, this.getActivePalette());
           await navigator.clipboard.writeText(svgString);
-          
-          const origText = copySvgBtn.querySelector("span").textContent;
-          copySvgBtn.querySelector("span").textContent = "Copied!";
-          setTimeout(() => copySvgBtn.querySelector("span").textContent = origText, 1500);
+          label.textContent = "Copied!";
         } catch (err) {
-          alert("SVG copied to clipboard!");
+          label.textContent = "Copy failed";
         }
+        setTimeout(() => label.textContent = origText, 1500);
       });
     }
 
@@ -298,7 +294,7 @@ export class StudioProApp {
     const downloadSvgBtn = document.getElementById("btn-download-svg");
     if (downloadSvgBtn) {
       downloadSvgBtn.addEventListener("click", () => {
-        StudioExporter.exportSVG(this.canvas, this.state, this.getActivePalette(), "module-studio-composition.svg");
+        StudioExporter.exportSVG(this.engine, this.canvas, this.getActivePalette(), "module-studio-composition.svg");
       });
     }
 
@@ -309,6 +305,77 @@ export class StudioProApp {
         StudioExporter.exportJSON(this.state, "module-studio-project.json");
       });
     }
+
+    // 7. Open a saved project (.json)
+    const openBtn = document.getElementById("btn-open-project");
+    const fileInput = document.getElementById("file-open-project");
+    if (openBtn && fileInput) {
+      openBtn.addEventListener("click", () => fileInput.click());
+      fileInput.addEventListener("change", async () => {
+        const file = fileInput.files && fileInput.files[0];
+        fileInput.value = "";
+        if (!file) return;
+        try {
+          this.loadProjectText(await file.text());
+        } catch (err) {
+          alert(`Could not open the project: ${err.message}`);
+        }
+      });
+    }
+  }
+
+  // Validates a saved project and replaces the current state with it.
+  // Anything missing or malformed falls back to the defaults, so a damaged file cannot break the app.
+  loadProjectText(text) {
+    let data;
+    try { data = JSON.parse(text); } catch (e) { throw new Error("the file is not valid JSON"); }
+    const raw = data && data.state && typeof data.state === "object" ? data.state : data;
+    if (!raw || !Array.isArray(raw.layers) || raw.layers.length === 0) throw new Error("it does not look like a Module Studio project");
+
+    const clone = (v) => JSON.parse(JSON.stringify(v));
+    const merge = (def, src) => {
+      if (def && typeof def === "object" && !Array.isArray(def)) {
+        const out = {};
+        for (const k of Object.keys(def)) {
+          out[k] = src && typeof src === "object" && k in src ? merge(def[k], src[k]) : clone(def[k]);
+        }
+        return out;
+      }
+      if (Array.isArray(def)) return Array.isArray(src) ? clone(src) : clone(def);
+      if (typeof def === "number") return typeof src === "number" && Number.isFinite(src) ? src : def;
+      return typeof src === typeof def ? src : def;
+    };
+
+    const used = new Set();
+    const layers = raw.layers.slice(0, 5).map((src, i) => {
+      const layer = merge(createDefaultLayer(`layer-${i + 1}`, `Layer ${i + 1}`), src);
+      if (!STUDIO_SHAPE_KEYS.includes(layer.shape)) layer.shape = "circle";
+      if (!layer.id || used.has(layer.id)) layer.id = `layer-${i + 1}-${Date.now() % 100000}`;
+      used.add(layer.id);
+      return layer;
+    });
+    const ids = layers.map(l => l.id);
+    let order = Array.isArray(raw.layerOrder) ? raw.layerOrder.filter(id => ids.includes(id)) : [];
+    for (const id of ids.slice().reverse()) if (!order.includes(id)) order.push(id);
+
+    const ratios = ["1:1", "9:16", "4:3", "3:4", "16:9"];
+    this.state = {
+      aspectRatio: ratios.includes(raw.aspectRatio) ? raw.aspectRatio : "1:1",
+      layers,
+      layerOrder: order,
+      invertFigureGround: !!raw.invertFigureGround,
+      showSafeBounds: raw.showSafeBounds !== false
+    };
+    this.activeLayerId = layers[0].id;
+    this.applyAspectRatio(this.state.aspectRatio);
+    document.getElementById("btn-toggle-grid")?.classList.toggle("active", this.state.showSafeBounds);
+    document.getElementById("btn-toggle-invert")?.classList.toggle("active", this.state.invertFigureGround);
+    this.updateActivePalette();
+    this.render();
+    this.centerArtboard();
+    this.syncAllInspectorsWithActiveLayer();
+    this.updateLayerCardsUI();
+    this.pushHistory("Open project");
   }
 
   /* =========================================================================

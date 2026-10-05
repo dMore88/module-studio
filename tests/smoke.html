@@ -299,6 +299,67 @@
       assert(cards.length > 0 && Array.from(cards).every((c) => c.getAttribute("role") === "button" && c.getAttribute("tabindex") === "0"), "Layer cards are not keyboard reachable");
     });
 
+    await test("Vector SVG export is real vector and matches the canvas", async () => {
+      const cv = win.document.getElementById("studio-canvas");
+      const toImage = (svg) => new Promise((res, rej) => {
+        const img = new win.Image();
+        img.onload = () => res(img); img.onerror = () => rej(new Error("The SVG could not be loaded as an image"));
+        img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+      });
+      const rng = makeRng(31);
+      let worst = 0, bytes = 0;
+      for (let n = 0; n < 6; n++) {
+        reset();
+        if (n > 0) {
+          randomizeState(app, rng);
+          for (const L of app.state.layers) { L.structure.repetition.cols = Math.min(L.structure.repetition.cols, 12); L.structure.repetition.rows = Math.min(L.structure.repetition.rows, 12); L.structure.radiation.rays = Math.min(L.structure.radiation.rays, 16); L.structure.radiation.rings = Math.min(L.structure.radiation.rings, 6); }
+        }
+        drawRaw(app);
+        const svg = win.StudioExporter.buildSVG(app.engine, cv, app.getActivePalette());
+        bytes = Math.max(bytes, svg.length);
+        const doc = new win.DOMParser().parseFromString(svg, "image/svg+xml");
+        assert(!doc.querySelector("parsererror"), `State ${n}: the SVG is not well formed`);
+        assert(!doc.querySelector("image"), `State ${n}: the SVG embeds a raster image`);
+        assert(doc.querySelectorAll("path").length > 0, `State ${n}: the SVG has no paths`);
+        const img = await toImage(svg);
+        const off = win.document.createElement("canvas"); off.width = cv.width; off.height = cv.height;
+        const octx = off.getContext("2d"); octx.drawImage(img, 0, 0, cv.width, cv.height);
+        const a = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+        const b = octx.getImageData(0, 0, cv.width, cv.height).data;
+        let bad = 0; for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i] - b[i]) > 80) bad++;
+        const frac = bad / (a.length / 4);
+        worst = Math.max(worst, frac);
+        assert(frac < 0.02, `State ${n}: ${(frac * 100).toFixed(1)}% of pixels differ from the canvas`);
+      }
+      return `worst difference ${(worst * 100).toFixed(2)}%, largest file ${Math.round(bytes / 1024)} KB`;
+    });
+
+    await test("Saved projects reopen, and damaged files are cleaned up or refused", () => {
+      reset();
+      const original = JSON.parse(JSON.stringify(app.state));
+      randomizeState(app, makeRng(5));
+      const saved = JSON.parse(JSON.stringify(app.state));
+      app.loadProjectText(JSON.stringify({ app: "module-studio", version: 1, state: saved }));
+      assert(JSON.stringify(app.state) === JSON.stringify(saved), "A saved project does not reopen identically");
+      // the older format (the bare state) also opens
+      app.loadProjectText(JSON.stringify(original));
+      assert(JSON.stringify(app.state.layers.map(l => l.shape)) === JSON.stringify(original.layers.map(l => l.shape)), "The bare-state format does not open");
+      // damaged: unknown shape, wrong types, missing blocks, too many layers
+      const bad = JSON.parse(JSON.stringify(original));
+      bad.layers[0].shape = "nonsense"; bad.layers[0].width = "wide"; delete bad.layers[0].structure.texture; bad.aspectRatio = "7:3";
+      for (let i = 0; i < 7; i++) bad.layers.push(JSON.parse(JSON.stringify(original.layers[0])));
+      app.loadProjectText(JSON.stringify(bad));
+      assert(app.state.layers.length === 5, "More than 5 layers were accepted");
+      assert(app.state.layers[0].shape === "circle" && typeof app.state.layers[0].width === "number", "Bad values were not replaced by defaults");
+      assert(app.state.layers[0].structure.texture && app.state.aspectRatio === "1:1", "Missing blocks were not restored");
+      assert(new Set(app.state.layers.map(l => l.id)).size === 5, "Layer ids are not unique");
+      drawRaw(app);
+      for (const text of ["not json", "{}", "{\"layers\":[]}", "[1,2]", "null"]) {
+        let threw = false; try { app.loadProjectText(text); } catch (e) { threw = true; }
+        assert(threw, `"${text}" was accepted as a project`);
+      }
+    });
+
     await test("A failed draw shows a visible notice and recovers", () => {
       reset();
       const original = app.engine.render;

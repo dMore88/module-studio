@@ -1,0 +1,3 @@
+#!/bin/sh
+# Blocks a commit when js/bundle-pro.js is out of date with the sources.
+python3 build-pro.py --check || exit 1

@@ -90,7 +90,9 @@ Después de cualquier modificación en los archivos de la carpeta `js/`:
 ```bash
 python3 build-pro.py
 ```
-Esto genera `js/bundle-pro.js` manteniendo sincronizada la versión standalone de la aplicación.
+Esto genera `js/bundle-pro.js` manteniendo sincronizada la versión standalone de la aplicación, y escribe su versión en la etiqueta `<script>` de `index.html` (`?v=...`) para evitar copias viejas en el navegador.
+
+Para comprobar sin regenerar: `python3 build-pro.py --check`. El hook de git `.githooks/pre-commit` ejecuta esa comprobación y bloquea el commit si el bundle está desfasado; se activa una vez por copia del repositorio con `git config core.hooksPath .githooks`.
 
 ---
 
