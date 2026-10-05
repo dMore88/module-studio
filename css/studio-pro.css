@@ -554,7 +554,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
 }
 .ds-brand { display: flex; align-items: center; gap: 14px; }
 .ds-brand-icon { display: grid; place-items: center; width: var(--sizing-7); height: var(--sizing-7); color: var(--neutral-text-main); }
-.ds-brand-icon svg { width: 28px; height: 28px; }
+.ds-brand-icon i { font-size: var(--sizing-7); }
 .ds-brand-title {
   font-family: var(--typography-family-heading);
   font-size: var(--font-size-xl);

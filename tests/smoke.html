@@ -701,6 +701,22 @@
       assert(problems.length === 0, problems.join("; "));
     });
 
+    await test("Icons match the Figma design (rail, shape grids, header)", () => {
+      const d = win.document;
+      const iconOf = (el) => { const i = el.querySelector("i"); return i ? Array.from(i.classList).find((c) => c.startsWith("ph-") && c !== "ph-fill") : null; };
+      const rail = { module: "shapes", layout: "circles-four", structure: "grid-four", similarity: "copy-simple", gradation: "angle", anomaly: "circles-three-plus", contrast: "circle-half", concentration: "radio-button", texture: "drop-half-bottom", space: "cube-transparent" };
+      for (const [tab, icon] of Object.entries(rail)) assert(iconOf(d.querySelector(`[data-rail-tab="${tab}"]`)) === "ph-" + icon, `Rail icon for ${tab} is ${iconOf(d.querySelector(`[data-rail-tab="${tab}"]`))}, expected ${icon}`);
+      const expected = { circle: "circle", square: "square", triangle: "triangle", wave: "tilde", horseshoe: "circle-notch", hexagon: "hexagon", line: "minus", parallelogram: "parallelogram", hatch: "scribble", crescent: "subset-proper-of", teardrop: "drop-half-bottom", cross: "plus", digit1: "number-one", digit5: "number-five", digit9: "number-nine" };
+      for (const attr of ["data-shape", "data-anom-shape", "data-contrast-shape", "data-grad-target"]) {
+        for (const [shape, icon] of Object.entries(expected)) {
+          const btn = d.querySelector(`[${attr}="${shape}"]`);
+          assert(btn && iconOf(btn) === "ph-" + icon && !btn.querySelector(".ph-fill"), `${attr}=${shape}: wrong icon (${btn && iconOf(btn)}), expected regular ${icon}`);
+          assert(win.Shapes[shape].phIcon === icon, `Layer card icon for ${shape} is ${win.Shapes[shape].phIcon}, expected ${icon}`);
+        }
+      }
+      assert(iconOf(d.querySelector("#btn-open-config")) === "ph-gear-six" && iconOf(d.querySelector("#btn-toggle-grid")) === "ph-grid-nine" && iconOf(d.querySelector(".ds-brand-icon").parentElement) === "ph-gradient", "Header or toolbar icons differ from Figma");
+    });
+
     await test("A failed draw shows a visible notice and recovers", () => {
       reset();
       const original = app.engine.render;

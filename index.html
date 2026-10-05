@@ -38,13 +38,7 @@
   <!-- TOP APPLICATION BAR (Figma: Application header, node 5763:1693) -->
   <header class="ds-app-header">
     <div class="ds-brand">
-      <span class="ds-brand-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-          <line x1="3" y1="6" x2="21" y2="6"/>
-          <line x1="3" y1="12" x2="16" y2="12"/>
-          <line x1="3" y1="18" x2="19" y2="18"/>
-        </svg>
-      </span>
+      <span class="ds-brand-icon" aria-hidden="true"><i class="ph ph-gradient"></i></span>
       <h1 class="ds-brand-title">Abstract Studio</h1>
     </div>
 
@@ -56,7 +50,7 @@
       <input type="file" id="file-open-project" accept=".json,application/json" aria-label="Project file to open" hidden>
       <button type="button" id="btn-open-config" class="ds-btn" title="Save the project (.json)">
         <span>Config</span>
-        <i class="ph ph-gear" aria-hidden="true"></i>
+        <i class="ph ph-gear-six" aria-hidden="true"></i>
       </button>
       <button type="button" id="btn-copy-svg-code" class="ds-btn" title="Copy Vector SVG to Clipboard">
         <span>Copy SVG</span>
@@ -105,7 +99,7 @@
         </div>
         <div class="ds-view-options">
           <button type="button" id="btn-toggle-grid" class="ds-icon-btn active" title="Toggle Grid Guides" aria-label="Toggle grid guides">
-            <i class="ph ph-grid-four" aria-hidden="true"></i>
+            <i class="ph ph-grid-nine" aria-hidden="true"></i>
           </button>
           <button type="button" id="btn-toggle-invert" class="ds-icon-btn" title="Toggle Figure / Ground Tone" aria-label="Toggle figure and ground tone">
             <i class="ph ph-circle-half" aria-hidden="true"></i>
@@ -131,31 +125,31 @@
         <i class="ph ph-shapes text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="layout" title="Layout Structure">
-        <i class="ph ph-layout text-[16px]"></i>
+        <i class="ph ph-circles-four text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="structure" title="Structure">
-        <i class="ph ph-squares-four text-[16px]"></i>
+        <i class="ph ph-grid-four text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="similarity" title="Similarity">
-        <i class="ph ph-copy text-[16px]"></i>
+        <i class="ph ph-copy-simple text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="gradation" title="Gradation">
-        <i class="ph ph-gradient text-[16px]"></i>
+        <i class="ph ph-angle text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="anomaly" title="Anomaly">
-        <i class="ph ph-sparkle text-[16px]"></i>
+        <i class="ph ph-circles-three-plus text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="contrast" title="Contrast">
         <i class="ph ph-circle-half text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="concentration" title="Concentration">
-        <i class="ph ph-target text-[16px]"></i>
+        <i class="ph ph-radio-button text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="texture" title="Texture">
-        <i class="ph ph-hash text-[16px]"></i>
+        <i class="ph ph-drop-half-bottom text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="space" title="Space & Depth">
-        <i class="ph ph-cube text-[16px]"></i>
+        <i class="ph ph-cube-transparent text-[16px]"></i>
       </button>
     </nav>
 
@@ -178,21 +172,21 @@
         <div class="ds-field">
           <div class="ds-label">Shape</div>
           <div class="shape-grid">
-            <button type="button" class="shape-circle-btn active" data-shape="circle" title="Circle"><i class="ph-fill ph-circle text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="square" title="Square"><i class="ph-fill ph-square text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="triangle" title="Triangle"><i class="ph-fill ph-triangle text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="wave" title="Sine Wave"><i class="ph-fill ph-wave-sine text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="horseshoe" title="Horseshoe"><i class="ph-fill ph-circle-notch text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="hexagon" title="Hexagon"><i class="ph-fill ph-hexagon text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="line" title="Line"><i class="ph-fill ph-minus text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="parallelogram" title="Parallelogram"><i class="ph-fill ph-parallelogram text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="hatch" title="Diagonal Hatch"><i class="ph-fill ph-line-segments text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="crescent" title="Crescent"><i class="ph-fill ph-moon text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="teardrop" title="Teardrop"><i class="ph-fill ph-drop text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="cross" title="Cross"><i class="ph-fill ph-plus text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="digit1" title="Number 1"><i class="ph-fill ph-number-one text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="digit5" title="Number 5"><i class="ph-fill ph-number-five text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="digit9" title="Number 9"><i class="ph-fill ph-number-nine text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn active" data-shape="circle" title="Circle"><i class="ph ph-circle text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="square" title="Square"><i class="ph ph-square text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="triangle" title="Triangle"><i class="ph ph-triangle text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="wave" title="Sine Wave"><i class="ph ph-tilde text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="horseshoe" title="Horseshoe"><i class="ph ph-circle-notch text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="hexagon" title="Hexagon"><i class="ph ph-hexagon text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="line" title="Line"><i class="ph ph-minus text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="parallelogram" title="Parallelogram"><i class="ph ph-parallelogram text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="hatch" title="Diagonal Hatch"><i class="ph ph-scribble text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="crescent" title="Crescent"><i class="ph ph-subset-proper-of text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="teardrop" title="Teardrop"><i class="ph ph-drop-half-bottom text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="cross" title="Cross"><i class="ph ph-plus text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="digit1" title="Number 1"><i class="ph ph-number-one text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="digit5" title="Number 5"><i class="ph ph-number-five text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-shape="digit9" title="Number 9"><i class="ph ph-number-nine text-[16px]"></i></button>
           </div>
         </div>
 
@@ -612,21 +606,21 @@
         <div id="grad-target-block" class="ds-field hidden">
           <div class="ds-label">Becomes</div>
           <div class="shape-grid">
-              <button type="button" class="shape-circle-btn" data-grad-target="circle" title="Circle"><i class="ph-fill ph-circle text-[16px]"></i></button>
-              <button type="button" class="shape-circle-btn" data-grad-target="square" title="Square"><i class="ph-fill ph-square text-[16px]"></i></button>
-              <button type="button" class="shape-circle-btn" data-grad-target="triangle" title="Triangle"><i class="ph-fill ph-triangle text-[16px]"></i></button>
-              <button type="button" class="shape-circle-btn" data-grad-target="wave" title="Sine Wave"><i class="ph-fill ph-wave-sine text-[16px]"></i></button>
-              <button type="button" class="shape-circle-btn" data-grad-target="horseshoe" title="Horseshoe"><i class="ph-fill ph-circle-notch text-[16px]"></i></button>
-              <button type="button" class="shape-circle-btn" data-grad-target="hexagon" title="Hexagon"><i class="ph-fill ph-hexagon text-[16px]"></i></button>
-              <button type="button" class="shape-circle-btn" data-grad-target="line" title="Line"><i class="ph-fill ph-minus text-[16px]"></i></button>
-              <button type="button" class="shape-circle-btn" data-grad-target="parallelogram" title="Parallelogram"><i class="ph-fill ph-parallelogram text-[16px]"></i></button>
-              <button type="button" class="shape-circle-btn" data-grad-target="hatch" title="Diagonal Hatch"><i class="ph-fill ph-line-segments text-[16px]"></i></button>
-              <button type="button" class="shape-circle-btn" data-grad-target="crescent" title="Crescent"><i class="ph-fill ph-moon text-[16px]"></i></button>
-              <button type="button" class="shape-circle-btn" data-grad-target="teardrop" title="Teardrop"><i class="ph-fill ph-drop text-[16px]"></i></button>
-              <button type="button" class="shape-circle-btn" data-grad-target="cross" title="Cross"><i class="ph-fill ph-plus text-[16px]"></i></button>
-              <button type="button" class="shape-circle-btn" data-grad-target="digit1" title="Number 1"><i class="ph-fill ph-number-one text-[16px]"></i></button>
-              <button type="button" class="shape-circle-btn" data-grad-target="digit5" title="Number 5"><i class="ph-fill ph-number-five text-[16px]"></i></button>
-              <button type="button" class="shape-circle-btn" data-grad-target="digit9" title="Number 9"><i class="ph-fill ph-number-nine text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="circle" title="Circle"><i class="ph ph-circle text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="square" title="Square"><i class="ph ph-square text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="triangle" title="Triangle"><i class="ph ph-triangle text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="wave" title="Sine Wave"><i class="ph ph-tilde text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="horseshoe" title="Horseshoe"><i class="ph ph-circle-notch text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="hexagon" title="Hexagon"><i class="ph ph-hexagon text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="line" title="Line"><i class="ph ph-minus text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="parallelogram" title="Parallelogram"><i class="ph ph-parallelogram text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="hatch" title="Diagonal Hatch"><i class="ph ph-scribble text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="crescent" title="Crescent"><i class="ph ph-subset-proper-of text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="teardrop" title="Teardrop"><i class="ph ph-drop-half-bottom text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="cross" title="Cross"><i class="ph ph-plus text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="digit1" title="Number 1"><i class="ph ph-number-one text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="digit5" title="Number 5"><i class="ph ph-number-five text-[16px]"></i></button>
+              <button type="button" class="shape-circle-btn" data-grad-target="digit9" title="Number 9"><i class="ph ph-number-nine text-[16px]"></i></button>
             </div>
         </div>
 
@@ -724,21 +718,21 @@
         <div class="ds-field">
           <div class="ds-label">Focal Intruder Shape</div>
           <div class="shape-grid">
-            <button type="button" class="shape-circle-btn active" data-anom-shape="circle" title="Circle"><i class="ph-fill ph-circle text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-anom-shape="square" title="Square"><i class="ph-fill ph-square text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-anom-shape="triangle" title="Triangle"><i class="ph-fill ph-triangle text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-anom-shape="wave" title="Sine Wave"><i class="ph-fill ph-wave-sine text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-anom-shape="horseshoe" title="Horseshoe"><i class="ph-fill ph-circle-notch text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-anom-shape="hexagon" title="Hexagon"><i class="ph-fill ph-hexagon text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-anom-shape="line" title="Line"><i class="ph-fill ph-minus text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-anom-shape="parallelogram" title="Parallelogram"><i class="ph-fill ph-parallelogram text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-anom-shape="hatch" title="Diagonal Hatch"><i class="ph-fill ph-line-segments text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-anom-shape="crescent" title="Crescent"><i class="ph-fill ph-moon text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-anom-shape="teardrop" title="Teardrop"><i class="ph-fill ph-drop text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-anom-shape="cross" title="Cross"><i class="ph-fill ph-plus text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-anom-shape="digit1" title="Number 1"><i class="ph-fill ph-number-one text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-anom-shape="digit5" title="Number 5"><i class="ph-fill ph-number-five text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-anom-shape="digit9" title="Number 9"><i class="ph-fill ph-number-nine text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn active" data-anom-shape="circle" title="Circle"><i class="ph ph-circle text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="square" title="Square"><i class="ph ph-square text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="triangle" title="Triangle"><i class="ph ph-triangle text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="wave" title="Sine Wave"><i class="ph ph-tilde text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="horseshoe" title="Horseshoe"><i class="ph ph-circle-notch text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="hexagon" title="Hexagon"><i class="ph ph-hexagon text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="line" title="Line"><i class="ph ph-minus text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="parallelogram" title="Parallelogram"><i class="ph ph-parallelogram text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="hatch" title="Diagonal Hatch"><i class="ph ph-scribble text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="crescent" title="Crescent"><i class="ph ph-subset-proper-of text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="teardrop" title="Teardrop"><i class="ph ph-drop-half-bottom text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="cross" title="Cross"><i class="ph ph-plus text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="digit1" title="Number 1"><i class="ph ph-number-one text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="digit5" title="Number 5"><i class="ph ph-number-five text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-anom-shape="digit9" title="Number 9"><i class="ph ph-number-nine text-[16px]"></i></button>
           </div>
         </div>
 
@@ -835,21 +829,21 @@
         <div class="ds-field" id="contrast-shape-block">
           <div class="ds-label">Minority Shape</div>
           <div class="shape-grid">
-            <button type="button" class="shape-circle-btn" data-contrast-shape="circle" title="Circle"><i class="ph-fill ph-circle text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-contrast-shape="square" title="Square"><i class="ph-fill ph-square text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-contrast-shape="triangle" title="Triangle"><i class="ph-fill ph-triangle text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-contrast-shape="wave" title="Sine Wave"><i class="ph-fill ph-wave-sine text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-contrast-shape="horseshoe" title="Horseshoe"><i class="ph-fill ph-circle-notch text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-contrast-shape="hexagon" title="Hexagon"><i class="ph-fill ph-hexagon text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-contrast-shape="line" title="Line"><i class="ph-fill ph-minus text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-contrast-shape="parallelogram" title="Parallelogram"><i class="ph-fill ph-parallelogram text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-contrast-shape="hatch" title="Diagonal Hatch"><i class="ph-fill ph-line-segments text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-contrast-shape="crescent" title="Crescent"><i class="ph-fill ph-moon text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-contrast-shape="teardrop" title="Teardrop"><i class="ph-fill ph-drop text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-contrast-shape="cross" title="Cross"><i class="ph-fill ph-plus text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-contrast-shape="digit1" title="Number 1"><i class="ph-fill ph-number-one text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-contrast-shape="digit5" title="Number 5"><i class="ph-fill ph-number-five text-[16px]"></i></button>
-            <button type="button" class="shape-circle-btn" data-contrast-shape="digit9" title="Number 9"><i class="ph-fill ph-number-nine text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-contrast-shape="circle" title="Circle"><i class="ph ph-circle text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-contrast-shape="square" title="Square"><i class="ph ph-square text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-contrast-shape="triangle" title="Triangle"><i class="ph ph-triangle text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-contrast-shape="wave" title="Sine Wave"><i class="ph ph-tilde text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-contrast-shape="horseshoe" title="Horseshoe"><i class="ph ph-circle-notch text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-contrast-shape="hexagon" title="Hexagon"><i class="ph ph-hexagon text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-contrast-shape="line" title="Line"><i class="ph ph-minus text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-contrast-shape="parallelogram" title="Parallelogram"><i class="ph ph-parallelogram text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-contrast-shape="hatch" title="Diagonal Hatch"><i class="ph ph-scribble text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-contrast-shape="crescent" title="Crescent"><i class="ph ph-subset-proper-of text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-contrast-shape="teardrop" title="Teardrop"><i class="ph ph-drop-half-bottom text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-contrast-shape="cross" title="Cross"><i class="ph ph-plus text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-contrast-shape="digit1" title="Number 1"><i class="ph ph-number-one text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-contrast-shape="digit5" title="Number 5"><i class="ph ph-number-five text-[16px]"></i></button>
+            <button type="button" class="shape-circle-btn" data-contrast-shape="digit9" title="Number 9"><i class="ph ph-number-nine text-[16px]"></i></button>
           </div>
         </div>
 
@@ -1100,7 +1094,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=48d38de8"></script>
+  <script src="js/bundle-pro.js?v=8e6df584"></script>
 
 </body>
 </html>

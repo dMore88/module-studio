@@ -70,7 +70,7 @@ Controla el soporte físico y los límites del plano gráfico.
 Cada capa es un módulo independiente. Se pueden tener hasta 5 capas con visibilidad, orden (drag & drop), forma, color y pipeline de modificadores propios.
 
 ### 3.1 Controles de capa
-* **`shape`**: una de las 15 formas del selector (lista canónica del mockup de Figma, `STUDIO_SHAPE_KEYS` en `js/studio/shapes.js`): `circle`, `square`, `triangle`, `wave`, `horseshoe`, `hexagon`, `line`, `parallelogram`, `hatch`, `crescent`, `teardrop`, `cross`, `digit1`, `digit5`, `digit9`. Los botones y las tarjetas de capa usan iconos Phosphor en peso *fill* (campo `phIcon` de cada forma). Los dígitos son vectoriales (ya no son texto) y `line` es una línea real.
+* **`shape`**: una de las 15 formas del selector (lista canónica del mockup de Figma, `STUDIO_SHAPE_KEYS` en `js/studio/shapes.js`): `circle`, `square`, `triangle`, `wave`, `horseshoe`, `hexagon`, `line`, `parallelogram`, `hatch`, `crescent`, `teardrop`, `cross`, `digit1`, `digit5`, `digit9`. Los botones y las tarjetas de capa usan iconos Phosphor en peso *regular*, los del Figma (campo `phIcon` de cada forma; lista completa en `docs/DESIGN_SYSTEM_TOKENS.md`, sección 6). Los dígitos son vectoriales (ya no son texto) y `line` es una línea real.
 * **`width / height`**: dimensiones del módulo (base 50; el ancho llega a 400 para permitir líneas largas).
 * **`rotation`**: ángulo de orientación.
 * **`strokeWidth`**: grosor del trazo.

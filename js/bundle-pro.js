@@ -168,7 +168,7 @@ const CanvasUtils = {
 
 
   // The 15 shapes available in the studio (matches the Figma shape grid).
-// `phIcon` is the Phosphor icon name, rendered with the fill weight (`ph-fill ph-<name>`).
+// `phIcon` is the Phosphor icon name, rendered with the regular weight (`ph ph-<name>`), as in the Figma shape grid.
 const STUDIO_SHAPE_KEYS = [
   "circle", "square", "triangle", "wave", "horseshoe", "hexagon", "line", "parallelogram", "hatch", "crescent", "teardrop", "cross", "digit1", "digit5", "digit9"
 ];
@@ -244,7 +244,7 @@ const Shapes = {
       const a = size * 0.25;
       return `<path d="M ${-w/2} 0 C ${-w/4} ${-a}, ${-w/4} ${-a}, 0 0 C ${w/4} ${a}, ${w/4} ${a}, ${w/2} 0" fill="none" stroke="currentColor" stroke-width="4" />`;
     },
-    phIcon: "wave-sine"
+    phIcon: "tilde"
   },
 
   horseshoe: {
@@ -356,7 +356,7 @@ const Shapes = {
       const s = size * 0.45;
       return `<g stroke="currentColor" stroke-width="3"><line x1="${-s}" y1="${s}" x2="${s}" y2="${-s}"/><line x1="${-s*0.3}" y1="${s}" x2="${s}" y2="${-s*0.3}"/><line x1="${-s}" y1="${s*0.3}" x2="${s*0.3}" y2="${-s}"/></g>`;
     },
-    phIcon: "line-segments"
+    phIcon: "scribble"
   },
 
   crescent: {
@@ -374,7 +374,7 @@ const Shapes = {
       const r = size * 0.45;
       return `<path d="M 0 ${r} A ${r} ${r} 0 0 1 0 ${-r} C ${r*0.4} ${-r*0.8} ${r*0.4} ${r*0.8} 0 ${r} Z" />`;
     },
-    phIcon: "moon"
+    phIcon: "subset-proper-of"
   },
 
   teardrop: {
@@ -395,7 +395,7 @@ const Shapes = {
       const l = size * 0.95;
       return `<path d="M 0 ${-l/2} C ${w/1.5} ${-l/6}, ${w/1.8} ${l/2}, 0 ${l/2} C ${-w/1.8} ${l/2}, ${-w/1.5} ${-l/6}, 0 ${-l/2} Z" />`;
     },
-    phIcon: "drop"
+    phIcon: "drop-half-bottom"
   },
 
   cross: {

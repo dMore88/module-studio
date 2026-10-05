@@ -297,7 +297,20 @@ Breadcrumbs, paginación, loaders, ribbon alert, modal, card, input de texto, b�
 
 ## 6. Iconografía
 
-[Phosphor Icons](https://github.com/phosphor-icons/homepage), 2.1.1. Peso **regular** (`ph ph-*`) para botones y controles; peso **fill** (`ph-fill ph-*`) para las formas que se colocan en el lienzo. Tamaños habituales: 12, 14, 16 y 20 px.
+[Phosphor Icons](https://github.com/phosphor-icons/homepage), 2.1.1. Todo en peso **regular** (`ph ph-*`), como en Figma, incluidas las formas del selector y las tarjetas de capa (el peso *fill* solo se usa en el icono de aviso de los snackbars). Tamaños habituales: 12, 14, 16, 20 y 40 px.
+
+Los iconos se identificaron comparando cada SVG del frame del editor (nodos `5763:31810` y `5763:1692`) con el catálogo de Phosphor 2.1.1; la coincidencia fue exacta. Equivalencias:
+
+| Dónde | Icono |
+| :--- | :--- |
+| Marca | `gradient` (40 px) |
+| Cabecera | Config `gear-six`, Copy SVG `copy`, Download SVG `download-simple` |
+| Capas | Add module `plus-circle`; visibilidad `eye`; borrar `trash`; arrastrar `dots-six-vertical` |
+| Barra del lienzo | cuadrícula `grid-nine`; invertir `circle-half` |
+| Riel | Module `shapes`, Layout `circles-four`, Structure `grid-four`, Similarity `copy-simple`, Gradation `angle`, Anomaly `circles-three-plus`, Contrast `circle-half`, Concentration `radio-button`, Texture `drop-half-bottom`, Space `cube-transparent` |
+| Formas | circle `circle`, square `square`, triangle `triangle`, wave `tilde`, horseshoe `circle-notch`, hexagon `hexagon`, line `minus`, parallelogram `parallelogram`, hatch `scribble`, crescent `subset-proper-of`, teardrop `drop-half-bottom`, cross `plus`, digit1 `number-one`, digit5 `number-five`, digit9 `number-nine` |
+
+Excepción: la flecha del selector de proporción del Figma no es de Phosphor (es un chevron propio de la librería); la app usa `caret-down`, que se ve igual. El botón Open no está en el Figma y usa `folder-open`. `tests/smoke.html` vigila estas equivalencias.
 
 ---
 
