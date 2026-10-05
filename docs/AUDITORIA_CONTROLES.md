@@ -145,3 +145,16 @@ Pasa de 6+6 controles a 4+4, con todo explicado.
 2. Rediseñar en Figma los casos tipo: un panel con Advanced plegable, un dropdown con iconos de retícula y el bloque de líneas.
 3. Implementar en este orden: Layout (el más cargado) → líneas compartidas → fusiones de Anomaly/Gradation/Concentration → Sorpréndeme y presets.
 4. Mantener las 35 pruebas y la comparación con los valores por defecto para no romper nada.
+
+## 7. Decisiones de Diego (5 oct 2026)
+
+- **Structure deja de ser un panel.** Sus proporciones A:B pasan a *Advanced* de Layout (*Rhythm*). Le gusta que jueguen con los tamaños de la retícula sin ser exactas.
+- **Anomaly:** se quitan los sliders X/Y. El punto en el lienzo está **activo por defecto** al activar el control, con opción de ocultarlo.
+- **Anomaly y Contrast:** elegir el color de acento reemplaza la casilla "Highlight" (si no, quedaría sin edición).
+- **Módulo:** el contenedor (ancho y alto) va a *Advanced*, y hay que añadir una opción para **ocultarlo** en el lienzo (hoy solo se ve con el panel abierto, o siempre).
+- **Concentration:** pendiente de definir (ver la pregunta del dropdown).
+- **Regla general de líneas y guías:**
+  - Las líneas de estructura visibles de **Layout** son **parte del diseño** (Wong): color, grosor, se exportan. No llevan modo "guía".
+  - Las guías de los **demás controles** (retículo de Anomaly, atractor de Concentration, retícula isométrica de Space...) son solo guías: **un control global de color de guías**, no se exportan.
+- **Sorpréndeme y presets:** prioridad **mínima**. Van al final de todo, cuando la herramienta esté afinada con todos los controles.
+- **Filtro del backlog P3:** aprobado (¿sirve para jugar o solo completa el libro?).
