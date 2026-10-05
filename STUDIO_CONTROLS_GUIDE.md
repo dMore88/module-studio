@@ -61,7 +61,7 @@ Controla el soporte físico y los límites del plano gráfico.
 | `invertFigureGround` | Switch (Toggle) | `boolean` (`true` / `false`) | Invierte ópticamente los roles de figura y fondo: la figura asume el tono del papel y el fondo el de la tinta principal. |
 | `wireframe` | Switch (Toggle) | `boolean` (`true` / `false`) | Elimina los rellenos sólidos (`fill: none`) forzando un trazo de contorno (`stroke`). Permite auditar colisiones e intersecciones booleanas sin oclusión visual. |
 | `showSafeBounds` | Switch (Toggle) | `boolean` (`true` / `false`) | Renderiza una rejilla perimetral sutil de 48px que delimita el área viva de impresión y resguarda márgenes editoriales. |
-| `zoomLevel` | Numérico / Botones | `0.5` a `2.0` | Factor de escala de previsualización en la mesa de trabajo sin alterar la resolución de exportación. |
+| `zoomLevel` | — | — | Retirado (2026-10-04): el lienzo se ajusta solo al alto libre de la pantalla. |
 
 ---
 

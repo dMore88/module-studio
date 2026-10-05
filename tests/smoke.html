@@ -360,6 +360,35 @@
       }
     });
 
+    await test("Layout: artboard fits the free height and never goes under the controls panel; controls stay in one column", async () => {
+      const d = win.document;
+      const sel = d.getElementById("canvas-aspect-ratio");
+      const flyout = d.getElementById("inspector-flyout");
+      const stage = d.getElementById("canvas-viewport-container");
+      const ratios = { "1:1": 1, "9:16": 9 / 16, "4:3": 4 / 3, "3:4": 3 / 4, "16:9": 16 / 9 };
+      for (const [key, r] of Object.entries(ratios)) {
+        sel.value = key; sel.dispatchEvent(new win.Event("change")); await wait(120);
+        const a = d.getElementById("artboard-wrapper").getBoundingClientRect();
+        const c = d.getElementById("studio-canvas").getBoundingClientRect();
+        const st = stage.getBoundingClientRect(), fl = flyout.getBoundingClientRect();
+        assert(Math.abs(c.width / c.height - r) < 0.01, `${key}: the canvas ratio is ${(c.width / c.height).toFixed(3)}`);
+        assert(a.bottom <= st.bottom + 1 && a.top >= st.top - 1, `${key}: the artboard does not fit the free height`);
+        assert(a.right <= fl.left - 20, `${key}: the artboard reaches the controls panel`);
+        const tol = 41; // 20 px border on each side plus rounding
+        assert(Math.abs(a.height - st.height) <= tol || Math.abs(a.width - (fl.left - 24 - a.left)) <= tol, `${key}: the artboard leaves free space on both axes`);
+      }
+      assert(/^\d+ × \d+ PX/.test(d.getElementById("hud-resolution").textContent), "The status line does not show the canvas size");
+      for (const btn of d.querySelectorAll("#controls-rail .rail-btn")) {
+        btn.click(); await wait(30);
+        const tab = d.querySelector(`.flyout-tab-content[data-flyout-tab="${btn.dataset.railTab}"]`);
+        assert(flyout.scrollWidth <= flyout.clientWidth + 1, `${btn.dataset.railTab}: the panel overflows horizontally`);
+        const tops = Array.from(tab.querySelectorAll(".ds-slider .ds-value")).filter(v => v.offsetParent).map(v => Math.round(v.getBoundingClientRect().top));
+        assert(new Set(tops).size === tops.length, `${btn.dataset.railTab}: two sliders share a row`);
+        assert(flyout.getBoundingClientRect().width === 340, `${btn.dataset.railTab}: the panel is not 340 px wide`);
+      }
+      sel.value = "1:1"; sel.dispatchEvent(new win.Event("change"));
+    });
+
     await test("A failed draw shows a visible notice and recovers", () => {
       reset();
       const original = app.engine.render;

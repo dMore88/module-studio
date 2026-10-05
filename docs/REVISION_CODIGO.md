@@ -103,7 +103,7 @@ El resto son problemas de orden interno que no se ven hoy pero encarecen cada ca
 - **10. Cada movimiento de un deslizador dibuja de inmediato.** Con ajustes pesados (peor caso medido: 973 ms) arrastrar puede sentirse con retraso. Conviene agrupar los dibujos de un mismo instante.
 - **11. Archivos muy grandes.** La lógica de pantalla tiene 2.529 líneas en una sola clase y el motor 1.794. Funcionan, pero cuesta encontrar cosas. A futuro, separar por modificador.
 - **12. Colores y medidas escritos a mano en el CSS** en lugar de variables de diseño. Se resuelve con el trabajo del design system (Q3).
-- **13. Pequeñas rarezas visuales.** El punto de referencia del centro se dibuja siempre, incluso con capas en cuadrícula. El zoom quedó desactivado pero su código sigue.
+- **13. Pequeñas rarezas visuales.** El punto de referencia del centro se dibuja siempre, incluso con capas en cuadrícula. El zoom quedó desactivado y su código se retiró.
 
 ---
 

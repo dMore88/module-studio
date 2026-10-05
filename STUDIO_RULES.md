@@ -71,7 +71,7 @@ Para cumplir esto, el editor implementa 3 reglas mecánicas:
 
 ## 4. Indicador de Resolución y Lienzo
  
- El pie del canvas muestra la resolución activa, el número de capas y el soporte HiDPI/Retina (ej. `600 × 600 PX • 2 LAYERS • 100% ZOOM`).
+ El pie del canvas muestra la resolución activa, el número de capas y el soporte HiDPI/Retina (ej. `640 × 640 PX • 2 LAYERS`; el tamaño es el del lienzo tal como se ve, calculado del espacio libre).
 
 
 ## 5. Proporciones de Canvas (Aspect Ratios)

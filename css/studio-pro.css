@@ -23,7 +23,7 @@ body {
   font-family: var(--typography-family-body);
   background-color: var(--neutral-bg-main);
   background-image: radial-gradient(var(--ds-canvas-dot) 1.2px, transparent 1.2px);
-  background-size: 20px 20px;
+  background-size: 24px 24px;
   background-position: 0 0;
   color: var(--neutral-text-main);
   overflow: hidden;
@@ -124,15 +124,15 @@ input[type="range"]:hover::-webkit-slider-thumb {
 
 .inspector-flyout-card {
   position: absolute;
-  top: 18px;
-  right: 68px;
-  width: 400px;
-  max-height: calc(100vh - 40px);
+  top: 0;
+  right: var(--flyout-right);
+  width: 340px;
+  max-height: calc(100% - var(--spacing-6));
   background: var(--neutral-bg-light);
   border: none;
   border-radius: var(--border-radius-3);
   box-shadow: var(--elevation-3x);
-  padding: var(--spacing-6);
+  padding: var(--spacing-5);
   overflow-y: auto;
   z-index: 30;
   transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
@@ -230,9 +230,10 @@ input[type="range"]:hover::-webkit-slider-thumb {
   gap: var(--spacing-2);
 }
 .ds-card-title-text {
-  font-size: var(--font-size-sm);
-  line-height: var(--line-height-small);
-  color: var(--neutral-text-subtle);
+  font-size: var(--font-size-md);
+  font-weight: var(--typography-weight-600);
+  line-height: var(--line-height-body);
+  color: var(--neutral-text-main);
 }
 .ds-badge {
   display: inline-flex;
@@ -279,7 +280,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
 
 /* Field + overline label */
 .ds-field { display: flex; flex-direction: column; gap: var(--spacing-3); min-width: 0; flex: 1; }
-.ds-row { display: flex; gap: 13px; }
+.ds-row { display: flex; flex-direction: column; gap: var(--spacing-6); }
 .ds-label {
   font-size: var(--font-size-xs);
   font-weight: var(--typography-weight-600);
@@ -311,7 +312,19 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .ds-tag:focus-visible { outline: var(--border-weight-2) solid var(--neutral-interactive-default); outline-offset: var(--spacing-1); }
 
 /* Slider + value box */
-.ds-slider { display: flex; align-items: center; gap: 10px; }
+.ds-slider { display: flex; align-items: center; gap: var(--spacing-4); }
+/* Figma "input-range" + "input-text": the value box sits beside the label and the track */
+.ds-field:has(> .ds-slider) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 56px;
+  column-gap: var(--spacing-4);
+  row-gap: var(--spacing-4);
+  align-items: center;
+}
+.ds-field:has(> .ds-slider) > .ds-label { grid-column: 1; grid-row: 1; }
+.ds-field:has(> .ds-slider) > .ds-slider { display: contents; }
+.ds-field:has(> .ds-slider) .ds-slider input[type="range"] { grid-column: 1; grid-row: 2; width: 100%; }
+.ds-field:has(> .ds-slider) .ds-value { grid-column: 2; grid-row: 1 / span 2; }
 .ds-slider input[type="range"] {
   flex: 1;
   min-width: 0;
@@ -342,8 +355,8 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .ds-value {
   box-sizing: border-box;
   flex-shrink: 0;
-  width: 62px;
-  height: 31px;
+  width: 56px;
+  height: var(--sizing-7);
   border: var(--border-weight-1) solid var(--ds-value-border);
   border-radius: var(--ds-value-radius);
   background: var(--ds-value-bg);
@@ -541,9 +554,9 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .ds-brand-icon svg { width: 28px; height: 28px; }
 .ds-brand-title {
   font-family: var(--typography-family-heading);
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-xl);
   font-weight: var(--typography-weight-600);
-  line-height: 1.2;
+  line-height: var(--line-height-body);
   color: var(--neutral-text-main);
   white-space: nowrap;
 }
@@ -564,9 +577,10 @@ input[type="range"]:hover::-webkit-slider-thumb {
   background: var(--neutral-interactive-default-inverted);
   color: var(--neutral-text-main);
   font-family: var(--typography-family-body);
-  font-size: var(--font-size-md);
-  font-weight: var(--typography-weight-500);
+  font-size: var(--font-size-xs);
+  font-weight: var(--typography-weight-600);
   line-height: var(--line-height-tight);
+  text-transform: uppercase;
   white-space: nowrap;
   cursor: pointer;
   transition: background 0.15s ease;
@@ -638,67 +652,88 @@ input[type="range"]:hover::-webkit-slider-thumb {
   pointer-events: none;
 }
 
-/* Workspace toolbar: select + view options, centered over the artboard */
+/* Workspace toolbar: select on the left, view options on the right, as wide as the artboard */
 .ds-workspace-toolbar {
-  position: absolute;
-  top: var(--spacing-5);
-  /* centered in the space between the layers panel (360) and the rail (~58) */
-  left: calc(360px + (100% - 418px) / 2);
-  transform: translateX(-50%);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: var(--spacing-6);
-  z-index: 20;
+  flex-shrink: 0;
+  width: var(--artboard-w, 100%);
+  min-width: 330px;
+  max-width: 100%;
+  height: var(--sizing-7);
 }
 .ds-view-options { display: flex; gap: var(--spacing-4); }
 
-/* Artboard frame */
+/* Workspace: layers | canvas column | rail, with the controls panel floating over the right edge */
+.ds-workspace {
+  --flyout-right: 66px;
+  position: relative;
+  display: flex;
+  flex: 1;
+  gap: var(--spacing-6);
+  min-height: 0;
+  overflow: hidden;
+}
+.ds-canvas-column {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--spacing-5);
+  min-width: 0;
+  padding-bottom: var(--spacing-6);
+}
+.ds-stage { flex: 1; min-height: 0; position: relative; }
+
+/* Artboard frame (Figma "Moiré artwork": white 20px border, radius 20, elevation 5x) */
+.ds-artboard {
+  display: inline-block;
+  box-sizing: content-box;
+  border: var(--sizing-5) solid var(--neutral-bg-light);
+  border-radius: var(--border-radius-3);
+  box-shadow: var(--elevation-5x);
+  overflow: hidden;
+  line-height: 0;
+}
 .artboard-container {
-  box-shadow: var(--elevation-2x);
-  border-radius: var(--border-radius-2);
-  transform-origin: center center;
-  transition: box-shadow 0.2s ease, background-color 0.2s ease;
-  background-color: var(--neutral-bg-light);
   display: block;
-  max-width: min(540px, calc(100vw - 560px));
-  max-height: min(540px, calc(100vh - 200px));
-  width: min(540px, calc(100vw - 560px), calc(100vh - 200px));
-  height: min(540px, calc(100vw - 560px), calc(100vh - 200px));
-  aspect-ratio: 1 / 1;
-  object-fit: contain;
+  background-color: var(--neutral-bg-main);
+  transition: background-color 0.2s ease;
 }
 
-/* Layers panel (360 wide) */
+/* Layers panel (320 wide) */
 .ds-layers-panel {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 20;
   display: flex;
   flex-direction: column;
-  width: 360px;
-  pointer-events: auto;
+  flex-shrink: 0;
+  width: 320px;
+  min-height: 0;
   user-select: none;
 }
 .ds-layers-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 70px;
-  padding: 0 var(--spacing-5);
+  flex-shrink: 0;
+  height: var(--sizing-7);
+  padding-left: var(--spacing-5);
 }
 .ds-layers-count { display: flex; align-items: center; gap: 10px; }
 .ds-layers-title {
-  font-size: var(--font-size-md);
-  font-weight: var(--typography-weight-500);
+  font-size: var(--font-size-xs);
+  font-weight: var(--typography-weight-600);
+  letter-spacing: 0.24px;
   line-height: var(--line-height-tight);
   color: var(--neutral-text-main);
 }
 .ds-layers-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 0 var(--spacing-5) var(--spacing-5);
+  gap: var(--spacing-3);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--spacing-5) 0 var(--spacing-5) var(--spacing-5);
 }
 
 /* Layer card: 72 high, preview 56, copy, actions */
@@ -709,6 +744,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
   box-sizing: border-box;
   height: 72px;
   padding: 0 var(--spacing-5) 0 var(--spacing-3);
+  flex-shrink: 0;
   border: var(--border-weight-1) solid var(--neutral-interactive-default);
   border-radius: var(--border-radius-1);
   background: var(--neutral-interactive-default-inverted);
@@ -733,12 +769,11 @@ input[type="range"]:hover::-webkit-slider-thumb {
   box-sizing: border-box;
   width: var(--sizing-9);
   height: var(--sizing-9);
-  border: var(--border-weight-1) solid var(--neutral-border-main);
   border-radius: var(--border-radius-1);
-  background: var(--neutral-bg-light);
   color: var(--neutral-interactive-default);
-  font-size: var(--sizing-5);
+  font-size: var(--sizing-7);
 }
+.layer-card.is-active .layer-preview-box { color: var(--neutral-icon-inverted); }
 .layer-copy { display: flex; flex-direction: column; gap: var(--spacing-1); flex: 1; min-width: 0; line-height: var(--line-height-body); }
 .layer-title {
   overflow: hidden;
@@ -777,14 +812,14 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .layer-action-btn:focus-visible { outline: var(--border-weight-2) solid var(--neutral-interactive-default); outline-offset: var(--spacing-1); }
 .layer-card.is-active .layer-action-btn:focus-visible { outline-color: var(--neutral-bg-light); }
 
-/* Controls rail (Figma "View options" column): 40x40 dark buttons */
+/* Controls rail (Figma "View options" column): its own column, 40x40 dark buttons */
 .controls-rail {
-  position: absolute;
-  top: var(--spacing-5);
-  right: var(--spacing-5);
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
+  align-self: flex-start;
   gap: var(--spacing-3);
+  padding: 0 var(--spacing-5);
   z-index: 35;
 }
 .rail-btn {
@@ -817,16 +852,12 @@ input[type="range"]:hover::-webkit-slider-thumb {
   border: var(--border-weight-1) solid var(--neutral-interactive-default);
 }
 
-/* Status line (bottom right) */
+/* Status line (under the artboard) */
 .ds-status {
-  position: absolute;
-  right: var(--spacing-6);
-  bottom: var(--spacing-5);
-  z-index: 20;
+  flex-shrink: 0;
   font-family: var(--typography-family-mono);
-  font-size: var(--font-size-xs);
+  font-size: 13px;
   font-weight: var(--typography-weight-500);
   color: var(--neutral-text-subtle);
-  pointer-events: auto;
   user-select: none;
 }

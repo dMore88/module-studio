@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Module Studio — Parametric 2D Vector & Generative Studio</title>
+  <title>Abstract Studio — Parametric 2D Vector & Generative Studio</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -45,7 +45,7 @@
           <line x1="3" y1="18" x2="19" y2="18"/>
         </svg>
       </span>
-      <h1 class="ds-brand-title">Module Studio</h1>
+      <h1 class="ds-brand-title">Abstract Studio</h1>
     </div>
 
     <div class="ds-export-actions">
@@ -70,7 +70,7 @@
   </header>
 
   <!-- MAIN CANVAS-FIRST WORKSPACE -->
-  <main class="flex-1 flex overflow-hidden relative">
+  <main class="ds-workspace">
 
     <!-- LAYERS PANEL (Figma: Layers panel, node 5763:32080) -->
     <div class="ds-layers-panel">
@@ -79,8 +79,8 @@
           <span class="ds-layers-title">LAYERS</span>
           <span id="layers-count-badge" class="ds-badge">2</span>
         </div>
-        <button type="button" id="btn-add-pattern" class="ds-btn" title="Add a layer">
-          <span>Add pattern</span>
+        <button type="button" id="btn-add-pattern" class="ds-btn" title="Add a layer (5 maximum)">
+          <span>Add module</span>
           <i class="ph ph-plus-circle" aria-hidden="true"></i>
         </button>
       </div>
@@ -89,39 +89,75 @@
       <div id="layers-stack-container" class="ds-layers-list"></div>
     </div>
 
-    <!-- WORKSPACE TOOLBAR (Figma: input-select + View options, nodes 5763:31782 and 5763:1730) -->
-    <div class="ds-workspace-toolbar">
-      <div class="ds-select">
-        <select id="canvas-aspect-ratio" aria-label="Canvas aspect ratio">
-          <option value="1:1" selected>1 : 1</option>
-          <option value="9:16">9 : 16</option>
-          <option value="4:3">4 : 3</option>
-          <option value="3:4">3 : 4</option>
-          <option value="16:9">16 : 9</option>
-        </select>
-        <span class="ds-select__button" aria-hidden="true"><i class="ph ph-caret-down"></i></span>
-      </div>
-      <div class="ds-view-options">
-        <button type="button" id="btn-toggle-grid" class="ds-icon-btn active" title="Toggle Grid Guides" aria-label="Toggle grid guides">
-          <i class="ph ph-grid-four" aria-hidden="true"></i>
-        </button>
-        <button type="button" id="btn-toggle-invert" class="ds-icon-btn" title="Toggle Figure / Ground Tone" aria-label="Toggle figure and ground tone">
-          <i class="ph ph-circle-half" aria-hidden="true"></i>
-        </button>
-      </div>
-    </div>
-
-    <!-- CANVAS VIEWPORT (Centered naturally between floating left layers panel and right tool rail) -->
-    <div id="canvas-viewport-container" class="w-full h-full relative overflow-hidden flex items-center justify-center pointer-events-none select-none">
-      <div id="artboard-wrapper" class="relative pointer-events-auto flex items-center justify-center">
-        <canvas id="studio-canvas" class="artboard-container shadow-2xl block" width="600" height="600"></canvas>
+    <!-- CANVAS COLUMN (Figma: canvas, node 5787:482). The artboard is sized by fitArtboard() from the free height -->
+    <div id="canvas-column" class="ds-canvas-column">
+      <!-- WORKSPACE TOOLBAR (Figma: input-select + View options, nodes 5763:31782 and 5763:1730) -->
+      <div class="ds-workspace-toolbar">
+        <div class="ds-select">
+          <select id="canvas-aspect-ratio" aria-label="Canvas aspect ratio">
+            <option value="1:1" selected>1 : 1</option>
+            <option value="9:16">9 : 16</option>
+            <option value="4:3">4 : 3</option>
+            <option value="3:4">3 : 4</option>
+            <option value="16:9">16 : 9</option>
+          </select>
+          <span class="ds-select__button" aria-hidden="true"><i class="ph ph-caret-down"></i></span>
+        </div>
+        <div class="ds-view-options">
+          <button type="button" id="btn-toggle-grid" class="ds-icon-btn active" title="Toggle Grid Guides" aria-label="Toggle grid guides">
+            <i class="ph ph-grid-four" aria-hidden="true"></i>
+          </button>
+          <button type="button" id="btn-toggle-invert" class="ds-icon-btn" title="Toggle Figure / Ground Tone" aria-label="Toggle figure and ground tone">
+            <i class="ph ph-circle-half" aria-hidden="true"></i>
+          </button>
+        </div>
       </div>
 
-      <!-- Bottom Right Status Line (Matching Reference 1 & 2) -->
+      <div id="canvas-viewport-container" class="ds-stage">
+        <div id="artboard-wrapper" class="ds-artboard">
+          <canvas id="studio-canvas" class="artboard-container block" width="600" height="600"></canvas>
+        </div>
+      </div>
+
+      <!-- Status line under the artboard: size of the canvas as shown, and layer count -->
       <div class="ds-status">
-        <span id="hud-resolution">600 × 600 PX</span> • <span id="hud-layers-status">2 LAYERS</span> • 100% ZOOM
+        <span id="hud-resolution">600 × 600 PX</span> • <span id="hud-layers-status">2 LAYERS</span>
       </div>
     </div>
+
+    <!-- CONTROLS RAIL (own column of the layout; Figma View options, node 5763:31810) -->
+    <nav id="controls-rail" class="controls-rail" aria-label="Controls Rail">
+      <button type="button" class="rail-btn active" data-rail-tab="module" title="Module">
+        <i class="ph ph-shapes text-[16px]"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="layout" title="Layout Structure">
+        <i class="ph ph-layout text-[16px]"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="structure" title="Structure">
+        <i class="ph ph-squares-four text-[16px]"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="similarity" title="Similarity">
+        <i class="ph ph-copy text-[16px]"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="gradation" title="Gradation">
+        <i class="ph ph-gradient text-[16px]"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="anomaly" title="Anomaly">
+        <i class="ph ph-sparkle text-[16px]"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="contrast" title="Contrast">
+        <i class="ph ph-circle-half text-[16px]"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="concentration" title="Concentration">
+        <i class="ph ph-target text-[16px]"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="texture" title="Texture">
+        <i class="ph ph-hash text-[16px]"></i>
+      </button>
+      <button type="button" class="rail-btn" data-rail-tab="space" title="Space & Depth">
+        <i class="ph ph-cube text-[16px]"></i>
+      </button>
+    </nav>
 
     <!-- FLOATING CONTEXTUAL INSPECTOR FLYOUT CARD (Floats to left of rail) -->
     <div id="inspector-flyout" class="inspector-flyout-card z-30 pointer-events-auto select-none">
@@ -133,7 +169,6 @@
         <div class="ds-card-header">
           <div class="ds-card-title">
             <span class="ds-card-title-text">Module</span>
-            <span id="active-layer-indicator-badge" class="ds-badge">Layer 1</span>
           </div>
           <button type="button" class="close-flyout-btn" title="Close Panel">
             <i class="ph ph-x text-[14px]"></i>
@@ -161,7 +196,32 @@
           </div>
         </div>
 
-        <div class="ds-row">
+        <div class="ds-field">
+          <div class="ds-btn-group" role="group" aria-label="Fill or stroke">
+            <button type="button" id="btn-mode-stroke" class="ds-btn-group__button active">Stroke</button>
+            <button type="button" id="btn-mode-fill" class="ds-btn-group__button">Fill</button>
+          </div>
+        </div>
+
+        <div class="ds-field">
+          <div class="ds-label">Shape color</div>
+          <div class="ds-color-picker">
+            <span class="ds-swatch ds-swatch-lg">
+              <input type="color" id="color-active-shape" value="#18181f">
+              <span id="swatch-active-color" class="ds-swatch-fill"></span>
+            </span>
+            <span id="text-color-hex" class="ds-color-hex">#18181F</span>
+          </div>
+        </div>
+
+        <div class="ds-stack">
+          <div class="ds-field">
+            <div class="ds-label">Stroke width</div>
+            <div class="ds-slider">
+              <input type="range" id="input-active-stroke" min="0.2" max="10" step="0.1" value="1.2">
+              <input type="text" id="num-active-stroke" class="ds-value" value="1.2px" inputmode="decimal">
+            </div>
+          </div>
           <div class="ds-field">
             <div class="ds-label">Width</div>
             <div class="ds-slider">
@@ -176,9 +236,6 @@
               <input type="text" id="num-active-height" class="ds-value" value="50" inputmode="decimal">
             </div>
           </div>
-        </div>
-
-        <div class="ds-row">
           <div class="ds-field">
             <div class="ds-label">Rotation (°)</div>
             <div class="ds-slider">
@@ -186,16 +243,6 @@
               <input type="text" id="num-active-rotation" class="ds-value" value="4.5" inputmode="decimal">
             </div>
           </div>
-          <div class="ds-field">
-            <div class="ds-label">Stroke width</div>
-            <div class="ds-slider">
-              <input type="range" id="input-active-stroke" min="0.2" max="10" step="0.1" value="1.2">
-              <input type="text" id="num-active-stroke" class="ds-value" value="1.2" inputmode="decimal">
-            </div>
-          </div>
-        </div>
-
-        <div class="ds-row">
           <div class="ds-field">
             <div class="ds-label">Offset X</div>
             <div class="ds-slider">
@@ -208,26 +255,6 @@
             <div class="ds-slider">
               <input type="range" id="input-active-offset-y" min="-250" max="250" step="1" value="0">
               <input type="text" id="num-active-offset-y" class="ds-value" value="0" inputmode="decimal">
-            </div>
-          </div>
-        </div>
-
-        <div class="ds-row">
-          <div class="ds-field">
-            <div class="ds-label">Fill / Stroke</div>
-            <div class="ds-btn-group" role="group" aria-label="Fill or stroke">
-              <button type="button" id="btn-mode-stroke" class="ds-btn-group__button active">Stroke</button>
-              <button type="button" id="btn-mode-fill" class="ds-btn-group__button">Fill</button>
-            </div>
-          </div>
-          <div class="ds-field">
-            <div class="ds-label">Shape color</div>
-            <div class="ds-color-picker">
-              <span class="ds-swatch ds-swatch-lg">
-                <input type="color" id="color-active-shape" value="#18181f">
-                <span id="swatch-active-color" class="ds-swatch-fill"></span>
-              </span>
-              <span id="text-color-hex" class="ds-color-hex">#18181F</span>
             </div>
           </div>
         </div>
@@ -976,44 +1003,11 @@
 
     </div>
 
-    <!-- FLOATING RIGHT CONTROLS RAIL (Vertical Black Circular Buttons Dock) -->
-    <nav id="controls-rail" class="controls-rail z-35 pointer-events-auto select-none" aria-label="Controls Rail">
-      <button type="button" class="rail-btn active" data-rail-tab="module" title="Module">
-        <i class="ph ph-shapes text-[16px]"></i>
-      </button>
-      <button type="button" class="rail-btn" data-rail-tab="layout" title="Layout Structure">
-        <i class="ph ph-layout text-[16px]"></i>
-      </button>
-      <button type="button" class="rail-btn" data-rail-tab="structure" title="Structure">
-        <i class="ph ph-squares-four text-[16px]"></i>
-      </button>
-      <button type="button" class="rail-btn" data-rail-tab="similarity" title="Similarity">
-        <i class="ph ph-copy text-[16px]"></i>
-      </button>
-      <button type="button" class="rail-btn" data-rail-tab="gradation" title="Gradation">
-        <i class="ph ph-gradient text-[16px]"></i>
-      </button>
-      <button type="button" class="rail-btn" data-rail-tab="anomaly" title="Anomaly">
-        <i class="ph ph-sparkle text-[16px]"></i>
-      </button>
-      <button type="button" class="rail-btn" data-rail-tab="contrast" title="Contrast">
-        <i class="ph ph-circle-half text-[16px]"></i>
-      </button>
-      <button type="button" class="rail-btn" data-rail-tab="concentration" title="Concentration">
-        <i class="ph ph-target text-[16px]"></i>
-      </button>
-      <button type="button" class="rail-btn" data-rail-tab="texture" title="Texture">
-        <i class="ph ph-hash text-[16px]"></i>
-      </button>
-      <button type="button" class="rail-btn" data-rail-tab="space" title="Space & Depth">
-        <i class="ph ph-cube text-[16px]"></i>
-      </button>
-    </nav>
 
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=d79fb219"></script>
+  <script src="js/bundle-pro.js?v=b38cc6b7"></script>
 
 </body>
 </html>

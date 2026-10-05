@@ -168,10 +168,12 @@ Todas las tarjetas: fondo blanco, radio `border/radius/3` (20), relleno `spacing
 ---
 
 ### 5.1 Tarjeta flotante del inspector (`.inspector-flyout-card` + `.ds-card`)
-Ancho 400 px, relleno `spacing/6` (24), radio `border/radius/3` (20), separación interna `spacing/5` (16), sombra `elevation/3x`, fondo `neutral/bg/light`. Se sitúa a la izquierda del riel de herramientas.
+Ancho **340 px** (angosto a propósito: no debe tapar el lienzo mientras se edita), relleno `spacing/5` (16), radio `border/radius/3` (20), separación interna `spacing/5` (16), sombra `elevation/3x`, fondo `neutral/bg/light`. Flota sobre el borde derecho del espacio de trabajo, a 66 px del borde (a la izquierda del riel), alineada con la parte superior de la barra del lienzo. Se abre y cierra con el riel y con su botón de cierre.
+
+**Regla para todos los controles: una sola columna.** Cada slider ocupa el ancho completo del panel; nunca se ponen dos controles lado a lado (por eso `.ds-row` es una columna). Las únicas filas horizontales son los grupos de botones, tags y formas, que se ajustan solos al ancho.
 
 ### 5.2 Cabecera de tarjeta (`.ds-card-header`)
-Título en *Body small* con `neutral/text/subtle`, seguido de un **badge** con el nombre de la capa y, a la derecha, el **interruptor** y el botón de cierre. Separación 18 px.
+Título en 16 / 600 con `neutral/text/main` (*Heading*), seguido de un **badge** con el nombre de la capa (el panel Module no lo lleva, como en el editor de Figma) y, a la derecha, el **interruptor** y el botón de cierre. El botón de cierre no está en el mockup del editor; se añadió a petición. Separación 18 px.
 
 ### 5.3 Badge (`.ds-badge`)
 Variante neutral: fondo `neutral/bg/strong`, radio `border/radius/1`, relleno horizontal `spacing/2`, texto *Caption--Strong* en `neutral/text/main`. La librería define otras cinco variantes (primary, success, warning, danger, info) con fondo `…/bg/soft` y texto `…/text/default`.
@@ -200,7 +202,7 @@ Separación entre tags `spacing/3` (8). Altura 24 (`sizing/6`), relleno horizont
 La librería define además un tag con icono y botón de cierre y estado deshabilitado (`neutral/interactive/disabled`, borde `neutral/border/muted`, texto `neutral/text/subtle`).
 
 ### 5.6 Control deslizante (`.ds-slider`) y caja de valor (`.ds-value`)
-Pista de 2 px, tirador de 16 px (`assets/slider-thumb.svg`), separación 10 px; caja de valor de 62×31, radio 7, fuente monoespaciada 15 px. La caja de valor y la pista están **dibujadas en Figma con colores sueltos**, no con variables (ver Pendientes); en el código viven como tokens locales `--ds-*`.
+Pista de 2 px, tirador de 16 px (`assets/slider-thumb.svg`). La etiqueta va encima de la pista y la **caja de valor (56×40) a la derecha, abarcando etiqueta y pista**, con separación `spacing/4` (12); radio 7, fuente monoespaciada 15 px. Los valores con unidad la muestran en la caja (`1.2px`, `50%`). La caja de valor y la pista están **dibujadas en Figma con colores sueltos**, no con variables (ver Pendientes); en el código viven como tokens locales `--ds-*`.
 
 ### 5.7 Campo con etiqueta (`.ds-field`, `.ds-row`, `.ds-label`)
 Etiqueta *Overline* en `neutral/text/soft`, separación `spacing/3` (8) entre etiqueta y control; dos campos en fila con separación 13 px.
@@ -231,10 +233,10 @@ Cuadro de color de 40×40 (`sizing/7`), radio `border/radius/1`, borde en `neutr
 Contenedor vertical con separación `spacing/6` (24) para los sub-paneles de Layout structure y para el grupo de controles de Structure y Similarity.
 
 ### 5.14 Cabecera de la aplicación (`.ds-app-header`, nodo `5763:1693`)
-Altura 68, relleno horizontal 26. A la izquierda la marca (icono de 40 px y el nombre en *Heading 5--Strong*: 24 / 600); a la derecha las acciones de exportación (Config, Copy SVG, Download SVG) con separación de 10 px.
+Altura 68, relleno horizontal 26. A la izquierda la marca (icono de 40 px y el nombre en *Heading 5--Strong*: 24 / 600); a la derecha las acciones de exportación (Open, Config, Copy SVG, Download SVG) con separación de 10 px. Nombre de la aplicación: **Abstract Studio**, 20 / 600 (el repositorio sigue llamándose Module Studio).
 
 ### 5.15 Botón (`.ds-btn`)
-Altura 40 (`sizing/7`), ancho mínimo 100, relleno horizontal `spacing/5`, radio `border/radius/2`, fondo `neutral/interactive/default--inverted`, texto *Label* (16 / 500) en `neutral/text/main` e icono de 16 px a la derecha.
+Altura 40 (`sizing/7`), ancho mínimo 100, relleno horizontal `spacing/5`, radio `border/radius/2`, fondo `neutral/interactive/default--inverted`, texto *Label* (12 / 600, **mayúsculas**) en `neutral/text/main` e icono de 16 px a la derecha.
 
 | Estado | Fondo |
 | :--- | :--- |
@@ -243,7 +245,7 @@ Altura 40 (`sizing/7`), ancho mínimo 100, relleno horizontal `spacing/5`, radio
 | Pulsado | `neutral/interactive/active--inverted` |
 | Deshabilitado | `neutral/interactive/disabled` |
 
-> El botón **Open** de la cabecera (junto a Config) no tiene mockup en Figma; reutiliza `.ds-btn` con el icono `ph-folder-open`. Pendiente de diseño.
+> El botón **Open** de la cabecera sirve para reabrir un proyecto guardado con Config no tiene mockup en Figma; reutiliza `.ds-btn` con el icono `ph-folder-open`. Pendiente de diseño.
 
 ### 5.16 Botón de icono (`.ds-icon-btn`)
 40×40, radio `border/radius/2`, icono de 16 px. Normal con `neutral/interactive/default--inverted`; **activo** (opciones de vista: guías de rejilla, inversión de tono) con `neutral/interactive/default` e icono `neutral/icon/inverted`.
@@ -252,13 +254,15 @@ Altura 40 (`sizing/7`), ancho mínimo 100, relleno horizontal `spacing/5`, radio
 212×40, borde `border/weight/1` en `neutral/border/strong`, radio `border/radius/2`, fondo `neutral/interactive/default--inverted`, texto de 16 px en `neutral/text/soft`, y a la derecha un botón oscuro de 40×40 (`neutral/interactive/default`) con un icono de 20 px. Es un `<select>` nativo con ese aspecto.
 
 ### 5.18 Barra del lienzo (`.ds-workspace-toolbar`)
-El selector de proporción y las dos opciones de vista, centrados en el espacio libre entre el panel de capas y el riel.
+Primera fila de la columna del lienzo: el selector de proporción a la izquierda y las dos opciones de vista (cuadrícula, invertir) a la derecha, con el **mismo ancho que el lienzo** (mínimo 330 px).
+
+**Tamaño del lienzo (`fitArtboard()`):** el alto manda. El lienzo ocupa todo el alto libre de la columna y el ancho sale de la proporción (1:1, 9:16, 4:3, 3:4, 16:9). El ancho tiene un tope para no pasar por debajo del panel de controles (340 px + 24 px de aire), así que en 4:3 y 16:9 el alto baja. El marco blanco de 20 px, el radio 20 y la sombra `elevation/5x` rodean al lienzo, que queda alineado a la izquierda de su columna. No hay zoom ni desplazamiento; el tamaño se recalcula al cambiar la ventana, la proporción o el espacio.
 
 ### 5.19 Panel de capas (`.ds-layers-panel`, nodo `5763:32080`)
-360 px de ancho. Barra superior de 70 px con el título *LAYERS* (16 / 500), el contador (badge) y el botón *Add pattern*. Lista con separación de 10 px y relleno `spacing/5`.
+320 px de ancho. Barra superior de 40 px con el título *LAYERS* (12 / 600, espaciado 0,24), el contador (badge, solo el número) y el botón **ADD MODULE**. Lista con separación `spacing/3` (8) y relleno `spacing/5` (16) arriba, abajo y a la izquierda, sin relleno a la derecha (las tarjetas llegan al borde de la columna).
 
 ### 5.20 Tarjeta de capa (`.layer-card`)
-72 de alto, radio `border/radius/1`, relleno izquierdo `spacing/3` y derecho `spacing/5`, separación `spacing/4`. Contiene una vista previa de 56×56 (borde `neutral/border/main`), el nombre en 16 / 600, una línea secundaria en `DM Mono` 14 / 500 con `neutral/text/subtle`, y las acciones (visibilidad, borrar, arrastrar) con separación `spacing/4`.
+72 de alto, radio `border/radius/1`, relleno izquierdo `spacing/3` y derecho `spacing/5`, separación `spacing/4`. Contiene una vista previa de 56×56 sin fondo ni borde, con el icono de la forma en trazo (`ph`, regular) de 40 px, el nombre en 16 / 600, una línea secundaria en `DM Mono` 14 / 500 con `neutral/text/subtle`, y las acciones (visibilidad, borrar, arrastrar) con separación `spacing/4`.
 
 | Estado | Fondo | Borde | Texto |
 | :--- | :--- | :--- | :--- |
@@ -267,10 +271,10 @@ El selector de proporción y las dos opciones de vista, centrados en el espacio 
 | Oculta | igual, con opacidad 45 % | | |
 
 ### 5.21 Riel de herramientas (`.controls-rail`, `.rail-btn`)
-Columna de botones de 40×40 con radio `border/radius/2` (no circulares), separación `spacing/3`, fondo `neutral/interactive/default` e icono `neutral/icon/inverted`. El botón del panel abierto lleva un anillo de 2 px; un punto de `primary/bg/main` indica que el modificador de esa capa está encendido.
+**Columna propia del layout** (relleno horizontal `spacing/5`, a la derecha del lienzo, no flota). Botones de 40×40 con radio `border/radius/2` (no circulares), separación `spacing/3`, fondo `neutral/interactive/default` e icono `neutral/icon/inverted`. El botón del panel abierto lleva un anillo de 2 px; un punto de `primary/bg/main` indica que el modificador de esa capa está encendido.
 
 ### 5.22 Línea de estado (`.ds-status`)
-Abajo a la derecha: resolución, número de capas y zoom, en `DM Mono` 12 / 500 con `neutral/text/subtle`.
+Debajo del lienzo, a la izquierda: tamaño del lienzo **tal como se ve** (se calcula del espacio disponible) y número de capas, en mono 13 / 500 con `neutral/text/subtle`. Ya no muestra el zoom.
 
 ### 5.23 Componentes de la librería que la app aún no usa
 Breadcrumbs, paginación, loaders, ribbon alert, modal, card, input de texto, búsqueda, select, textarea, input numérico, lista, tabla, botón, enlace, grupo de botones, grupo de botones de alternancia, tabs, acordeón y tooltip.
@@ -303,8 +307,8 @@ Breadcrumbs, paginación, loaders, ribbon alert, modal, card, input de texto, b�
 | 8 | **Etiqueta "Relleno / Trazo" en Layout** | En el mockup del selector Repetition / Radiation sobra el texto "Relleno / Trazo" (parece de otro control). En la app se llama *Structure mode* | Confirmar |
 | 9 | **Panel Module** | El mockup no muestra la etiqueta de capa (badge) ni el botón de cierre; la app los mantiene | Confirmar |
 | 9b | **Barra del lienzo** | En el mockup el selector de proporción y las opciones de vista van alineados con los bordes del lienzo; en la app están centrados sobre él | Confirmar |
-| 9c | **Zoom** | El mockup incluye un grupo de botones de zoom bajo el lienzo; el zoom está desactivado en la app a petición tuya | Confirmar si vuelve |
-| 9d | **Línea de estado** | El mockup muestra "RETINA HiDPI"; la app muestra el zoom (100 %) | Confirmar el texto |
+| 9c | **Zoom** | El mockup incluye un grupo de botones de zoom bajo el lienzo; el zoom está desactivado en la app a petición tuya | Quitado por ahora (2026-10-04), junto con el desplazamiento y los atajos Espacio y Cmd+0. Confirmar si vuelve |
+| 9d | **Línea de estado** | El mockup muestra "RETINA HiDPI"; la app muestra el tamaño del lienzo y el número de capas, como el frame actual | Resuelto: el texto sigue el frame del editor |
 | 10 | **Rampa de primitivos** | No se puede leer completa con las herramientas disponibles | Exportar la lista de variables desde Figma si se quiere documentar entera |
 
 ---

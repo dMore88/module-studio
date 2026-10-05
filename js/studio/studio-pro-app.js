@@ -25,14 +25,8 @@ export class StudioProApp {
     this.engine = new StudioEngine(this.canvas);
     this.state = JSON.parse(JSON.stringify(defaultStudioState));
     
-    // Viewport Navigation state
-    this.zoom = 1.0;
-    this.panX = 0;
-    this.panY = 0;
-    this.isPanning = false;
-    this.panStartX = 0;
-    this.panStartY = 0;
-    this.isSpacePressed = false;
+    // Artboard size as shown on screen (set by fitArtboard)
+    this.artboardSize = { w: 0, h: 0 };
 
     // Active Layer Management (Each layer is a module!)
     this.activeLayerId = "layer-2"; // 'layer-1' (Form A) or 'layer-2' (Form B)
@@ -197,7 +191,6 @@ export class StudioProApp {
       this.showRenderError(err);
       return;
     }
-    this.updateHUD();
   }
 
   showRenderError(err) {
@@ -223,11 +216,7 @@ export class StudioProApp {
     this.state.aspectRatio = key;
     this.canvas.width = cfg.w;
     this.canvas.height = cfg.h;
-    this.canvas.style.aspectRatio = cfg.css;
-
-    // Update dimensions HUD
-    const resText = document.getElementById("hud-resolution");
-    if (resText) resText.textContent = `${cfg.w} × ${cfg.h} PX`;
+    this.fitArtboard();
 
     const selectEl = document.getElementById("canvas-aspect-ratio");
     if (selectEl && selectEl.value !== key) selectEl.value = key;
@@ -571,7 +560,7 @@ export class StudioProApp {
     const layers = this.getLayers();
     const count = layers.length;
 
-    if (layersCountBadge) layersCountBadge.textContent = `${count} / 5`;
+    if (layersCountBadge) layersCountBadge.textContent = `${count}`;
     if (layersStatus) layersStatus.textContent = `${count} LAYERS`;
 
     if (addBtn) {
@@ -625,7 +614,7 @@ export class StudioProApp {
       const isActive = l.id === this.activeLayerId;
       const isVis = l.visible !== false;
       const shapeDef = Shapes[l.shape] || Shapes.circle;
-      const icon = `<i class="ph-fill ph-${shapeDef?.phIcon || "circle"} text-[16px]"></i>`;
+      const icon = `<i class="ph ph-${shapeDef?.phIcon || "circle"}" aria-hidden="true"></i>`;
       const mode = l.wireframe !== false ? "stroke" : "fill";
       const s = l.structure;
       const structText = s?.enabled ? (s.mode === "radiation" ? " • radiation" : " • grid") : "";
@@ -2222,7 +2211,7 @@ export class StudioProApp {
       const mod = this.getActiveModule();
       mod.strokeWidth = val;
       this.render();
-    }, "Stroke Width");
+    }, "Stroke Width", "px");
 
     // 4.5 Position Offset (Offset X & Offset Y)
     this.bindSliderWithNumber("input-active-offset-x", "num-active-offset-x", (val) => {
@@ -2298,7 +2287,7 @@ export class StudioProApp {
     this.syncControlValue("input-active-rotation", mod.rotation || 0);
     this.syncControlValue("num-active-rotation", mod.rotation || 0);
     this.syncControlValue("input-active-stroke", mod.strokeWidth || 1.2);
-    this.syncControlValue("num-active-stroke", mod.strokeWidth || 1.2);
+    this.syncControlValue("num-active-stroke", `${mod.strokeWidth || 1.2}px`);
     this.syncControlValue("input-active-offset-x", mod.offsetX !== undefined ? mod.offsetX : 0);
     this.syncControlValue("num-active-offset-x", mod.offsetX !== undefined ? mod.offsetX : 0);
     this.syncControlValue("input-active-offset-y", mod.offsetY !== undefined ? mod.offsetY : 0);
@@ -2333,28 +2322,47 @@ export class StudioProApp {
      ========================================================================= */
 
   setupViewportEvents() {
-    // Zoom and pan disabled by request. Artboard stays strictly at 100% natural scale.
-    this.zoom = 1.0;
-    this.panX = 0;
-    this.panY = 0;
-    if (this.artboardWrapper) {
-      this.artboardWrapper.style.transform = "none";
+    // The artboard is not zoomed or panned: it is sized to the free height of the workspace.
+    // Refit whenever the window or the stage changes size.
+    window.addEventListener("resize", () => this.fitArtboard());
+    if (typeof ResizeObserver !== "undefined" && this.canvasContainer) {
+      new ResizeObserver(() => this.fitArtboard()).observe(this.canvasContainer);
     }
+  }
+
+  // Sizes the canvas so its height fills the free height (the height rules), and its width follows
+  // the aspect ratio. The width is capped so the artboard never slides under the controls panel.
+  fitArtboard() {
+    const stage = this.canvasContainer;
+    const column = document.getElementById("canvas-column");
+    const flyout = document.getElementById("inspector-flyout");
+    const workspace = document.querySelector(".ds-workspace");
+    if (!stage || !column || !workspace || !stage.clientHeight) return;
+
+    const BORDER = 20; // white frame around the canvas, each side (Figma "Moiré artwork")
+    const GAP = 24;
+    const cfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
+    const ratio = cfg.w / cfg.h;
+
+    const flyoutWidth = flyout ? flyout.offsetWidth : 340;
+    const flyoutLeft = workspace.getBoundingClientRect().right - parseFloat(getComputedStyle(workspace).getPropertyValue("--flyout-right") || 66) - flyoutWidth;
+    const maxOuterW = Math.max(160, flyoutLeft - GAP - column.getBoundingClientRect().left);
+
+    const innerH = Math.max(120, Math.min(stage.clientHeight - BORDER * 2, (maxOuterW - BORDER * 2) / ratio));
+    const h = Math.floor(innerH);
+    const w = Math.floor(innerH * ratio);
+
+    this.canvas.style.width = `${w}px`;
+    this.canvas.style.height = `${h}px`;
+    column.style.setProperty("--artboard-w", `${w + BORDER * 2}px`);
+    this.artboardSize = { w, h };
+
+    const resText = document.getElementById("hud-resolution");
+    if (resText) resText.textContent = `${w} × ${h} PX`;
   }
 
   centerArtboard() {
-    this.zoom = 1.0;
-    this.panX = 0;
-    this.panY = 0;
-    if (this.artboardWrapper) {
-      this.artboardWrapper.style.transform = "none";
-    }
-  }
-
-  updateHUD() {
-    const cfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"];
-    const resEl = document.getElementById("hud-resolution");
-    if (resEl) resEl.textContent = `${cfg.w} × ${cfg.h} PX`;
+    this.fitArtboard();
   }
 
   /* =========================================================================
@@ -2367,41 +2375,22 @@ export class StudioProApp {
 
       const isCmdOrCtrl = e.metaKey || e.ctrlKey;
 
-      if (e.code === "Space" && !this.isSpacePressed) {
-        this.isSpacePressed = true;
-        const vp = document.getElementById("canvas-viewport-container");
-        if (vp) vp.style.cursor = "grab";
-      }
-
       if (isCmdOrCtrl && e.key.toLowerCase() === "z") {
         e.preventDefault();
         if (e.shiftKey) this.redo();
         else this.undo();
       }
-
-      if (isCmdOrCtrl && e.key === "0") {
-        e.preventDefault();
-        this.centerArtboard();
-      }
-    });
-
-    window.addEventListener("keyup", (e) => {
-      if (e.code === "Space") {
-        this.isSpacePressed = false;
-        const vp = document.getElementById("canvas-viewport-container");
-        if (vp) vp.style.cursor = "default";
-      }
     });
   }
 
-  bindSliderWithNumber(sliderId, numberId, callback, label = "Parameter") {
+  bindSliderWithNumber(sliderId, numberId, callback, label = "Parameter", suffix = "") {
     const slider = document.getElementById(sliderId);
     const numInput = document.getElementById(numberId);
 
     if (slider) {
       slider.addEventListener("input", (e) => {
         const val = parseFloat(e.target.value);
-        if (numInput) numInput.value = val;
+        if (numInput) numInput.value = `${val}${suffix}`;
         callback(val);
       });
       slider.addEventListener("change", (e) => {
@@ -2413,6 +2402,7 @@ export class StudioProApp {
       numInput.addEventListener("change", (e) => {
         const val = parseFloat(e.target.value);
         if (slider) slider.value = val;
+        e.target.value = `${val}${suffix}`;
         callback(val);
         this.pushHistory(`Edited ${label}: ${val}`);
       });
