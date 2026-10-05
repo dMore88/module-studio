@@ -4321,7 +4321,7 @@ class StudioProApp {
       }
       this.syncStructureInspectorWithActiveLayer();
       this.syncFormalStructureInspectorWithActiveLayer();
-      this.syncSimilarityInspectorWithActiveLayer();
+      this.syncAllInspectorsWithActiveLayer(); // every collective modifier shows or hides its "turn on Layout" notice
       this.render();
       this.updateLayerCardsUI();
       this.pushHistory(`Layer ${this.activeLayerId} Layout Structure: ${enabled ? "ON" : "OFF"}`);
@@ -4337,7 +4337,7 @@ class StudioProApp {
       }
       this.syncStructureInspectorWithActiveLayer();
       this.syncFormalStructureInspectorWithActiveLayer();
-      this.syncSimilarityInspectorWithActiveLayer();
+      this.syncAllInspectorsWithActiveLayer(); // every collective modifier shows or hides its "turn on Layout" notice
       this.render();
       this.updateLayerCardsUI();
       this.pushHistory(`Layer ${this.activeLayerId} Layout Mode: ${mode}`);
@@ -4764,7 +4764,7 @@ class StudioProApp {
     // Dependency warning: Shown only when Similarity is ON but Layout Structure is OFF (neither Repetition nor Radiation)
     const hasGrid = !!(mod.structure && mod.structure.enabled);
     const isSimActive = !!sim.enabled;
-    const showWarning = isSimActive && !hasGrid;
+    const showWarning = !hasGrid;
 
     const warnBox = document.getElementById("warning-similarity-grid");
     if (warnBox) warnBox.classList.toggle("hidden", !showWarning);
@@ -5055,7 +5055,7 @@ class StudioProApp {
 
     const hasGrid = !!mod.structure.enabled;
     const warnBox = document.getElementById("warning-gradation-grid");
-    if (warnBox) warnBox.classList.toggle("hidden", !(grad.enabled && !hasGrid));
+    if (warnBox) warnBox.classList.toggle("hidden", hasGrid);
 
     const toggle = document.getElementById("toggle-gradation-active");
     if (toggle) toggle.checked = !!grad.enabled;
@@ -5271,7 +5271,7 @@ class StudioProApp {
 
     const hasGrid = !!mod.structure.enabled;
     const warnBox = document.getElementById("warning-anomaly-grid");
-    if (warnBox) warnBox.classList.toggle("hidden", !(anom.enabled && !hasGrid));
+    if (warnBox) warnBox.classList.toggle("hidden", hasGrid);
 
     const toggle = document.getElementById("toggle-anomaly-active");
     if (toggle) toggle.checked = !!anom.enabled;
@@ -5452,7 +5452,7 @@ class StudioProApp {
 
     const hasGrid = !!mod.structure.enabled;
     const warnBox = document.getElementById("warning-contrast-grid");
-    if (warnBox) warnBox.classList.toggle("hidden", !(con.enabled && !hasGrid));
+    if (warnBox) warnBox.classList.toggle("hidden", hasGrid);
 
     const toggle = document.getElementById("toggle-contrast-active");
     if (toggle) toggle.checked = !!con.enabled;
@@ -5609,7 +5609,7 @@ class StudioProApp {
 
     const hasGrid = !!mod.structure.enabled;
     const warnBox = document.getElementById("warning-concentration-grid");
-    if (warnBox) warnBox.classList.toggle("hidden", !(conc.enabled && !hasGrid));
+    if (warnBox) warnBox.classList.toggle("hidden", hasGrid);
 
     const toggle = document.getElementById("toggle-concentration-active");
     if (toggle) toggle.checked = !!conc.enabled;

@@ -1540,6 +1540,24 @@
       reset();
     });
 
+    await test("Collective modifiers warn that Layout must be on, even before they are switched on", async () => {
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      const panels = ["similarity", "gradation", "anomaly", "contrast", "concentration"];
+      app.getActiveLayerStructure().enabled = false; app.syncAllInspectorsWithActiveLayer();
+      for (const p of panels) {
+        q(`[data-rail-tab="${p}"]`).click(); await wait(60);
+        assert(!q(`#warning-${p}-grid`).classList.contains("hidden"), `${p}: no warning while Layout is off`);
+      }
+      q('[data-rail-tab="layout"]').click(); await wait(60); q("#toggle-layout-structure").click(); await wait(60);
+      assert(app.getActiveLayerStructure().enabled, "The Layout switch did not turn Layout on");
+      for (const p of panels) {
+        q(`[data-rail-tab="${p}"]`).click(); await wait(60);
+        assert(q(`#warning-${p}-grid`).classList.contains("hidden"), `${p}: the warning stays with Layout on`);
+      }
+      reset();
+    });
+
     await test("Irregular sizes: every column and row gets its own size, the same for the same seed", async () => {
       reset();
       const cv = win.document.getElementById("studio-canvas");
