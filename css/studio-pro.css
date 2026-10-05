@@ -280,7 +280,6 @@ input[type="range"]:hover::-webkit-slider-thumb {
 
 /* Field + overline label */
 .ds-field { display: flex; flex-direction: column; gap: var(--spacing-3); min-width: 0; flex: 1; }
-.ds-row { display: flex; flex-direction: column; gap: var(--spacing-6); }
 .ds-label {
   font-size: var(--font-size-xs);
   font-weight: var(--typography-weight-600);
@@ -325,6 +324,9 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .ds-field:has(> .ds-slider) > .ds-slider { display: contents; }
 .ds-field:has(> .ds-slider) .ds-slider input[type="range"] { grid-column: 1; grid-row: 2; width: 100%; }
 .ds-field:has(> .ds-slider) .ds-value { grid-column: 2; grid-row: 1 / span 2; }
+/* Sliders are 24 apart (Figma "Geometry controls"); the card gap is 16, so consecutive sliders add 8 */
+.ds-field:has(> .ds-slider) + .ds-field:has(> .ds-slider) { margin-top: var(--spacing-3); }
+.ds-stack > .ds-field:has(> .ds-slider) + .ds-field:has(> .ds-slider) { margin-top: 0; }
 .ds-slider input[type="range"] {
   flex: 1;
   min-width: 0;
@@ -513,6 +515,8 @@ input[type="range"]:hover::-webkit-slider-thumb {
 /* Vertical stack of fields inside a card (sub-panels) */
 .ds-stack { display: flex; flex-direction: column; gap: var(--spacing-6); }
 .ds-stack.hidden { display: none !important; }
+/* a hint that belongs to the fields above it */
+.ds-stack > .ds-hint { margin-top: calc(var(--spacing-4) * -1); }
 
 /* Snackbar (Figma "snackbar", warning): dependency notice shown inside a card */
 .ds-snackbar {
@@ -531,7 +535,6 @@ input[type="range"]:hover::-webkit-slider-thumb {
 
 /* Color picker (swatch + hex), large swatch */
 .ds-color-picker { display: flex; align-items: center; gap: var(--spacing-3); }
-.ds-swatch-lg { width: var(--sizing-7); height: var(--sizing-7); }
 
 /* =========================================================================
    APP SHELL (Figma: Abstract Studio editor, node 5763:1692)

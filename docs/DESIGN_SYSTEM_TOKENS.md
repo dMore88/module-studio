@@ -170,7 +170,7 @@ Todas las tarjetas: fondo blanco, radio `border/radius/3` (20), relleno `spacing
 ### 5.1 Tarjeta flotante del inspector (`.inspector-flyout-card` + `.ds-card`)
 Ancho **340 px** (angosto a propósito: no debe tapar el lienzo mientras se edita), relleno `spacing/5` (16), radio `border/radius/3` (20), separación interna `spacing/5` (16), sombra `elevation/3x`, fondo `neutral/bg/light`. Flota sobre el borde derecho del espacio de trabajo, a 66 px del borde (a la izquierda del riel), alineada con la parte superior de la barra del lienzo. Se abre y cierra con el riel y con su botón de cierre.
 
-**Regla para todos los controles: una sola columna.** Cada slider ocupa el ancho completo del panel; nunca se ponen dos controles lado a lado (por eso `.ds-row` es una columna). Las únicas filas horizontales son los grupos de botones, tags y formas, que se ajustan solos al ancho.
+**Regla para todos los controles: una sola columna.** Cada slider ocupa el ancho completo del panel; nunca se ponen dos controles lado a lado (por eso `.ds-row` es una columna). Entre dos sliders seguidos hay **24 px** (la separación normal de la tarjeta es 16, y entre sliders se suman 8). Las únicas filas horizontales son los grupos de botones, tags y formas, que se ajustan solos al ancho.
 
 ### 5.2 Cabecera de tarjeta (`.ds-card-header`)
 Título en 16 / 600 con `neutral/text/main` (*Heading*), seguido de un **badge** con el nombre de la capa (el panel Module no lo lleva, como en el editor de Figma) y, a la derecha, el **interruptor** y el botón de cierre. El botón de cierre no está en el mockup del editor; se añadió a petición. Separación 18 px.
@@ -226,8 +226,10 @@ Snackbar de advertencia (nodo `5779:3233`): fondo `warning/bg/soft`, borde `bord
 ### 5.11 Grupo de botones (`.ds-btn-group`)
 Altura 40 (`sizing/7`), borde `border/weight/1` en `neutral/border/strong`, radio `border/radius/2`, fondo `neutral/bg/light`. Botones de ancho igual (mínimo 80 px) con texto *Body small*, separados por una línea; el activo usa `neutral/interactive/active` con texto `neutral/text/main-inverted`. Se usa en *Structure mode* (Repetition / Radiation) y *Fill / Stroke*.
 
-### 5.12 Selector de color (`.ds-color-picker`)
-Cuadro de color de 40×40 (`sizing/7`), radio `border/radius/1`, borde en `neutral/border/strong`, y el valor hexadecimal al lado en fuente monoespaciada.
+### 5.12 Selector de color (`.ds-color-picker`, `.ds-color-row`)
+La muestra mide **24 px en todos los paneles** (Shape color, color de acento de Anomaly y Contrast), con el texto hex al lado.
+
+Cuadro de color de 24×24 (`sizing/6`), radio `border/radius/1`, borde en `neutral/border/strong`, y el valor hexadecimal al lado en fuente monoespaciada.
 
 ### 5.13 Pila de campos (`.ds-stack`)
 Contenedor vertical con separación `spacing/6` (24) para los sub-paneles de Layout structure y para el grupo de controles de Structure y Similarity.

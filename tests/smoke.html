@@ -385,6 +385,12 @@
         const tops = Array.from(tab.querySelectorAll(".ds-slider .ds-value")).filter(v => v.offsetParent).map(v => Math.round(v.getBoundingClientRect().top));
         assert(new Set(tops).size === tops.length, `${btn.dataset.railTab}: two sliders share a row`);
         assert(flyout.getBoundingClientRect().width === 340, `${btn.dataset.railTab}: the panel is not 340 px wide`);
+        for (const sw of tab.querySelectorAll(".ds-swatch")) assert(Math.round(sw.getBoundingClientRect().width) === 24, `${btn.dataset.railTab}: a color swatch is not 24 px`);
+        const fields = Array.from(tab.querySelectorAll(".ds-field")).filter(e => e.offsetParent && e.querySelector(":scope > .ds-slider")).sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+        for (let i = 1; i < fields.length; i++) {
+          const gap = fields[i].getBoundingClientRect().top - fields[i - 1].getBoundingClientRect().bottom;
+          assert(gap >= 23.5, `${btn.dataset.railTab}: two sliders are only ${Math.round(gap)} px apart (24 minimum)`);
+        }
       }
       sel.value = "1:1"; sel.dispatchEvent(new win.Event("change"));
     });

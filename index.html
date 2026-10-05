@@ -206,7 +206,7 @@
         <div class="ds-field">
           <div class="ds-label">Shape color</div>
           <div class="ds-color-picker">
-            <span class="ds-swatch ds-swatch-lg">
+            <span class="ds-swatch">
               <input type="color" id="color-active-shape" value="#18181f">
               <span id="swatch-active-color" class="ds-swatch-fill"></span>
             </span>
@@ -302,7 +302,6 @@
           </div>
         </div>
 
-        <div class="ds-row">
           <div class="ds-field">
             <div class="ds-label">Columns</div>
             <div class="ds-slider">
@@ -317,7 +316,6 @@
               <input type="text" id="num-layout-rows" class="ds-value" value="4" inputmode="decimal">
             </div>
           </div>
-        </div>
 
                 <!-- Parameter of the chosen variation: Brick = row offset, Diagonal = shear angle, Curved / Zigzag = wave amount -->
         <div id="rep-param-block" class="ds-field hidden">
@@ -365,7 +363,6 @@
           </div>
         </div>
 
-        <div class="ds-row">
           <div class="ds-field">
             <div class="ds-label">Angular rays</div>
             <div class="ds-slider">
@@ -380,7 +377,6 @@
               <input type="text" id="num-layout-rings" class="ds-value" value="5" inputmode="decimal">
             </div>
           </div>
-        </div>
 
           <div class="ds-field">
             <div class="ds-label">Spiral twist</div>
@@ -433,7 +429,6 @@
 
         <!-- Structure controls: dimmed and inert while Radiation is active -->
         <div id="struct-controls-group" class="ds-stack">
-        <div class="ds-row">
           <div class="ds-field">
             <div class="ds-label ds-label-clip">Col ratio [A:B]</div>
             <div class="ds-slider">
@@ -448,7 +443,6 @@
               <input type="text" id="num-struct-row-ratio" class="ds-value" value="1" inputmode="decimal">
             </div>
           </div>
-        </div>
 
         <div class="ds-toggles">
           <label class="ds-toggle-item">
@@ -496,7 +490,6 @@
           </div>
         </div>
 
-        <div class="ds-row">
           <div class="ds-field">
             <div class="ds-label ds-label-clip">Fluctuation intensity</div>
             <div class="ds-slider">
@@ -511,7 +504,6 @@
               <input type="text" id="num-sim-jitter" class="ds-value" value="0" inputmode="decimal">
             </div>
           </div>
-        </div>
         </div>
       </div>
 
@@ -550,7 +542,6 @@
           </div>
         </div>
 
-        <div class="ds-row">
           <div class="ds-field">
             <div class="ds-label">Range</div>
             <div class="ds-slider">
@@ -565,7 +556,6 @@
               <input type="text" id="num-grad-steps" class="ds-value" value="1" inputmode="numeric">
             </div>
           </div>
-        </div>
 
         <div class="ds-field">
           <div class="ds-label">Pathway direction</div>
@@ -639,8 +629,7 @@
           </div>
         </div>
 
-        <div class="ds-field">
-          <div class="ds-row">
+        <div class="ds-stack">
           <div class="ds-field">
             <div class="ds-label">X position</div>
             <div class="ds-slider">
@@ -655,11 +644,9 @@
               <input type="text" id="num-anom-y" class="ds-value" value="50%" inputmode="numeric">
             </div>
           </div>
-          </div>
           <p class="ds-hint">Click anywhere on the canvas to set focal point</p>
         </div>
 
-        <div class="ds-row">
           <div class="ds-field">
             <div class="ds-label">Radius</div>
             <div class="ds-slider">
@@ -674,7 +661,6 @@
               <input type="text" id="num-anom-intensity" class="ds-value" value="65%" inputmode="numeric">
             </div>
           </div>
-        </div>
 
         <div class="ds-toggles">
           <label class="ds-toggle-item">
@@ -752,7 +738,6 @@
           </div>
         </div>
 
-        <div class="ds-row">
           <div id="contrast-dominance-block" class="ds-field">
             <div class="ds-label ds-label-clip">Dominance ratio</div>
             <div class="ds-slider">
@@ -774,7 +759,6 @@
               <input type="text" id="num-contrast-angle" class="ds-value" value="45º" inputmode="decimal">
             </div>
           </div>
-        </div>
 
         <div class="ds-toggles">
           <label class="ds-toggle-item">
@@ -835,8 +819,7 @@
           </div>
         </div>
 
-        <div class="ds-field">
-          <div class="ds-row">
+        <div class="ds-stack">
           <div class="ds-field">
             <div class="ds-label ds-label-clip">X position</div>
             <div class="ds-slider">
@@ -851,11 +834,9 @@
               <input type="text" id="num-conc-y" class="ds-value" value="50%" inputmode="numeric">
             </div>
           </div>
-          </div>
           <p class="ds-hint">Click anywhere on the canvas to reposition the attractor</p>
         </div>
 
-        <div class="ds-row">
           <div class="ds-field">
             <div class="ds-label ds-label-clip">Gathering pull</div>
             <div class="ds-slider">
@@ -870,7 +851,6 @@
               <input type="text" id="num-conc-radius" class="ds-value" value="240px" inputmode="numeric">
             </div>
           </div>
-        </div>
 
         <div class="ds-toggles">
           <label class="ds-toggle-item">
@@ -968,7 +948,6 @@
           </div>
         </div>
 
-        <div class="ds-row">
           <div class="ds-field">
             <div class="ds-label ds-label-clip">Extrusion depth</div>
             <div class="ds-slider">
@@ -983,7 +962,6 @@
               <input type="text" id="num-space-angle" class="ds-value" value="30º" inputmode="numeric">
             </div>
           </div>
-        </div>
 
           <div class="ds-field">
             <div class="ds-label ds-label-clip">Facet shading contrast</div>
