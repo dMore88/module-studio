@@ -21,7 +21,6 @@ Sale de las filas ⏳ del mapa de conceptos, más las mejoras de filas 🟡 que 
 ### P3 — por evaluar con el filtro de juego
 | ID | Concepto | Notas |
 | :-- | :-- | :-- |
-| S8 | Retícula de celdas irregulares | Subdivisiones similares, no repetidas |
 | A8 | Deformar las líneas de estructura visibles | Hoy solo se deforman los módulos |
 | C4 | Contraste cálido/frío entre zonas | La gradación de color ya está hecha (Gradation › Color) |
 | SP9 | Sombra unida o separada | |
@@ -96,8 +95,7 @@ Hasta el 5 de octubre de 2026 el backlog numeraba **tareas** (R4, E2, G7...). De
 | A2 | A3 | | K5 | K3 |
 | A3 | A9 | | S1 | S2 |
 | A4 | A8 | | S2 | S3 |
-| S3 | S8 | | S4 | S9, E3 |
-| SP1 | SP5, SP11 | | SP2 | SP9 |
+| S3 | SP1 | SP5, SP11 | | SP2 | SP9 |
 | SP3 | SP6, SP14, SP15 | | SP4 | SP12 |
 | SP5 | SP18 | | T1, T2 | T1 y T3 (descartados), T10 |
 | INT1 | INT5 a INT7 | | INT2 | INT4 |

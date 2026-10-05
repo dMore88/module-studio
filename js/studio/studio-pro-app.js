@@ -1352,6 +1352,11 @@ export class StudioProApp {
     this.syncControlValue("num-struct-row-grade", `${fs.rowGrade || 0}%`);
     this.syncControlValue("input-struct-row-ratio", fs.rowRatio !== undefined ? fs.rowRatio : 1);
     this.syncControlValue("num-struct-row-ratio", fs.rowRatio !== undefined ? fs.rowRatio : 1);
+    this.syncControlValue("input-struct-irregular", fs.irregular || 0);
+    this.syncControlValue("num-struct-irregular", `${fs.irregular || 0}%`);
+    this.syncControlValue("input-struct-irregseed", fs.irregSeed ?? 7);
+    this.syncControlValue("num-struct-irregseed", `${fs.irregSeed ?? 7}`);
+    document.getElementById("struct-irregseed-block")?.classList.toggle("hidden", !(fs.irregular > 0));
     this.syncCheckbox("chk-struct-gridlines", !!fs.showGridLines);
 
     this.updateRailIndicatorDots();
@@ -1382,22 +1387,25 @@ export class StudioProApp {
     });
 
     // Gradation of structure: columns / rows that grow or shrink step by step
-    const bindGrade = (inputId, numId, key, label) => {
+    const bindGrade = (inputId, numId, key, label, lo = -30, hi = 30, suffix = "%") => {
       this.bindSliderWithNumber(inputId, numId, (val) => {
         const mod = this.getActiveModule();
         if (!mod || !mod.structure) return;
         if (!mod.structure.formalStructure) {
           mod.structure.formalStructure = { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false };
         }
-        mod.structure.formalStructure[key] = Math.max(-30, Math.min(30, val));
+        mod.structure.formalStructure[key] = Math.max(lo, Math.min(hi, val));
         mod.structure.formalStructure.enabled = true;
         mod.structure.enabled = true;
         if (mod.structure.mode === "radiation") mod.structure.mode = "repetition";
         this.syncStructureInspectorWithActiveLayer();
+        document.getElementById("struct-irregseed-block")?.classList.toggle("hidden", !(mod.structure.formalStructure.irregular > 0));
         this.render();
         this.updateLayerCardsUI();
-      }, label, "%");
+      }, label, suffix);
     };
+    bindGrade("input-struct-irregular", "num-struct-irregular", "irregular", "Irregular Sizes", 0, 100);
+    bindGrade("input-struct-irregseed", "num-struct-irregseed", "irregSeed", "Irregular Seed", 1, 99, "");
     bindGrade("input-struct-col-grade", "num-struct-col-grade", "colGrade", "Col Gradation");
     bindGrade("input-struct-row-grade", "num-struct-row-grade", "rowGrade", "Row Gradation");
 

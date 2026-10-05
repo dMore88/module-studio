@@ -1540,6 +1540,36 @@
       reset();
     });
 
+    await test("Irregular sizes: every column and row gets its own size, the same for the same seed", async () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const render = (irregular, irregSeed) => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        const L = st.layers[0];
+        Object.assign(L, { shape: "square", width: 200, height: 200, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false, containerW: 100, containerH: 100 });
+        L.structure.enabled = true; L.structure.mode = "repetition";
+        Object.assign(L.structure.repetition, { cols: 5, rows: 5, gridType: "basic", sizeMode: "fit", showGridLines: false, placement: "centers", cellMix: "none" });
+        L.structure.formalStructure = { enabled: true, colRatio: 1, rowRatio: 1, colGrade: 0, rowGrade: 0, irregular, irregSeed, showGridLines: false };
+        app.state = st; drawRaw(app);
+        const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+        let h = 0; for (let i = 0; i < d.length; i += 4) h = (h * 31 + d[i]) >>> 0;
+        return h;
+      };
+      const none = render(0, 7), noneOtherSeed = render(0, 55), a = render(100, 7), again = render(100, 7), other = render(100, 55);
+      assert(none === noneOtherSeed, "With no irregularity the seed must not matter");
+      assert(a !== none, "Irregular sizes did not change the grid");
+      assert(a === again, "The same seed should give the same sizes");
+      assert(a !== other, "Another seed should give other sizes");
+      // Inspector: the slider reaches the state and the seed slider appears
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      q('[data-rail-tab="layout"]').click(); await wait(80); q("#toggle-layout-structure").click();
+      const inp = q("#input-struct-irregular"); inp.value = 40; inp.dispatchEvent(new win.Event("input", { bubbles: true }));
+      assert(app.getActiveLayerStructure().formalStructure.irregular === 40 && q("#num-struct-irregular").value === "40%", "The irregular slider did not reach the state");
+      assert(!q("#struct-irregseed-block").classList.contains("hidden"), "The seed slider should appear with irregular sizes");
+      reset();
+    });
+
     await test("Concentration Hotspots: 2 to 6 foci", async () => {
       reset();
       const cv = win.document.getElementById("studio-canvas");

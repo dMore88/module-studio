@@ -851,6 +851,8 @@ const createDefaultLayerStructure = () => ({
     rowRatio: 1.0,
     colGrade: 0, // gradation of structure: each column is this % wider (or narrower) than the one before (-30 to 30)
     rowGrade: 0, // the same for rows
+    irregular: 0, // 0 to 100: each column and row gets its own size (0 = all alike; 100 = from a tenth to almost double)
+    irregSeed: 7, // 1 to 99: which irregular sizes come out
     showGridLines: false
   },
   similarity: {
@@ -1936,8 +1938,12 @@ class StudioEngine {
     // Gradation of structure: every column / row is a fixed % bigger than the one before (kept in a sane range)
     const gC = Math.max(-0.3, Math.min(0.3, (Number(struct && struct.enabled ? struct.colGrade : 0) || 0) / 100));
     const gR = Math.max(-0.3, Math.min(0.3, (Number(struct && struct.enabled ? struct.rowGrade : 0) || 0) / 100));
-    const gradeC = (c) => Math.max(0.05, Math.min(20, Math.pow(1 + gC, c)));
-    const gradeR = (r) => Math.max(0.05, Math.min(20, Math.pow(1 + gR, r)));
+    // Irregular sizes: every column and row gets its own random size (the same for the same seed)
+    const irreg = Math.max(0, Math.min(1, (Number(struct && struct.enabled ? struct.irregular : 0) || 0) / 100));
+    const irregSeed = Number(struct && struct.irregSeed) || 7;
+    const irregK = (i, axis) => 1 + irreg * 0.9 * ((Math.abs(Math.sin(i * 12.9898 + irregSeed * 78.233 + axis * 37.719) * 43758.5453) % 1) * 2 - 1);
+    const gradeC = (c) => Math.max(0.05, Math.min(20, Math.pow(1 + gC, c) * irregK(c, 0)));
+    const gradeR = (r) => Math.max(0.05, Math.min(20, Math.pow(1 + gR, r) * irregK(r, 1)));
     // Calculate column widths and x positions (Dual rhythmic interval support)
     const colWidths = [];
     const colX = [];
@@ -4612,6 +4618,11 @@ class StudioProApp {
     this.syncControlValue("num-struct-row-grade", `${fs.rowGrade || 0}%`);
     this.syncControlValue("input-struct-row-ratio", fs.rowRatio !== undefined ? fs.rowRatio : 1);
     this.syncControlValue("num-struct-row-ratio", fs.rowRatio !== undefined ? fs.rowRatio : 1);
+    this.syncControlValue("input-struct-irregular", fs.irregular || 0);
+    this.syncControlValue("num-struct-irregular", `${fs.irregular || 0}%`);
+    this.syncControlValue("input-struct-irregseed", fs.irregSeed ?? 7);
+    this.syncControlValue("num-struct-irregseed", `${fs.irregSeed ?? 7}`);
+    document.getElementById("struct-irregseed-block")?.classList.toggle("hidden", !(fs.irregular > 0));
     this.syncCheckbox("chk-struct-gridlines", !!fs.showGridLines);
 
     this.updateRailIndicatorDots();
@@ -4642,22 +4653,25 @@ class StudioProApp {
     });
 
     // Gradation of structure: columns / rows that grow or shrink step by step
-    const bindGrade = (inputId, numId, key, label) => {
+    const bindGrade = (inputId, numId, key, label, lo = -30, hi = 30, suffix = "%") => {
       this.bindSliderWithNumber(inputId, numId, (val) => {
         const mod = this.getActiveModule();
         if (!mod || !mod.structure) return;
         if (!mod.structure.formalStructure) {
           mod.structure.formalStructure = { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false };
         }
-        mod.structure.formalStructure[key] = Math.max(-30, Math.min(30, val));
+        mod.structure.formalStructure[key] = Math.max(lo, Math.min(hi, val));
         mod.structure.formalStructure.enabled = true;
         mod.structure.enabled = true;
         if (mod.structure.mode === "radiation") mod.structure.mode = "repetition";
         this.syncStructureInspectorWithActiveLayer();
+        document.getElementById("struct-irregseed-block")?.classList.toggle("hidden", !(mod.structure.formalStructure.irregular > 0));
         this.render();
         this.updateLayerCardsUI();
-      }, label, "%");
+      }, label, suffix);
     };
+    bindGrade("input-struct-irregular", "num-struct-irregular", "irregular", "Irregular Sizes", 0, 100);
+    bindGrade("input-struct-irregseed", "num-struct-irregseed", "irregSeed", "Irregular Seed", 1, 99, "");
     bindGrade("input-struct-col-grade", "num-struct-col-grade", "colGrade", "Col Gradation");
     bindGrade("input-struct-row-grade", "num-struct-row-grade", "rowGrade", "Row Gradation");
 

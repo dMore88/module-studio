@@ -119,7 +119,7 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | S5 | **Unión o sustracción**: formas compuestas de formas menores unidas o restadas | Similitud de figura | — | ⏳ | Ligado a las interrelaciones (INT5 a INT7) |
 | S6 | **Tensión o compresión**: la forma estirada o apretada, como algo elástico | Similitud de figura | Similarity › `Elastic` | ✅ |  |
 | S7 | **Similitud y gradación**: la similitud no debe mostrar un cambio sistemático | Diferenciar conceptos | Similarity frente a Gradation (paneles separados) | ✅ |  |
-| S8 | **Subdivisiones estructurales similares**: cuadriláteros, triángulos o hexágonos de lados desiguales | Estructura de similitud | — | ⏳ | Retícula de celdas irregulares |
+| S8 | **Subdivisiones estructurales similares**: cuadriláteros, triángulos o hexágonos de lados desiguales | Estructura de similitud | Layout › Advanced › Irregular sizes | ✅ | Cada columna y fila con su propio tamaño al azar (semilla); los lados desiguales de triángulos y hexágonos no |
 | S9 | **Distribución visual**: módulos sin retícula, con espacio similar para cada uno | Estructura de similitud | Layout › Grid structure variation `Free` (con Seed) | ✅ | Columns × Rows dan la cantidad de módulos; el reparto mantiene un espacio parecido alrededor de cada uno y cambia con la semilla |
 
 ## Gradación

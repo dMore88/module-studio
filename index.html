@@ -446,6 +446,20 @@
             <input type="text" id="num-struct-row-grade" class="ds-value" value="0%" inputmode="decimal">
           </div>
         </div>
+        <div class="ds-field">
+          <div class="ds-label ds-label-clip">Irregular sizes</div>
+          <div class="ds-slider">
+            <input type="range" id="input-struct-irregular" min="0" max="100" step="5" value="0">
+            <input type="text" id="num-struct-irregular" class="ds-value" value="0%" inputmode="decimal">
+          </div>
+        </div>
+        <div class="ds-field hidden" id="struct-irregseed-block">
+          <div class="ds-label ds-label-clip">Irregular seed</div>
+          <div class="ds-slider">
+            <input type="range" id="input-struct-irregseed" min="1" max="99" step="1" value="7">
+            <input type="text" id="num-struct-irregseed" class="ds-value" value="7" inputmode="numeric">
+          </div>
+        </div>
         <div class="ds-toggles">
           <label class="ds-toggle-item">
             <span class="ds-toggle-label">Clip cell</span>
@@ -1410,7 +1424,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=07efc100"></script>
+  <script src="js/bundle-pro.js?v=bf6ed12b"></script>
 
 </body>
 </html>
