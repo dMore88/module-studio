@@ -831,7 +831,15 @@ export class StudioProApp {
       const num = document.getElementById("num-layout-param");
       if (num) num.value = `${val}${spec.suffix}`;
     }
-    document.getElementById("rep-linewidth-block")?.classList.toggle("hidden", !rep.showGridLines);
+    document.getElementById("rep-lines-block")?.classList.toggle("hidden", !rep.showGridLines);
+    const mark = (attr, value) => document.querySelectorAll(`[${attr}]`).forEach(b => {
+      const v = b.getAttribute(attr);
+      b.classList.toggle("active", v === value);
+    });
+    mark("data-rep-tone", rep.lineTone || "guide");
+    mark("data-rep-linedir", rep.lineDirection || "both");
+    mark("data-rep-linespace", rep.lineSpacing || "all");
+    mark("data-rep-reflect", rep.reflection || "none");
     const w = rep.gridLineWidth ?? 1.5;
     this.syncControlValue("input-layout-linewidth", w);
     const nw = document.getElementById("num-layout-linewidth");
@@ -860,6 +868,24 @@ export class StudioProApp {
       const raw = parseFloat(e.target.value.replace(/[^0-9.-]/g, ""));
       applyParam(isNaN(raw) ? 0 : raw, "", true);
     });
+
+    // Tags of the line style and of the reflection (one stored value each)
+    const bindTags = (selector, attr, key, label) => {
+      document.querySelectorAll(selector).forEach(btn => {
+        btn.addEventListener("click", () => {
+          const r = rep(); if (!r) return;
+          r[key] = btn.getAttribute(attr);
+          this.getActiveLayerStructure().mode = "repetition";
+          this.syncRepetitionExtras(r);
+          this.render();
+          this.pushHistory(`Layer ${this.activeLayerId} ${label}: ${r[key]}`);
+        });
+      });
+    };
+    bindTags("[data-rep-tone]", "data-rep-tone", "lineTone", "Line Tone");
+    bindTags("[data-rep-linedir]", "data-rep-linedir", "lineDirection", "Line Direction");
+    bindTags("[data-rep-linespace]", "data-rep-linespace", "lineSpacing", "Line Spacing");
+    bindTags("[data-rep-reflect]", "data-rep-reflect", "reflection", "Reflection");
 
     // Line width of the visible grid lines
     const lw = document.getElementById("input-layout-linewidth");

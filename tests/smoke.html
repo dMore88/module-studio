@@ -64,7 +64,7 @@
       L.shape = pick(SHAPES); L.width = ri(5, 400); L.height = ri(5, 250); L.rotation = ri(0, 360);
       L.offsetX = ri(-250, 250); L.offsetY = ri(-250, 250); L.wireframe = rb(); L.strokeWidth = ri(1, 10) / 2; L.visible = rnd() < 0.9;
       const st = L.structure; st.enabled = rnd() < 0.8; st.mode = pick(["repetition", "radiation"]);
-      const rp = st.repetition; rp.gridType = pick(["basic","sliding","sheared","curved","zigzag","triangular","alternating"]);
+      const rp = st.repetition; rp.gridType = pick(["basic","sliding","sheared","curved","zigzag","triangular","alternating","hexagonal"]); rp.lineTone = pick(["guide","positive","negative"]); rp.lineDirection = pick(["both","horizontal","vertical"]); rp.lineSpacing = pick(["all","alternate"]); rp.reflection = pick(["none","columns","rows","both"]);
       rp.cols = ri(1, 50); rp.rows = ri(1, 50); rp.spacing = ri(0, 40); rp.shearAngle = ri(0, 45); rp.slideOffset = rnd(); rp.curveIntensity = ri(0, 60);
       rp.activeClipping = rb(); rp.showGridLines = rb(); rp.checkerInvert = rb();
       const rd = st.radiation; rd.scheme = pick(["centrifugal","centripetal","concentric","spiral","multi_center"]); rd.orientation = pick(["auto","outward","inward","tangent","fixed"]); rd.centerOpen = ri(0, 70); rd.ringRotation = ri(-90, 90); rd.rays = ri(4, 28); rd.rings = ri(2, 10);
@@ -266,9 +266,9 @@
       assert(rep().shearAngle === 20 && q("#num-layout-param").value === "20º", "Shear angle did not apply");
       q('[data-grid-var="curved"]').click(); fire(q("#input-layout-param"), 40);
       assert(rep().curveIntensity === 40 && q("#num-layout-param").value === "40px", "Wave amount did not apply");
-      assert(q("#rep-linewidth-block").classList.contains("hidden"), "Line width should be hidden while grid lines are off");
+      assert(q("#rep-lines-block").classList.contains("hidden"), "Line width should be hidden while grid lines are off");
       q("#chk-rep-gridlines").click();
-      assert(!q("#rep-linewidth-block").classList.contains("hidden"), "Line width should show with grid lines on");
+      assert(!q("#rep-lines-block").classList.contains("hidden"), "Line width should show with grid lines on");
       fire(q("#input-layout-linewidth"), 3);
       assert(rep().gridLineWidth === 3 && q("#num-layout-linewidth").value === "3px", "Line width did not apply");
     });
@@ -538,6 +538,74 @@
       assert(rad().ringRotation === -20 && q("#num-layout-ringrot").value === "-20º", "Ring rotation slider and value box out of sync");
       app.addLayer(); await wait(80);
       assert(rad().centerOpen === 0 && rad().orientation === "auto" && rad().ringRotation === 0, "A new layer should start with the default radiation");
+    });
+
+    await test("Structure: hexagonal grid, line tone, direction and spacing, reflection", () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const render = (o, layer = {}) => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        const L = st.layers[0];
+        Object.assign(L, { shape: "triangle", width: 30, height: 30, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false }, layer);
+        L.structure.enabled = true; L.structure.mode = "repetition";
+        Object.assign(L.structure.repetition, { cols: 6, rows: 6, gridType: "basic", showGridLines: false, lineTone: "guide", lineDirection: "both", lineSpacing: "all", reflection: "none", activeClipping: false, gridLineWidth: 3 }, o);
+        app.state = st; drawRaw(app);
+        return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      };
+      const dpr = () => cv.width / 600;
+      const px = (d, x, y) => d[(Math.round(y * dpr()) * cv.width + Math.round(x * dpr())) * 4];
+      const diff = (a, b) => { let n = 0; for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i] - b[i]) > 60) n++; return n; };
+      // Hexagonal: rows interlock (pitch 0.866 of the cell width = 78 px) and odd rows shift half a cell
+      const hex = render({ gridType: "hexagonal" });
+      const rowsWithInk = [];
+      for (let y = 0; y < 600; y++) { let ink = 0; for (let x = 30; x < 570; x++) if (px(hex, x, y) < 128) ink++; if (ink > 0) rowsWithInk.push(y); }
+      const bands = []; for (const y of rowsWithInk) { if (!bands.length || y - bands[bands.length - 1].end > 3) bands.push({ start: y, end: y }); else bands[bands.length - 1].end = y; }
+      const centers = bands.map(b => (b.start + b.end) / 2);
+      assert(centers.length === 6, `Hexagonal grid shows ${centers.length} rows instead of 6`);
+      assert(Math.abs((centers[1] - centers[0]) - 77.9) < 3, `Hexagonal row pitch is ${(centers[1] - centers[0]).toFixed(1)} px`);
+      assert(diff(hex, render({ gridType: "triangular" })) > 100 && diff(hex, render({})) > 100, "Hexagonal looks like another grid");
+      // Lines: boundary between rows 2 and 3 is y = 300; modules are small so nothing else is there
+      const ink = (o) => px(render({ showGridLines: true, ...o }), 100, 300);
+      assert(ink({ lineTone: "positive" }) < 100, "Positive lines are not drawn in ink");
+      assert(ink({ lineTone: "guide" }) > 150, "Guide lines should stay faint");
+      const big = { width: 480, height: 480, shape: "square" }; // larger than the 90 px cell, so the lines cross it
+      const cut = px(render({ showGridLines: true, lineTone: "negative" }, big), 75, 300);
+      const uncut = px(render({}, big), 75, 300);
+      assert(uncut < 100 && cut > 200, "Negative lines do not cut the modules");
+      assert(px(render({ showGridLines: true, lineTone: "positive", lineDirection: "vertical" }), 100, 300) > 150 && px(render({ showGridLines: true, lineTone: "positive", lineDirection: "vertical" }), 120, 100) < 100, "Vertical-only lines wrong");
+      assert(px(render({ showGridLines: true, lineTone: "positive", lineDirection: "horizontal" }), 100, 300) < 100 && px(render({ showGridLines: true, lineTone: "positive", lineDirection: "horizontal" }), 120, 100) > 150, "Horizontal-only lines wrong");
+      const every = render({ showGridLines: true, lineTone: "positive", lineSpacing: "alternate" });
+      assert(px(every, 100, 120) > 150 && px(every, 100, 210) < 100, "Every-other spacing should skip the odd lines");
+      // Reflection: row 1 is the mirror image of row 1 without reflection
+      const plain = render({}), refl = render({ reflection: "rows" });
+      let off = 0; const cx0 = 30, cy0 = 120; // cell (row 1, col 0): 90 x 90
+      for (let yy = 0; yy < 90; yy++) for (let xx = 0; xx < 90; xx++) if (Math.abs(px(refl, cx0 + xx, cy0 + yy) - px(plain, cx0 + xx, cy0 + 89 - yy)) > 80) off++;
+      assert(off < 60, `Row reflection is not a mirror image (${off} px differ)`);
+      let same = 0; for (let yy = 0; yy < 90; yy++) for (let xx = 0; xx < 90; xx++) if (Math.abs(px(refl, 30 + xx, 30 + yy) - px(plain, 30 + xx, 30 + yy)) > 80) same++;
+      assert(same === 0, "Row 0 should not change with row reflection");
+    });
+
+    await test("Structure inspector: new line, reflection and hexagonal controls", async () => {
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      q('[data-rail-tab="layout"]').click(); await wait(80);
+      q("#toggle-layout-structure").click();
+      const rep = () => app.getActiveLayerStructure().repetition;
+      assert(q("#rep-lines-block").classList.contains("hidden"), "Line options should be hidden while the lines are off");
+      q("#chk-rep-gridlines").click(); await wait(40);
+      assert(!q("#rep-lines-block").classList.contains("hidden"), "Line options should show with the lines on");
+      q('[data-rep-tone="negative"]').click();
+      q('[data-rep-linedir="vertical"]').click();
+      q('[data-rep-linespace="alternate"]').click();
+      q('[data-rep-reflect="both"]').click();
+      q('[data-grid-var="hexagonal"]').click();
+      const r = rep();
+      assert(r.lineTone === "negative" && r.lineDirection === "vertical" && r.lineSpacing === "alternate" && r.reflection === "both" && r.gridType === "hexagonal", "A control did not reach the state");
+      assert(q('[data-rep-tone="negative"]').classList.contains("active") && !q('[data-rep-tone="guide"]').classList.contains("active"), "Tone tags out of sync");
+      assert(q('[data-rep-linespace="alternate"]').classList.contains("active"), "Spacing group out of sync");
+      app.addLayer(); await wait(80);
+      assert(rep().lineTone === "guide" && rep().reflection === "none", "A new layer should start with the default lines and no reflection");
     });
 
     await test("A failed draw shows a visible notice and recovers", () => {

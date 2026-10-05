@@ -20,8 +20,8 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 | 4b | **Migrar los paneles Module, Layout, Structure y Similarity al diseño de Figma** (Q3b) | ✅ Hecho (2026-10-04). Q3d también hecho: toda la interfaz usa los tokens |
 | 5 | Gradation avanzada (G1 a G6) | ✅ Hecho (G7, gradación de estructura, sigue en P2) |
 | 6 | Radiación: centrípeta y centro abierto (R1, R2, R3, R5) | ✅ Hecho (R4, R6 y R7 siguen en P2) |
-| 7 | **Estructura y Repetición** (sección 9: E1, E3, RP1, RP3; E2 ya hecho) | **P1, siguiente.** Es la base de todo lo demás: cada modificador se dibuja sobre una retícula, y varias mejoras son baratas (líneas visibles, retícula hexagonal, reflexión) |
-| 8 | **Contraste** (sección 5: C8, C4, C2) | **P1.** C8 (qué manda cuando Contrast, Gradation, Concentration y Anomaly tocan lo mismo) es pedido explícito; C4 y C2 reutilizan Texture y figura/fondo, que ya existen |
+| 7 | **Estructura y Repetición** (sección 9: E1, E3, RP1, RP3) | ✅ Hecho (E2 radial, E4, RP2 y RP4 siguen en P2) |
+| 8 | **Contraste** (sección 5: C8, C4, C2) | **P1, siguiente.** C8 (qué manda cuando Contrast, Gradation, Concentration y Anomaly tocan lo mismo) es pedido explícito; C4 y C2 reutilizan Texture y figura/fondo, que ya existen |
 | 9 | Anomalía (sección 7: A1, A3) | P2 |
 | 10 | Similitud (sección 8: S1, S2) | P2. S2 se apoya en Line skipping de Texture |
 | 11 | Concentración (sección 6: K2, K1, K4) | P2 |
@@ -160,14 +160,14 @@ Ya cubierto: retícula básica, sliding, sheared, curved, zigzag, triangular; es
 
 | ID | Ítem | Notas | Prioridad |
 | :-- | :--- | :--- | :-- |
-| E1 | Líneas visibles positivas o negativas | Fig. 20b y 20c | **P1** |
-| E2 | Grosor de las líneas | ✅ Hecho en la cuadrícula (*Line width*, F6); falta el radial | ✅ |
-| E3 | Horizontales y verticales por separado | Visibles o invisibles, alternadas (fig. 20d) | **P1** |
+| E1 | Líneas visibles positivas o negativas | ✅ Hecho: tags *Line tone* (Guide, Positive, Negative) | ✅ |
+| E2 | Grosor de las líneas | ✅ Hecho en la cuadrícula (*Line width*, F6); falta el radial | P2 |
+| E3 | Horizontales y verticales por separado | ✅ Hecho: *Line direction* y *Line spacing* (Every other) | ✅ |
 | E4 | Estructura de múltiple repetición | Dos clases de subdivisión entretejidas (fig. 23) | P2 |
-| RP1 | Retícula hexagonal | Un tag más en *Grid structure variation* | **P1** |
+| RP1 | Retícula hexagonal | ✅ Hecho: tag *Hexagonal* (panal con recorte y líneas hexagonales) | ✅ |
 | RP0 | Mostrar en pantalla las retículas triangular, zigzag y alternada | ✅ Hecho (F6), con el parámetro de cada variación y el grosor de líneas | ✅ |
 | RP2 | Subdivisión y combinación de celdas | | P2 |
-| RP3 | Reflexión | Espejar el módulo en celdas alternas | **P1** |
+| RP3 | Reflexión | ✅ Hecho: tags *Reflection* (None, Columns, Rows, Both) | ✅ |
 | RP4 | Selector de dirección | Repetida, alternada o indefinida | P2 |
 | RP5 | Superposición de estructuras | Ya posible con capas | ✅ |
 | RP6 | **Supermódulos** | Un grupo de módulos que se repite como unidad. La app trabaja un módulo = una capa, así que hay que decidir cómo (por ejemplo, grupos de capas que comparten retícula) | **P3, al final de todo** |

@@ -299,6 +299,7 @@
             <button type="button" class="ds-tag" data-grid-var="zigzag">Zigzag</button>
             <button type="button" class="ds-tag" data-grid-var="triangular">Triangular</button>
             <button type="button" class="ds-tag" data-grid-var="alternating">Alternating</button>
+            <button type="button" class="ds-tag" data-grid-var="hexagonal">Hexagonal</button>
           </div>
         </div>
 
@@ -326,12 +327,13 @@
           </div>
         </div>
 
-        <!-- Thickness of the visible grid lines (only while "Visible Grid Lines" is on) -->
-        <div id="rep-linewidth-block" class="ds-field hidden">
-          <div class="ds-label">Line width</div>
-          <div class="ds-slider">
-            <input type="range" id="input-layout-linewidth" min="0.5" max="6" step="0.5" value="1.5">
-            <input type="text" id="num-layout-linewidth" class="ds-value" value="1.5px" inputmode="decimal">
+        <div class="ds-field">
+          <div class="ds-label">Reflection</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-rep-reflect="none">None</button>
+            <button type="button" class="ds-tag" data-rep-reflect="columns">Columns</button>
+            <button type="button" class="ds-tag" data-rep-reflect="rows">Rows</button>
+            <button type="button" class="ds-tag" data-rep-reflect="both">Both</button>
           </div>
         </div>
 
@@ -348,6 +350,40 @@
             <span class="ds-toggle-label">Checkerboard inversion</span>
             <input type="checkbox" id="chk-rep-checker" class="ds-checkbox">
           </label>
+        </div>
+
+        <!-- Options of the visible grid lines (only while "Visible Grid Lines" is on) -->
+        <div id="rep-lines-block" class="ds-stack hidden">
+          <div class="ds-field">
+            <div class="ds-label">Line tone</div>
+            <div class="ds-tags">
+              <button type="button" class="ds-tag active" data-rep-tone="guide">Guide</button>
+              <button type="button" class="ds-tag" data-rep-tone="positive">Positive</button>
+              <button type="button" class="ds-tag" data-rep-tone="negative">Negative</button>
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Line direction</div>
+            <div class="ds-tags">
+              <button type="button" class="ds-tag active" data-rep-linedir="both">Both</button>
+              <button type="button" class="ds-tag" data-rep-linedir="horizontal">Horizontal</button>
+              <button type="button" class="ds-tag" data-rep-linedir="vertical">Vertical</button>
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Line spacing</div>
+            <div class="ds-btn-group" role="group" aria-label="Line spacing">
+              <button type="button" class="ds-btn-group__button active" data-rep-linespace="all">All lines</button>
+              <button type="button" class="ds-btn-group__button" data-rep-linespace="alternate">Every other</button>
+            </div>
+          </div>
+          <div id="rep-linewidth-block" class="ds-field">
+            <div class="ds-label">Line width</div>
+            <div class="ds-slider">
+              <input type="range" id="input-layout-linewidth" min="0.5" max="6" step="0.5" value="1.5">
+              <input type="text" id="num-layout-linewidth" class="ds-value" value="1.5px" inputmode="decimal">
+            </div>
+          </div>
         </div>
         </div>
 
@@ -1057,7 +1093,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=668d0c17"></script>
+  <script src="js/bundle-pro.js?v=a939731e"></script>
 
 </body>
 </html>

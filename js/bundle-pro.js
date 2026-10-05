@@ -812,6 +812,10 @@ const createDefaultLayerStructure = () => ({
     activeClipping: false,
     showGridLines: false,
     gridLineWidth: 1.5,
+    lineTone: "guide", // guide (faint), positive (ink) or negative (ground colour, cuts the modules)
+    lineDirection: "both", // both, horizontal, vertical
+    lineSpacing: "all", // all, alternate (every other line)
+    reflection: "none", // none, columns, rows, both: mirror the module in alternate cells
     checkerInvert: false
   },
   radiation: {
@@ -1268,6 +1272,14 @@ class StudioEngine {
       ctx.lineTo(cx + cW / 2 + dxTop, cy - cH / 2);
       ctx.lineTo(cx + cW / 2 + dxBot, cy + cH / 2);
       ctx.lineTo(cx - cW / 2 + dxBot, cy + cH / 2);
+    } else if (rep.gridType === "hexagonal") {
+      const s = cH / 1.5; // vertical radius of the hexagon
+      ctx.moveTo(cx, cy - s);
+      ctx.lineTo(cx + cW / 2, cy - s / 2);
+      ctx.lineTo(cx + cW / 2, cy + s / 2);
+      ctx.lineTo(cx, cy + s);
+      ctx.lineTo(cx - cW / 2, cy + s / 2);
+      ctx.lineTo(cx - cW / 2, cy - s / 2);
     } else if (rep.gridType === "triangular") {
       const isUp = (r + c) % 2 === 0;
       if (isUp) {
@@ -1660,12 +1672,17 @@ class StudioEngine {
 
     const seed = sim.seed || 42;
 
+    // Hexagonal grid: rows interlock, so the row pitch is 0.866 of the cell width (squeezed if it does not fit)
+    const isHex = rep.gridType === "hexagonal";
+    const hexPitch = Math.min(colWidths[0] * 0.866, usableH / rows);
+
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const cW = colWidths[c];
-        const cH = rowHeights[r];
+        const cH = isHex ? hexPitch : rowHeights[r];
         let cx = colX[c];
         let cy = rowY[r];
+        if (isHex) cy = margin + usableH / 2 + (r - (rows - 1) / 2) * hexPitch;
         const startX = colStarts[c];
 
         // Apply grid deformations to center coordinates
@@ -1680,7 +1697,7 @@ class StudioEngine {
         } else if (rep.gridType === "zigzag") {
           const zig = (r % 2 === 0 ? 1 : -1) * rep.curveIntensity;
           cx += zig;
-        } else if (rep.gridType === "triangular") {
+        } else if (rep.gridType === "triangular" || isHex) {
           if (r % 2 === 1) cx += cW * 0.5;
         }
 
@@ -1769,6 +1786,10 @@ class StudioEngine {
         const normScale = scaleUnit * cellRatio * cellScaleMul * concScaleMul;
         this.cellSeed = r * cols + c + 1;
         this.cellAlt = (r + c) % 2 === 1;
+        // Reflection: mirror the module in alternate columns and/or rows
+        const refl = rep.reflection || "none";
+        if ((refl === "columns" || refl === "both") && c % 2 === 1) ctx.scale(-1, 1);
+        if ((refl === "rows" || refl === "both") && r % 2 === 1) ctx.scale(1, -1);
         const lineWidthMul = (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * cellScaleMul * concScaleMul : null;
         this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor ? cellFg : null, lineWidthMul);
         ctx.restore();
@@ -1776,6 +1797,11 @@ class StudioEngine {
 
       // Draw primary cell
       renderCell(cx, cy, startX);
+
+      // Hexagonal grid: the half-cell shift pushes the last cell out, so it also appears at the left edge
+      if (isHex && r % 2 === 1 && c === cols - 1) {
+        renderCell(cx - usableW, cy, startX - usableW);
+      }
 
       // Seamless repeat wrapping in sliding (brick) grid
       if (rep.gridType === "sliding" && r % 2 === 1) {
@@ -1795,85 +1821,113 @@ class StudioEngine {
     const showLines = !!(rep.showGridLines || (struct && (struct.showGridLines || (struct.enabled && struct.showBands))));
     if (showLines) {
       ctx.save();
-      ctx.strokeStyle = palette.isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(24, 24, 31, 0.35)";
+      // Tone: faint guide, positive (drawn in ink) or negative (drawn in the ground colour, cutting the modules)
+      const tone = rep.lineTone || "guide";
+      ctx.strokeStyle = tone === "positive" ? (targetMod.color || palette.fg)
+        : tone === "negative" ? palette.bg
+        : (palette.isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(24, 24, 31, 0.35)");
       ctx.lineWidth = struct && struct.enabled && struct.showBands ? struct.bandThickness : (rep.gridLineWidth || 1.2);
+      const dir = rep.lineDirection || "both";
+      const showH = dir !== "vertical";
+      const showV = dir !== "horizontal";
+      const alt = rep.lineSpacing === "alternate"; // every other line
 
-      // Draw horizontal lines
-      for (let r = 0; r <= rows; r++) {
-        const y = r === rows ? margin + usableH : rowStarts[r];
-        ctx.beginPath();
-        ctx.moveTo(margin, y);
-        ctx.lineTo(margin + usableW, y);
-        ctx.stroke();
-      }
-
-      if (rep.gridType === "sliding") {
-        // True running-bond staggered vertical brick joints
+      if (isHex) {
+        // Honeycomb: every cell outline (direction and spacing do not apply)
         for (let r = 0; r < rows; r++) {
-          const yTop = rowStarts[r];
-          const yBot = r === rows - 1 ? margin + usableH : rowStarts[r + 1];
-          const isShifted = r % 2 === 1;
-          const shift = isShifted ? colWidths[0] * (rep.slideOffset ?? 0.5) : 0;
-
-          // Left border
-          ctx.beginPath();
-          ctx.moveTo(margin, yTop);
-          ctx.lineTo(margin, yBot);
-          ctx.stroke();
-
-          // Internal vertical joints
-          for (let c = 0; c <= cols; c++) {
-            const rawX = (c === cols ? margin + usableW : colStarts[c]) + shift;
-            let x = rawX;
-            if (isShifted && x > margin + usableW + 0.1) {
-              x -= usableW;
-            }
-            if (x > margin + 0.5 && x < margin + usableW - 0.5) {
-              ctx.beginPath();
-              ctx.moveTo(x, yTop);
-              ctx.lineTo(x, yBot);
+          for (let c = 0; c < cols; c++) {
+            const cy = margin + usableH / 2 + (r - (rows - 1) / 2) * hexPitch;
+            const shiftX = r % 2 === 1 ? colWidths[c] * 0.5 : 0;
+            for (const off of (r % 2 === 1 && c === cols - 1 ? [0, -usableW] : [0])) {
+              this.buildCellPath(ctx, r, c, rows, cols, colX[c] + shiftX + off, cy, colWidths[c], hexPitch, rep, colStarts[c]);
+              ctx.closePath();
               ctx.stroke();
             }
           }
-
-          // Right border
-          ctx.beginPath();
-          ctx.moveTo(margin + usableW, yTop);
-          ctx.lineTo(margin + usableW, yBot);
-          ctx.stroke();
         }
       } else {
-        // Draw vertical / deformed lines
-        for (let c = 0; c <= cols; c++) {
-          const baseX = c === cols ? margin + usableW : colStarts[c];
-          ctx.beginPath();
-
-          if (rep.gridType === "sheared") {
-            const rad = (rep.shearAngle * Math.PI) / 180;
-            const topX = baseX - (rows / 2) * Math.tan(rad) * (rowHeights[0] * 0.6);
-            const botX = baseX + (rows / 2) * Math.tan(rad) * (rowHeights[0] * 0.6);
-            ctx.moveTo(topX, margin);
-            ctx.lineTo(botX, margin + usableH);
-          } else if (rep.gridType === "curved") {
-            ctx.moveTo(baseX, margin);
-            const steps = 30;
-            for (let s = 1; s <= steps; s++) {
-              const frac = s / steps;
-              const y = margin + frac * usableH;
-              const wave = Math.sin(frac * Math.PI * 2) * rep.curveIntensity;
-              ctx.lineTo(baseX + wave, y);
-            }
-          } else if (rep.gridType === "zigzag") {
-            ctx.moveTo(baseX, margin);
-            for (let r = 0; r < rows; r++) {
-              const zig = (r % 2 === 0 ? 1 : -1) * rep.curveIntensity;
-              ctx.lineTo(baseX + zig, margin + (r + 1) * rowHeights[r]);
-            }
-          } else {
-            ctx.moveTo(baseX, margin);
-            ctx.lineTo(baseX, margin + usableH);
+        // Draw horizontal lines
+        if (showH) {
+          for (let r = 0; r <= rows; r++) {
+            if (alt && r % 2 === 1) continue;
+            const y = r === rows ? margin + usableH : rowStarts[r];
+            ctx.beginPath();
+            ctx.moveTo(margin, y);
+            ctx.lineTo(margin + usableW, y);
+            ctx.stroke();
           }
-          ctx.stroke();
+        }
+
+        if (showV && rep.gridType === "sliding") {
+          // True running-bond staggered vertical brick joints
+          for (let r = 0; r < rows; r++) {
+            const yTop = rowStarts[r];
+            const yBot = r === rows - 1 ? margin + usableH : rowStarts[r + 1];
+            const isShifted = r % 2 === 1;
+            const shift = isShifted ? colWidths[0] * (rep.slideOffset ?? 0.5) : 0;
+
+            // Left border
+            ctx.beginPath();
+            ctx.moveTo(margin, yTop);
+            ctx.lineTo(margin, yBot);
+            ctx.stroke();
+
+            // Internal vertical joints
+            for (let c = 0; c <= cols; c++) {
+              if (alt && c % 2 === 1) continue;
+              const rawX = (c === cols ? margin + usableW : colStarts[c]) + shift;
+              let x = rawX;
+              if (isShifted && x > margin + usableW + 0.1) {
+                x -= usableW;
+              }
+              if (x > margin + 0.5 && x < margin + usableW - 0.5) {
+                ctx.beginPath();
+                ctx.moveTo(x, yTop);
+                ctx.lineTo(x, yBot);
+                ctx.stroke();
+              }
+            }
+
+            // Right border
+            ctx.beginPath();
+            ctx.moveTo(margin + usableW, yTop);
+            ctx.lineTo(margin + usableW, yBot);
+            ctx.stroke();
+          }
+        } else if (showV) {
+          // Draw vertical / deformed lines
+          for (let c = 0; c <= cols; c++) {
+            if (alt && c % 2 === 1) continue;
+            const baseX = c === cols ? margin + usableW : colStarts[c];
+            ctx.beginPath();
+
+            if (rep.gridType === "sheared") {
+              const rad = (rep.shearAngle * Math.PI) / 180;
+              const topX = baseX - (rows / 2) * Math.tan(rad) * (rowHeights[0] * 0.6);
+              const botX = baseX + (rows / 2) * Math.tan(rad) * (rowHeights[0] * 0.6);
+              ctx.moveTo(topX, margin);
+              ctx.lineTo(botX, margin + usableH);
+            } else if (rep.gridType === "curved") {
+              ctx.moveTo(baseX, margin);
+              const steps = 30;
+              for (let st = 1; st <= steps; st++) {
+                const frac = st / steps;
+                const y = margin + frac * usableH;
+                const wave = Math.sin(frac * Math.PI * 2) * rep.curveIntensity;
+                ctx.lineTo(baseX + wave, y);
+              }
+            } else if (rep.gridType === "zigzag") {
+              ctx.moveTo(baseX, margin);
+              for (let r = 0; r < rows; r++) {
+                const zig = (r % 2 === 0 ? 1 : -1) * rep.curveIntensity;
+                ctx.lineTo(baseX + zig, margin + (r + 1) * rowHeights[r]);
+              }
+            } else {
+              ctx.moveTo(baseX, margin);
+              ctx.lineTo(baseX, margin + usableH);
+            }
+            ctx.stroke();
+          }
         }
       }
 
@@ -3496,7 +3550,15 @@ class StudioProApp {
       const num = document.getElementById("num-layout-param");
       if (num) num.value = `${val}${spec.suffix}`;
     }
-    document.getElementById("rep-linewidth-block")?.classList.toggle("hidden", !rep.showGridLines);
+    document.getElementById("rep-lines-block")?.classList.toggle("hidden", !rep.showGridLines);
+    const mark = (attr, value) => document.querySelectorAll(`[${attr}]`).forEach(b => {
+      const v = b.getAttribute(attr);
+      b.classList.toggle("active", v === value);
+    });
+    mark("data-rep-tone", rep.lineTone || "guide");
+    mark("data-rep-linedir", rep.lineDirection || "both");
+    mark("data-rep-linespace", rep.lineSpacing || "all");
+    mark("data-rep-reflect", rep.reflection || "none");
     const w = rep.gridLineWidth ?? 1.5;
     this.syncControlValue("input-layout-linewidth", w);
     const nw = document.getElementById("num-layout-linewidth");
@@ -3525,6 +3587,24 @@ class StudioProApp {
       const raw = parseFloat(e.target.value.replace(/[^0-9.-]/g, ""));
       applyParam(isNaN(raw) ? 0 : raw, "", true);
     });
+
+    // Tags of the line style and of the reflection (one stored value each)
+    const bindTags = (selector, attr, key, label) => {
+      document.querySelectorAll(selector).forEach(btn => {
+        btn.addEventListener("click", () => {
+          const r = rep(); if (!r) return;
+          r[key] = btn.getAttribute(attr);
+          this.getActiveLayerStructure().mode = "repetition";
+          this.syncRepetitionExtras(r);
+          this.render();
+          this.pushHistory(`Layer ${this.activeLayerId} ${label}: ${r[key]}`);
+        });
+      });
+    };
+    bindTags("[data-rep-tone]", "data-rep-tone", "lineTone", "Line Tone");
+    bindTags("[data-rep-linedir]", "data-rep-linedir", "lineDirection", "Line Direction");
+    bindTags("[data-rep-linespace]", "data-rep-linespace", "lineSpacing", "Line Spacing");
+    bindTags("[data-rep-reflect]", "data-rep-reflect", "reflection", "Reflection");
 
     // Line width of the visible grid lines
     const lw = document.getElementById("input-layout-linewidth");

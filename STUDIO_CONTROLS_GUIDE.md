@@ -92,12 +92,19 @@ Multiplica el módulo en una retícula ortogonal sobre el plano cartesiano $X, Y
   * `zigzag` (*Zigzag*): Deformación angular triangular de las filas. Mismo parámetro **Wave amount**.
   * `triangular` (*Triangular*): Filas impares desplazadas media celda (retícula triangular).
   * `alternating` (*Alternating*): Las celdas impares giran 180° (direcciones alternadas).
+  * `hexagonal` (*Hexagonal*): Panal. Las filas impares se desplazan media celda y las filas encajan (paso vertical de 0,866 del ancho de celda, algo menor si no cabe). El recorte de celda y las líneas visibles usan hexágonos.
 * **`cols / rows`** (1 a 50): Número de divisiones en los ejes horizontal y vertical.
 * **`spacing`** (px): Separación o canaleta (*gutter*) entre celdas contiguas.
 * **`slideOffset`** (0.0 a 1.0): Proporción de desplazamiento en filas impares (modo `sliding`).
 * **`shearAngle`** (0° a 45°): Ángulo de inclinación oblicua (modo `sheared`).
 * **`curveIntensity`** (px): Amplitud de oscilación de la onda (modo `curved`).
-* **`showGridLines`** (`boolean`): Renderiza las líneas maestras de la retícula. Con las líneas visibles aparece el control **Line width** (`gridLineWidth`, 0.5 a 6 px).
+* **`showGridLines`** (`boolean`): Renderiza las líneas maestras de la retícula. Con las líneas visibles aparecen sus opciones:
+  * **`lineTone`** (*Line tone*, `guide` por defecto): `guide` es la línea tenue de siempre; `positive` se dibuja en tinta (el color de la capa); `negative` se dibuja con el color del fondo y corta los módulos que cruza (fig. 20b y 20c). Los módulos más grandes que la celda son los que muestran el corte.
+  * **`lineDirection`** (*Line direction*, `both`): solo líneas `horizontal`, solo `vertical` o ambas (fig. 20d).
+  * **`lineSpacing`** (*Line spacing*, `all`): `alternate` dibuja una línea de cada dos.
+  * **`gridLineWidth`** (*Line width*, 0.5 a 6 px).
+  En la cuadrícula hexagonal se dibuja cada panal y la dirección y el espaciado no se aplican. Las líneas del esquema radial siguen con el estilo tenue de siempre (E2 pendiente para radial).
+* **`reflection`** (*Reflection*, `none`): Espeja el módulo en las columnas impares (`columns`), en las filas impares (`rows`) o en ambas (`both`). El espejo se aplica al módulo ya transformado, así que las rotaciones de Gradation y los campos de Concentration no se invierten.
 * **`checkerInvert`** (`boolean`): Invierte el color de figura y fondo en casillas alternadas (tablero de ajedrez).
 
 ---
