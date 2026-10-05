@@ -64,7 +64,7 @@
       L.shape = pick(SHAPES); L.width = ri(5, 400); L.height = ri(5, 250); L.rotation = ri(0, 360);
       L.offsetX = ri(-250, 250); L.offsetY = ri(-250, 250); L.wireframe = rb(); L.strokeWidth = ri(1, 10) / 2; L.visible = rnd() < 0.9;
       const st = L.structure; st.enabled = rnd() < 0.8; st.mode = pick(["repetition", "radiation"]);
-      const rp = st.repetition; rp.gridType = pick(["basic","sliding","sheared","curved","zigzag","triangular","alternating","hexagonal"]); rp.lineColor = pick(["","#cc2222","#ffffff"]); rp.lineDirection = pick(["both","horizontal","vertical"]); rp.lineSpacing = pick(["all","alternate"]); rp.reflection = pick(["none","columns","rows","both"]);
+      const rp = st.repetition; rp.gridType = pick(["basic","sliding","sheared","curved","zigzag","triangular","alternating","hexagonal","free"]); rp.freeSeed = ri(1, 99); rp.lineColor = pick(["","#cc2222","#ffffff"]); rp.lineDirection = pick(["both","horizontal","vertical"]); rp.lineSpacing = pick(["all","alternate"]); rp.reflection = pick(["none","columns","rows","both"]);
       rp.cols = ri(1, 50); rp.rows = ri(1, 50); rp.spacing = ri(0, 40); rp.shearAngle = ri(0, 45); rp.slideOffset = rnd(); rp.curveIntensity = ri(0, 60);
       rp.activeClipping = rb(); rp.showGridLines = rb(); rp.checkerInvert = rb(); rp.direction = pick(["repeated","alternated","undefined"]);
       const rd = st.radiation; rd.scheme = pick(["centrifugal","centripetal","concentric","spiral","multi_center"]); rd.orientation = pick(["auto","outward","inward","tangent","fixed"]); rd.centerOpen = ri(0, 70); rd.ringRotation = ri(-90, 90); rd.rays = ri(4, 28); rd.rings = ri(2, 10);
@@ -1525,6 +1525,41 @@
       assert(!q("#conc-foci-block").classList.contains("hidden"), "Foci should show with Hotspots");
       const inp = q("#input-conc-foci"); inp.value = 4; inp.dispatchEvent(new win.Event("input", { bubbles: true }));
       assert(app.getActiveLayerStructure().concentration.focusCount === 4, "The Foci slider did not reach the state");
+      reset();
+    });
+
+    await test("Free distribution: modules without a grid, each with a similar space around it", async () => {
+      reset();
+      const e = app.engine;
+      const pts = e.freePoints(36, 0, 0, 600, 600, 7, 6, 6);
+      assert(pts.length === 36 && pts.every(p => p.x >= 0 && p.x <= 600 && p.y >= 0 && p.y <= 600), "Every point must be inside the area");
+      const nn = pts.map((p, i) => Math.min(...pts.filter((q, j) => j !== i).map(q => Math.hypot(p.x - q.x, p.y - q.y))));
+      const spacing = Math.sqrt(600 * 600 / 36);
+      assert(Math.min(...nn) > spacing * 0.3, `Points should keep their distance (closest pair ${Math.min(...nn).toFixed(0)} px, spacing ${spacing.toFixed(0)})`);
+      assert(JSON.stringify(e.freePoints(36, 0, 0, 600, 600, 7, 6, 6)) === JSON.stringify(pts), "Same seed, same layout");
+      assert(JSON.stringify(e.freePoints(36, 0, 0, 600, 600, 8, 6, 6)) !== JSON.stringify(pts), "Another seed, another layout");
+      for (let r = 1; r < 6; r++) assert(Math.max(...pts.slice((r - 1) * 6, r * 6).map(p => p.y)) <= Math.max(...pts.slice(r * 6, (r + 1) * 6).map(p => p.y)) + 1e-6, "Rows keep their order from top to bottom");
+      const cv = win.document.getElementById("studio-canvas");
+      const render = (rep) => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        const L = st.layers[0];
+        Object.assign(L, { shape: "circle", width: 200, height: 200, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false, containerW: 0, containerH: 0 });
+        L.structure.enabled = true; L.structure.mode = "repetition";
+        Object.assign(L.structure.repetition, { cols: 6, rows: 6, gridType: "free", sizeMode: "fit", showGridLines: false, freeSeed: 7, placement: "centers", cellMix: "none" }, rep);
+        app.state = st; drawRaw(app);
+        return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      };
+      const free = render({}), grid = render({ gridType: "basic" });
+      assert(JSON.stringify(Array.from(free)) !== JSON.stringify(Array.from(grid)), "Free should not look like the plain grid");
+      assert(JSON.stringify(Array.from(render({ showGridLines: true }))) === JSON.stringify(Array.from(free)), "Free has no grid lines to show");
+      assert(JSON.stringify(Array.from(render({ freeSeed: 8 }))) !== JSON.stringify(Array.from(free)), "The seed should change the drawing");
+      // Inspector
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      q('[data-rail-tab="layout"]').click(); await wait(80); q("#toggle-layout-structure").click();
+      q('[data-grid-var="free"]').click(); await wait(40);
+      assert(!q("#rep-param-block").classList.contains("hidden") && q("#rep-param-label").textContent === "Seed", "Free should offer the Seed slider");
+      assert(q("#rep-placement-block").classList.contains("hidden"), "Module placement does not apply to the free distribution");
       reset();
     });
 

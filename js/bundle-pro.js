@@ -808,6 +808,7 @@ const createDefaultLayerStructure = () => ({
     spacing: 0,
     shearAngle: 15,
     slideOffset: 0.5,
+    freeSeed: 7, // Free distribution: changes the layout of the modules (1 to 99)
     curveIntensity: 18,
     activeClipping: false,
     showGridLines: false,
@@ -1831,6 +1832,47 @@ class StudioEngine {
     ctx.restore();
   }
 
+  // Free distribution: n points that keep a similar space around each one (best-candidate blue noise),
+  // ordered row by row so the (row, column) index still follows the layout. Deterministic for a given seed.
+  freePoints(n, x0, y0, x1, y1, seed, cols, rows) {
+    let a = (seed * 2654435761) >>> 0;
+    const rnd = () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const w = Math.max(1, x1 - x0), h = Math.max(1, y1 - y0);
+    const bs = Math.max(1, Math.sqrt((w * h) / Math.max(1, n)));
+    const bw = Math.ceil(w / bs) + 1;
+    const buckets = new Map();
+    const key = (x, y) => Math.floor((y - y0) / bs) * bw + Math.floor((x - x0) / bs);
+    const pts = [];
+    const nearest = (x, y) => {
+      let best = Infinity;
+      const bx = Math.floor((x - x0) / bs), by = Math.floor((y - y0) / bs);
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        const list = buckets.get((by + dy) * bw + (bx + dx));
+        if (!list) continue;
+        for (const p of list) { const d = (p.x - x) * (p.x - x) + (p.y - y) * (p.y - y); if (d < best) best = d; }
+      }
+      return best;
+    };
+    for (let i = 0; i < n; i++) {
+      let bestPt = null, bestD = -1;
+      const tries = i === 0 ? 1 : 8;
+      for (let k = 0; k < tries; k++) {
+        const x = x0 + rnd() * w, y = y0 + rnd() * h;
+        const d = i === 0 ? 0 : Math.min(nearest(x, y), bs * bs * 9);
+        if (d > bestD) { bestD = d; bestPt = { x, y }; }
+      }
+      pts.push(bestPt);
+      const kk = key(bestPt.x, bestPt.y);
+      if (!buckets.has(kk)) buckets.set(kk, []);
+      buckets.get(kk).push(bestPt);
+    }
+    // Row by row: sort by height, then each row of `cols` points left to right
+    pts.sort((p, q) => p.y - q.y);
+    const out = [];
+    for (let r = 0; r < rows; r++) out.push(...pts.slice(r * cols, (r + 1) * cols).sort((p, q) => p.x - q.x));
+    return out;
+  }
+
   // Render the repetition / structural grid with similarity and gradation kinematics
   renderRepetitionGrid(ctx, width, height, palette, marginParam, usableWParam, usableHParam, targetMod = null, repConfig = null) {
     if (!targetMod || !targetMod.structure) return;
@@ -1960,8 +2002,18 @@ class StudioEngine {
 
     // Hexagonal grid: rows interlock, so the row pitch is 0.866 of the cell width (squeezed if it does not fit)
     const isHex = rep.gridType === "hexagonal";
+    // Free distribution: no grid, modules keep a similar space around each one
+    const isFree = rep.gridType === "free";
+    let freePts = null, freeW = 0, freeH = 0;
+    if (isFree) {
+      freeW = isFixed ? fixedCW : usableW / cols;
+      freeH = isFixed ? fixedCH : usableH / rows;
+      const bw = isFixed ? cols * fixedCW : usableW, bh = isFixed ? rows * fixedCH : usableH;
+      const fx0 = isFixed ? margin + usableW / 2 - bw / 2 : margin, fy0 = isFixed ? margin + usableH / 2 - bh / 2 : margin;
+      freePts = this.freePoints(cols * rows, fx0 + freeW / 2, fy0 + freeH / 2, fx0 + bw - freeW / 2, fy0 + bh - freeH / 2, rep.freeSeed || 7, cols, rows);
+    }
     // Rhythm scales the space: the A column and row keep the module's size, the B ones shrink it in proportion
-    const rhythmOn = !isHex && !!(struct && struct.enabled) && ((Number(struct.colRatio) || 1) !== 1 || (Number(struct.rowRatio) || 1) !== 1 || gC !== 0 || gR !== 0);
+    const rhythmOn = !isHex && !isFree && !!(struct && struct.enabled) && ((Number(struct.colRatio) || 1) !== 1 || (Number(struct.rowRatio) || 1) !== 1 || gC !== 0 || gR !== 0);
     const refW = colWidths[0], refH = rowHeights[0];
     const hexPitch = isFixed ? hexFixedPitch : Math.min(colWidths[0] * 0.866, usableH / rows);
     // Far edges of the grid (the canvas edge in fit mode; past it in fixed mode)
@@ -1970,12 +2022,13 @@ class StudioEngine {
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        const cW = colWidths[c];
-        const cH = isHex ? hexPitch : rowHeights[r];
+        let cW = colWidths[c];
+        let cH = isHex ? hexPitch : rowHeights[r];
         let cx = colX[c];
         let cy = rowY[r];
         if (isHex) cy = margin + usableH / 2 + (r - (rows - 1) / 2) * hexPitch;
-        const startX = colStarts[c];
+        let startX = colStarts[c];
+        if (isFree) { const fp = freePts[r * cols + c]; cW = freeW; cH = freeH; cx = fp.x; cy = fp.y; startX = cx - cW / 2; }
 
         // Apply grid deformations to center coordinates
         if (rep.gridType === "sliding") {
@@ -2117,7 +2170,7 @@ class StudioEngine {
       };
 
       // Placement: centres, intersections or both; mixed sizes: some 2x2 blocks merged or divided
-      const place = isHex ? "centers" : (rep.placement || "centers");
+      const place = isHex || isFree ? "centers" : (rep.placement || "centers");
       const mix = rep.gridType === "basic" || rep.gridType === "alternating" ? (rep.cellMix || "none") : "none";
       const bigBlock = mix !== "none" && ((r >> 1) + (c >> 1)) % 2 === 0 && 2 * (r >> 1) + 1 < rows && 2 * (c >> 1) + 1 < cols;
       if (place !== "intersections") {
@@ -2163,7 +2216,7 @@ class StudioEngine {
     const showLines = !!(rep.showGridLines || (struct && (struct.showGridLines || (struct.enabled && struct.showBands))));
     const bandLines = !!(struct && struct.enabled && struct.showBands);
     // Visible lines are part of the design (Wong): they have their own colour and width and are exported
-    if (showLines) {
+    if (showLines && !isFree) {
       ctx.save();
       ctx.strokeStyle = rep.lineColor || targetMod.color || palette.fg;
       ctx.lineWidth = bandLines ? struct.bandThickness : (rep.gridLineWidth || 1.2);
@@ -4006,7 +4059,8 @@ class StudioProApp {
       sliding: { label: "Row offset", key: "slideOffset", min: 0, max: 100, step: 1, suffix: "%", toUi: v => Math.round(v * 100), fromUi: v => v / 100 },
       sheared: { label: "Shear angle", key: "shearAngle", min: 0, max: 45, step: 1, suffix: "º", toUi: v => v, fromUi: v => v },
       curved: { label: "Wave amount", key: "curveIntensity", min: 0, max: 60, step: 1, suffix: "px", toUi: v => v, fromUi: v => v },
-      zigzag: { label: "Wave amount", key: "curveIntensity", min: 0, max: 60, step: 1, suffix: "px", toUi: v => v, fromUi: v => v }
+      zigzag: { label: "Wave amount", key: "curveIntensity", min: 0, max: 60, step: 1, suffix: "px", toUi: v => v, fromUi: v => v },
+      free: { label: "Seed", key: "freeSeed", min: 1, max: 99, step: 1, suffix: "", toUi: v => v, fromUi: v => v }
     };
   }
 
@@ -4045,9 +4099,9 @@ class StudioProApp {
     mark("data-rep-place", rep.placement || "centers");
     mark("data-rep-mix", rep.cellMix || "none");
     // Placement does not apply to the honeycomb; mixed sizes only to the plain and alternating grids
-    document.getElementById("rep-placement-block")?.classList.toggle("hidden", rep.gridType === "hexagonal");
+    document.getElementById("rep-placement-block")?.classList.toggle("hidden", rep.gridType === "hexagonal" || rep.gridType === "free");
     document.getElementById("rep-mix-block")?.classList.toggle("hidden", !(rep.gridType === "basic" || rep.gridType === "alternating"));
-    const interOn = rep.gridType !== "hexagonal" && (rep.placement || "centers") !== "centers";
+    const interOn = rep.gridType !== "hexagonal" && rep.gridType !== "free" && (rep.placement || "centers") !== "centers";
     document.getElementById("rep-inter-block")?.classList.toggle("hidden", !interOn);
     this.syncControlValue("input-layout-inter", rep.interScale ?? 50);
     const ni = document.getElementById("num-layout-inter");

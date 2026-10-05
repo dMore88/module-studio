@@ -841,7 +841,8 @@ export class StudioProApp {
       sliding: { label: "Row offset", key: "slideOffset", min: 0, max: 100, step: 1, suffix: "%", toUi: v => Math.round(v * 100), fromUi: v => v / 100 },
       sheared: { label: "Shear angle", key: "shearAngle", min: 0, max: 45, step: 1, suffix: "º", toUi: v => v, fromUi: v => v },
       curved: { label: "Wave amount", key: "curveIntensity", min: 0, max: 60, step: 1, suffix: "px", toUi: v => v, fromUi: v => v },
-      zigzag: { label: "Wave amount", key: "curveIntensity", min: 0, max: 60, step: 1, suffix: "px", toUi: v => v, fromUi: v => v }
+      zigzag: { label: "Wave amount", key: "curveIntensity", min: 0, max: 60, step: 1, suffix: "px", toUi: v => v, fromUi: v => v },
+      free: { label: "Seed", key: "freeSeed", min: 1, max: 99, step: 1, suffix: "", toUi: v => v, fromUi: v => v }
     };
   }
 
@@ -880,9 +881,9 @@ export class StudioProApp {
     mark("data-rep-place", rep.placement || "centers");
     mark("data-rep-mix", rep.cellMix || "none");
     // Placement does not apply to the honeycomb; mixed sizes only to the plain and alternating grids
-    document.getElementById("rep-placement-block")?.classList.toggle("hidden", rep.gridType === "hexagonal");
+    document.getElementById("rep-placement-block")?.classList.toggle("hidden", rep.gridType === "hexagonal" || rep.gridType === "free");
     document.getElementById("rep-mix-block")?.classList.toggle("hidden", !(rep.gridType === "basic" || rep.gridType === "alternating"));
-    const interOn = rep.gridType !== "hexagonal" && (rep.placement || "centers") !== "centers";
+    const interOn = rep.gridType !== "hexagonal" && rep.gridType !== "free" && (rep.placement || "centers") !== "centers";
     document.getElementById("rep-inter-block")?.classList.toggle("hidden", !interOn);
     this.syncControlValue("input-layout-inter", rep.interScale ?? 50);
     const ni = document.getElementById("num-layout-inter");
