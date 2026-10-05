@@ -805,6 +805,9 @@ export class StudioProApp {
         btn.classList.toggle("active", btn.dataset.radSize === (rad.sizeMode || "fit"));
       });
       document.querySelectorAll("[data-rad-dir]").forEach(btn => btn.classList.toggle("active", btn.dataset.radDir === (rad.direction || "repeated")));
+      document.querySelectorAll("[data-rad-shape]").forEach(btn => btn.classList.toggle("active", btn.dataset.radShape === (rad.ringShape || "circle")));
+      // Polygonal rings do not apply to spirals or chevrons
+      document.getElementById("rad-ringshape-block")?.classList.toggle("hidden", rad.scheme === "spiral" || rad.scheme === "centripetal");
       document.getElementById("rad-lines-block")?.classList.toggle("hidden", !(rad.showRays || rad.showRings));
       this.syncAccentColorRow("radline", rad.lineColor || mod?.color || "#18181f", true);
       this.syncControlValue("input-layout-radline", rad.lineWidth ?? 1);
@@ -1173,6 +1176,7 @@ export class StudioProApp {
       });
     };
     bindRadTags("[data-rad-dir]", "radDir", "direction", "Radiation Direction");
+    bindRadTags("[data-rad-shape]", "radShape", "ringShape", "Ring Shape");
     this.bindSliderWithNumber("input-layout-radline", "num-layout-radline", (val) => {
       const struct = this.getActiveLayerStructure();
       if (!struct) return;

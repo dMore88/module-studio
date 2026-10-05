@@ -91,7 +91,7 @@ Ya cubierto: centrífuga, concéntrica, espiral y doble centro, con rayos, anill
 | R1 | Estructura **centrípeta** | ✅ Hecho: esquema *Centripetal* (ángulos hacia el centro, guías en chevrones anidados) | ✅ |
 | R2 | Centro abierto | ✅ Hecho: slider *Open center* (las líneas tangentes al agujero poligonal quedan para R4) | ✅ |
 | R3 | Anillos rotados entre sí | ✅ Hecho: slider *Ring rotation* | ✅ |
-| R4 | Anillos poligonales | Cuadrados, polígonos en lugar de círculos (fig. 49b, g) | P2 |
+| R4 | Anillos poligonales | ✅ Hecho: *Ring shape* (Circle, Triangle, Square, Hexagon) en Radiation > Advanced; no aplica a espiral ni centrípeta | ✅ |
 | R5 | Orientación del módulo | ✅ Hecho: tags *Module orientation* (Auto, Outward, Inward, Tangent, Fixed) | ✅ |
 | R6 | Separación de anillos en gradación | Hoy es lineal | P2 |
 | R7 | Más de dos centros | Hoy doble centro simétrico | P2 |

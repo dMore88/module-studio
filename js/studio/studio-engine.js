@@ -31,7 +31,8 @@ export const createDefaultLayerStructure = () => ({
     scheme: "centrifugal", // centrifugal, centripetal, concentric, spiral, multi_center
     orientation: "auto", // auto (by scheme), outward, inward, tangent, fixed
     centerOpen: 0, // open center: hole radius as a percentage of the radius (0 to 70)
-    ringRotation: 0, // degrees each ring is rotated more than the previous one (-90 to 90)
+    ringRotation: 0,
+    ringShape: "circle", // circle, triangle, square or hexagon: the shape of every ring (Wong, fig. 49) // degrees each ring is rotated more than the previous one (-90 to 90)
     sizeMode: "fit", // fit (Fit to canvas) or actual (Actual size: each ring is as thick as the module)
     direction: "repeated", // repeated, alternated or undefined (see the repetition)
         lineColor: "", // empty = the layer's ink colour
@@ -1489,6 +1490,27 @@ export class StudioEngine {
     // Each ring is turned a bit more than the one inside it, so their subdivisions do not line up
     const ringRotRad = ((rad.ringRotation || 0) * Math.PI) / 180;
 
+    // Ring shape: a regular polygon (circumradius = the ring radius) instead of a circle. Not for spirals or chevrons.
+    const polySides = ({ triangle: 3, square: 4, hexagon: 6 })[rad.ringShape] || 0;
+    const polyOn = polySides > 0 && rad.scheme !== "spiral" && rad.scheme !== "centripetal";
+    const polyOff = -Math.PI / 2 + (polySides % 2 === 0 ? Math.PI / Math.max(1, polySides) : 0); // a point up, or a flat side up
+    // Radius of the polygon along the angle th, once the polygon is turned by `shift`
+    const shapeR = (r, th, shift = 0) => {
+      if (!polyOn) return r;
+      const step = (Math.PI * 2) / polySides;
+      let a = (th - shift - polyOff) % step;
+      if (a < 0) a += step;
+      return (r * Math.cos(Math.PI / polySides)) / Math.cos(a - Math.PI / polySides);
+    };
+    const polyPath = (c, r, shift) => {
+      for (let k = 0; k < polySides; k++) {
+        const a = polyOff + shift + (k * Math.PI * 2) / polySides;
+        if (k === 0) ctx.moveTo(c.x + r * Math.cos(a), c.y + r * Math.sin(a));
+        else ctx.lineTo(c.x + r * Math.cos(a), c.y + r * Math.sin(a));
+      }
+      ctx.closePath();
+    };
+
     // Centers list (if multi_center, we have two focal centers creating Moiré)
     const centers = isMultiCenter
       ? [
@@ -1524,8 +1546,9 @@ export class StudioEngine {
             angle += twistRad * twistFraction;
           }
 
-          const x = center.x + ringRadius * Math.cos(angle);
-          const y = center.y + ringRadius * Math.sin(angle);
+          const posR = shapeR(ringRadius, angle, ringShift);
+          const x = center.x + posR * Math.cos(angle);
+          const y = center.y + posR * Math.sin(angle);
 
           let posX = x;
           let posY = y;
@@ -1556,6 +1579,26 @@ export class StudioEngine {
           // The polar sector of this module (used to clip it and to reverse figure and ground)
           const sectorPath = () => {
             ctx.beginPath();
+            if (polyOn) {
+              const N = 8;
+              for (let s = 0; s <= N; s++) {
+                const a = rayAngleStart + ((rayAngleEnd - rayAngleStart) * s) / N;
+                const rr = shapeR(rOuter, a, ringShift);
+                if (s === 0) ctx.moveTo(center.x + rr * Math.cos(a), center.y + rr * Math.sin(a));
+                else ctx.lineTo(center.x + rr * Math.cos(a), center.y + rr * Math.sin(a));
+              }
+              if (rInner > 0.5) {
+                for (let s = N; s >= 0; s--) {
+                  const a = rayAngleStart + ((rayAngleEnd - rayAngleStart) * s) / N;
+                  const rr = shapeR(rInner, a, ringShift);
+                  ctx.lineTo(center.x + rr * Math.cos(a), center.y + rr * Math.sin(a));
+                }
+              } else {
+                ctx.lineTo(center.x, center.y);
+              }
+              ctx.closePath();
+              return;
+            }
             let aOuterStart = rayAngleStart;
             let aOuterEnd = rayAngleEnd;
             let aInnerStart = rayAngleStart;
@@ -1691,7 +1734,7 @@ export class StudioEngine {
         if (rad.showRings) {
           if (openR > 0.5) {
             ctx.beginPath();
-            ctx.arc(center.x, center.y, openR, 0, Math.PI * 2);
+            if (polyOn) polyPath(center, openR, 0); else ctx.arc(center.x, center.y, openR, 0, Math.PI * 2);
             ctx.stroke();
           }
           if (rad.scheme === "centripetal") {
@@ -1727,7 +1770,7 @@ export class StudioEngine {
             for (let i = 1; i <= rings; i++) {
               const r = openR + (i / rings) * span;
               ctx.beginPath();
-              ctx.arc(center.x, center.y, r, 0, Math.PI * 2);
+              if (polyOn) polyPath(center, r, (i - 1) * ringRotRad); else ctx.arc(center.x, center.y, r, 0, Math.PI * 2);
               ctx.stroke();
             }
           }
@@ -1745,8 +1788,9 @@ export class StudioEngine {
                 const aa = baseAngle + shift + (rad.scheme === "spiral" ? twistRad * (ra / maxR) : 0);
                 const ab = baseAngle + shift + (rad.scheme === "spiral" ? twistRad * (rb / maxR) : 0);
                 ctx.beginPath();
-                ctx.moveTo(center.x + ra * Math.cos(aa), center.y + ra * Math.sin(aa));
-                ctx.lineTo(center.x + rb * Math.cos(ab), center.y + rb * Math.sin(ab));
+                const pa = shapeR(ra, aa, shift), pb = shapeR(rb, ab, shift);
+                ctx.moveTo(center.x + pa * Math.cos(aa), center.y + pa * Math.sin(aa));
+                ctx.lineTo(center.x + pb * Math.cos(ab), center.y + pb * Math.sin(ab));
                 ctx.stroke();
               }
               continue;
@@ -1762,8 +1806,9 @@ export class StudioEngine {
                 ctx.lineTo(center.x + r * Math.cos(a), center.y + r * Math.sin(a));
               }
             } else {
-              ctx.moveTo(center.x + openR * Math.cos(baseAngle), center.y + openR * Math.sin(baseAngle));
-              ctx.lineTo(center.x + maxR * Math.cos(baseAngle), center.y + maxR * Math.sin(baseAngle));
+              const r0 = shapeR(openR, baseAngle), r1 = shapeR(maxR, baseAngle);
+              ctx.moveTo(center.x + r0 * Math.cos(baseAngle), center.y + r0 * Math.sin(baseAngle));
+              ctx.lineTo(center.x + r1 * Math.cos(baseAngle), center.y + r1 * Math.sin(baseAngle));
             }
             ctx.stroke();
           }

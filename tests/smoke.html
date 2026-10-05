@@ -68,7 +68,7 @@
       rp.cols = ri(1, 50); rp.rows = ri(1, 50); rp.spacing = ri(0, 40); rp.shearAngle = ri(0, 45); rp.slideOffset = rnd(); rp.curveIntensity = ri(0, 60);
       rp.activeClipping = rb(); rp.showGridLines = rb(); rp.checkerInvert = rb(); rp.direction = pick(["repeated","alternated","undefined"]);
       const rd = st.radiation; rd.scheme = pick(["centrifugal","centripetal","concentric","spiral","multi_center"]); rd.orientation = pick(["auto","outward","inward","tangent","fixed"]); rd.centerOpen = ri(0, 70); rd.ringRotation = ri(-90, 90); rd.rays = ri(4, 28); rd.rings = ri(2, 10);
-      rd.spiralTwist = ri(-180, 180); rd.centerX = ri(-200, 200); rd.centerY = ri(-200, 200); rd.showRays = rb(); rd.showRings = rb(); rd.activeClipping = rb(); rd.direction = pick(["repeated","alternated","undefined"]); rd.lineColor = pick(["","#2244cc"]); rd.lineWidth = ri(1, 12) / 2;
+      rd.spiralTwist = ri(-180, 180); rd.centerX = ri(-200, 200); rd.centerY = ri(-200, 200); rd.showRays = rb(); rd.showRings = rb(); rd.activeClipping = rb(); rd.direction = pick(["repeated","alternated","undefined"]); rd.lineColor = pick(["","#2244cc"]); rd.ringShape = pick(["circle","triangle","square","hexagon"]); rd.lineWidth = ri(1, 12) / 2;
       const fs = st.formalStructure; fs.enabled = rnd() < 0.4; fs.colRatio = 1 + rnd() * 2; fs.rowRatio = 1 + rnd() * 2; fs.showGridLines = rb();
       const sm = st.similarity; sm.enabled = rb(); sm.kinshipType = pick(["distortion","foreshortening","rotation_wobble","scale_kinship","hybrid"]); sm.intensity = ri(0, 100); sm.cellJitter = ri(0, 30); sm.association = pick(["none","round","angular","lines","numbers"]); sm.assocMix = ri(0, 100); sm.imperfection = pick(["none","cut","broken"]); sm.imperfAmount = ri(0, 100);
       const g = st.gradation; g.enabled = rb(); g.type = pick(["rotation","scale","depth","drift","shape","texture"]); g.pathway = pick(["diagonal","horizontal","vertical","concentric","zigzag"]); g.range = ri(15, 360); g.steps = ri(1, 4); g.reverse = rb();
@@ -1275,6 +1275,48 @@
       assert(sAdv && sAdv.contains(q('[data-sim-assoc="round"]')) && sAdv.contains(q("#input-sim-jitter")) && !sAdv.contains(q("#input-sim-intensity")), "Association, Imperfection and jitter belong in Similarity > Advanced; Fluctuation stays up front");
       q('[data-kinship-type="hybrid"]').click();
       assert(/Hibrid/.test(q('[data-kinship-type="hybrid"]').closest(".ds-dropdown").querySelector(".ds-dropdown-current").textContent), "The kinship dropdown should show the chosen type");
+      reset();
+    });
+
+    await test("Radiation: polygonal rings (triangle, square, hexagon) for modules, sectors and visible lines", async () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const render = (rad, scheme = "concentric") => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        const L = st.layers[0];
+        Object.assign(L, { shape: "circle", width: 10, height: 10, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false, containerW: 0, containerH: 0 });
+        L.structure.enabled = true; L.structure.mode = "radiation";
+        Object.assign(L.structure.radiation, { rays: 8, rings: 2, scheme, centerOpen: 0, ringRotation: 0, sizeMode: "fit", showRays: false, showRings: true, lineColor: "", lineWidth: 3, ringShape: "circle" }, rad);
+        app.state = st; drawRaw(app);
+        return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      };
+      const dpr = cv.width / 600;
+      const dark = (d, x, y) => d[(Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4] < 110;
+      // Outer ring: radius 252. A circle passes through (552, 300); a square (flat sides) is 178 px from the centre at that angle
+      const circle = render({});
+      assert(dark(circle, 552, 300) && !dark(circle, 478, 300), "The default ring is a circle");
+      const square = render({ ringShape: "square" });
+      assert(dark(square, 478, 300) && !dark(square, 552, 300), "A square ring should pass 178 px from the centre on its flat side");
+      assert(dark(square, 478, 122) && dark(square, 122, 478), "The square ring should have its corners at 45 degrees");
+      const tri = render({ ringShape: "triangle" });
+      assert(dark(tri, 300, 48), "A triangle has a point up (252 px above the centre)");
+      const hex = render({ ringShape: "hexagon" });
+      assert(dark(hex, 300, 300 - Math.round(252 * Math.cos(Math.PI / 6))), "A hexagon has a flat side up");
+      // Modules follow the ring: with 8 rays the module at 22.5 degrees sits closer to the centre on a square ring
+      const modules = (d) => { let n = 0; for (let x = 460; x < 540; x++) for (let y = 300 - 120; y < 300 - 60; y++) if (dark(d, x, y)) n++; return n; };
+      const mc = render({ showRings: false }), ms = render({ showRings: false, ringShape: "square" });
+      assert(JSON.stringify(Array.from(mc)) !== JSON.stringify(Array.from(ms)), "Modules should move onto the polygon");
+      // Spirals and chevrons keep their circles and hide the control
+      const spiral = render({ ringShape: "square" }, "spiral");
+      assert(dark(spiral, 552, 300), "A spiral keeps circular rings");
+      // Inspector
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      q('[data-rail-tab="layout"]').click(); await wait(80); q("#toggle-layout-structure").click(); q("#btn-layout-radiation").click(); await wait(60);
+      q('[data-rad-shape="hexagon"]').click();
+      assert(app.getActiveLayerStructure().radiation.ringShape === "hexagon" && /Hexagon/.test(q("#rad-ringshape-block .ds-dropdown-current").textContent), "The Ring shape dropdown did not apply");
+      q('[data-rad-scheme="spiral"]').click(); await wait(40);
+      assert(q("#rad-ringshape-block").classList.contains("hidden"), "Ring shape does not apply to spirals");
       reset();
     });
 
