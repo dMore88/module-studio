@@ -7,7 +7,7 @@ Fuente: archivo de Figma **Web apps**, con dos páginas:
 
 Este documento describe los tokens y componentes **tal como están en Figma** y cómo se usan en el código. Los tokens viven en `css/tokens.css`.
 
-> **Estado de la migración:** los **diez paneles del inspector** (Module, Layout structure, Structure, Similarity, Gradation, Anomaly, Contrast, Concentration, Texture y Space) usan estos tokens y las clases `.ds-*` de `css/studio-pro.css`. Siguen con el tema antiguo (`css/design-system.css`, variables `--bs-*`, ver el apartado 7) la **barra superior, las tarjetas de capas y el riel de herramientas**, porque en Figma solo existen como una captura plana, sin componentes (backlog Q3d).
+> **Estado de la migración:** toda la interfaz usa estos tokens: los diez paneles del inspector, la barra superior, la barra del lienzo, el panel de capas, el riel de herramientas y la línea de estado. El tema antiguo (`css/design-system.css`, variables `--bs-*`) se eliminó.
 
 ---
 
@@ -210,7 +210,47 @@ Cuadro de color de 40×40 (`sizing/7`), radio `border/radius/1`, borde en `neutr
 ### 5.13 Pila de campos (`.ds-stack`)
 Contenedor vertical con separación `spacing/6` (24) para los sub-paneles de Layout structure y para el grupo de controles de Structure y Similarity.
 
-### 5.14 Componentes de la librería que la app aún no usa
+### 5.14 Cabecera de la aplicación (`.ds-app-header`, nodo `5763:1693`)
+Altura 68, relleno horizontal 26. A la izquierda la marca (icono de 40 px y el nombre en *Heading 5--Strong*: 24 / 600); a la derecha las acciones de exportación (Config, Copy SVG, Download SVG) con separación de 10 px.
+
+### 5.15 Botón (`.ds-btn`)
+Altura 40 (`sizing/7`), ancho mínimo 100, relleno horizontal `spacing/5`, radio `border/radius/2`, fondo `neutral/interactive/default--inverted`, texto *Label* (16 / 500) en `neutral/text/main` e icono de 16 px a la derecha.
+
+| Estado | Fondo |
+| :--- | :--- |
+| Normal | `neutral/interactive/default--inverted` |
+| Hover | `neutral/interactive/hover--inverted` |
+| Pulsado | `neutral/interactive/active--inverted` |
+| Deshabilitado | `neutral/interactive/disabled` |
+
+### 5.16 Botón de icono (`.ds-icon-btn`)
+40×40, radio `border/radius/2`, icono de 16 px. Normal con `neutral/interactive/default--inverted`; **activo** (opciones de vista: guías de rejilla, inversión de tono) con `neutral/interactive/default` e icono `neutral/icon/inverted`.
+
+### 5.17 Selector (`.ds-select`, nodo `5763:31782`)
+212×40, borde `border/weight/1` en `neutral/border/strong`, radio `border/radius/2`, fondo `neutral/interactive/default--inverted`, texto de 16 px en `neutral/text/soft`, y a la derecha un botón oscuro de 40×40 (`neutral/interactive/default`) con un icono de 20 px. Es un `<select>` nativo con ese aspecto.
+
+### 5.18 Barra del lienzo (`.ds-workspace-toolbar`)
+El selector de proporción y las dos opciones de vista, centrados en el espacio libre entre el panel de capas y el riel.
+
+### 5.19 Panel de capas (`.ds-layers-panel`, nodo `5763:32080`)
+360 px de ancho. Barra superior de 70 px con el título *LAYERS* (16 / 500), el contador (badge) y el botón *Add pattern*. Lista con separación de 10 px y relleno `spacing/5`.
+
+### 5.20 Tarjeta de capa (`.layer-card`)
+72 de alto, radio `border/radius/1`, relleno izquierdo `spacing/3` y derecho `spacing/5`, separación `spacing/4`. Contiene una vista previa de 56×56 (borde `neutral/border/main`), el nombre en 16 / 600, una línea secundaria en `DM Mono` 14 / 500 con `neutral/text/subtle`, y las acciones (visibilidad, borrar, arrastrar) con separación `spacing/4`.
+
+| Estado | Fondo | Borde | Texto |
+| :--- | :--- | :--- | :--- |
+| Inactiva | `neutral/interactive/default--inverted` | 1 px `neutral/interactive/default` | `neutral/text/main` |
+| Activa | `neutral/interactive/active` | 2 px `neutral/interactive/default` | `neutral/text/main-inverted` |
+| Oculta | igual, con opacidad 45 % | | |
+
+### 5.21 Riel de herramientas (`.controls-rail`, `.rail-btn`)
+Columna de botones de 40×40 con radio `border/radius/2` (no circulares), separación `spacing/3`, fondo `neutral/interactive/default` e icono `neutral/icon/inverted`. El botón del panel abierto lleva un anillo de 2 px; un punto de `primary/bg/main` indica que el modificador de esa capa está encendido.
+
+### 5.22 Línea de estado (`.ds-status`)
+Abajo a la derecha: resolución, número de capas y zoom, en `DM Mono` 12 / 500 con `neutral/text/subtle`.
+
+### 5.23 Componentes de la librería que la app aún no usa
 Breadcrumbs, paginación, loaders, ribbon alert, modal, card, input de texto, búsqueda, select, textarea, input numérico, lista, tabla, botón, enlace, grupo de botones, grupo de botones de alternancia, tabs, acordeón y tooltip.
 
 ---
@@ -221,9 +261,9 @@ Breadcrumbs, paginación, loaders, ribbon alert, modal, card, input de texto, b�
 
 ---
 
-## 7. Tema antiguo (`css/design-system.css`)
+## 7. Tema antiguo (retirado)
 
-Variables `--bs-*` (por ejemplo `--bs-accent-primary: #18181f`, `--bs-radius-card: 14px`), con una paleta propia que **no coincide con Figma** (la tinta antigua es `#18181f`, no `#282a36`). Siguen en uso en la barra superior, las tarjetas de capas y el riel, que en Figma son una captura plana. Se retirarán cuando existan sus frames (backlog **Q3d**).
+`css/design-system.css` (variables `--bs-*`, tinta `#18181f`) se eliminó al migrar toda la interfaz a los tokens de Figma. Cualquier referencia a `--bs-*` en el código nuevo es un error.
 
 ---
 
@@ -240,6 +280,9 @@ Variables `--bs-*` (por ejemplo `--bs-accent-primary: #18181f`, `--bs-radius-car
 | 7 | **Dos generaciones de mockups** | Los frames de Layout, Structure y Similarity usan los componentes tal como están en la librería: tags y casillas con fondo gris `#e1e2eb`, interruptor encendido con pista clara y bolita oscura. Los frames de Gradation a Space usan tags y casillas blancos y el interruptor encendido con pista oscura. La app aplica a todos los paneles el estilo de los frames recientes (blancos, interruptor oscuro) | Elegir uno y actualizar el otro en Figma. Cambiarlo en la app son unas pocas líneas de `css/studio-pro.css` |
 | 8 | **Etiqueta "Relleno / Trazo" en Layout** | En el mockup del selector Repetition / Radiation sobra el texto "Relleno / Trazo" (parece de otro control). En la app se llama *Structure mode* | Confirmar |
 | 9 | **Panel Module** | El mockup no muestra la etiqueta de capa (badge) ni el botón de cierre; la app los mantiene | Confirmar |
+| 9b | **Barra del lienzo** | En el mockup el selector de proporción y las opciones de vista van alineados con los bordes del lienzo; en la app están centrados sobre él | Confirmar |
+| 9c | **Zoom** | El mockup incluye un grupo de botones de zoom bajo el lienzo; el zoom está desactivado en la app a petición tuya | Confirmar si vuelve |
+| 9d | **Línea de estado** | El mockup muestra "RETINA HiDPI"; la app muestra el zoom (100 %) | Confirmar el texto |
 | 10 | **Rampa de primitivos** | No se puede leer completa con las herramientas disponibles | Exportar la lista de variables desde Figma si se quiere documentar entera |
 
 ---

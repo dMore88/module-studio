@@ -2987,24 +2987,22 @@ class StudioProApp {
 
       return `
         <div id="layer-card-${l.id}" class="layer-card ${isActive ? 'is-active' : ''} ${!isVis ? 'is-hidden' : ''}" data-layer-id="${l.id}" draggable="true">
-          <div class="flex items-center gap-2.5 min-w-0 pointer-events-none">
-            <div class="layer-preview-box">
-              ${icon}
-            </div>
-            <div class="min-w-0">
-              <div class="layer-title font-semibold text-xs truncate">${l.name || l.id}</div>
-              <div class="layer-subtitle text-[10px] font-mono truncate">${l.shape} • ${mode}${structText}</div>
-            </div>
+          <div class="layer-preview-box pointer-events-none">
+            ${icon}
           </div>
-          <div class="flex items-center gap-1">
-            <button type="button" class="layer-action-btn btn-layer-eye" data-layer="${l.id}" title="Toggle Visibility">
-              ${isVis ? '<i class="ph ph-eye text-[14px]"></i>' : '<i class="ph ph-eye-slash text-[14px] opacity-40"></i>'}
+          <div class="layer-copy pointer-events-none">
+            <div class="layer-title">${l.name || l.id}</div>
+            <div class="layer-subtitle">${l.shape} • ${mode}${structText}</div>
+          </div>
+          <div class="layer-actions">
+            <button type="button" class="layer-action-btn btn-layer-eye" data-layer="${l.id}" title="Toggle Visibility" aria-label="Toggle visibility of ${l.name || l.id}">
+              ${isVis ? '<i class="ph ph-eye" aria-hidden="true"></i>' : '<i class="ph ph-eye-slash opacity-40" aria-hidden="true"></i>'}
             </button>
-            <button type="button" class="layer-action-btn btn-layer-delete ${!canDelete ? 'opacity-25 cursor-not-allowed' : ''}" data-layer="${l.id}" title="${canDelete ? 'Delete Layer' : 'Cannot delete the only layer'}" ${!canDelete ? 'disabled' : ''}>
-              <i class="ph ph-trash text-[14px]"></i>
+            <button type="button" class="layer-action-btn btn-layer-delete ${!canDelete ? 'opacity-25 cursor-not-allowed' : ''}" data-layer="${l.id}" title="${canDelete ? 'Delete Layer' : 'Cannot delete the only layer'}" aria-label="Delete ${l.name || l.id}" ${!canDelete ? 'disabled' : ''}>
+              <i class="ph ph-trash" aria-hidden="true"></i>
             </button>
-            <span class="layer-action-btn layer-drag-handle cursor-grab active:cursor-grabbing text-zinc-400" title="Drag to reorder">
-              <i class="ph ph-dots-six-vertical text-[14px]"></i>
+            <span class="layer-action-btn layer-drag-handle cursor-grab active:cursor-grabbing" title="Drag to reorder" aria-hidden="true">
+              <i class="ph ph-dots-six-vertical"></i>
             </span>
           </div>
         </div>

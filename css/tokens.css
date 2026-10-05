@@ -177,6 +177,7 @@
   --ds-value-bg: #f0f0f2;
   --ds-value-border: #292932;
   --ds-value-radius: 7px;
-  --ds-value-font: 'Roboto Mono', var(--bs-font-mono, monospace);
+  --ds-value-font: 'Roboto Mono', 'JetBrains Mono', monospace;
+  --ds-canvas-dot: rgba(0, 0, 0, 0.08); /* dotted workspace background */
   --ds-value-font-size: 15px;
 }
