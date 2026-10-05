@@ -1182,6 +1182,35 @@
       reset();
     });
 
+    await test("Container: lives in Module > Advanced, can be hidden, and neither it nor the canvas guides are exported", async () => {
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      const cv = q("#studio-canvas");
+      assert(q("#module-advanced").contains(q("#input-active-container-w")) && q("#module-advanced").contains(q("#chk-active-show-container")), "The container controls should sit in Module > Advanced");
+      const setup = (show, guides) => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = guides; st.aspectRatio = "1:1";
+        Object.assign(st.layers[0], { shape: "circle", width: 20, height: 20, containerW: 300, containerH: 300, showContainer: show });
+        st.layers[0].structure.enabled = false;
+        app.state = st; app.engine.state = st; drawRaw(app);
+      };
+      const dpr = cv.width / 600;
+      const px = (x, y) => cv.getContext("2d").getImageData(Math.round(x * dpr), Math.round(y * dpr), 1, 1).data[0];
+      setup(true, true);
+      assert(px(150, 300) < 200, "The container frame should show on the canvas");
+      setup(false, true);
+      assert(px(150, 300) > 200, "Show container off should hide the frame");
+      const svg = () => win.StudioExporter.buildSVG(app.engine, cv, app.getActivePalette());
+      setup(true, true); const withGuides = svg().length;
+      setup(true, false); const without = svg().length;
+      assert(withGuides === without, "Canvas guides and the container frame must not be exported");
+      // Control reaches the state
+      reset(); q('[data-rail-tab="module"]').click(); await wait(60);
+      const chk = q("#chk-active-show-container"); chk.click();
+      assert(app.getActiveModule().showContainer === false, "The checkbox did not reach the layer");
+      reset();
+    });
+
     await test("Checkerboard reverses figure and ground, also with a coloured module", () => {
       reset();
       const cv = win.document.getElementById("studio-canvas");

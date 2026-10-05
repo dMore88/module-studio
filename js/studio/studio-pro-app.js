@@ -2609,6 +2609,13 @@ export class StudioProApp {
       this.render();
     }, "Container Height", "px");
 
+    document.getElementById("chk-active-show-container")?.addEventListener("change", (e) => {
+      const mod = this.getActiveModule();
+      mod.showContainer = e.target.checked;
+      this.render();
+      this.pushHistory(`Layer ${this.activeLayerId} Show Container: ${e.target.checked ? "ON" : "OFF"}`);
+    });
+
     // 5. Drawing Mode: Stroke vs Fill (per active layer)
     const btnStroke = document.getElementById("btn-mode-stroke");
     const btnFill = document.getElementById("btn-mode-fill");
@@ -2683,6 +2690,7 @@ export class StudioProApp {
     this.syncControlValue("num-active-container-w", `${contW}px`);
     this.syncControlValue("input-active-container-h", contH);
     this.syncControlValue("num-active-container-h", `${contH}px`);
+    this.syncCheckbox("chk-active-show-container", mod.showContainer !== false);
 
     // Sync Mode (per active layer)
     const btnStroke = document.getElementById("btn-mode-stroke");

@@ -146,6 +146,7 @@ export const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "ci
   offsetY,
   containerW: 0, // width of the module's container in px (0 = the whole canvas)
   containerH: 0, // height of the module's container in px (0 = the whole canvas)
+  showContainer: true, // draw the container as a dashed frame on the canvas (an on-screen guide, never exported)
   wireframe: true,
   strokeWidth: 1.2,
   color: "#18181f",
@@ -1817,7 +1818,8 @@ export class StudioEngine {
     const usableW = width - margin * 2;
     const usableH = height - margin * 2;
 
-    if (this.state.showSafeBounds) {
+    // Guides (coordinate grid, safe bounds, containers) are an on-screen aid and never reach an export
+    if (this.state.showSafeBounds && !this.exporting) {
       ctx.save();
       // Draw faint architectural coordinate grid (clean and theme-adaptive)
       ctx.strokeStyle = palette.isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(24, 24, 31, 0.08)";
@@ -1846,7 +1848,7 @@ export class StudioEngine {
       // The container of each module that has one: a frame centred on the canvas
       ctx.strokeStyle = palette.isDark ? "rgba(255, 255, 255, 0.55)" : "rgba(24, 24, 31, 0.45)";
       for (const l of this.getLayers()) {
-        if (l.visible === false || !(l.containerW > 0 || l.containerH > 0)) continue;
+        if (l.visible === false || l.showContainer === false || !(l.containerW > 0 || l.containerH > 0)) continue;
         const cs = this.containerSize(l, width, height);
         ctx.strokeRect(width / 2 - cs.w / 2, height / 2 - cs.h / 2, cs.w, cs.h);
       }

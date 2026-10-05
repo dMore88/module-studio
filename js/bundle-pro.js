@@ -941,6 +941,7 @@ const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "circle", 
   offsetY,
   containerW: 0, // width of the module's container in px (0 = the whole canvas)
   containerH: 0, // height of the module's container in px (0 = the whole canvas)
+  showContainer: true, // draw the container as a dashed frame on the canvas (an on-screen guide, never exported)
   wireframe: true,
   strokeWidth: 1.2,
   color: "#18181f",
@@ -2610,7 +2611,8 @@ class StudioEngine {
     const usableW = width - margin * 2;
     const usableH = height - margin * 2;
 
-    if (this.state.showSafeBounds) {
+    // Guides (coordinate grid, safe bounds, containers) are an on-screen aid and never reach an export
+    if (this.state.showSafeBounds && !this.exporting) {
       ctx.save();
       // Draw faint architectural coordinate grid (clean and theme-adaptive)
       ctx.strokeStyle = palette.isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(24, 24, 31, 0.08)";
@@ -2639,7 +2641,7 @@ class StudioEngine {
       // The container of each module that has one: a frame centred on the canvas
       ctx.strokeStyle = palette.isDark ? "rgba(255, 255, 255, 0.55)" : "rgba(24, 24, 31, 0.45)";
       for (const l of this.getLayers()) {
-        if (l.visible === false || !(l.containerW > 0 || l.containerH > 0)) continue;
+        if (l.visible === false || l.showContainer === false || !(l.containerW > 0 || l.containerH > 0)) continue;
         const cs = this.containerSize(l, width, height);
         ctx.strokeRect(width / 2 - cs.w / 2, height / 2 - cs.h / 2, cs.w, cs.h);
       }
@@ -5677,6 +5679,13 @@ class StudioProApp {
       this.render();
     }, "Container Height", "px");
 
+    document.getElementById("chk-active-show-container")?.addEventListener("change", (e) => {
+      const mod = this.getActiveModule();
+      mod.showContainer = e.target.checked;
+      this.render();
+      this.pushHistory(`Layer ${this.activeLayerId} Show Container: ${e.target.checked ? "ON" : "OFF"}`);
+    });
+
     // 5. Drawing Mode: Stroke vs Fill (per active layer)
     const btnStroke = document.getElementById("btn-mode-stroke");
     const btnFill = document.getElementById("btn-mode-fill");
@@ -5751,6 +5760,7 @@ class StudioProApp {
     this.syncControlValue("num-active-container-w", `${contW}px`);
     this.syncControlValue("input-active-container-h", contH);
     this.syncControlValue("num-active-container-h", `${contH}px`);
+    this.syncCheckbox("chk-active-show-container", mod.showContainer !== false);
 
     // Sync Mode (per active layer)
     const btnStroke = document.getElementById("btn-mode-stroke");
