@@ -70,7 +70,7 @@
       const rd = st.radiation; rd.scheme = pick(["centrifugal","centripetal","concentric","spiral","multi_center"]); rd.orientation = pick(["auto","outward","inward","tangent","fixed"]); rd.centerOpen = ri(0, 70); rd.ringRotation = ri(-90, 90); rd.rays = ri(4, 28); rd.rings = ri(2, 10);
       rd.spiralTwist = ri(-180, 180); rd.centerX = ri(-200, 200); rd.centerY = ri(-200, 200); rd.showRays = rb(); rd.showRings = rb(); rd.activeClipping = rb();
       const fs = st.formalStructure; fs.enabled = rnd() < 0.4; fs.colRatio = 1 + rnd() * 2; fs.rowRatio = 1 + rnd() * 2; fs.showGridLines = rb();
-      const sm = st.similarity; sm.enabled = rb(); sm.kinshipType = pick(["distortion","foreshortening","rotation_wobble","scale_kinship","hybrid"]); sm.intensity = ri(0, 100); sm.cellJitter = ri(0, 30);
+      const sm = st.similarity; sm.enabled = rb(); sm.kinshipType = pick(["distortion","foreshortening","rotation_wobble","scale_kinship","hybrid"]); sm.intensity = ri(0, 100); sm.cellJitter = ri(0, 30); sm.association = pick(["none","round","angular","lines","numbers"]); sm.assocMix = ri(0, 100); sm.imperfection = pick(["none","cut","broken"]); sm.imperfAmount = ri(0, 100);
       const g = st.gradation; g.enabled = rb(); g.type = pick(["rotation","scale","depth","drift","shape","texture"]); g.pathway = pick(["diagonal","horizontal","vertical","concentric","zigzag"]); g.range = ri(15, 360); g.steps = ri(1, 4); g.reverse = rb();
       g.sequence = pick(["restart","pingpong"]); g.easing = ri(-100, 100); g.alternate = rb(); g.targetShape = pick(SHAPES);
       const an = st.anomaly; an.enabled = rb(); an.type = pick(["focal","fracture","swell","tear"]); an.epicenterX = 0.1 + rnd() * 0.8; an.epicenterY = 0.1 + rnd() * 0.8; an.radius = ri(50, 350); an.intensity = ri(10, 100); an.anomalousShape = pick(SHAPES); an.highlightColor = rb(); an.showReticle = rb(); an.distribution = pick(["single","regular","random"]); an.count = ri(2, 12); an.seed = ri(1, 99); an.attrs = { shape: rb(), scale: rb(), rotation: rb(), position: rb() };
@@ -866,6 +866,59 @@
       assert(q("#input-active-height").closest(".ds-field").classList.contains("hidden"), "The line should not show Height");
       q('[data-shape="square"]').click();
       assert(!q("#input-active-height").closest(".ds-field").classList.contains("hidden"), "Height should come back for other shapes");
+    });
+
+    await test("Similarity: association of shapes and imperfection (cut, broken)", async () => {
+      const e = app.engine;
+      const fixed = (a, b) => (salt) => (salt === 61 ? a : salt === 62 ? b : 0);
+      const fam = { round: ["circle", "horseshoe", "crescent", "teardrop"], angular: ["square", "triangle", "hexagon", "parallelogram"], lines: ["line", "wave", "hatch", "cross"], numbers: ["digit1", "digit5", "digit9"] };
+      for (const [name, members] of Object.entries(fam)) {
+        assert(e.similarityShape({ association: name, assocMix: 100 }, fixed(-1, -1)) === members[0], `${name}: first member`);
+        assert(e.similarityShape({ association: name, assocMix: 100 }, fixed(-1, 0.99)) === members[members.length - 1], `${name}: last member`);
+        assert(e.similarityShape({ association: name, assocMix: 0 }, fixed(-1, 0)) === null, `${name}: mix 0 should keep the module's shape`);
+      }
+      assert(e.similarityShape({ association: "none", assocMix: 100 }, fixed(-1, 0)) === null, "No family should keep the shape");
+      assert(e.similarityImperfection({ imperfection: "none", imperfAmount: 100 }, () => 0) === null, "No imperfection should keep the module whole");
+      assert(e.similarityImperfection({ imperfection: "cut", imperfAmount: 0 }, () => 0) === null, "Amount 0 should keep every module whole");
+      assert(e.similarityImperfection({ imperfection: "broken", imperfAmount: 100 }, () => 0.2).mode === "broken", "Amount 100 should break every module");
+      // Drawing
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const render = (sim) => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        const L = st.layers[0];
+        Object.assign(L, { shape: "circle", width: 110, height: 110, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false, containerW: 0, containerH: 0 });
+        L.structure.enabled = true; L.structure.mode = "repetition";
+        Object.assign(L.structure.repetition, { cols: 5, rows: 5, gridType: "basic", sizeMode: "fit", activeClipping: false });
+        Object.assign(L.structure.similarity, { enabled: true, kinshipType: "rotation_wobble", intensity: 0, cellJitter: 0, association: "none", imperfection: "none" }, sim);
+        app.state = st; drawRaw(app);
+        return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      };
+      const ink = (d) => { let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] < 128) n++; return n; };
+      const diff = (a, b) => { let n = 0; for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i] - b[i]) > 60) n++; return n; };
+      const plain = render({});
+      const mixed = render({ association: "angular", assocMix: 100 });
+      assert(diff(plain, mixed) > 500, "Association did not change the shapes");
+      assert(diff(mixed, render({ association: "angular", assocMix: 100 })) === 0, "Association should be the same on every draw");
+      assert(diff(plain, render({ association: "angular", assocMix: 0 })) === 0, "Mix 0 should draw the module only");
+      assert(diff(plain, render({ imperfection: "cut", imperfAmount: 0 })) === 0, "Imperfect 0% should draw whole modules");
+      const cutInk = ink(render({ imperfection: "cut", imperfAmount: 100 }));
+      assert(cutInk > 0 && cutInk < ink(plain) * 0.97, `Cut modules should have less ink (${cutInk} against ${ink(plain)})`);
+      const brokenInk = ink(render({ imperfection: "broken", imperfAmount: 100 }));
+      const brokenDiff = diff(plain, render({ imperfection: "broken", imperfAmount: 100 }));
+      assert(brokenDiff > 60 && Math.abs(brokenInk - ink(plain)) < ink(plain) * 0.12, `Broken modules should look split but keep their mass (diff ${brokenDiff}, ink ${brokenInk} against ${ink(plain)})`);
+      // Inspector
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      q('[data-rail-tab="similarity"]').click(); await wait(80);
+      const sim = () => app.getActiveLayerStructure().similarity;
+      assert(q("#sim-assoc-block").classList.contains("hidden") && q("#sim-imperf-block").classList.contains("hidden"), "Amounts should be hidden until chosen");
+      q('[data-sim-assoc="round"]').click();
+      assert(sim().association === "round" && sim().enabled && !q("#sim-assoc-block").classList.contains("hidden"), "Association chip did not apply");
+      q('[data-sim-imperf="broken"]').click();
+      assert(sim().imperfection === "broken" && !q("#sim-imperf-block").classList.contains("hidden") && q('[data-sim-imperf="broken"]').classList.contains("active"), "Imperfection chip did not apply");
+      const mix = q("#input-sim-assoc-mix"); mix.value = 80; mix.dispatchEvent(new win.Event("input", { bubbles: true }));
+      assert(sim().assocMix === 80 && q("#num-sim-assoc-mix").value === "80%", "Association mix slider out of sync");
     });
 
     await test("A failed draw shows a visible notice and recovers", () => {

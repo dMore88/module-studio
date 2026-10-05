@@ -50,6 +50,10 @@ export const createDefaultLayerStructure = () => ({
     kinshipType: "distortion",
     intensity: 50,
     cellJitter: 0,
+    association: "none", // none, round, angular, lines, numbers: shapes of one family mixed into the population
+    assocMix: 50, // % of the modules that change to another shape of the family
+    imperfection: "none", // none, cut (a slice is cut off) or broken (split in two and shifted)
+    imperfAmount: 30, // % of the modules that are imperfect
     seed: 42
   },
   gradation: {
@@ -150,6 +154,14 @@ export const defaultStudioState = {
 
   // Mat / Canvas display settings
   showSafeBounds: true
+};
+
+// Shapes of the same family, mixed by Similarity > Association
+const SIMILARITY_FAMILIES = {
+  round: ["circle", "horseshoe", "crescent", "teardrop"],
+  angular: ["square", "triangle", "hexagon", "parallelogram"],
+  lines: ["line", "wave", "hatch", "cross"],
+  numbers: ["digit1", "digit5", "digit9"]
 };
 
 // A module is drawn at exactly the size its Width and Height say (1 px per unit), on any canvas
@@ -464,7 +476,10 @@ export class StudioEngine {
     const layerColor = colorOverride || mod.color || fgColor;
     const layerNum = parseInt(String(mod.id || "").replace(/\D/g, ""), 10) || 1;
     const seed = (this.cellSeed || 0) * 7.13 + layerNum * 53.7;
-    this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, !!this.cellAlt, isCutout, mod.structure?.space || null, mod.structure?.texture || null, seed);
+    const imp = this.cellImperf;
+    this.cellImperf = null;
+    const drawIt = () => this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, !!this.cellAlt, isCutout, mod.structure?.space || null, mod.structure?.texture || null, seed);
+    if (imp) this.drawImperfect(targetCtx, r, imp, drawIt); else drawIt();
     this.cellMorph = null;
     this.cellTexScale = null;
     targetCtx.restore();
@@ -685,6 +700,52 @@ export class StudioEngine {
     }
   }
 
+  // Similarity > Association: a shape of the chosen family for this module, or null to keep its own.
+  similarityShape(sim, pRand) {
+    const family = SIMILARITY_FAMILIES[sim.association];
+    if (!family) return null;
+    if ((pRand(61) + 1) / 2 >= (sim.assocMix ?? 50) / 100) return null;
+    return family[Math.floor(((pRand(62) + 1) / 2) * family.length) % family.length];
+  }
+
+  // Similarity > Imperfection: how this module is cut or broken, or null when it is whole.
+  similarityImperfection(sim, pRand) {
+    if (sim.imperfection !== "cut" && sim.imperfection !== "broken") return null;
+    if ((pRand(63) + 1) / 2 >= (sim.imperfAmount ?? 30) / 100) return null;
+    return { mode: sim.imperfection, angle: pRand(64) * Math.PI, pos: pRand(65) * 0.3, gap: 0.05 + 0.07 * Math.abs(pRand(66)) };
+  }
+
+  // Draws a module cut by a straight line (cut: one side is lost) or split along it (broken: the two
+  // halves are pulled apart and slid). `size` is the module's size; `drawIt` draws it whole.
+  drawImperfect(ctx, size, imp, drawIt) {
+    const R = size * 2 + 100;
+    const cut = imp.pos * size;
+    const half = (side) => {
+      ctx.beginPath();
+      if (side < 0) ctx.rect(-R, -R, R + cut, 2 * R); else ctx.rect(cut, -R, R, 2 * R);
+      ctx.clip();
+    };
+    if (imp.mode === "cut") {
+      ctx.save();
+      ctx.rotate(imp.angle);
+      half(-1);
+      ctx.rotate(-imp.angle);
+      drawIt();
+      ctx.restore();
+      return;
+    }
+    const g = imp.gap * size;
+    for (const side of [-1, 1]) {
+      ctx.save();
+      ctx.rotate(imp.angle);
+      half(side);
+      ctx.translate(side * g * 0.5, side * g * 0.4);
+      ctx.rotate(-imp.angle);
+      drawIt();
+      ctx.restore();
+    }
+  }
+
   // Similarity: module kinship transform driven by the cell's PRNG.
   applySimilarity(ctx, sim, pRand) {
     const intensity = (sim.intensity ?? 50) / 100;
@@ -877,6 +938,7 @@ export class StudioEngine {
     if (!targetMod || !targetMod.structure) return;
     this.cellMorph = null;
     this.cellTexScale = null;
+    this.cellImperf = null;
     const rep = repConfig || targetMod.structure.repetition;
     const struct = targetMod.structure.formalStructure;
     const sim = targetMod.structure.similarity;
@@ -1088,9 +1150,11 @@ export class StudioEngine {
 
         // Similarity: Module Kinship & Fluctuation
         if (sim.enabled) this.applySimilarity(ctx, sim, pRand);
+        const simShape = sim.enabled ? this.similarityShape(sim, pRand) : null;
+        this.cellImperf = sim.enabled ? this.similarityImperfection(sim, pRand) : null;
 
         // Anomaly & Contrast Modifiers
-        const cell = { shape: null, wireframe: null, fg: fgColor, scaleMul: 1 };
+        const cell = { shape: simShape, wireframe: null, fg: fgColor, scaleMul: 1 };
         if (anom.enabled && !this.applyAnomaly(ctx, anom, cx, cy, width, height, palette, pRand, cell)) {
           ctx.restore();
           return;
@@ -1272,6 +1336,7 @@ export class StudioEngine {
     if (!targetMod || !targetMod.structure) return;
     this.cellMorph = null;
     this.cellTexScale = null;
+    this.cellImperf = null;
     const rad = radConfig || targetMod.structure.radiation;
     const grad = targetMod.structure.gradation;
     const sim = targetMod.structure.similarity;
@@ -1448,9 +1513,11 @@ export class StudioEngine {
 
           // Similarity on radiation
           if (sim.enabled) this.applySimilarity(ctx, sim, pRand);
+          const simShape = sim.enabled ? this.similarityShape(sim, pRand) : null;
+          this.cellImperf = sim.enabled ? this.similarityImperfection(sim, pRand) : null;
 
           // Anomaly & Contrast on radiation module
-          const cell = { shape: null, wireframe: null, fg: spaceFlip ? palette.bg : palette.fg, scaleMul: 1 };
+          const cell = { shape: simShape, wireframe: null, fg: spaceFlip ? palette.bg : palette.fg, scaleMul: 1 };
           if (anom.enabled && !this.applyAnomaly(ctx, anom, x, y, width, height, palette, pRand, cell)) {
             ctx.restore();
             continue;

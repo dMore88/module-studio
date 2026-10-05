@@ -24,7 +24,7 @@ Origen: revisión de la primera parte del libro de Wucius Wong (capítulos 1 a 1
 | 8 | **Contraste** (sección 5: C8, C4, C2) | ✅ Hecho (C1, C3, C5, C6 y C7 siguen en P2 y P3). Siguiente: Anomalía |
 | 9 | Anomalía (sección 7: A1, A3) | ✅ Hecho (A2 y A4 siguen en P3) |
 | 9b | **Tamaño del módulo, contenedor y sangrado** (petición de Diego) | ✅ Hecho: contenedor del módulo (*Container width / height*), *Module size* Fit to canvas / Actual size en cuadrícula y radial, bloque centrado con sangrado, margen de seguridad en 0 y tamaño exacto del módulo. Siguiente: Similitud |
-| 10 | Similitud (sección 8: S1, S2) | P2. S2 se apoya en Line skipping de Texture |
+| 10 | Similitud (sección 8: S1, S2) | ✅ Hecho (S3 y S4 siguen en P3). Siguiente: Concentración |
 | 11 | Concentración (sección 6: K2, K1, K4) | P2 |
 | 12 | Interrelaciones entre capas (sección 2) | P2, después de los modificadores (7 a 11) |
 | 13 | Espacio (sección 10) | P3. Es el más complejo; SP5 depende de las interrelaciones |
@@ -148,8 +148,8 @@ Ya cubierto: Elastic (tensión/compresión), 3D tilt (distorsión espacial), Wob
 
 | ID | Ítem | Notas | Prioridad |
 | :-- | :--- | :--- | :-- |
-| S1 | Asociación | Formas de una misma familia mezcladas | P2 |
-| S2 | Imperfección | Formas cortadas o quebradas. Puede apoyarse en Line skipping de Texture | P2 |
+| S1 | Asociación | ✅ Hecho: chips *Association* (Round, Angular, Lines, Numbers) con *Association mix* | ✅ |
+| S2 | Imperfección | ✅ Hecho: chips *Imperfection* (Cut, Broken) con *Imperfect modules* | ✅ |
 | S3 | Retícula de celdas irregulares | "Subdivisiones estructurales similares" (fig. 33) | P3 |
 | S4 | Distribución visual libre | Sin retícula, con espacio similar para cada módulo | P3 |
 

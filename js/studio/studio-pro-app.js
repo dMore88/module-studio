@@ -1334,6 +1334,17 @@ export class StudioProApp {
       btn.classList.toggle("active", btn.dataset.kinshipType === activeType);
     });
 
+    // Association (family of shapes) and Imperfection
+    const assoc = sim.association || "none", imperf = sim.imperfection || "none";
+    document.querySelectorAll("#card-similarity [data-sim-assoc]").forEach(btn => btn.classList.toggle("active", btn.dataset.simAssoc === assoc));
+    document.querySelectorAll("#card-similarity [data-sim-imperf]").forEach(btn => btn.classList.toggle("active", btn.dataset.simImperf === imperf));
+    document.getElementById("sim-assoc-block")?.classList.toggle("hidden", assoc === "none");
+    document.getElementById("sim-imperf-block")?.classList.toggle("hidden", imperf === "none");
+    this.syncControlValue("input-sim-assoc-mix", sim.assocMix ?? 50);
+    this.syncControlValue("num-sim-assoc-mix", `${sim.assocMix ?? 50}%`);
+    this.syncControlValue("input-sim-imperf-amount", sim.imperfAmount ?? 30);
+    this.syncControlValue("num-sim-imperf-amount", `${sim.imperfAmount ?? 30}%`);
+
     // Sync Fluctuation Intensity slider and numeric box (50%)
     const intensity = sim.intensity !== undefined ? sim.intensity : 50;
     this.syncControlValue("input-sim-intensity", intensity);
@@ -1364,6 +1375,45 @@ export class StudioProApp {
       this.updateLayerCardsUI();
       this.pushHistory(`Layer ${this.activeLayerId} Similarity: ${enabled ? "ON" : "OFF"}`);
     });
+
+    // Association (family of shapes), Imperfection (cut or broken) and their amounts.
+    // Any edit turns Similarity on for the active layer.
+    const commitSim = (mutate, label) => {
+      const mod = this.getActiveModule();
+      if (!mod || !mod.structure) return;
+      if (!mod.structure.similarity) {
+        mod.structure.similarity = { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 };
+      }
+      mutate(mod.structure.similarity);
+      mod.structure.similarity.enabled = true;
+      if (toggle) toggle.checked = true;
+      this.syncSimilarityInspectorWithActiveLayer();
+      this.render();
+      this.updateLayerCardsUI();
+      if (label) this.pushHistory(`Layer ${this.activeLayerId} ${label}`);
+    };
+    document.querySelectorAll("#card-similarity [data-sim-assoc]").forEach(btn => {
+      btn.addEventListener("click", () => commitSim(s => { s.association = btn.dataset.simAssoc; }, `Similarity Association: ${btn.dataset.simAssoc}`));
+    });
+    document.querySelectorAll("#card-similarity [data-sim-imperf]").forEach(btn => {
+      btn.addEventListener("click", () => commitSim(s => { s.imperfection = btn.dataset.simImperf; }, `Similarity Imperfection: ${btn.dataset.simImperf}`));
+    });
+    const bindSimPct = (sliderId, numId, key, label) => {
+      const sl = document.getElementById(sliderId), nm = document.getElementById(numId);
+      sl?.addEventListener("input", (e) => {
+        const v = parseInt(e.target.value, 10);
+        commitSim(s => { s[key] = v; });
+        if (nm) nm.value = `${v}%`;
+      });
+      sl?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} Similarity ${label}: ${e.target.value}%`));
+      nm?.addEventListener("change", (e) => {
+        const raw = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10);
+        const v = isNaN(raw) ? 0 : Math.max(0, Math.min(100, raw));
+        commitSim(s => { s[key] = v; }, `Similarity ${label}: ${v}%`);
+      });
+    };
+    bindSimPct("input-sim-assoc-mix", "num-sim-assoc-mix", "assocMix", "Association Mix");
+    bindSimPct("input-sim-imperf-amount", "num-sim-imperf-amount", "imperfAmount", "Imperfect Modules");
 
     // Visual Kinship Type Pills: Elastic, 3D tilt, Wobble, Scale, Hibrid
     document.querySelectorAll("#card-similarity [data-kinship-type]").forEach(btn => {

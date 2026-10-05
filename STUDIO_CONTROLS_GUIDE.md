@@ -77,7 +77,7 @@ Cada capa es un módulo independiente. Se pueden tener hasta 5 capas con visibil
 * **`width / height`**: dimensiones del módulo en píxeles, de 5 a 2000 para todas las formas (base 50), de modo que cualquier figura pueda ser gigante y un círculo pueda seguir siendo círculo con valores iguales. La línea solo tiene largo (*Width*): su *Height* se oculta.
 * **`rotation`**: ángulo de orientación.
 * **`strokeWidth`**: grosor del trazo.
-* **`offsetX / offsetY`**: desplazamiento relativo al centro.
+* **`offsetX / offsetY`**: desplazamiento relativo al centro, de -1000 a 1000 px.
 * **`drawMode`**: trazo o relleno.
 * **`color`**: color de la forma (hex).
 * **`visible`**: visibilidad de la capa.
@@ -160,6 +160,8 @@ Rompe la rigidez mecánica de la repetición pura asignando variaciones de paren
   * `hybrid`: Combinación simultánea de todas las transformaciones anteriores.
 * **`intensity`** (0% a 100%): Magnitud del desvío morfológico respecto a la figura madre.
 * **`cellJitter`** (0 a 30px): Desplazamiento orgánico del centro de cada celda fuera del nodo ortogonal estricto.
+* **`association`** (*Association*, `none` por defecto): Mezcla en la población formas de **una misma familia visual**: `round` (círculo, herradura, creciente, gota), `angular` (cuadrado, triángulo, hexágono, paralelogramo), `lines` (línea, onda, trama, cruz) o `numbers` (1, 5, 9). La forma de la capa pasa a una de la familia en una parte de los módulos. **`assocMix`** (*Association mix*, 0% a 100%, por defecto 50%) es el porcentaje de módulos que cambian. Precedencia: Anomaly y Contrast mandan sobre la asociación en forma.
+* **`imperfection`** (*Imperfection*, `none`): Módulos imperfectos. `cut` corta una porción con una recta; `broken` parte el módulo por una recta y separa y desliza las dos mitades. **`imperfAmount`** (*Imperfect modules*, 0% a 100%, por defecto 30%) es el porcentaje de módulos afectados. Cada módulo imperfecto lleva su propio ángulo y posición de corte, fijos para la misma semilla.
 * **`seed`** (`number`): Semilla generativa para garantizar repetibilidad algorítmica.
 
 ---
