@@ -180,7 +180,7 @@ Genera una ilusión de movimiento, velocidad o dimensión mediante una progresi�
 * **`alternate`** (*Alternate rows*, por defecto apagado): Las filas impares (las columnas impares en `vertical`; los anillos o rayos impares en radial) corren en sentido contrario (fig. 43).
 * **`reverse`** (`boolean`): Invierte el sentido del gradiente (*Reverse Gradient Direction*).
 
-**UI (Figma, nodo `5779:2472`):** tags *Attribute* (Rotate, Scale, Depth, Drift, Shape, Texture), la rejilla de formas *Becomes* (solo con Shape), sliders *Range*, *Cycles* y *Acceleration* con caja de valor, tags *Pathway direction* (Diagonal, Horizontal, Vertical, Concentric, Zigzag), grupo de botones *Sequence* (Restart, Ping-pong) y checkboxes *Alternate rows* y *Reverse*. Los controles nuevos (Shape, Texture, Becomes, Acceleration, Sequence, Alternate rows, Zigzag) salen del catálogo de componentes. Estado por capa en `layer.structure.gradation`. En esquema polar, `drift` desplaza el módulo sobre su eje local hasta cerca de un anillo.
+**UI (Figma, nodo `5779:2472`):** tags *Attribute* (Rotate, Scale, Depth, Drift, Shape, Texture), la rejilla de formas *Becomes* (solo con Shape), sliders *Range*, *Cycles* y *Acceleration* con caja de valor, tags *Pathway direction* (Diagonal, Horizontal, Vertical, Concentric, Zigzag), tags *Sequence* (Restart, Ping-pong) y checkboxes *Alternate rows* y *Reverse*. Los controles nuevos (Shape, Texture, Becomes, Acceleration, Sequence, Alternate rows, Zigzag) salen del catálogo de componentes. Estado por capa en `layer.structure.gradation`. En esquema polar, `drift` desplaza el módulo sobre su eje local hasta cerca de un anillo.
 
 ---
 

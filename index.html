@@ -303,6 +303,16 @@
           </div>
         </div>
 
+        <div class="ds-field">
+          <div class="ds-label">Reflection</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-rep-reflect="none">None</button>
+            <button type="button" class="ds-tag" data-rep-reflect="columns">Columns</button>
+            <button type="button" class="ds-tag" data-rep-reflect="rows">Rows</button>
+            <button type="button" class="ds-tag" data-rep-reflect="both">Both</button>
+          </div>
+        </div>
+
           <div class="ds-field">
             <div class="ds-label">Columns</div>
             <div class="ds-slider">
@@ -327,15 +337,6 @@
           </div>
         </div>
 
-        <div class="ds-field">
-          <div class="ds-label">Reflection</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-rep-reflect="none">None</button>
-            <button type="button" class="ds-tag" data-rep-reflect="columns">Columns</button>
-            <button type="button" class="ds-tag" data-rep-reflect="rows">Rows</button>
-            <button type="button" class="ds-tag" data-rep-reflect="both">Both</button>
-          </div>
-        </div>
 
         <div class="ds-toggles">
           <label class="ds-toggle-item">
@@ -372,9 +373,9 @@
           </div>
           <div class="ds-field">
             <div class="ds-label">Line spacing</div>
-            <div class="ds-btn-group" role="group" aria-label="Line spacing">
-              <button type="button" class="ds-btn-group__button active" data-rep-linespace="all">All lines</button>
-              <button type="button" class="ds-btn-group__button" data-rep-linespace="alternate">Every other</button>
+            <div class="ds-tags">
+              <button type="button" class="ds-tag active" data-rep-linespace="all">All lines</button>
+              <button type="button" class="ds-tag" data-rep-linespace="alternate">Every other</button>
             </div>
           </div>
           <div id="rep-linewidth-block" class="ds-field">
@@ -629,6 +630,27 @@
             </div>
         </div>
 
+        <div class="ds-field">
+          <div class="ds-label">Pathway direction</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-grad-pathway="diagonal">Diagonal</button>
+            <button type="button" class="ds-tag" data-grad-pathway="horizontal">Horizontal</button>
+            <button type="button" class="ds-tag" data-grad-pathway="vertical">Vertical</button>
+            <button type="button" class="ds-tag" data-grad-pathway="concentric">Concentric</button>
+            <button type="button" class="ds-tag" data-grad-pathway="zigzag">Zigzag</button>
+          </div>
+        </div>
+
+        <div class="ds-field">
+          <div class="ds-label">Sequence</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-grad-sequence="restart">Restart</button>
+            <button type="button" class="ds-tag" data-grad-sequence="pingpong">Ping-pong</button>
+          </div>
+        </div>
+
+
+
           <div class="ds-field">
             <div class="ds-label">Range</div>
             <div class="ds-slider">
@@ -651,24 +673,7 @@
             </div>
           </div>
 
-        <div class="ds-field">
-          <div class="ds-label">Pathway direction</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-grad-pathway="diagonal">Diagonal</button>
-            <button type="button" class="ds-tag" data-grad-pathway="horizontal">Horizontal</button>
-            <button type="button" class="ds-tag" data-grad-pathway="vertical">Vertical</button>
-            <button type="button" class="ds-tag" data-grad-pathway="concentric">Concentric</button>
-            <button type="button" class="ds-tag" data-grad-pathway="zigzag">Zigzag</button>
-          </div>
-        </div>
 
-        <div class="ds-field">
-          <div class="ds-label">Sequence</div>
-          <div class="ds-btn-group" role="group" aria-label="Gradation sequence">
-            <button type="button" class="ds-btn-group__button active" data-grad-sequence="restart">Restart</button>
-            <button type="button" class="ds-btn-group__button" data-grad-sequence="pingpong">Ping-pong</button>
-          </div>
-        </div>
 
         <label class="ds-toggle-item">
           <span class="ds-toggle-label">Alternate rows</span>

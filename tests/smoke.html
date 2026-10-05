@@ -675,6 +675,32 @@
       assert(inkOf(render({ dimension: "space" }, "radiation", { width: 20, height: 20 })) > 1.5 * inkOf(render({ dimension: "tone" }, "radiation", { width: 20, height: 20 })), "Space did not reverse the radial minority");
     });
 
+    await test("Panel order: selectors (chips, shapes) come before sliders; button groups only for the two Figma mode switches", () => {
+      const d = win.document;
+      const problems = [];
+      const containers = [];
+      d.querySelectorAll(".flyout-tab-content").forEach((tab) => {
+        if (tab.dataset.flyoutTab === "layout") { containers.push(["layout/repetition", tab.querySelector("#subpanel-repetition")]); containers.push(["layout/radiation", tab.querySelector("#subpanel-radiation")]); }
+        else containers.push([tab.dataset.flyoutTab, tab]);
+      });
+      for (const [name, box] of containers) {
+        if (!box) continue;
+        const inLines = (el) => !!el.closest("#rep-lines-block");
+        const sliders = Array.from(box.querySelectorAll(".ds-slider")).filter((e) => !inLines(e));
+        const selectors = Array.from(box.querySelectorAll(".ds-tags, .shape-grid")).filter((e) => !inLines(e));
+        if (!sliders.length) continue;
+        const first = sliders[0];
+        for (const sel of selectors) {
+          if (first.compareDocumentPosition(sel) & win.Node.DOCUMENT_POSITION_FOLLOWING) problems.push(`${name}: a selector comes after a slider`);
+        }
+      }
+      d.querySelectorAll(".ds-btn-group").forEach((g) => {
+        const ok = g.querySelector("#btn-mode-stroke") || g.querySelector("#btn-layout-repetition");
+        if (!ok) problems.push(`unexpected button group: ${g.getAttribute("aria-label")}`);
+      });
+      assert(problems.length === 0, problems.join("; "));
+    });
+
     await test("A failed draw shows a visible notice and recovers", () => {
       reset();
       const original = app.engine.render;

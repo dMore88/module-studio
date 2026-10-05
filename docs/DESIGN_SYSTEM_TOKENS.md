@@ -167,6 +167,8 @@ Todas las tarjetas: fondo blanco, radio `border/radius/3` (20), relleno `spacing
 
 ---
 
+**Orden dentro de un panel:** los controles de jerarquía alta, los que definen qué subcontroles se muestran (tipo, modo, esquema, camino, secuencia), van **arriba** y son **chips** (tags). Debajo van los sliders y, al final, las casillas. Si un subcontrol necesita elegir entre opciones, también son chips. El grupo de botones se reserva para los dos selectores del Figma (Stroke / Fill y Repetition / Radiation). Los subcontroles que solo existen con un modo van justo debajo del chip que los activa (por ejemplo *Becomes* bajo *Attribute*). `tests/smoke.html` comprueba que ningún selector aparezca después de un slider.
+
 **Regla:** los controles nuevos se arman con este catálogo, eligiendo el que mejor encaje. Solo si ninguno sirve se pide un diseño nuevo en Figma.
 
 ### 5.1 Tarjeta flotante del inspector (`.inspector-flyout-card` + `.ds-card`)
