@@ -1115,6 +1115,25 @@
       reset();
     });
 
+    await test("A stretched shape keeps a uniform stroke (the line does not stretch with the figure)", () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const st = JSON.parse(JSON.stringify(app.state));
+      st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+      const L = st.layers[0];
+      Object.assign(L, { shape: "circle", width: 300, height: 100, offsetX: 0, offsetY: 0, rotation: 0, wireframe: true, strokeWidth: 8, containerW: 0, containerH: 0 });
+      L.structure.enabled = false;
+      app.state = st; drawRaw(app);
+      const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      const dpr = cv.width / 600;
+      const dark = (x, y) => d[(Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4] < 128;
+      // top of the oval: vertical run through x=300; its left tip: horizontal run through y=300
+      let top = 0; for (let y = 100; y < 300; y += 0.25) if (dark(300, y)) top += 0.25; else if (top) break;
+      let left = 0; for (let x = 100; x < 300; x += 0.25) if (dark(x, 300)) left += 0.25; else if (left) break;
+      assert(top > 6 && top < 10 && left > 6 && left < 10, `Stroke is not uniform: ${top}px on top, ${left}px at the tip (expected about 8)`);
+      reset();
+    });
+
     await test("Checkerboard reverses figure and ground, also with a coloured module", () => {
       reset();
       const cv = win.document.getElementById("studio-canvas");

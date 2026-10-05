@@ -483,6 +483,16 @@ export class StudioEngine {
     targetCtx.translate(ox, oy);
     targetCtx.rotate(((mod.rotation || 0) * Math.PI) / 180);
     targetCtx.scale(sx, sy);
+    // A stretched shape keeps a uniform stroke: the outline is stretched, but the pen is not
+    const stretched = Math.abs(sx - sy) > 1e-6;
+    if (stretched) {
+      targetCtx.stroke = function (...a) {
+        this.save();
+        this.scale(1 / sx, 1 / sy);
+        Object.getPrototypeOf(this).stroke.apply(this, a);
+        this.restore();
+      };
+    }
     // An explicit override (anomaly / contrast accent) wins over the layer color.
     const layerColor = colorOverride || mod.color || fgColor;
     const layerNum = parseInt(String(mod.id || "").replace(/\D/g, ""), 10) || 1;
@@ -490,7 +500,11 @@ export class StudioEngine {
     const imp = this.cellImperf;
     this.cellImperf = null;
     const drawIt = () => this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, !!this.cellAlt, isCutout, mod.structure?.space || null, mod.structure?.texture || null, seed);
-    if (imp) this.drawImperfect(targetCtx, r, imp, drawIt); else drawIt();
+    try {
+      if (imp) this.drawImperfect(targetCtx, r, imp, drawIt); else drawIt();
+    } finally {
+      if (stretched) delete targetCtx.stroke;
+    }
     this.cellMorph = null;
     this.cellTexScale = null;
     targetCtx.restore();
