@@ -110,7 +110,7 @@ Ya cubierto: dominancia de la mayoría y énfasis de la minoría, dimensiones Sc
 | C4 | Dimensión textura | ✅ Hecho: dimensión *Texture* (solo la minoría se deforma) | ✅ |
 | C5 | Dimensión color | Más allá del acento | P3 |
 | C6 | Minoría por zonas y equilibrio | El libro reparte la mayoría sobre una zona mayor y la minoría tira desde el borde (fig. 61b) | P3 |
-| C7 | Revisar "Tone" | Hoy es trazo contra relleno, más cercano a contraste de espacio que de color | P2 |
+| C7 | Revisar "Tone" | ✅ Hecho: ahora es un tono más claro del color del módulo (slider *Tone*), en relleno y en contorno | ✅ |
 | **C8** | **Revisar la interacción con otros modificadores** | ✅ **Hecho.** Anomaly gana a Contrast en forma y color; las escalas se multiplican (tope 8x) y los giros se suman. Reglas en la guía (3b). **Pedido explícito.** Orden de aplicación y multiplicadores con Gradation, Concentration y Anomaly (todos tocan escala, dirección o color). Definir qué manda cuando coinciden | ✅ |
 
 ---

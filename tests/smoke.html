@@ -1416,6 +1416,45 @@
       reset();
     });
 
+    await test("Contrast dimension Tone gives the minority a different tone of its own colour, in fill and in stroke", async () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const render = (contrast, layer = {}) => {
+        const st = JSON.parse(JSON.stringify(app.state));
+        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = false; st.aspectRatio = "1:1";
+        const L = st.layers[0];
+        Object.assign(L, { shape: "square", width: 120, height: 120, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false, color: "#000000", strokeWidth: 6, containerW: 0, containerH: 0 }, layer);
+        L.structure.enabled = true; L.structure.mode = "repetition";
+        Object.assign(L.structure.repetition, { cols: 6, rows: 6, gridType: "basic", sizeMode: "fit", showGridLines: false, placement: "centers", cellMix: "none" });
+        Object.assign(L.structure.contrast, { enabled: true, dimension: "tone", dominanceRatio: 70, highlightContrast: false, toneAmount: 50 }, contrast);
+        app.state = st; drawRaw(app);
+        return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      };
+      const dpr = cv.width / 600;
+      const red = (d, x, y) => d[(Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4];
+      const e = app.engine, con = { dominanceRatio: 70 };
+      const cells = []; for (let r = 0; r < 6; r++) for (let c = 0; c < 6; c++) cells.push({ r, c, minority: e.isContrastMinority(con, r * 6 + c) });
+      const minority = cells.find(k => k.minority), majority = cells.find(k => !k.minority);
+      const cx = (k) => k.c * 100 + 50, cy = (k) => k.r * 100 + 50;
+      // Fill: black module, 50 % toward the paper (#FAFAFA) is mid grey; the majority stays black
+      const fill = render({});
+      assert(red(fill, cx(majority), cy(majority)) < 30, "The majority keeps the layer colour");
+      const g = red(fill, cx(minority), cy(minority));
+      assert(g > 100 && g < 160, `A 50 % tone of black should be a mid grey, got ${g}`);
+      assert(red(render({ toneAmount: 90 }), cx(minority), cy(minority)) > g, "A bigger tone amount is lighter");
+      // Stroke: the outline is the one that changes tone, it does not turn into a fill
+      const stroke = render({}, { wireframe: true });
+      let edgeMin = 255; for (let x = cx(minority) - 12; x <= cx(minority) - 6; x += 0.5) edgeMin = Math.min(edgeMin, red(stroke, x, cy(minority)));
+      assert(red(stroke, cx(minority), cy(minority)) > 200 && edgeMin > 90 && edgeMin < 190, `In stroke mode the minority outline should be grey and the inside empty (outline ${edgeMin})`);
+      // Inspector: only the Tone slider is shown
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      q('[data-rail-tab="contrast"]').click(); await wait(60);
+      q('[data-contrast-dimension="tone"]').click(); await wait(40);
+      assert(!q("#contrast-tone-block").classList.contains("hidden") && q("#contrast-shift-block").classList.contains("hidden"), "Tone should show its slider only");
+      assert(getComputedStyle(q("#contrast-accent-row")).opacity === "1", "The accent colour should stay available with Tone");
+      reset();
+    });
+
     await test("Checkerboard reverses figure and ground, also with a coloured module", () => {
       reset();
       const cv = win.document.getElementById("studio-canvas");

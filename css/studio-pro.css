@@ -436,7 +436,6 @@ input[type="range"]:hover::-webkit-slider-thumb {
   padding: 0 0 var(--spacing-3);
   transition: opacity 0.15s ease;
 }
-.ds-color-row.is-dimmed { opacity: 0.45; }
 .ds-color-row.is-dimmed .ds-color-clear { display: none; }
 .ds-color-clear {
   display: grid; place-items: center; flex-shrink: 0;

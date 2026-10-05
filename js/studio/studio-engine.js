@@ -100,6 +100,7 @@ export const createDefaultLayerStructure = () => ({
     contrastShape: "cross", // shape for shape contrast
     scaleFactor: 2.2, // scale multiplier for scale contrast (0.2 to 3.0)
     angle: 45, // clash angle for direction contrast
+    toneAmount: 50, // tone contrast: how far the minority moves toward the ground colour (0 = same colour, 100 = the ground)
     positionShift: 25, // position contrast: how far the minority moves inside its cell (% of the cell)
     positionAngle: 45, // position contrast: the direction of that move (0 to 360 degrees)
     highlightContrast: false, // accentuate minority elements
@@ -967,6 +968,17 @@ export class StudioEngine {
 
   // Contrast: `k` is the module's running index, used to pick the minority.
   // The "space" dimension (figure and ground reversed) is drawn by the layouts, before the module.
+  // Mix two #rrggbb colours: t = 0 gives a, t = 1 gives b
+  mixHex(a, b, t) {
+    const parse = (c) => {
+      const m = /^#([0-9a-f]{6})$/i.exec(c || "");
+      return m ? [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16)) : null;
+    };
+    const pa = parse(a), pb = parse(b);
+    if (!pa || !pb) return a;
+    return "#" + pa.map((v, i) => Math.round(v + (pb[i] - v) * t).toString(16).padStart(2, "0")).join("");
+  }
+
   applyContrast(ctx, contrast, k, palette, cell) {
     if (!this.isContrastMinority(contrast, k)) return;
     if (contrast.dimension === "scale") {
@@ -980,7 +992,8 @@ export class StudioEngine {
       const a = ((contrast.positionAngle ?? 45) * Math.PI) / 180, d = ((contrast.positionShift ?? 25) / 100) * (cell.unit || 0);
       ctx.translate(Math.cos(a) * d, Math.sin(a) * d);
     } else if (contrast.dimension === "tone") {
-      cell.wireframe = true;
+      // A different tone of the module's own colour (lighter, toward the ground): works for fill and for stroke
+      if (!cell.fgLocked && cell.fg === palette.fg) cell.fg = this.mixHex(cell.base || cell.fg, palette.bg, (contrast.toneAmount ?? 50) / 100);
     } else if (contrast.dimension === "texture") {
       cell.texScale = 1; // only the minority is textured
     }
@@ -1260,7 +1273,7 @@ export class StudioEngine {
         this.cellImperf = sim.enabled ? this.similarityImperfection(sim, pRand) : null;
 
         // Anomaly & Contrast Modifiers
-        const cell = { shape: simShape, wireframe: null, fg: fgColor, scaleMul: 1, unit: Math.min(cW, cH) * k };
+        const cell = { shape: simShape, wireframe: null, fg: fgColor, scaleMul: 1, unit: Math.min(cW, cH) * k, base: targetMod.color || fgColor };
         if (anom.enabled && !this.applyAnomaly(ctx, anom, cx, cy, width, height, palette, pRand, cell)) {
           ctx.restore();
           return;
@@ -1701,7 +1714,7 @@ export class StudioEngine {
           this.cellImperf = sim.enabled ? this.similarityImperfection(sim, pRand) : null;
 
           // Anomaly & Contrast on radiation module
-          const cell = { shape: simShape, wireframe: null, fg: spaceFlip ? palette.bg : palette.fg, scaleMul: 1, unit: span / rings };
+          const cell = { shape: simShape, wireframe: null, fg: spaceFlip ? palette.bg : palette.fg, scaleMul: 1, unit: span / rings, base: targetMod.color || palette.fg };
           if (anom.enabled && !this.applyAnomaly(ctx, anom, x, y, width, height, palette, pRand, cell)) {
             ctx.restore();
             continue;

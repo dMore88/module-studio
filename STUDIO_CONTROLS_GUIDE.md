@@ -227,7 +227,7 @@ Establece disparidad formal estructurada en una relación matemática de **mayor
   * `scale` (*Scale*): Mayoría regular reducida vs. minoría monumental.
   * `shape` (*Shape*): Mayoría regular vs. minoría con glifo completamente discordante (`contrastShape`, selector *Minority Shape* con las 15 formas, por defecto `cross`).
   * `direction` (*Angle*): Mayoría alineada vs. minoría rotada en un ángulo de choque (`angle`, slider *Clash Angle* de 15° a 90°, por defecto 45°).
-  * `tone` (*Tone*): Mayoría en línea/tinta vs. minoría en masa rellena o invertida.
+  * `tone` (*Tone*): la minoría se dibuja en otro **tono del color del propio módulo**, más claro, hacia el color del fondo. El slider *Tone* (`toneAmount`, 10 a 90 %, por defecto 50) dice cuánto se acerca al fondo. Sirve igual con relleno que con contorno (lo que cambia es el color, no pasa de relleno a contorno). El color de acento sigue disponible y manda sobre el tono.
   * `texture` (*Texture*): Solo la minoría recibe la deformación de Texture (la fuerza de la capa si Texture está encendido; si no, una fuerza propia). Se lee mejor con Texture apagado en la capa, porque encendido afecta también a la mayoría.
   * `space` (*Space*): La minoría se dibuja con figura y fondo invertidos: la celda (o el sector, en radial) se rellena de tinta y el módulo va en el color del fondo. Con *Checkerboard inversion* se combinan por exclusión: una celda invertida por los dos queda normal.
 * **`dominanceRatio`** (*Dominance ratio*, 50% a 95%, por defecto 80%): Proporción que ocupa la mayoría regular. El techo del 95% garantiza que siempre exista una minoría.
