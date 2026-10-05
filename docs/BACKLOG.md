@@ -21,17 +21,15 @@ Sale de las filas ⏳ del mapa de conceptos, más las mejoras de filas 🟡 que 
 ### P3 — por evaluar con el filtro de juego
 | ID | Concepto | Notas |
 | :-- | :-- | :-- |
-| K3 | Varios módulos por celda (cambios cuantitativos) | |
 | S8 | Retícula de celdas irregulares | Subdivisiones similares, no repetidas |
 | A8 | Deformar las líneas de estructura visibles | Hoy solo se deforman los módulos |
-| C4 | Contraste y gradación de color más allá del acento (también G3) | El tono ya está hecho |
+| C4 | Contraste cálido/frío entre zonas | La gradación de color ya está hecha (Gradation › Color) |
 | C11, C14 | Estructura de contraste y equilibrio por zonas | La minoría tira desde el borde |
 | SP9 | Sombra unida o separada | |
 | SP11 | Perspectiva con disminución de tamaño | |
 | SP12 | Planos transparentes (marcos espaciales) | |
 | SP14, SP15 | Planos de textura uniforme y planos de color o textura en gradación | |
 | SP6 | Pistas de profundidad por tamaño, tono y textura | |
-| R8, R10, R13, R16, R19, R21 | Variantes de la radiación: centros múltiples ocultos, traslado de centros, capas reorganizadas, centrípeta con quiebres | Sin priorizar |
 | G9, S5 | Unión o sustracción dentro de la figura (en gradación y en similitud) | Ligado a las interrelaciones |
 | F5 | Formas rectilíneas e irregulares propias | La app trabaja con una biblioteca fija de 15 formas |
 
@@ -89,7 +87,7 @@ Hasta el 5 de octubre de 2026 el backlog numeraba **tareas** (R4, E2, G7...). De
 | RP4 | RP2 a RP4 | | C1 | C7 |
 | RP5 | INT3, E28, R23 | | C2 | C8 |
 | RP6 | RP8 a RP10, E29, R26 | | C3 | B12, C9 (descartado) |
-| G1 | G15 | | C4 | C5 |
+| G1 | G15 | | C4 | Contraste cálido/frío entre zonas | La gradación de color ya está hecha (Gradation › Color) |
 | G2 | G16 | | C5 | C4, G3 |
 | G3 | G21 | | C6 | C11, C14 |
 | G4 | G12 | | C7 | C4 |

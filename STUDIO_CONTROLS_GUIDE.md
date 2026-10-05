@@ -191,7 +191,7 @@ Rompe la rigidez de la repetición pura con variaciones de parentesco entre mód
 Genera una ilusión de movimiento, velocidad o dimensión mediante una progresión sistemática de módulos. Requiere retícula.
 
 **Visible:**
-* **`type`** (*Attribute*, dropdown): `rotation`, `scale`, `depth`, `drift` (desplazamiento acumulado), `shape` (la forma se convierte paso a paso en `targetShape`, *Becomes*, las 15 formas, interpolando contornos) y `texture` (la deformación de Texture crece a lo largo del recorrido).
+* **`type`** (*Attribute*, dropdown): `rotation`, `scale`, `depth`, `drift` (desplazamiento acumulado), `shape` (la forma se convierte paso a paso en `targetShape`, *Becomes*, las 15 formas, interpolando contornos) `texture` (la deformación de Texture crece a lo largo del recorrido) y `color` (el color del módulo viaja hacia *End color* a lo largo del recorrido; *Range* controla cuánto avanza; los módulos de acento de Anomaly o Contrast conservan su color).
 * **`pathway`** (*Pathway direction*, dropdown): `diagonal`, `horizontal`, `vertical`, `concentric` y `zigzag` (camino en serpiente, fig. 41).
 * **`range`** (*Range*, 15º a 360º): magnitud total de la transición. **`steps`** (*Cycles*, 1 a 4).
 

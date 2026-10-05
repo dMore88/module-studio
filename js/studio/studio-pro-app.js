@@ -1813,6 +1813,8 @@ export class StudioProApp {
       btn.classList.toggle("active", btn.dataset.gradTarget === (grad.targetShape || "triangle"));
     });
     document.getElementById("grad-target-block")?.classList.toggle("hidden", grad.type !== "shape");
+    document.getElementById("grad-color-block")?.classList.toggle("hidden", grad.type !== "color");
+    this.syncAccentColorRow("grad", grad.endColor || "#f43f5e", true);
 
     const alternate = document.getElementById("toggle-grad-alternate");
     if (alternate) alternate.checked = !!grad.alternate;
@@ -1848,6 +1850,16 @@ export class StudioProApp {
       this.updateLayerCardsUI();
       this.pushHistory(`Layer ${this.activeLayerId} Gradation: ${grad.enabled ? "ON" : "OFF"}`);
     });
+
+    const gradColor = document.getElementById("grad-accent-color");
+    gradColor?.addEventListener("input", (e) => {
+      const grad = this.getActiveGradation();
+      if (!grad) return;
+      grad.endColor = e.target.value;
+      this.syncAccentColorRow("grad", e.target.value, true);
+      this.render();
+    });
+    gradColor?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} Gradation End Color: ${e.target.value.toUpperCase()}`));
 
     document.querySelectorAll("#card-gradation [data-grad-type]").forEach(btn => {
       btn.addEventListener("click", () => {

@@ -128,7 +128,7 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | :-- | :-- | :-- | :-- | :-: | :-- |
 | G1 | **Gradación de figura** de un módulo a otro | Gradación de módulos | Gradation › Attribute `Shape` con Becomes | ✅ | Interpola contornos entre cualquier pareja de formas |
 | G2 | **Gradación de tamaño** | Gradación de módulos | Gradation › Attribute `Scale` | ✅ |  |
-| G3 | **Gradación de color** | Gradación de módulos | — | ⏳ | Relacionada con C4 |
+| G3 | **Gradación de color** | Gradación de módulos | Gradation › Attribute `Color` + End color | ✅ | El color del módulo viaja hacia el color final a lo largo del recorrido |
 | G4 | **Gradación de textura** | Gradación de módulos | Gradation › Attribute `Texture` | ✅ |  |
 | G5 | **Rotación en el plano**: cambio gradual de dirección | Gradación en el plano | Gradation › `Rotate` | ✅ |  |
 | G6 | **Progresión en el plano**: cambio gradual de posición dentro de la subdivisión | Gradación en el plano | Gradation › `Drift` | ✅ |  |
@@ -161,20 +161,20 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | R5 | **Curvatura o quebrantamiento de líneas** | Estructura centrífuga | Radiation › Spiral twist (curvatura) | 🟡 | Curvas sí, quebrantamiento no |
 | R6 | **Centro en posición excéntrica** | Estructura centrífuga | Estado `centerX / centerY` | 🟡 | Sin control en la interfaz |
 | R7 | **Apertura del centro** redondo, ovalado, triangular, cuadrado o poligonal | Estructura centrífuga | Radiation › Advanced › Open center (+ Ring shape) | ✅ | Las líneas tangentes al agujero poligonal no |
-| R8 | **Centros múltiples, abriendo el centro** | Estructura centrífuga | — | ⏳ |  |
+| R8 | **Centros múltiples, abriendo el centro** | Estructura centrífuga | — | 🚫 |  |
 | R9 | **Centros múltiples, dividiendo y deslizando el centro** | Estructura centrífuga | Radiation › Scheme `Multi-center` con Centers (2 a 6) | ✅ |  |
-| R10 | **Centros múltiples ocultos**, combinando sectores excéntricos | Estructura centrífuga | — | ⏳ |  |
+| R10 | **Centros múltiples ocultos**, combinando sectores excéntricos | Estructura centrífuga | — | 🚫 |  |
 | R11 | **Concéntrica básica**: capas de círculos espaciados | Estructura concéntrica | Radiation › Scheme `Concentric` | ✅ |  |
 | R12 | **Enderezamiento, curvatura o quebrantamiento** de las capas: cuadrados, polígonos | Estructura concéntrica | Radiation › Advanced › Ring shape (Triangle, Square, Hexagon) | ✅ |  |
-| R13 | **Traslado de los centros** de cada círculo a lo largo de una línea | Estructura concéntrica | — | ⏳ |  |
+| R13 | **Traslado de los centros** de cada círculo a lo largo de una línea | Estructura concéntrica | — | 🚫 |  |
 | R14 | **La espiral** | Estructura concéntrica | Radiation › Scheme `Spiral` con Spiral twist | ✅ |  |
 | R15 | **Centros múltiples en concéntrica** | Estructura concéntrica | Radiation › `Multi-center` | 🟡 |  |
-| R16 | **Centros distorsionados u ocultos** | Estructura concéntrica | — | ⏳ |  |
+| R16 | **Centros distorsionados u ocultos** | Estructura concéntrica | — | 🚫 |  |
 | R17 | **Rotación gradual de capas concéntricas** | Estructura concéntrica | Radiation › Advanced › Ring rotation | ✅ |  |
 | R18 | **Capas concéntricas con radiaciones centrífugas** | Estructura concéntrica | Radiation › Angular rays + Concentric rings | ✅ |  |
-| R19 | **Capas concéntricas reorganizadas**, entretejidas | Estructura concéntrica | — | ⏳ |  |
+| R19 | **Capas concéntricas reorganizadas**, entretejidas | Estructura concéntrica | — | 🚫 |  |
 | R20 | **Centrípeta básica**: ángulos que apuntan al centro | Estructura centrípeta | Radiation › Scheme `Centripetal` | ✅ |  |
-| R21 | **Cambio direccional, curvatura y quebrantamiento** de líneas centrípetas | Estructura centrípeta | — | ⏳ |  |
+| R21 | **Cambio direccional, curvatura y quebrantamiento** de líneas centrípetas | Estructura centrípeta | — | 🚫 |  |
 | R22 | **Apertura del centro** de una centrípeta | Estructura centrípeta | Radiation › Open center | 🟡 |  |
 | R23 | **Superposición de estructuras de radiación**; **radiación y repetición**; **radiación y gradación** | Combinaciones | Varias capas; Gradation en esquema polar | ✅ |  |
 | R24 | **Subdivisiones estructurales y módulos**: los módulos se ajustan y giran con ellas | Módulos en radiación | Radiation › Module orientation; Clip cell | ✅ |  |
@@ -205,7 +205,7 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | C1 | **Contraste, regularidad y anomalía**: el contraste existe dentro de la propia regularidad | Principio | Contrast y Anomaly | ✅ |  |
 | C2 | **Contraste de figura** | Elementos visuales | Contrast › Dimension `Shape` con Minority Shape | ✅ |  |
 | C3 | **Contraste de tamaño** | Elementos visuales | Contrast › `Scale` | ✅ |  |
-| C4 | **Contraste de color**: luminoso/oscuro, brillante/opaco, cálido/frío | Elementos visuales | Contrast › `Tone` y Accent color | 🟡 | El tono ya está hecho; falta el color más allá del acento |
+| C4 | **Contraste de color**: luminoso/oscuro, brillante/opaco, cálido/frío | Elementos visuales | Contrast › `Tone` y Accent color; Gradation › `Color` | 🟡 | El tono y la gradación de color están hechos; falta el contraste cálido/frío entre zonas |
 | C5 | **Contraste de textura**: suave/rugoso, pulido/tosco | Elementos visuales | Contrast › `Texture` | ✅ |  |
 | C6 | **Contraste de dirección**: a 90º es el máximo | Elementos de relación | Contrast › `Angle` con Clash Angle | ✅ |  |
 | C7 | **Contraste de posición**: arriba/abajo, izquierda/derecha, céntrico/excéntrico | Elementos de relación | Contrast › `Position` con Shift y Shift direction | ✅ |  |
@@ -223,7 +223,7 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | :-- | :-- | :-- | :-- | :-: | :-- |
 | K1 | **Ausencias frecuentes**: módulos que desaparecen por ser del color del fondo | Concentración en estructuras formales | Concentration › Method `Absence` | ✅ |  |
 | K2 | **Cambios posicionales** dentro de las subdivisiones | Concentración en estructuras formales | Concentration › Method `Move` | ✅ |  |
-| K3 | **Cambios cuantitativos**: más o menos módulos por subdivisión | Concentración en estructuras formales | — | ⏳ | Falta: varios módulos por celda |
+| K3 | **Cambios cuantitativos**: más o menos módulos por subdivisión | Concentración en estructuras formales | — | 🚫 | Fuera de alcance: varios módulos por celda se logra con capas |
 | K4 | **Concentración hacia un punto** | Estructura de concentración | Concentration › Structure `Point` | ✅ |  |
 | K5 | **Concentración desde un punto** | Estructura de concentración | Concentration › `Void` | ✅ |  |
 | K6 | **Concentración hacia una línea** | Estructura de concentración | Concentration › `Line` con Line axis | ✅ |  |

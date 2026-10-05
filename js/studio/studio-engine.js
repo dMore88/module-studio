@@ -70,7 +70,7 @@ export const createDefaultLayerStructure = () => ({
   },
   gradation: {
     enabled: false,
-    type: "rotation", // rotation, scale, depth, drift, shape, texture
+    type: "rotation", // rotation, scale, depth, drift, shape, texture, color
     pathway: "diagonal", // diagonal, horizontal, vertical, concentric, zigzag
     range: 180, // degrees of total rotation (rotation type); 180 is the full reach for the other types
     steps: 1, // cycles (1 to 4)
@@ -78,6 +78,7 @@ export const createDefaultLayerStructure = () => ({
     easing: 0, // -100 (starts fast, brakes) to 100 (starts slow, accelerates)
     alternate: false, // alternate rows (or columns) run in opposite directions
     targetShape: "triangle", // shape reached by the "shape" attribute
+    endColor: "#f43f5e", // colour reached by the "color" attribute (the module colour is the start)
     reverse: false
   },
   anomaly: {
@@ -760,6 +761,15 @@ export class StudioEngine {
     return u;
   }
 
+  // Gradation > Color: the module colour moves toward the end colour (set by applyGradation for this cell)
+  applyGradationColor(grad, palette, cell) {
+    const mix = this.cellColorMix;
+    this.cellColorMix = null;
+    if (mix === null || mix === undefined || !grad.enabled || cell.fgLocked) return;
+    const start = cell.fg === palette.fg ? (cell.base || cell.fg) : cell.fg;
+    cell.fg = this.mixHex(start, grad.endColor || "#f43f5e", mix);
+  }
+
   // Gradation: applies the attribute for position t along the pathway.
   // `driftDistance` is the full slide length for the current layout.
   applyGradation(ctx, grad, pathT, driftDistance) {
@@ -782,6 +792,8 @@ export class StudioEngine {
       this.cellMorph = { to: grad.targetShape || "triangle", amount: Math.min(1, t * rangeK) };
     } else if (grad.type === "texture") {
       this.cellTexScale = Math.min(2, t * rangeK);
+    } else if (grad.type === "color") {
+      this.cellColorMix = Math.min(1, t * rangeK);
     }
   }
 
@@ -1089,6 +1101,7 @@ export class StudioEngine {
     if (!targetMod || !targetMod.structure) return;
     this.cellMorph = null;
     this.cellTexScale = null;
+    this.cellColorMix = null;
     this.cellImperf = null;
     const rep = repConfig || targetMod.structure.repetition;
     const struct = targetMod.structure.formalStructure;
@@ -1363,6 +1376,7 @@ export class StudioEngine {
           return;
         }
         if (contrast.enabled) this.applyContrast(ctx, contrast, r * cols + c, palette, cell);
+        this.applyGradationColor(grad, palette, cell);
         const cellShapeA = cell.shape;
         const cellWireframe = cell.wireframe;
         const cellFg = cell.fg;
@@ -1561,6 +1575,7 @@ export class StudioEngine {
     if (!targetMod || !targetMod.structure) return;
     this.cellMorph = null;
     this.cellTexScale = null;
+    this.cellColorMix = null;
     this.cellImperf = null;
     const rad = radConfig || targetMod.structure.radiation;
     const grad = targetMod.structure.gradation;
@@ -1804,6 +1819,7 @@ export class StudioEngine {
             continue;
           }
           if (contrast.enabled) this.applyContrast(ctx, contrast, centerIdx * 1000 + i * rays + j, palette, cell);
+          this.applyGradationColor(grad, palette, cell);
           const cellShapeA = cell.shape;
           const cellWireframe = cell.wireframe;
           const cellFg = cell.fg;

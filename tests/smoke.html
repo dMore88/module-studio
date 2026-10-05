@@ -71,7 +71,7 @@
       rd.spiralTwist = ri(-180, 180); rd.centerX = ri(-200, 200); rd.centerY = ri(-200, 200); rd.showRays = rb(); rd.showRings = rb(); rd.activeClipping = rb(); rd.direction = pick(["repeated","alternated","undefined"]); rd.lineColor = pick(["","#2244cc"]); rd.ringShape = pick(["circle","triangle","square","hexagon"]); rd.centerCount = ri(2, 6); rd.lineWidth = ri(1, 12) / 2;
       const fs = st.formalStructure; fs.enabled = rnd() < 0.4; fs.colRatio = 1 + rnd() * 2; fs.rowRatio = 1 + rnd() * 2; fs.showGridLines = rb();
       const sm = st.similarity; sm.enabled = rb(); sm.kinshipType = pick(["distortion","foreshortening","rotation_wobble","scale_kinship","hybrid"]); sm.intensity = ri(0, 100); sm.cellJitter = ri(0, 30); sm.association = pick(["none","round","angular","lines","numbers"]); sm.assocMix = ri(0, 100); sm.imperfection = pick(["none","cut","broken"]); sm.imperfAmount = ri(0, 100);
-      const g = st.gradation; g.enabled = rb(); g.type = pick(["rotation","scale","depth","drift","shape","texture"]); g.pathway = pick(["diagonal","horizontal","vertical","concentric","zigzag"]); g.range = ri(15, 360); g.steps = ri(1, 4); g.reverse = rb();
+      const g = st.gradation; g.enabled = rb(); g.type = pick(["rotation","scale","depth","drift","shape","texture","color"]); g.pathway = pick(["diagonal","horizontal","vertical","concentric","zigzag"]); g.range = ri(15, 360); g.steps = ri(1, 4); g.reverse = rb();
       g.sequence = pick(["restart","pingpong"]); g.easing = ri(-100, 100); g.alternate = rb(); g.targetShape = pick(SHAPES);
       const an = st.anomaly; an.enabled = rb(); an.type = pick(["focal","fracture","swell","tear","regrid"]); an.zoneGrid = pick(["sliding","sheared","curved","zigzag","triangular","alternating"]); an.epicenterX = 0.1 + rnd() * 0.8; an.epicenterY = 0.1 + rnd() * 0.8; an.radius = ri(50, 350); an.intensity = ri(10, 100); an.anomalousShape = pick(SHAPES); an.highlightColor = rb(); an.showReticle = rb(); an.distribution = pick(["single","regular","random"]); an.count = ri(2, 12); an.seed = ri(1, 99); an.attrs = { shape: rb(), scale: rb(), rotation: rb(), position: rb() };
       const co = st.contrast; co.enabled = rb(); co.dimension = pick(["scale","shape","direction","position","tone","texture","space"]); co.positionShift = ri(5, 50); co.positionAngle = ri(0, 360); co.dominanceRatio = ri(50, 95); co.scaleFactor = 0.2 + rnd() * 2.8; co.contrastShape = pick(SHAPES); co.angle = ri(15, 90); co.highlightContrast = rb();
@@ -425,6 +425,27 @@
       assert(near(e.gradationValue(g({}), 0.3), 0.3), "The default sequence changed");
       // Acceleration: positive starts slow, negative starts fast
       assert(e.gradationValue(g({ easing: 100 }), 0.5) < 0.4 && e.gradationValue(g({ easing: -100 }), 0.5) > 0.6, "Acceleration does not bend the ramp");
+    });
+
+    await test("Gradation attribute Color moves the module colour toward the end colour", () => {
+      const e = app.engine;
+      const pal = { fg: "#000000", bg: "#ffffff" };
+      const g = { enabled: true, type: "color", range: 180, steps: 1, sequence: "restart", easing: 0, reverse: false, endColor: "#ff0000" };
+      const at = (t) => {
+        const cv = win.document.createElement("canvas"); const ctx = cv.getContext("2d");
+        e.applyGradation(ctx, g, t, 10);
+        const cell = { fg: pal.fg, base: "#000000" };
+        e.applyGradationColor(g, pal, cell);
+        return cell.fg;
+      };
+      assert(at(0) === "#000000", "The start of the path should keep the module colour, got " + at(0));
+      assert(at(1) === "#ff0000", "The end of the path should reach the end colour, got " + at(1));
+      assert(at(0.5) === "#800000", "The middle should be halfway, got " + at(0.5));
+      const half = (() => { const cv = win.document.createElement("canvas"); const ctx = cv.getContext("2d"); e.applyGradation(ctx, Object.assign({}, g, { type: "rotation" }), 1, 10); const cell = { fg: pal.fg, base: "#000000" }; e.applyGradationColor(g, pal, cell); return cell.fg; })();
+      assert(half === "#000000", "Other attributes must not change the colour");
+      const locked = { fg: "#123456", base: "#000000", fgLocked: true };
+      e.applyGradation(win.document.createElement("canvas").getContext("2d"), g, 1, 10); e.applyGradationColor(g, pal, locked);
+      assert(locked.fg === "#123456", "A locked (accent) module keeps its colour");
     });
 
     await test("Gradation attributes Shape and Texture change the module along the path", () => {
