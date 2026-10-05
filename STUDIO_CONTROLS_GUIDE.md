@@ -84,19 +84,20 @@ Cada capa es un módulo independiente. Se pueden tener hasta 5 capas con visibil
 ### 4.1 Repetition (Retícula Cartesiana Regular)
 Multiplica el módulo en una retícula ortogonal sobre el plano cartesiano $X, Y$.
 
-* **`gridType`**:
-  * `basic`: Retícula ortogonal tradicional $M_{i,j}$.
-  * `sliding`: Desfase alternado de filas o columnas (*brick pattern*).
-  * `sheared`: Cizallamiento diagonal del plano ($X' = X + Y \cdot \tan\theta$).
-  * `curved`: Deformación armónica sinusoidal sobre las líneas guía.
-  * `zigzag`: Deformación angular triangular sobre los ejes.
-  * `triangular / alternating`: Retícula triangular isomorfa o hexagonal.
+* **`gridType`** (tags *Grid structure variation*):
+  * `basic` (*Grid*): Retícula ortogonal tradicional $M_{i,j}$.
+  * `sliding` (*Brick*): Desfase alternado de filas (*brick pattern*). Parámetro **Row offset** (`slideOffset`, 0% a 100%).
+  * `sheared` (*Diagonal*): Cizallamiento diagonal del plano. Parámetro **Shear angle** (`shearAngle`, 0° a 45°).
+  * `curved` (*Curved*): Deformación sinusoidal de las filas. Parámetro **Wave amount** (`curveIntensity`, 0 a 60 px).
+  * `zigzag` (*Zigzag*): Deformación angular triangular de las filas. Mismo parámetro **Wave amount**.
+  * `triangular` (*Triangular*): Filas impares desplazadas media celda (retícula triangular).
+  * `alternating` (*Alternating*): Las celdas impares giran 180° (direcciones alternadas).
 * **`cols / rows`** (1 a 50): Número de divisiones en los ejes horizontal y vertical.
 * **`spacing`** (px): Separación o canaleta (*gutter*) entre celdas contiguas.
 * **`slideOffset`** (0.0 a 1.0): Proporción de desplazamiento en filas impares (modo `sliding`).
 * **`shearAngle`** (0° a 45°): Ángulo de inclinación oblicua (modo `sheared`).
 * **`curveIntensity`** (px): Amplitud de oscilación de la onda (modo `curved`).
-* **`showGridLines`** (`boolean`): Renderiza las líneas maestras de la retícula.
+* **`showGridLines`** (`boolean`): Renderiza las líneas maestras de la retícula. Con las líneas visibles aparece el control **Line width** (`gridLineWidth`, 0.5 a 6 px).
 * **`checkerInvert`** (`boolean`): Invierte el color de figura y fondo en casillas alternadas (tablero de ajedrez).
 
 ---

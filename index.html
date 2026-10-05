@@ -264,6 +264,9 @@
             <button type="button" class="ds-tag" data-grid-var="curved">Curved</button>
             <button type="button" class="ds-tag" data-grid-var="sliding">Brick</button>
             <button type="button" class="ds-tag" data-grid-var="sheared">Diagonal</button>
+            <button type="button" class="ds-tag" data-grid-var="zigzag">Zigzag</button>
+            <button type="button" class="ds-tag" data-grid-var="triangular">Triangular</button>
+            <button type="button" class="ds-tag" data-grid-var="alternating">Alternating</button>
           </div>
         </div>
 
@@ -281,6 +284,24 @@
               <input type="range" id="input-layout-rows" min="1" max="50" step="1" value="4">
               <input type="text" id="num-layout-rows" class="ds-value" value="4" inputmode="decimal">
             </div>
+          </div>
+        </div>
+
+                <!-- Parameter of the chosen variation: Brick = row offset, Diagonal = shear angle, Curved / Zigzag = wave amount -->
+        <div id="rep-param-block" class="ds-field hidden">
+          <div id="rep-param-label" class="ds-label">Row offset</div>
+          <div class="ds-slider">
+            <input type="range" id="input-layout-param" min="0" max="100" step="1" value="50">
+            <input type="text" id="num-layout-param" class="ds-value" value="50%" inputmode="decimal">
+          </div>
+        </div>
+
+        <!-- Thickness of the visible grid lines (only while "Visible Grid Lines" is on) -->
+        <div id="rep-linewidth-block" class="ds-field hidden">
+          <div class="ds-label">Line width</div>
+          <div class="ds-slider">
+            <input type="range" id="input-layout-linewidth" min="0.5" max="6" step="0.5" value="1.5">
+            <input type="text" id="num-layout-linewidth" class="ds-value" value="1.5px" inputmode="decimal">
           </div>
         </div>
 

@@ -243,6 +243,62 @@
       assert(q("#btn-mode-fill").classList.contains("active") && !q("#btn-mode-stroke").classList.contains("active"), "Fill / Stroke group active state wrong");
     });
 
+    await test("Layout variations expose their own parameter and the line width", async () => {
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      const fire = (el, v) => { el.value = v; el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
+      q('[data-rail-tab="layout"]').click(); await wait(80);
+      q("#toggle-layout-structure").click();
+      const rep = () => app.getActiveLayerStructure().repetition;
+      const expected = { basic: null, sliding: "Row offset", sheared: "Shear angle", curved: "Wave amount", zigzag: "Wave amount", triangular: null, alternating: null };
+      for (const [gt, label] of Object.entries(expected)) {
+        q(`[data-grid-var="${gt}"]`).click(); await wait(40);
+        assert(rep().gridType === gt, `Variation ${gt} did not apply`);
+        const shown = !q("#rep-param-block").classList.contains("hidden");
+        assert(shown === !!label, `${gt}: parameter control ${shown ? "shown" : "hidden"} unexpectedly`);
+        if (label) assert(q("#rep-param-label").textContent === label, `${gt}: label is "${q("#rep-param-label").textContent}", expected "${label}"`);
+        drawRaw(app);
+      }
+      q('[data-grid-var="sliding"]').click(); fire(q("#input-layout-param"), 30);
+      assert(Math.abs(rep().slideOffset - 0.3) < 1e-9 && q("#num-layout-param").value === "30%", "Row offset did not apply");
+      q('[data-grid-var="sheared"]').click(); fire(q("#input-layout-param"), 20);
+      assert(rep().shearAngle === 20 && q("#num-layout-param").value === "20º", "Shear angle did not apply");
+      q('[data-grid-var="curved"]').click(); fire(q("#input-layout-param"), 40);
+      assert(rep().curveIntensity === 40 && q("#num-layout-param").value === "40px", "Wave amount did not apply");
+      assert(q("#rep-linewidth-block").classList.contains("hidden"), "Line width should be hidden while grid lines are off");
+      q("#chk-rep-gridlines").click();
+      assert(!q("#rep-linewidth-block").classList.contains("hidden"), "Line width should show with grid lines on");
+      fire(q("#input-layout-linewidth"), 3);
+      assert(rep().gridLineWidth === 3 && q("#num-layout-linewidth").value === "3px", "Line width did not apply");
+    });
+
+    await test("Every control has an accessible name and toggles expose their state", () => {
+      const d = win.document;
+      const textOf = (id) => (d.getElementById(id)?.textContent || "").trim();
+      const nameOf = (el) => {
+        if (el.getAttribute("aria-label")) return el.getAttribute("aria-label");
+        const lb = el.getAttribute("aria-labelledby");
+        if (lb) return lb.split(/\s+/).map(textOf).join(" ").trim();
+        if (el.id && d.querySelector(`label[for="${el.id}"]`)) return d.querySelector(`label[for="${el.id}"]`).textContent.trim();
+        const wrap = el.closest("label");
+        if (wrap) return wrap.textContent.trim() || wrap.getAttribute("title") || "";
+        return (el.textContent || "").trim();
+      };
+      const missing = [];
+      d.querySelectorAll("input:not([type=hidden]), select, textarea, button").forEach((el) => {
+        if (!nameOf(el)) missing.push(`${el.tagName.toLowerCase()}${el.id ? "#" + el.id : ""}${el.className ? "." + String(el.className).split(" ")[0] : ""}`);
+      });
+      assert(missing.length === 0, `${missing.length} controls without a name, first: ${missing.slice(0, 5).join(", ")}`);
+      const wrong = [];
+      d.querySelectorAll(".ds-tag, .ds-btn-group__button, .shape-circle-btn, .rail-btn").forEach((el) => {
+        const pressed = el.getAttribute("aria-pressed");
+        if (pressed !== (el.classList.contains("active") ? "true" : "false")) wrong.push(el.className);
+      });
+      assert(wrong.length === 0, `${wrong.length} toggles with a wrong aria-pressed state`);
+      const cards = d.querySelectorAll(".layer-card");
+      assert(cards.length > 0 && Array.from(cards).every((c) => c.getAttribute("role") === "button" && c.getAttribute("tabindex") === "0"), "Layer cards are not keyboard reachable");
+    });
+
     await test("A failed draw shows a visible notice and recovers", () => {
       reset();
       const original = app.engine.render;

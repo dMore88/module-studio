@@ -722,6 +722,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
   background: var(--neutral-interactive-active);
   color: var(--neutral-text-main-inverted);
 }
+.layer-card:focus-visible { outline: var(--border-weight-2) solid var(--neutral-interactive-default); outline-offset: var(--spacing-1); }
 .layer-card.is-hidden { opacity: 0.45; }
 .layer-card.is-dragging { opacity: 0.3; transform: scale(0.97); }
 .layer-card.drag-over { box-shadow: 0 0 0 var(--border-weight-2) var(--neutral-interactive-default); }

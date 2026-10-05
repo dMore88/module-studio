@@ -287,7 +287,22 @@ Breadcrumbs, paginación, loaders, ribbon alert, modal, card, input de texto, b�
 
 ---
 
-## 9. Cómo añadir un componente nuevo
+## 9. Accesibilidad de los componentes
+
+`setupAccessibility()` (en `js/studio/studio-pro-app.js`) aplica estas reglas a todos los componentes, también a los que se crean después:
+
+- El texto *Overline* de un campo da nombre al deslizador, a su caja de valor y a los grupos de tags o botones (`aria-labelledby`).
+- Los botones de solo icono toman su nombre del tooltip (`title`) y los de cierre se llaman "Close panel".
+- Los interruptores se nombran por la tarjeta que activan.
+- Tags, grupos de botones, botones de forma, botones de vista y riel exponen su estado con `aria-pressed`, sincronizado con la clase `active`.
+- Las tarjetas de capa son botones alcanzables con teclado (Enter o Espacio) y marcan la activa con `aria-current`.
+- Los avisos usan `role="status"` (snackbar) y `role="alert"` (error de dibujo).
+
+`tests/smoke.html` comprueba que ningún control se quede sin nombre y que `aria-pressed` coincida con el estado visual.
+
+---
+
+## 10. Cómo añadir un componente nuevo
 
 1. Dibujarlo en Figma usando las variables de la sección 2 a 4.
 2. Pasar el enlace del nodo.

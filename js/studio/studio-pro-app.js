@@ -69,6 +69,7 @@ export class StudioProApp {
     this.setupFloatingLayersPanel();
     this.setupControlsRail();
     this.setupLayoutStructure();
+    this.setupRepetitionExtras();
     this.setupFormalStructure();
     this.setupSimilarity();
     this.setupGradation();
@@ -77,6 +78,7 @@ export class StudioProApp {
     this.setupConcentration();
     this.setupSpace();
     this.setupTexture();
+    this.setupAccessibility();
     this.setupShapeInspector();
 
     // Initial render
@@ -712,6 +714,7 @@ export class StudioProApp {
       this.syncCheckbox("chk-rep-clip", !!rep.activeClipping);
       this.syncCheckbox("chk-rep-gridlines", !!rep.showGridLines);
       this.syncCheckbox("chk-rep-checker", !!rep.checkerInvert);
+      this.syncRepetitionExtras(rep);
     }
 
     // Sync Radiation Controls
@@ -737,6 +740,79 @@ export class StudioProApp {
   /* =========================================================================
      LAYOUT STRUCTURE CONTROLLER (Per Active Layer)
      ========================================================================= */
+
+  // Parameter each grid variation exposes (stored value <-> shown value)
+  static get REPETITION_PARAMS() {
+    return {
+      sliding: { label: "Row offset", key: "slideOffset", min: 0, max: 100, step: 1, suffix: "%", toUi: v => Math.round(v * 100), fromUi: v => v / 100 },
+      sheared: { label: "Shear angle", key: "shearAngle", min: 0, max: 45, step: 1, suffix: "º", toUi: v => v, fromUi: v => v },
+      curved: { label: "Wave amount", key: "curveIntensity", min: 0, max: 60, step: 1, suffix: "px", toUi: v => v, fromUi: v => v },
+      zigzag: { label: "Wave amount", key: "curveIntensity", min: 0, max: 60, step: 1, suffix: "px", toUi: v => v, fromUi: v => v }
+    };
+  }
+
+  syncRepetitionExtras(rep) {
+    const spec = StudioProApp.REPETITION_PARAMS[rep.gridType];
+    const block = document.getElementById("rep-param-block");
+    block?.classList.toggle("hidden", !spec);
+    if (spec) {
+      const slider = document.getElementById("input-layout-param");
+      if (slider) { slider.min = spec.min; slider.max = spec.max; slider.step = spec.step; }
+      const label = document.getElementById("rep-param-label");
+      if (label) label.textContent = spec.label;
+      const val = spec.toUi(rep[spec.key] ?? 0);
+      this.syncControlValue("input-layout-param", val);
+      const num = document.getElementById("num-layout-param");
+      if (num) num.value = `${val}${spec.suffix}`;
+    }
+    document.getElementById("rep-linewidth-block")?.classList.toggle("hidden", !rep.showGridLines);
+    const w = rep.gridLineWidth ?? 1.5;
+    this.syncControlValue("input-layout-linewidth", w);
+    const nw = document.getElementById("num-layout-linewidth");
+    if (nw) nw.value = `${w}px`;
+  }
+
+  setupRepetitionExtras() {
+    const rep = () => this.getActiveLayerStructure()?.repetition;
+
+    // Variation parameter (row offset / shear angle / wave amount)
+    const slider = document.getElementById("input-layout-param");
+    const num = document.getElementById("num-layout-param");
+    const applyParam = (uiVal, label, push) => {
+      const r = rep(); const spec = r && StudioProApp.REPETITION_PARAMS[r.gridType];
+      if (!spec) return;
+      const v = Math.max(spec.min, Math.min(spec.max, uiVal));
+      r[spec.key] = spec.fromUi(v);
+      this.getActiveLayerStructure().mode = "repetition";
+      this.syncRepetitionExtras(r);
+      this.render();
+      if (push) this.pushHistory(`Layer ${this.activeLayerId} ${spec.label}: ${v}${spec.suffix}`);
+    };
+    slider?.addEventListener("input", (e) => applyParam(parseFloat(e.target.value), "", false));
+    slider?.addEventListener("change", (e) => applyParam(parseFloat(e.target.value), "", true));
+    num?.addEventListener("change", (e) => {
+      const raw = parseFloat(e.target.value.replace(/[^0-9.-]/g, ""));
+      applyParam(isNaN(raw) ? 0 : raw, "", true);
+    });
+
+    // Line width of the visible grid lines
+    const lw = document.getElementById("input-layout-linewidth");
+    const nlw = document.getElementById("num-layout-linewidth");
+    const applyWidth = (val, push) => {
+      const r = rep(); if (!r) return;
+      const v = Math.max(0.5, Math.min(6, val));
+      r.gridLineWidth = v;
+      this.syncRepetitionExtras(r);
+      this.render();
+      if (push) this.pushHistory(`Layer ${this.activeLayerId} Grid Line Width: ${v}px`);
+    };
+    lw?.addEventListener("input", (e) => applyWidth(parseFloat(e.target.value), false));
+    lw?.addEventListener("change", (e) => applyWidth(parseFloat(e.target.value), true));
+    nlw?.addEventListener("change", (e) => {
+      const raw = parseFloat(e.target.value.replace(/[^0-9.]/g, ""));
+      applyWidth(isNaN(raw) ? 1.5 : raw, true);
+    });
+  }
 
   setupLayoutStructure() {
     const toggleSwitch = document.getElementById("toggle-layout-structure");
@@ -779,7 +855,7 @@ export class StudioProApp {
     btnRep?.addEventListener("click", () => setMode("repetition"));
     btnRad?.addEventListener("click", () => setMode("radiation"));
 
-    // Repetition Variations (Grid, Curved, Brick, Diagonal)
+    // Repetition Variations (Grid, Curved, Brick, Diagonal, Zigzag, Triangular, Alternating)
     document.querySelectorAll("[data-grid-var]").forEach(btn => {
       btn.addEventListener("click", () => {
         const struct = this.getActiveLayerStructure();
@@ -833,6 +909,7 @@ export class StudioProApp {
         }
         const structGrid = document.getElementById("chk-struct-gridlines");
         if (structGrid) structGrid.checked = e.target.checked;
+        if (struct) this.syncRepetitionExtras(struct.repetition);
         this.render();
       });
     }
@@ -1204,6 +1281,103 @@ export class StudioProApp {
       if (toggle) toggle.checked = true;
       this.render();
     }, "Cell Jitter");
+  }
+
+  /* =========================================================================
+     ACCESSIBILITY
+     Gives every control an accessible name, keeps aria-pressed in sync with the
+     visual "active" state, and makes layer cards reachable from the keyboard.
+     ========================================================================= */
+
+  setupAccessibility() {
+    const flyout = document.getElementById("inspector-flyout");
+    if (flyout) { flyout.setAttribute("role", "region"); flyout.setAttribute("aria-label", "Inspector"); }
+
+    this.enhanceAccessibility(document);
+
+    // Keep aria-pressed / aria-current in sync with the .active / .is-active classes
+    const toggleSel = ".ds-tag, .ds-btn-group__button, .shape-circle-btn, .ds-icon-btn, .rail-btn";
+    const syncState = (el) => {
+      if (el.matches(".layer-card")) el.setAttribute("aria-current", el.classList.contains("is-active") ? "true" : "false");
+      else el.setAttribute("aria-pressed", el.classList.contains("active") ? "true" : "false");
+    };
+    const stateSel = toggleSel + ", .layer-card";
+    document.querySelectorAll(stateSel).forEach(syncState);
+
+    this.a11yObserver = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.type === "attributes") {
+          if (m.target.matches && m.target.matches(stateSel)) syncState(m.target);
+        } else {
+          m.addedNodes.forEach((n) => {
+            if (n.nodeType !== 1) return;
+            this.enhanceAccessibility(n);
+            if (n.matches(stateSel)) syncState(n);
+            n.querySelectorAll(stateSel).forEach(syncState);
+          });
+        }
+      }
+    });
+    this.a11yObserver.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["class"] });
+
+    // Layer cards: Enter or Space selects the layer
+    document.getElementById("layers-stack-container")?.addEventListener("keydown", (e) => {
+      if ((e.key === "Enter" || e.key === " ") && e.target.classList?.contains("layer-card")) {
+        e.preventDefault();
+        e.target.click();
+      }
+    });
+  }
+
+  enhanceAccessibility(root) {
+    const all = (sel) => {
+      const list = Array.from(root.querySelectorAll ? root.querySelectorAll(sel) : []);
+      if (root.matches && root.matches(sel)) list.unshift(root);
+      return list;
+    };
+    let uid = this._a11yUid || 0;
+    const labelId = (el) => { if (!el.id) el.id = `a11y-label-${++uid}`; return el.id; };
+
+    // Fields: the overline label names the slider, its value box and any group inside
+    all(".ds-field").forEach((field) => {
+      const label = field.querySelector(":scope > .ds-label");
+      if (!label) return;
+      const id = labelId(label);
+      field.querySelectorAll(":scope > .ds-slider input, :scope > .ds-color-picker input, :scope > .ds-select select").forEach((inp) => {
+        if (!inp.hasAttribute("aria-label") && !inp.hasAttribute("aria-labelledby")) inp.setAttribute("aria-labelledby", id);
+      });
+      field.querySelectorAll(":scope > .ds-tags, :scope > .shape-grid, :scope > .ds-btn-group").forEach((grp) => {
+        grp.setAttribute("role", "group");
+        if (!grp.hasAttribute("aria-label") && !grp.hasAttribute("aria-labelledby")) grp.setAttribute("aria-labelledby", id);
+      });
+    });
+
+    // Accent color rows (Anomaly, Contrast): the row label names the color input
+    all(".ds-color-row").forEach((row) => {
+      const text = row.querySelector(".ds-color-label")?.textContent.trim();
+      const inp = row.querySelector("input[type='color']");
+      if (inp && text && !inp.hasAttribute("aria-label")) inp.setAttribute("aria-label", text);
+    });
+
+    // Switches: named after the card they enable
+    all(".ds-switch input").forEach((inp) => {
+      if (inp.hasAttribute("aria-label")) return;
+      const title = inp.closest("label")?.getAttribute("title") || inp.closest(".ds-card")?.querySelector(".ds-card-title-text")?.textContent || "Toggle";
+      inp.setAttribute("aria-label", title);
+    });
+
+    // Icon-only buttons take their name from the tooltip
+    all("button").forEach((b) => {
+      if (b.hasAttribute("aria-label") || b.textContent.trim()) return;
+      const t = b.getAttribute("title");
+      if (t) b.setAttribute("aria-label", t);
+    });
+    all(".close-flyout-btn").forEach((b) => b.setAttribute("aria-label", "Close panel"));
+
+    // Layer cards behave like buttons
+    all(".layer-card").forEach((c) => { c.setAttribute("role", "button"); c.setAttribute("tabindex", "0"); });
+
+    this._a11yUid = uid;
   }
 
   /* =========================================================================
