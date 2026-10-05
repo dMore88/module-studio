@@ -57,7 +57,7 @@ Controla el soporte físico y los límites del plano gráfico.
 
 | Parámetro / Control | Selector / Tipo | Rango / Valores | Función & Comportamiento Gráfico |
 | :--- | :--- | :--- | :--- |
-| `aspectRatio` | Grupo de Botones | `1:1`, `9:16`, `4:3`, `3:4`, `16:9` | Modifica dinámicamente las dimensiones del canvas (`width`, `height`) y recalcula márgenes de seguridad. Determina el tamaño de celda en retículas y el radio máximo en esquemas polares. |
+| `aspectRatio` | Grupo de Botones | `1:1`, `9:16`, `4:3`, `3:4`, `16:9` | Modifica dinámicamente las dimensiones del canvas (`width`, `height`) (sin margen de seguridad). Determina el tamaño de celda en retículas y el radio máximo en esquemas polares. |
 | `invertFigureGround` | Switch (Toggle) | `boolean` (`true` / `false`) | Invierte ópticamente los roles de figura y fondo: la figura asume el tono del papel y el fondo el de la tinta principal. |
 | `wireframe` | Switch (Toggle) | `boolean` (`true` / `false`) | Elimina los rellenos sólidos (`fill: none`) forzando un trazo de contorno (`stroke`). Permite auditar colisiones e intersecciones booleanas sin oclusión visual. |
 | `showSafeBounds` | Switch (Toggle) | `boolean` (`true` / `false`) | Renderiza una rejilla perimetral sutil que cubre el lienzo. |
@@ -71,6 +71,7 @@ Controla el soporte físico y los límites del plano gráfico.
 Cada capa es un módulo independiente. Se pueden tener hasta 5 capas con visibilidad, orden (drag & drop), forma, color y pipeline de modificadores propios.
 
 ### 3.1 Controles de capa
+* **`width` / `height`**: tamaño del módulo **exactamente en píxeles** del lienzo (un módulo de 100 mide 100 px en cualquier proporción de lienzo; ya no hay factor oculto de 1,25 ni reducción en lienzos pequeños). Con Structure en *Fit to cell* ese tamaño se reparte entre las celdas (con 4 columnas, un módulo de 100 ocupa 25 px); en *Fixed size* mantiene sus píxeles.
 * **`shape`**: una de las 15 formas del selector (lista canónica del mockup de Figma, `STUDIO_SHAPE_KEYS` en `js/studio/shapes.js`): `circle`, `square`, `triangle`, `wave`, `horseshoe`, `hexagon`, `line`, `parallelogram`, `hatch`, `crescent`, `teardrop`, `cross`, `digit1`, `digit5`, `digit9`. Los botones y las tarjetas de capa usan iconos Phosphor en peso *regular*, los del Figma (campo `phIcon` de cada forma; lista completa en `docs/DESIGN_SYSTEM_TOKENS.md`, sección 6). Los dígitos son vectoriales (ya no son texto) y `line` es una línea real.
 * **`width / height`**: dimensiones del módulo (base 50; el ancho llega a 400 para permitir líneas largas).
 * **`rotation`**: ángulo de orientación.

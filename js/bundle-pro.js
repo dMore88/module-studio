@@ -947,6 +947,9 @@ const defaultStudioState = {
   showSafeBounds: true
 };
 
+// A module is drawn at exactly the size its Width and Height say (1 px per unit), on any canvas
+const MODULE_UNIT = 1;
+
 // Contrast, Anomaly and Concentration multiply the module scale; the product is capped so modules never explode
 const MAX_SCALE_MUL = 8;
 
@@ -1266,10 +1269,9 @@ class StudioEngine {
     if (!mod || mod.visible === false) return;
     ctx.save();
     ctx.translate(width / 2, height / 2);
-    const aspectScale = Math.min(1.0, Math.min(width, height) / 600);
     this.cellSeed = 0;
     this.cellAlt = false;
-    this.drawSingleLayerShape(ctx, mod, 1.25 * aspectScale, palette.fg, palette.bg);
+    this.drawSingleLayerShape(ctx, mod, MODULE_UNIT, palette.fg, palette.bg);
     ctx.restore();
   }
 
@@ -1512,7 +1514,7 @@ class StudioEngine {
 
   // Size at which a module is drawn on its own: the default cell / ring spacing of the fixed size mode.
   defaultCellSize(mod, width, height) {
-    const unit = 1.25 * Math.min(1.0, Math.min(width, height) / 600);
+    const unit = MODULE_UNIT;
     const w = (mod.width !== undefined ? mod.width : (mod.scale || 50)) * unit;
     const h = (mod.height !== undefined ? mod.height : (mod.scale || 50)) * unit;
     return { w: Math.max(10, w), h: Math.max(10, h) };
@@ -1886,7 +1888,7 @@ class StudioEngine {
         const cellBg = bgColor;
         const cellScaleMul = cell.scaleMul;
 
-        const scaleUnit = 1.25 * Math.min(1.0, Math.min(width, height) / 600);
+        const scaleUnit = MODULE_UNIT;
         const cellRatio = Math.min(cW / usableW, cH / usableH);
         const normScale = isFixed
           ? scaleUnit * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul)
@@ -2252,7 +2254,7 @@ class StudioEngine {
           const cellScaleMul = cell.scaleMul;
 
           // Natural centrifugal growth scale: outer modules larger, inner smaller, proportional to sector size
-          const scaleUnit = 1.25 * Math.min(1.0, Math.min(width, height) / 600);
+          const scaleUnit = MODULE_UNIT;
           const ringThickness = span / rings;
           const arcWidth = (ringRadius * 2 * Math.PI) / rays;
           const sectorSize = Math.min(ringThickness, Math.max(ringThickness * 0.5, arcWidth));
