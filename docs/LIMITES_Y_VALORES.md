@@ -135,11 +135,11 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | Control | Mín. | Máx. | Paso | Razón |
 | :-- | :-- | :-- | :-- | :-- |
 | Dominance ratio | 50 % | 95 % | 1 | % de la mayoría regular; por debajo de 50 la minoría sería mayoría. |
-| Contrast Scale Multiplier | 0,2× | 3× | 0,1 | De muy pequeño a triple. |
-| Tone | 10 % | 90 % | 5 | Qué tanto se acerca al fondo; 0 no se vería diferente y 100 desaparece. |
-| Shift | 5 % | 50 % | 1 | Desplazamiento dentro de la celda; 50 % la llega al borde. |
+| Contrast Scale Multiplier | 0,2× | 5× | 0,1 | De muy pequeño a cinco veces; el producto con otros multiplicadores sigue limitado a 8×. |
+| Tone | 0 % | 100 % | 5 | Mezcla del color del módulo con el color de fondo del lienzo: 0 % = su color original (sin contraste), 100 % = igual al fondo (desaparece, como un vacío). |
+| Shift | 0 % | 50 % | 1 | Cuánto se aleja el módulo de su centro, como % de la celda; 50 % lleva el centro al borde de la celda. |
 | Shift direction | 0° | 360° | 5 | Dirección del desplazamiento. |
-| Clash Angle | 15° | 90° | 5 | Ángulo de choque; menos de 15 apenas se aprecia. |
+| Clash Angle | 5º | 90º | 5 | Ángulo de choque; 5º se nota en figuras con vértices. |
 
 ### Concentration
 | Control | Mín. | Máx. | Paso | Razón |

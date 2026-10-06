@@ -2434,10 +2434,10 @@ export class StudioProApp {
       });
     };
     bindPair("input-contrast-dominance", "num-contrast-dominance", { min: 50, max: 95, suffix: "%", label: "Dominance", key: "dominanceRatio" });
-    bindPair("input-contrast-scale", "num-contrast-scale", { min: 0.2, max: 3, suffix: "x", label: "Scale", key: "scaleFactor" });
-    bindPair("input-contrast-angle", "num-contrast-angle", { min: 15, max: 90, suffix: "º", label: "Angle", key: "angle" });
-    bindPair("input-contrast-tone", "num-contrast-tone", { min: 10, max: 90, suffix: "%", label: "Tone", key: "toneAmount" });
-    bindPair("input-contrast-shift", "num-contrast-shift", { min: 5, max: 50, suffix: "%", label: "Shift", key: "positionShift" });
+    bindPair("input-contrast-scale", "num-contrast-scale", { min: 0.2, max: 5, suffix: "x", label: "Scale", key: "scaleFactor" });
+    bindPair("input-contrast-angle", "num-contrast-angle", { min: 5, max: 90, suffix: "º", label: "Angle", key: "angle" });
+    bindPair("input-contrast-tone", "num-contrast-tone", { min: 0, max: 100, suffix: "%", label: "Tone", key: "toneAmount" });
+    bindPair("input-contrast-shift", "num-contrast-shift", { min: 0, max: 50, suffix: "%", label: "Shift", key: "positionShift" });
     bindPair("input-contrast-shiftangle", "num-contrast-shiftangle", { min: 0, max: 360, suffix: "º", label: "Shift direction", key: "positionAngle" });
 
     document.querySelectorAll("#card-contrast [data-contrast-shape]").forEach(btn => {

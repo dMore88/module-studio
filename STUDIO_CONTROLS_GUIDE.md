@@ -224,11 +224,11 @@ Introduce una zona de irregularidad donde prevalece una estructura regular previ
 Establece disparidad formal entre una **mayoría dominante** y una **minoría discordante**. Requiere retícula. Estado en `layer.structure.contrast`.
 
 * **`dimension`** (*Dimension*, dropdown con siete opciones):
-  * `scale`: minoría monumental (`scaleFactor`, *Contrast Scale Multiplier*, 0,2 a 3x, por defecto 2,2).
+  * `scale`: minoría monumental (`scaleFactor`, *Contrast Scale Multiplier*, 0,2 a 5x, por defecto 2,2).
   * `shape`: minoría con glifo discordante (`contrastShape`, *Minority Shape*, la lista de 22 formas, en dropdown).
-  * `direction` (*Angle*): minoría rotada (`angle`, *Clash Angle*, 15º a 90º).
-  * `position` (*Position*): la minoría se desplaza dentro de su celda: **`positionShift`** (*Shift*, 5 a 50 % del lado menor de la celda, por defecto 25) en la dirección **`positionAngle`** (*Shift direction*, 0 a 360º). La mayoría queda centrada.
-  * `tone` (*Tone*): la minoría se dibuja en otro **tono del color del propio módulo**, más claro, hacia el color del fondo. **`toneAmount`** (*Tone*, 10 a 90 %, por defecto 50). Sirve igual en relleno que en contorno.
+  * `direction` (*Angle*): minoría rotada (`angle`, *Clash Angle*, 5º a 90º).
+  * `position` (*Position*): la minoría se desplaza dentro de su celda: **`positionShift`** (*Shift*, 0 a 50 % del lado menor de la celda, por defecto 25) en la dirección **`positionAngle`** (*Shift direction*, 0 a 360º). La mayoría queda centrada.
+  * `tone` (*Tone*): la minoría se dibuja en otro **tono del color del propio módulo**, más claro, hacia el color del fondo. **`toneAmount`** (*Tone*, 0 a 100 %, por defecto 50; 0 % es el color original y 100 % el del fondo, donde la minoría desaparece). Sirve igual en relleno que en contorno.
   * `texture`: solo la minoría recibe la deformación de Texture.
   * `space`: la minoría se dibuja con figura y fondo invertidos. Con *Checkerboard inversion* se combinan por exclusión.
 * **`dominanceRatio`** (*Dominance ratio*, 50 a 95 %, por defecto 80).
