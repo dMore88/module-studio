@@ -91,7 +91,7 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | Variation param (Wave amount) | 0 px | 60 px | 1 | Amplitud de la onda de Curved y Zigzag. |
 | Free seed | 1 | 99 | 1 | Distribución de Free; la semilla elige cuál sale. |
 | Intersection size | 10 % | 100 % | 5 | Tamaño de los módulos en los cruces respecto a los de los centros. |
-| Col / Row B size [% of A] | 25 % | 100 % | 5 | Tamaño de B respecto a A: 100 % = iguales, 25 % = B mide un cuarto de A (límite elegido para que B no sea una raya). Internamente se guarda como factor 4 a 1. |
+| Col / Row B size [% of A] | 10 % | 100 % | 5 | Tamaño de B respecto a A: 100 % = iguales, 10 % = B mide una décima parte de A. Límite elegido por criterio de diseño. Internamente se guarda como factor 10 a 1. |
 | Col / Row gradation | −30 % | 30 % | 1 | Cada columna o fila crece o se achica ese % respecto a la anterior; más de ±30 % explota en pocos pasos. |
 | Line width | 0,5 px | 10 px | 0,5 | Grosor de las líneas visibles (son parte del diseño). |
 

@@ -1544,7 +1544,7 @@ export class StudioProApp {
       if (!mod.structure.formalStructure) {
         mod.structure.formalStructure = { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false };
       }
-      mod.structure.formalStructure.colRatio = Math.max(1, Math.min(4, 100 / Math.max(25, val)));
+      mod.structure.formalStructure.colRatio = Math.max(1, Math.min(10, 100 / Math.max(10, val)));
       mod.structure.formalStructure.enabled = true;
       mod.structure.enabled = true;
       if (mod.structure.mode === "radiation") {
@@ -1563,7 +1563,7 @@ export class StudioProApp {
       if (!mod.structure.formalStructure) {
         mod.structure.formalStructure = { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false };
       }
-      mod.structure.formalStructure.rowRatio = Math.max(1, Math.min(4, 100 / Math.max(25, val)));
+      mod.structure.formalStructure.rowRatio = Math.max(1, Math.min(10, 100 / Math.max(10, val)));
       mod.structure.formalStructure.enabled = true;
       mod.structure.enabled = true;
       if (mod.structure.mode === "radiation") {
