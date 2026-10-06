@@ -255,10 +255,10 @@ Agrupa o dispersa los módulos según campos de fuerza invisibles. Requiere ret�
 ### 4.9 Texture (Deformación de Geometría como Efecto de Textura)
 No es una textura de píxeles: son deformaciones de la geometría de cada módulo que producen un efecto artesanal (trazo a mano, deshilachado, ruptura de línea). Cada forma se convierte en una polilínea y se alteran sus vértices con un ruido determinista (estable por capa y celda). Estado en `layer.structure.texture`. Modificador autónomo: funciona en módulo único y sobre cualquier retícula. Se aplica antes de Space.
 
-* **`jitter`** (*Jitter*, 0 a 8 px, por defecto 1): temblor de cada vértice.
-* **`skipChance`** (*Line skipping*, 0 a 60 %, por defecto 10): omite vértices y rompe el trazo (solo en modo trazo).
-* **`crossing`** (*Strand crossing*, 0 a 60 %, por defecto 10): intercambia vértices cercanos (solo en modo trazo).
-* **`undulation`** (*Perimeter undulation*, 0 a 30 px, por defecto 10): onda senoidal sobre la normal del contorno.
+* **`jitter`** (*Jitter*, el slider muestra **0 a 100 %**; por dentro 0 a 10 px para un módulo de 100 px, por defecto 10 % = 1 px): temblor de cada vértice, al azar en horizontal y en vertical hasta la mitad del valor.
+* **`skipChance`** (*Line skipping*, 0 a 90 %, por defecto 10): probabilidad de que cada vértice se omita, y donde se omite el trazo se corta (solo en modo trazo).
+* **`crossing`** (*Random lines*, 0 a 100 %, por defecto 10): probabilidad de que cada vértice saque una línea corta (del 4 al 12 % del tamaño del módulo) en un ángulo al azar, como pelos del trazo (solo en modo trazo). Sustituye al antiguo *Strand crossing*, que intercambiaba vértices y casi no se veía.
+* **`undulation`** (*Perimeter undulation*, el slider muestra **0 a 100 %**; por dentro 0 a 30 px para un módulo de 100 px, por defecto 30 % = 9 px): onda senoidal sobre la normal del contorno; al 100 % el contorno se desplaza hasta un 21 % del tamaño del módulo.
 
 Los px de `jitter` y `undulation` están expresados para un módulo de 100 px y se escalan al tamaño real (la forma `line` usa 450 px como referencia). Las formas de trazo abierto (`line`, `wave`, `spiral`, `letterA`, `letterS`, `letterR`, `digit1`, `digit5`, `digit9`) son rutas abiertas: en modo trazo se ven como línea fina y en relleno como trazo grueso; no usan extrusión de Space.
 

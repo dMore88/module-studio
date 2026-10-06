@@ -2719,7 +2719,7 @@ export class StudioProApp {
   /* =========================================================================
      TEXTURE INSPECTOR & CONTROLLER (Per Active Layer)
      Geometry deformations that read as texture: Jitter, Line skipping,
-     Strand crossing, Perimeter undulation. Autonomous modifier.
+     Random lines, Perimeter undulation. Autonomous modifier.
      Jitter and undulation are px for a 100px module (scaled to the real size).
      Skipping and crossing only read on strokes.
      ========================================================================= */
@@ -2740,15 +2740,17 @@ export class StudioProApp {
     const toggle = document.getElementById("toggle-texture-active");
     if (toggle) toggle.checked = !!tex.enabled;
 
-    const setPair = (sliderId, numId, value, suffix) => {
-      this.syncControlValue(sliderId, value);
+    // Jitter and undulation are stored in px for a 100 px module but shown as 0 to 100 % (unit = px per 1 %)
+    const setPair = (sliderId, numId, value, suffix, unit = 1) => {
+      const shown = Math.round(value / unit);
+      this.syncControlValue(sliderId, shown);
       const num = document.getElementById(numId);
-      if (num) num.value = `${value}${suffix}`;
+      if (num) num.value = `${shown}${suffix}`;
     };
-    setPair("input-texture-jitter", "num-texture-jitter", tex.jitter ?? 1, "px");
+    setPair("input-texture-jitter", "num-texture-jitter", tex.jitter ?? 1, "%", 0.1);
     setPair("input-texture-skip", "num-texture-skip", tex.skipChance ?? 10, "%");
     setPair("input-texture-crossing", "num-texture-crossing", tex.crossing ?? 10, "%");
-    setPair("input-texture-undulation", "num-texture-undulation", tex.undulation ?? 10, "px");
+    setPair("input-texture-undulation", "num-texture-undulation", tex.undulation ?? 9, "%", 0.3);
 
     this.updateRailIndicatorDots();
   }
@@ -2779,12 +2781,12 @@ export class StudioProApp {
       this.pushHistory(`Layer ${this.activeLayerId} Texture: ${tex.enabled ? "ON" : "OFF"}`);
     });
 
-    const bindPair = (sliderId, numId, { min, max, suffix, label, key }) => {
+    const bindPair = (sliderId, numId, { min, max, suffix, label, key, unit = 1 }) => {
       const slider = document.getElementById(sliderId);
       const num = document.getElementById(numId);
       slider?.addEventListener("input", (e) => {
         const val = parseInt(e.target.value, 10);
-        commit(t => { t[key] = val; }, null, { resync: false });
+        commit(t => { t[key] = val * unit; }, null, { resync: false });
         if (num) num.value = `${val}${suffix}`;
       });
       slider?.addEventListener("change", (e) => {
@@ -2793,13 +2795,13 @@ export class StudioProApp {
       num?.addEventListener("change", (e) => {
         const raw = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10);
         const val = isNaN(raw) ? min : Math.max(min, Math.min(max, raw));
-        commit(t => { t[key] = val; }, `Texture ${label}: ${val}${suffix}`);
+        commit(t => { t[key] = val * unit; }, `Texture ${label}: ${val}${suffix}`);
       });
     };
-    bindPair("input-texture-jitter", "num-texture-jitter", { min: 0, max: 8, suffix: "px", label: "Jitter", key: "jitter" });
-    bindPair("input-texture-skip", "num-texture-skip", { min: 0, max: 60, suffix: "%", label: "Line Skipping", key: "skipChance" });
-    bindPair("input-texture-crossing", "num-texture-crossing", { min: 0, max: 60, suffix: "%", label: "Strand Crossing", key: "crossing" });
-    bindPair("input-texture-undulation", "num-texture-undulation", { min: 0, max: 30, suffix: "px", label: "Undulation", key: "undulation" });
+    bindPair("input-texture-jitter", "num-texture-jitter", { min: 0, max: 100, suffix: "%", label: "Jitter", key: "jitter", unit: 0.1 });
+    bindPair("input-texture-skip", "num-texture-skip", { min: 0, max: 90, suffix: "%", label: "Line Skipping", key: "skipChance" });
+    bindPair("input-texture-crossing", "num-texture-crossing", { min: 0, max: 100, suffix: "%", label: "Random Lines", key: "crossing" });
+    bindPair("input-texture-undulation", "num-texture-undulation", { min: 0, max: 100, suffix: "%", label: "Undulation", key: "undulation", unit: 0.3 });
   }
 
   /* =========================================================================

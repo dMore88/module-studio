@@ -152,10 +152,10 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 ### Texture
 | Control | Mín. | Máx. | Paso | Razón |
 | :-- | :-- | :-- | :-- | :-- |
-| Jitter | 0 | 8 px | 1 | Temblor de los vértices, **para un módulo de 100 px** (se escala al tamaño real). |
-| Line skipping | 0 % | 60 % | 1 | % de trazo omitido; más de 60 deja el módulo irreconocible. Solo en trazos. |
-| Strand crossing | 0 % | 60 % | 1 | % de hebras cruzadas. Solo en trazos. |
-| Perimeter undulation | 0 | 30 px | 1 | Ondulación del contorno, también para 100 px. |
+| Jitter | 0 % | 100 % | 1 | Temblor de los vértices. 100 % = 10 px para un módulo de 100 px (se escala al tamaño real). |
+| Line skipping | 0 % | 90 % | 1 | Probabilidad de que cada vértice se omita y el trazo se corte; a 90 % las figuras complejas quedan casi deshechas. Solo en trazos. |
+| Random lines | 0 % | 100 % | 1 | Probabilidad de que cada vértice saque una línea corta en ángulo al azar. Solo en trazos. |
+| Perimeter undulation | 0 % | 100 % | 1 | Ondulación del contorno. 100 % = 30 px para un módulo de 100 px, es decir, el contorno se desplaza hasta un 21 % del módulo. |
 
 ### Space
 | Control | Mín. | Máx. | Paso | Razón |
@@ -184,7 +184,7 @@ Una sola capa (**Layer 1**): círculo, trazo (no relleno), color `#18181f`, traz
 | **Anomaly** | Focal, un punto en el centro (50 %, 50 %), Radius 150, Severity 60, Single, Count 5, Seed 7, se desvía en forma, escala, rotación y posición, forma intrusa triángulo, zona Another grid = Brick, color de acento `#f43f5e` (apagado), punto visible |
 | **Contrast** | Scale, Dominance 80 %, Scattered, Scale 2,2×, Tone 50 %, Shift 25 % a 45°, Clash angle 45°, forma de minoría cruz, color de acento `#f43f5e` (apagado) |
 | **Concentration** | Point, Move, atractor en el centro (50 %, 50 %), Gathering pull 50 %, Field radius 250, 2 focos, eje horizontal, flujo y densidad apagados, guía del atractor apagada |
-| **Texture** | Jitter 1, Line skipping 10 %, Strand crossing 10 %, Perimeter undulation 10 |
+| **Texture** | Jitter 10 %, Line skipping 10 %, Random lines 10 %, Perimeter undulation 30 % |
 | **Space** | Isometric, Extrusion depth 10, Projection angle 30°, Shading 50 %, guías isométricas apagadas |
 | **Hide modifiers** | apagado; solo actúa con el panel Module abierto |
 

@@ -41,7 +41,7 @@ The application is built on a clean, zero-dependency stack with high-performance
 | **Anomaly** | Focal Disruption | Focal, rupture, swell and void anomalies; single, regular or random distribution; intruder shape, radius, severity and accent colour. The focal point is on the canvas (click to move it). |
 | **Contrast** | Tension & Dominance | Minority clash across scale, shape, angle, **position**, **tone** (a lighter tone of the module's colour), texture and space, with dominance ratio and accent colour. |
 | **Concentration** | Gravitational Fields | Attractor points, axes, voids, hotspots and whole-design dense/sparse fields, by moving or by absence, with pull, field radius and mixable field styles (soft edge, flowing, dynamic density). |
-| **Texture** | Geometry Deformation | Jitter, line skipping, strand crossing and perimeter undulation that deform shape geometry into a hand-made texture effect. |
+| **Texture** | Geometry Deformation | Jitter, line skipping, random lines and perimeter undulation that deform shape geometry into a hand-made texture effect. |
 | **Space** | 3D Illusion | Isometric extrusion, 3D tilt, fluctuating and paradox planes, with depth, projection angle, facet shading and isometric grid lines. |
 
 Every panel shows the essentials first and keeps the rest in a collapsible **Advanced** section. Number boxes respond to the up and down arrow keys (Shift = ×10, Alt = ×0.1). All on-screen **guides** (container frame, focal point, attractor, isometric grid) share one colour, chosen next to the canvas buttons, and are never exported.
@@ -55,7 +55,7 @@ Every panel shows the essentials first and keeps the rest in a collapsible **Adv
 | **Anomaly** | Focal Disruption | Per-layer focal, rupture, swell and void anomalies with intruder shape, epicenter (click on canvas), radius, severity, accent highlight and reticle. |
 | **Contrast** | Tension & Dominance | Per-layer minority clash across scale, shape, angle and tone, with dominance ratio, scale multiplier and minority accent. |
 | **Concentration** | Gravitational Fields | Per-layer density kinematics towards attractor points, axes, voids and hotspots, with pull, field radius, flow orientation, density scale and attractor guide. |
-| **Texture** | Geometry Deformation | Per-layer jitter, line skipping, strand crossing and perimeter undulation that deform shape geometry into a hand-made texture effect. |
+| **Texture** | Geometry Deformation | Per-layer jitter, line skipping, random lines and perimeter undulation that deform shape geometry into a hand-made texture effect. |
 | **Space** | 3D Illusion | Per-layer isometric extrusion, 3D tilt, fluctuating and paradox planes, with depth, projection angle, facet shading and isometric grid lines. |
 
 ---

@@ -406,7 +406,7 @@ export const Shapes = {
 // ============================================================================
 // TEXTURE GEOMETRY
 // Texture is a set of geometry deformations (not a pixel pattern): every shape is
-// flattened into a polyline once, then jitter, undulation, strand crossing and
+// flattened into a polyline once, then jitter, undulation, random lines and
 // line skipping are applied to its vertices. Deterministic per seed.
 // ============================================================================
 
@@ -626,7 +626,7 @@ export function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
   const k = size / (shapeDef.textureRef || FLAT_REF_SIZE); // texture px are relative to the module size
   const jitter = (tex.jitter || 0) * k;
   const undulation = (tex.undulation || 0) * k * 0.7;
-  // Skipping and crossing only read on strokes; they are ignored on filled shapes.
+  // Skipping and random lines only read on strokes; they are ignored on filled shapes.
   const skipChance = strokeOnly ? (tex.skipChance || 0) / 100 : 0;
   const crossing = strokeOnly ? (tex.crossing || 0) / 100 : 0;
   const stride = Math.max(1, Math.round(Math.max(2, size * 0.04) / (FLAT_SPACING * f)));
@@ -666,14 +666,16 @@ export function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
       });
     }
 
-    // Strand crossing: swap nearby vertices to fray the stroke
-    if (crossing > 0 && n > 6) {
-      const swaps = Math.floor(n * crossing * 0.15);
-      for (let k = 0; k < swaps; k++) {
-        const a = Math.floor(Math.abs(Math.sin(s * 9.1 + k * 3.7)) * n) % n;
-        const b = (a + 2 + Math.floor(Math.abs(Math.cos(s * 5.3 + k * 7.1)) * 4)) % n;
-        const tmp = pts[a]; pts[a] = pts[b]; pts[b] = tmp;
-      }
+    // Random lines: short strokes that leave the outline at random angles (a share of the vertices grows one)
+    const fract = (v) => v - Math.floor(v);
+    const strays = [];
+    if (crossing > 0 && n > 2) {
+      pts.forEach((pt, p) => {
+        if (fract(Math.abs(Math.sin(s * 17.3 + p * 61.7)) * 1000) >= crossing) return;
+        const ang = fract(Math.abs(Math.cos(s * 7.9 + p * 23.1)) * 1000) * Math.PI * 2;
+        const len = size * (0.04 + 0.08 * fract(Math.abs(Math.sin(s * 3.3 + p * 11.9)) * 1000));
+        strays.push([{ x: pt.x, y: pt.y }, { x: pt.x + Math.cos(ang) * len, y: pt.y + Math.sin(ang) * len }]);
+      });
     }
 
     // Line skipping: drop vertices so the stroke breaks into segments
@@ -689,6 +691,7 @@ export function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
     } else {
       segments.push(pts);
     }
+    strays.forEach(st => segments.push(st));
     out.push({ segments, closed: sp.closed && skipChance === 0 });
   });
   return out;

@@ -1344,7 +1344,7 @@
       <!-- ===================================================================
            TAB 9: TEXTURE (Figma: Web apps / Abstract studio)
            Geometry deformations that read as texture: Jitter, Line skipping,
-           Strand crossing, Perimeter undulation. Autonomous modifier.
+           Random lines, Perimeter undulation. Autonomous modifier.
            =================================================================== -->
       <div id="card-texture" class="flyout-tab-content ds-card hidden" data-flyout-tab="texture">
         <div class="ds-card-header">
@@ -1364,29 +1364,29 @@
         <div class="ds-field">
           <div class="ds-label">Jitter</div>
           <div class="ds-slider">
-            <input type="range" id="input-texture-jitter" min="0" max="8" step="1" value="1">
-            <input type="text" id="num-texture-jitter" class="ds-value" value="1px" inputmode="numeric">
+            <input type="range" id="input-texture-jitter" min="0" max="100" step="1" value="10">
+            <input type="text" id="num-texture-jitter" class="ds-value" value="10%" inputmode="numeric">
           </div>
         </div>
         <div class="ds-field">
           <div class="ds-label">Line skipping</div>
           <div class="ds-slider">
-            <input type="range" id="input-texture-skip" min="0" max="60" step="1" value="10">
+            <input type="range" id="input-texture-skip" min="0" max="90" step="1" value="10">
             <input type="text" id="num-texture-skip" class="ds-value" value="10%" inputmode="numeric">
           </div>
         </div>
         <div class="ds-field">
-          <div class="ds-label">Strand crossing</div>
+          <div class="ds-label">Random lines</div>
           <div class="ds-slider">
-            <input type="range" id="input-texture-crossing" min="0" max="60" step="1" value="10">
+            <input type="range" id="input-texture-crossing" min="0" max="100" step="1" value="10">
             <input type="text" id="num-texture-crossing" class="ds-value" value="10%" inputmode="numeric">
           </div>
         </div>
         <div class="ds-field">
           <div class="ds-label">Perimeter undulation</div>
           <div class="ds-slider">
-            <input type="range" id="input-texture-undulation" min="0" max="30" step="1" value="10">
-            <input type="text" id="num-texture-undulation" class="ds-value" value="10px" inputmode="numeric">
+            <input type="range" id="input-texture-undulation" min="0" max="100" step="1" value="30">
+            <input type="text" id="num-texture-undulation" class="ds-value" value="30%" inputmode="numeric">
           </div>
         </div>
       </div>
@@ -1458,7 +1458,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=3513f221"></script>
+  <script src="js/bundle-pro.js?v=c4109ee9"></script>
 
 </body>
 </html>

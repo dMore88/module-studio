@@ -130,10 +130,10 @@ export const createDefaultLayerStructure = () => ({
   },
   texture: {
     enabled: false,
-    jitter: 1, // px for a 100px module, 0 to 8
-    skipChance: 10, // line skipping %, 0 to 60 (strokes only)
-    crossing: 10, // strand crossing %, 0 to 60 (strokes only)
-    undulation: 10 // perimeter undulation, px for a 100px module, 0 to 30
+    jitter: 1, // px for a 100px module, 0 to 10 (shown as 0 to 100 %)
+    skipChance: 10, // line skipping %, 0 to 90 (strokes only)
+    crossing: 10, // random lines %, 0 to 100: share of the vertices that grow a short line (strokes only)
+    undulation: 9 // perimeter undulation, px for a 100px module, 0 to 30 (shown as 0 to 100 %)
   },
   space: {
     enabled: false,

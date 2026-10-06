@@ -574,7 +574,7 @@ const Shapes = {
 // ============================================================================
 // TEXTURE GEOMETRY
 // Texture is a set of geometry deformations (not a pixel pattern): every shape is
-// flattened into a polyline once, then jitter, undulation, strand crossing and
+// flattened into a polyline once, then jitter, undulation, random lines and
 // line skipping are applied to its vertices. Deterministic per seed.
 // ============================================================================
 
@@ -794,7 +794,7 @@ function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
   const k = size / (shapeDef.textureRef || FLAT_REF_SIZE); // texture px are relative to the module size
   const jitter = (tex.jitter || 0) * k;
   const undulation = (tex.undulation || 0) * k * 0.7;
-  // Skipping and crossing only read on strokes; they are ignored on filled shapes.
+  // Skipping and random lines only read on strokes; they are ignored on filled shapes.
   const skipChance = strokeOnly ? (tex.skipChance || 0) / 100 : 0;
   const crossing = strokeOnly ? (tex.crossing || 0) / 100 : 0;
   const stride = Math.max(1, Math.round(Math.max(2, size * 0.04) / (FLAT_SPACING * f)));
@@ -834,14 +834,16 @@ function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
       });
     }
 
-    // Strand crossing: swap nearby vertices to fray the stroke
-    if (crossing > 0 && n > 6) {
-      const swaps = Math.floor(n * crossing * 0.15);
-      for (let k = 0; k < swaps; k++) {
-        const a = Math.floor(Math.abs(Math.sin(s * 9.1 + k * 3.7)) * n) % n;
-        const b = (a + 2 + Math.floor(Math.abs(Math.cos(s * 5.3 + k * 7.1)) * 4)) % n;
-        const tmp = pts[a]; pts[a] = pts[b]; pts[b] = tmp;
-      }
+    // Random lines: short strokes that leave the outline at random angles (a share of the vertices grows one)
+    const fract = (v) => v - Math.floor(v);
+    const strays = [];
+    if (crossing > 0 && n > 2) {
+      pts.forEach((pt, p) => {
+        if (fract(Math.abs(Math.sin(s * 17.3 + p * 61.7)) * 1000) >= crossing) return;
+        const ang = fract(Math.abs(Math.cos(s * 7.9 + p * 23.1)) * 1000) * Math.PI * 2;
+        const len = size * (0.04 + 0.08 * fract(Math.abs(Math.sin(s * 3.3 + p * 11.9)) * 1000));
+        strays.push([{ x: pt.x, y: pt.y }, { x: pt.x + Math.cos(ang) * len, y: pt.y + Math.sin(ang) * len }]);
+      });
     }
 
     // Line skipping: drop vertices so the stroke breaks into segments
@@ -857,6 +859,7 @@ function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
     } else {
       segments.push(pts);
     }
+    strays.forEach(st => segments.push(st));
     out.push({ segments, closed: sp.closed && skipChance === 0 });
   });
   return out;
@@ -1009,10 +1012,10 @@ const createDefaultLayerStructure = () => ({
   },
   texture: {
     enabled: false,
-    jitter: 1, // px for a 100px module, 0 to 8
-    skipChance: 10, // line skipping %, 0 to 60 (strokes only)
-    crossing: 10, // strand crossing %, 0 to 60 (strokes only)
-    undulation: 10 // perimeter undulation, px for a 100px module, 0 to 30
+    jitter: 1, // px for a 100px module, 0 to 10 (shown as 0 to 100 %)
+    skipChance: 10, // line skipping %, 0 to 90 (strokes only)
+    crossing: 10, // random lines %, 0 to 100: share of the vertices that grow a short line (strokes only)
+    undulation: 9 // perimeter undulation, px for a 100px module, 0 to 30 (shown as 0 to 100 %)
   },
   space: {
     enabled: false,
@@ -6110,7 +6113,7 @@ class StudioProApp {
   /* =========================================================================
      TEXTURE INSPECTOR & CONTROLLER (Per Active Layer)
      Geometry deformations that read as texture: Jitter, Line skipping,
-     Strand crossing, Perimeter undulation. Autonomous modifier.
+     Random lines, Perimeter undulation. Autonomous modifier.
      Jitter and undulation are px for a 100px module (scaled to the real size).
      Skipping and crossing only read on strokes.
      ========================================================================= */
@@ -6131,15 +6134,17 @@ class StudioProApp {
     const toggle = document.getElementById("toggle-texture-active");
     if (toggle) toggle.checked = !!tex.enabled;
 
-    const setPair = (sliderId, numId, value, suffix) => {
-      this.syncControlValue(sliderId, value);
+    // Jitter and undulation are stored in px for a 100 px module but shown as 0 to 100 % (unit = px per 1 %)
+    const setPair = (sliderId, numId, value, suffix, unit = 1) => {
+      const shown = Math.round(value / unit);
+      this.syncControlValue(sliderId, shown);
       const num = document.getElementById(numId);
-      if (num) num.value = `${value}${suffix}`;
+      if (num) num.value = `${shown}${suffix}`;
     };
-    setPair("input-texture-jitter", "num-texture-jitter", tex.jitter ?? 1, "px");
+    setPair("input-texture-jitter", "num-texture-jitter", tex.jitter ?? 1, "%", 0.1);
     setPair("input-texture-skip", "num-texture-skip", tex.skipChance ?? 10, "%");
     setPair("input-texture-crossing", "num-texture-crossing", tex.crossing ?? 10, "%");
-    setPair("input-texture-undulation", "num-texture-undulation", tex.undulation ?? 10, "px");
+    setPair("input-texture-undulation", "num-texture-undulation", tex.undulation ?? 9, "%", 0.3);
 
     this.updateRailIndicatorDots();
   }
@@ -6170,12 +6175,12 @@ class StudioProApp {
       this.pushHistory(`Layer ${this.activeLayerId} Texture: ${tex.enabled ? "ON" : "OFF"}`);
     });
 
-    const bindPair = (sliderId, numId, { min, max, suffix, label, key }) => {
+    const bindPair = (sliderId, numId, { min, max, suffix, label, key, unit = 1 }) => {
       const slider = document.getElementById(sliderId);
       const num = document.getElementById(numId);
       slider?.addEventListener("input", (e) => {
         const val = parseInt(e.target.value, 10);
-        commit(t => { t[key] = val; }, null, { resync: false });
+        commit(t => { t[key] = val * unit; }, null, { resync: false });
         if (num) num.value = `${val}${suffix}`;
       });
       slider?.addEventListener("change", (e) => {
@@ -6184,13 +6189,13 @@ class StudioProApp {
       num?.addEventListener("change", (e) => {
         const raw = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10);
         const val = isNaN(raw) ? min : Math.max(min, Math.min(max, raw));
-        commit(t => { t[key] = val; }, `Texture ${label}: ${val}${suffix}`);
+        commit(t => { t[key] = val * unit; }, `Texture ${label}: ${val}${suffix}`);
       });
     };
-    bindPair("input-texture-jitter", "num-texture-jitter", { min: 0, max: 8, suffix: "px", label: "Jitter", key: "jitter" });
-    bindPair("input-texture-skip", "num-texture-skip", { min: 0, max: 60, suffix: "%", label: "Line Skipping", key: "skipChance" });
-    bindPair("input-texture-crossing", "num-texture-crossing", { min: 0, max: 60, suffix: "%", label: "Strand Crossing", key: "crossing" });
-    bindPair("input-texture-undulation", "num-texture-undulation", { min: 0, max: 30, suffix: "px", label: "Undulation", key: "undulation" });
+    bindPair("input-texture-jitter", "num-texture-jitter", { min: 0, max: 100, suffix: "%", label: "Jitter", key: "jitter", unit: 0.1 });
+    bindPair("input-texture-skip", "num-texture-skip", { min: 0, max: 90, suffix: "%", label: "Line Skipping", key: "skipChance" });
+    bindPair("input-texture-crossing", "num-texture-crossing", { min: 0, max: 100, suffix: "%", label: "Random Lines", key: "crossing" });
+    bindPair("input-texture-undulation", "num-texture-undulation", { min: 0, max: 100, suffix: "%", label: "Undulation", key: "undulation", unit: 0.3 });
   }
 
   /* =========================================================================

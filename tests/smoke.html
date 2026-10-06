@@ -76,7 +76,7 @@
       const an = st.anomaly; an.enabled = rb(); an.type = pick(["focal","fracture","swell","tear","regrid"]); an.zoneGrid = pick(["sliding","sheared","curved","zigzag","triangular","alternating"]); an.epicenterX = 0.1 + rnd() * 0.8; an.epicenterY = 0.1 + rnd() * 0.8; an.radius = ri(50, 350); an.intensity = ri(10, 100); an.anomalousShape = pick(SHAPES); an.highlightColor = rb(); an.showReticle = rb(); an.distribution = pick(["single","regular","random"]); an.count = ri(2, 12); an.seed = ri(1, 99); an.attrs = { shape: rb(), scale: rb(), rotation: rb(), position: rb() };
       const co = st.contrast; co.enabled = rb(); co.dimension = pick(["scale","shape","direction","position","tone","texture","space"]); co.positionShift = ri(5, 50); co.positionAngle = ri(0, 360); co.dominanceRatio = ri(50, 95); co.scaleFactor = 0.2 + rnd() * 2.8; co.contrastShape = pick(SHAPES); co.angle = ri(15, 90); co.highlightContrast = rb(); co.spread = pick(["scattered","balanced","edge","center"]);
       const cn = st.concentration; cn.enabled = rb(); cn.mode = pick(["point","void","line","line_void","free","dense","sparse"]); cn.method = pick(["move","absence"]); cn.edgeFade = rb(); cn.attractorX = 0.05 + rnd() * 0.9; cn.attractorY = 0.05 + rnd() * 0.9; cn.power = ri(20, 100); cn.radius = ri(80, 450); cn.lineAxis = pick(["horizontal","vertical"]); cn.alignToField = rb(); cn.densityScale = rb(); cn.showAttractor = rb(); cn.focusCount = ri(2, 6);
-      const tx = st.texture; tx.enabled = rb(); tx.jitter = ri(0, 8); tx.skipChance = ri(0, 60); tx.crossing = ri(0, 60); tx.undulation = ri(0, 30);
+      const tx = st.texture; tx.enabled = rb(); tx.jitter = ri(0, 10); tx.skipChance = ri(0, 90); tx.crossing = ri(0, 100); tx.undulation = ri(0, 30);
       const sp = st.space; sp.enabled = rb(); sp.mode = pick(["isometric","foreshortening","fluctuating","conflicting"]); sp.depth = ri(10, 80); sp.angle = ri(-60, 60); sp.shading = ri(20, 100); sp.showIsoGuides = rb();
     }
   }
@@ -182,6 +182,28 @@
       drawRaw(app); const a = win.document.getElementById("studio-canvas").toDataURL();
       drawRaw(app); const b = win.document.getElementById("studio-canvas").toDataURL();
       assert(a === b, "Two identical renders differ (texture flickers)");
+    });
+
+    await test("Texture: random lines add short strokes outside the outline, and the sliders show 0 to 100 %", () => {
+      reset();
+      const d0 = win.document, q = (sel) => d0.querySelector(sel);
+      const fire = (el, v) => { el.value = v; el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
+      const cv = win.document.getElementById("studio-canvas");
+      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: true, width: 300, height: 300 }); app.state.showSafeBounds = false;
+      const ink = (crossing) => {
+        L.structure.enabled = true; L.structure.texture = { enabled: true, jitter: 0, skipChance: 0, crossing, undulation: 0 };
+        drawRaw(app); const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0;
+        for (let i = 0; i < d.length; i += 4) if (d[i] < 110) n++;
+        return n;
+      };
+      const none = ink(0), some = ink(100);
+      assert(some > none * 1.15, `Random lines should add ink (${none} -> ${some})`);
+      q('[data-rail-tab="texture"]').click();
+      L.structure.texture = { enabled: true, jitter: 4, skipChance: 20, crossing: 20, undulation: 15 };
+      app.syncTextureInspectorWithActiveLayer();
+      assert(q("#num-texture-jitter").value === "40%" && q("#num-texture-undulation").value === "50%", `Shown as ${q("#num-texture-jitter").value} / ${q("#num-texture-undulation").value}`);
+      fire(q("#input-texture-jitter"), 100);
+      assert(Math.abs(L.structure.texture.jitter - 10) < 1e-9, "100 % jitter should store 10 px");
     });
 
     await test("Undo and redo restore a per-layer setting", () => {
