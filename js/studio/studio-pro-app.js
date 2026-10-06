@@ -265,6 +265,7 @@ export class StudioProApp {
       aspectSelect.addEventListener("change", (e) => {
         const ratio = e.target.value;
         this.applyAspectRatio(ratio);
+        this.syncAllInspectorsWithActiveLayer(); // the Block shows pixels of the canvas
         this.render();
         this.centerArtboard();
         this.pushHistory(`Aspect Ratio: ${ratio}`);
@@ -657,7 +658,8 @@ export class StudioProApp {
         if (!b || (b.x === 50 && b.y === 50 && b.w === 100 && b.h === 100)) return;
         const cur = s.mode === "radiation" ? s.radiation : s.repetition;
         const actual = !!cur && (cur.sizeMode === "actual" || cur.sizeMode === "fixed");
-        out.push(line("Block", `${actual ? "" : `${b.w}% x ${b.h}% `}at ${b.x}% / ${b.y}%`));
+        const px = this.blockPixels(s);
+        out.push(line("Block", `${actual ? "" : `${px.w} x ${px.h}px `}offset ${px.x} / ${px.y}px`));
       };
       if (s.enabled) {
         if (s.mode === "radiation") {
@@ -939,17 +941,28 @@ export class StudioProApp {
     return { x: (px * cfg.w - bf.tx) / bf.w, y: (py * cfg.h - bf.ty) / bf.h };
   }
 
-  // Block (Layout): position of the layout on the canvas and, in Fit and Radiation, its size
-  syncBlockInspector(struct) {
+  // Block (Layout): where the layout lives. The sliders show pixels of the canvas (size, and offset from its centre, like
+  // Module); the project keeps percentages so the block follows the canvas if its proportion changes
+  blockPixels(struct) {
+    const cfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
     const b = { x: 50, y: 50, w: 100, h: 100, ...(struct.block || {}) };
+    return { w: Math.round((b.w / 100) * cfg.w), h: Math.round((b.h / 100) * cfg.h), x: Math.round(((b.x - 50) / 100) * cfg.w), y: Math.round(((b.y - 50) / 100) * cfg.h), cfg };
+  }
+
+  syncBlockInspector(struct) {
+    const px = this.blockPixels(struct);
     for (const [k, id] of [["x", "block-x"], ["y", "block-y"], ["w", "block-w"], ["h", "block-h"]]) {
-      this.syncControlValue(`input-${id}`, b[k]);
+      this.syncControlValue(`input-${id}`, px[k]);
       const num = document.getElementById(`num-${id}`);
-      if (num) num.value = `${Math.round(b[k])}%`;
+      if (num) num.value = `${px[k]}px`;
     }
     const cur = struct.mode === "radiation" ? struct.radiation : struct.repetition;
     const actual = !!cur && (cur.sizeMode === "actual" || cur.sizeMode === "fixed");
     document.getElementById("block-size-fields")?.classList.toggle("hidden", actual);
+    // The Block sits right under the design controls of the active mode, before its Advanced section
+    const blockEl = document.getElementById("layout-block");
+    const adv = document.getElementById(struct.mode === "radiation" ? "rad-advanced" : "rep-advanced");
+    if (blockEl && adv && blockEl.nextElementSibling !== adv) adv.parentNode.insertBefore(blockEl, adv);
   }
 
   syncStructureInspectorWithActiveLayer() {
@@ -1307,15 +1320,18 @@ export class StudioProApp {
     btnRep?.addEventListener("click", () => setMode("repetition"));
     btnRad?.addEventListener("click", () => setMode("radiation"));
 
-    // Block: the rectangle the layout lives in (position of its centre and, in Fit / Radiation, its size, in % of the canvas)
-    for (const [key, id, label] of [["x", "block-x", "Block X"], ["y", "block-y", "Block Y"], ["w", "block-w", "Block Width"], ["h", "block-h", "Block Height"]]) {
+    // Block: the rectangle the layout lives in (size and offset of its centre from the canvas centre, in px)
+    for (const [key, id, label] of [["x", "block-x", "Block Offset X"], ["y", "block-y", "Block Offset Y"], ["w", "block-w", "Block Width"], ["h", "block-h", "Block Height"]]) {
       this.bindSliderWithNumber(`input-${id}`, `num-${id}`, (val) => {
         const struct = this.getActiveLayerStructure();
         if (!struct) return;
+        const cfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
         struct.block = { x: 50, y: 50, w: 100, h: 100, ...(struct.block || {}) };
-        struct.block[key] = key === "w" || key === "h" ? Math.max(10, Math.min(100, val)) : Math.max(0, Math.min(100, val));
+        const along = key === "x" || key === "w" ? cfg.w : cfg.h;
+        if (key === "w" || key === "h") struct.block[key] = (Math.max(10, val) / along) * 100;
+        else struct.block[key] = 50 + (val / along) * 100;
         this.render();
-      }, label, "%");
+      }, label, "px");
     }
 
     // Repetition Variations (Grid, Curved, Brick, Diagonal, Zigzag, Triangular, Alternating)

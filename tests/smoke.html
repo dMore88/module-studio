@@ -356,13 +356,16 @@
       assert(Math.abs(at.x - 0.5) < 1e-6 && Math.abs(at.y - 0.5) < 1e-6, `The middle of the block is 50 % / 50 % of the layout (${JSON.stringify(at)})`);
       // The inspector: four sliders, the size ones hidden in Actual size, and the art log says it
       d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("num-block-x").value === "25%" && d.getElementById("num-block-w").value === "50%", "The block sliders should show the block");
+      assert(d.getElementById("num-block-x").value === "-150px" && d.getElementById("num-block-w").value === "300px", `The block sliders should show pixels of the canvas (${d.getElementById("num-block-x").value} / ${d.getElementById("num-block-w").value})`);
+      assert(d.getElementById("layout-block").nextElementSibling === d.getElementById("rep-advanced"), "The Block should sit right before the Repetition Advanced section");
       assert(!d.getElementById("block-size-fields").classList.contains("hidden"), "Fit shows the block size");
       st.repetition.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer(); app.render();
       assert(d.getElementById("block-size-fields").classList.contains("hidden"), "Actual size hides the block size");
-      assert(/Block: at 25% \/ 25%/.test(d.getElementById("art-log-lines").textContent), "The log should mention the block: " + d.getElementById("art-log-lines").textContent);
-      fire0(d.getElementById("input-block-x"), 70);
-      assert(st.block.x === 70, "The block X slider did not apply");
+      assert(/Block: offset -150 \/ -150px/.test(d.getElementById("art-log-lines").textContent), "The log should mention the block: " + d.getElementById("art-log-lines").textContent);
+      fire0(d.getElementById("input-block-x"), 60);
+      assert(Math.abs(st.block.x - 60) < 1e-9, `A 60 px offset should store 60 % of the canvas away from the middle... (${st.block.x})`);
+      st.mode = "radiation"; app.syncAllInspectorsWithActiveLayer();
+      assert(d.getElementById("layout-block").nextElementSibling === d.getElementById("rad-advanced"), "In Radiation the Block should move before the Radiation Advanced section");
     });
 
     await test("Undo and redo restore a per-layer setting", () => {

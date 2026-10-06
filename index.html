@@ -303,43 +303,6 @@
           </div>
         </div>
 
-        <!-- Block: where the layout lives on the canvas (for both modes) -->
-        <details id="layout-block" class="ds-advanced" open>
-          <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Block</span></summary>
-          <div class="ds-stack">
-            <div class="ds-field">
-              <div class="ds-label">Position X</div>
-              <div class="ds-slider">
-                <input type="range" id="input-block-x" min="0" max="100" step="1" value="50">
-                <input type="text" id="num-block-x" class="ds-value" value="50%" inputmode="decimal">
-              </div>
-            </div>
-            <div class="ds-field">
-              <div class="ds-label">Position Y</div>
-              <div class="ds-slider">
-                <input type="range" id="input-block-y" min="0" max="100" step="1" value="50">
-                <input type="text" id="num-block-y" class="ds-value" value="50%" inputmode="decimal">
-              </div>
-            </div>
-            <div id="block-size-fields" class="ds-stack">
-              <div class="ds-field">
-                <div class="ds-label">Block width</div>
-                <div class="ds-slider">
-                  <input type="range" id="input-block-w" min="10" max="100" step="1" value="100">
-                  <input type="text" id="num-block-w" class="ds-value" value="100%" inputmode="decimal">
-                </div>
-              </div>
-              <div class="ds-field">
-                <div class="ds-label">Block height</div>
-                <div class="ds-slider">
-                  <input type="range" id="input-block-h" min="10" max="100" step="1" value="100">
-                  <input type="text" id="num-block-h" class="ds-value" value="100%" inputmode="decimal">
-                </div>
-              </div>
-            </div>
-          </div>
-        </details>
-
         <!-- SUB-PANEL A: REPETITION MODE -->
         <div id="subpanel-repetition" class="ds-stack">
 
@@ -417,6 +380,40 @@
           <div class="ds-slider">
             <input type="range" id="input-layout-inter" min="10" max="100" step="5" value="50">
             <input type="text" id="num-layout-inter" class="ds-value" value="50%" inputmode="decimal">
+          </div>
+        </div>
+
+        <!-- Block: where the layout lives on the canvas (shared by both modes; the script moves it before the active mode's Advanced) -->
+        <div id="layout-block" class="ds-stack">
+          <div id="block-size-fields" class="ds-stack">
+            <div class="ds-field">
+              <div class="ds-label">Block width</div>
+              <div class="ds-slider">
+                <input type="range" id="input-block-w" min="10" max="2000" step="1" value="600">
+                <input type="text" id="num-block-w" class="ds-value" value="600px" inputmode="decimal">
+              </div>
+            </div>
+            <div class="ds-field">
+              <div class="ds-label">Block height</div>
+              <div class="ds-slider">
+                <input type="range" id="input-block-h" min="10" max="2000" step="1" value="600">
+                <input type="text" id="num-block-h" class="ds-value" value="600px" inputmode="decimal">
+              </div>
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Block offset X</div>
+            <div class="ds-slider">
+              <input type="range" id="input-block-x" min="-1000" max="1000" step="1" value="0">
+              <input type="text" id="num-block-x" class="ds-value" value="0px" inputmode="decimal">
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Block offset Y</div>
+            <div class="ds-slider">
+              <input type="range" id="input-block-y" min="-1000" max="1000" step="1" value="0">
+              <input type="text" id="num-block-y" class="ds-value" value="0px" inputmode="decimal">
+            </div>
           </div>
         </div>
 
@@ -1493,7 +1490,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=27dfc176"></script>
+  <script src="js/bundle-pro.js?v=3465b121"></script>
 
 </body>
 </html>

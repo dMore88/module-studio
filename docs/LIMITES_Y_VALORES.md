@@ -85,12 +85,12 @@ El **valor por defecto** es el que tiene el control al abrir la app o al encende
 | Container width / height | 10 px | 2000 px | 1 px | 100 px | Marco en el que se compone el módulo; 10 px evita celdas degeneradas. Por defecto del tamaño del módulo, para verlo de un vistazo. |
 
 ### Layout › Block
-Vale para Repetition y Radiation; es el rectángulo del lienzo donde vive el layout de la capa. En Actual size solo cuenta la posición.
+Vale para Repetition y Radiation; es el rectángulo del lienzo donde vive el layout de la capa, justo debajo del diseño del modo activo. Se muestra en px del lienzo (600 × 600 en 1:1) y por dentro se guarda en %. En Actual size solo cuenta el desfase.
 
 | Control | Mín. | Máx. | Paso | Por defecto | Razón |
 | :-- | :-- | :-- | :-- | :-- | :-- |
-| Position X / Y | 0 % | 100 % | 1 % | 50 % | Centro del bloque en el lienzo. |
-| Block width / height | 10 % | 100 % | 1 % | 100 % | Tamaño del bloque en Fit y Radiation; con 100 % ocupa todo el lienzo, como siempre. (Fase 2: hasta 200 % para fondos sangrados.) |
+| Block width / height | 10 px | 2000 px | 1 px | tamaño del lienzo (600 px en 1:1) | Tamaño del bloque en Fit y Radiation; más grande que el lienzo da fondos sangrados. |
+| Block offset X / Y | −1000 px | 1000 px | 1 px | 0 px | Desfase del centro del bloque respecto al centro del lienzo, como el Offset de Module. |
 
 ### Layout › Repetition
 | Control | Mín. | Máx. | Paso | Por defecto | Razón |
