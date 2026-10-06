@@ -793,13 +793,18 @@ input[type="range"]:hover::-webkit-slider-thumb {
   transition: background-color 0.2s ease;
 }
 
-/* Layers panel (320 wide) */
+/* Layers panel (320 wide): the layers on top, the Art configuration log below, half and half */
 .ds-layers-panel {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  gap: var(--spacing-4);
+  box-sizing: border-box;
   width: 320px;
   min-height: 0;
+  padding: var(--spacing-3) 0;
+  border-radius: var(--border-radius-1);
+  background: var(--neutral-bg-strong);
   user-select: none;
 }
 .ds-layers-toolbar {
@@ -807,63 +812,64 @@ input[type="range"]:hover::-webkit-slider-thumb {
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
-  height: var(--sizing-9);
+  height: var(--sizing-7);
+  padding: 0 var(--spacing-5);
 }
 .ds-layers-count { display: flex; align-items: center; gap: 10px; }
 .ds-layers-title {
   font-size: var(--font-size-xs);
   font-weight: var(--typography-weight-600);
-  letter-spacing: 0.24px;
+  letter-spacing: 0.2px;
   line-height: var(--line-height-tight);
   color: var(--neutral-text-main);
 }
 .ds-layers-list {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-3);
+  flex: 1 1 0;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--spacing-5) 0;
 }
 
-/* Layer card: 72 high, preview 56, copy, actions */
+/* Layer row (Figma "Layer"): 64 high, 40 preview, a line under each one; the active one is ink */
 .layer-card {
   display: flex;
   align-items: center;
   gap: var(--spacing-4);
   box-sizing: border-box;
-  height: 72px;
+  height: 64px;
   padding: 0 var(--spacing-5) 0 var(--spacing-3);
   flex-shrink: 0;
-  border: var(--border-weight-1) solid var(--neutral-interactive-default);
-  border-radius: var(--border-radius-2);
-  background: var(--neutral-interactive-default-inverted);
+  border: 0;
+  border-bottom: var(--border-weight-1) solid var(--neutral-border-main);
+  background: transparent;
   color: var(--neutral-text-main);
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease;
 }
 .layer-card:hover { background: var(--neutral-interactive-hover-inverted); }
 .layer-card.is-active {
-  border-width: var(--border-weight-2);
+  border-bottom-color: var(--neutral-interactive-default);
   background: var(--neutral-interactive-active);
   color: var(--neutral-text-main-inverted);
 }
 .layer-card:focus-visible { outline: var(--border-weight-2) solid var(--neutral-interactive-default); outline-offset: var(--spacing-1); }
 .layer-card.is-hidden { opacity: 0.45; }
 .layer-card.is-dragging { opacity: 0.3; transform: scale(0.97); }
-.layer-card.drag-over { box-shadow: 0 0 0 var(--border-weight-2) var(--neutral-interactive-default); }
+.layer-card.drag-over { box-shadow: inset 0 0 0 var(--border-weight-2) var(--neutral-interactive-default); }
 .layer-preview-box {
   display: grid;
   place-items: center;
   flex-shrink: 0;
   box-sizing: border-box;
-  width: var(--sizing-11);
-  height: var(--sizing-11);
-  border-radius: var(--border-radius-2);
+  width: var(--sizing-9);
+  height: var(--sizing-9);
+  border-radius: var(--border-radius-1);
   color: var(--neutral-interactive-default);
-  font-size: var(--sizing-9);
+  font-size: var(--sizing-7);
 }
 .layer-card.is-active .layer-preview-box { color: var(--neutral-icon-inverted); }
+.layer-card.is-active:hover { background: var(--neutral-interactive-hover); }
 .layer-copy { display: flex; flex-direction: column; gap: var(--spacing-1); flex: 1; min-width: 0; line-height: var(--line-height-small); }
 .layer-title {
   overflow: hidden;
@@ -939,12 +945,30 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .rail-btn.active { box-shadow: 0 0 0 var(--border-weight-2) var(--neutral-bg-light), 0 0 0 var(--border-weight-3) var(--neutral-interactive-default); }
 .rail-btn:focus-visible { outline: var(--border-weight-2) solid var(--primary-interactive-focus); outline-offset: var(--spacing-1); }
 
-/* Status line (under the artboard) */
-.ds-status {
-  flex-shrink: 0;
+/* Art configuration (Figma "Layer list" bottom half): DM Mono 12, a line above, soft text with dark keys */
+.ds-art-log {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  gap: var(--spacing-5);
+  min-height: 0;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: var(--spacing-6);
+  border-top: var(--border-weight-1) solid var(--neutral-border-main);
   font-family: var(--typography-family-mono);
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   font-weight: var(--typography-weight-500);
-  color: var(--neutral-text-subtle);
-  user-select: none;
+  user-select: text;
 }
+.art-log__title { margin: 0; line-height: var(--line-height-body); color: var(--neutral-text-main); }
+.art-log__lines { color: var(--neutral-text-subtle); line-height: var(--line-height-body); overflow-wrap: anywhere; }
+.art-log__lines p { margin: 0; }
+.art-log__key, .art-log__layer { color: var(--neutral-text-main); }
+.art-log__layer { margin-top: var(--spacing-3) !important; }
+
+/* Scroll bars: thin, black at 50 % so they do not weigh on the layout */
+* { scrollbar-width: thin; scrollbar-color: rgba(0, 0, 0, 0.5) transparent; }
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.5); border-radius: var(--border-radius-full); }

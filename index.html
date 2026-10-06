@@ -105,6 +105,12 @@
 
       <!-- Layers list (populated dynamically, up to 5 layers) -->
       <div id="layers-stack-container" class="ds-layers-list"></div>
+
+      <!-- Art configuration: fills in as controls are turned on (built from the state) -->
+      <section class="ds-art-log" aria-labelledby="art-log-title">
+        <p id="art-log-title" class="art-log__title">Art configuration</p>
+        <div id="art-log-lines" class="art-log__lines"></div>
+      </section>
     </div>
 
     <!-- CANVAS COLUMN (Figma: canvas, node 5787:482). The artboard is sized by fitArtboard() from the free height -->
@@ -115,10 +121,6 @@
         </div>
       </div>
 
-      <!-- Status line under the artboard: size of the canvas as shown, and layer count -->
-      <div class="ds-status">
-        <span id="hud-resolution">600 × 600 PX</span> • <span id="hud-layers-status">2 LAYERS</span>
-      </div>
     </div>
 
     <!-- CONTROLS RAIL (own column of the layout; Figma View options, node 5763:31810) -->
@@ -1408,7 +1410,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=c064cf49"></script>
+  <script src="js/bundle-pro.js?v=bfed805f"></script>
 
 </body>
 </html>

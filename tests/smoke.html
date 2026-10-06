@@ -1600,6 +1600,21 @@
       assert(left.every(([x, y]) => Math.abs(x - e.gridShift(curved, y)) < 1e-9), "The clip's left side is not the grid line");
     });
 
+    await test("Art configuration log fills in as controls are turned on and empties when they are turned off", async () => {
+      reset();
+      const d = win.document, log = () => d.getElementById("art-log-lines").textContent;
+      app.render();
+      assert(/\d+ × \d+ PX/.test(log()) && /2 LAYERS/.test(log()) && /Modules: /.test(log()), "The log should start with the size, the layers and the modules: " + log());
+      assert(!/Structure|Gradation|Contrast/.test(log()), "Nothing is on yet, so the log should list no controls");
+      const st = app.getActiveLayerStructure();
+      st.enabled = true; st.mode = "repetition"; st.gradation.enabled = true; st.contrast.enabled = true; st.contrast.dimension = "tone";
+      app.render();
+      assert(/Structure: Repetition \/ Grid \/ C\d+ - R\d+/.test(log()) && /Gradation: /.test(log()) && /Contrast: Tone/.test(log()), "The log should list the controls that are on: " + log());
+      st.gradation.enabled = false; app.render();
+      assert(!/Gradation/.test(log()), "A control that is turned off should leave the log");
+      reset();
+    });
+
     await test("Concentration Hotspots: 2 to 6 foci", async () => {
       reset();
       const cv = win.document.getElementById("studio-canvas");

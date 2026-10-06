@@ -3454,6 +3454,7 @@ class StudioProApp {
       this.showRenderError(err);
       return;
     }
+    this.updateArtLog();
   }
 
   showRenderError(err) {
@@ -3825,17 +3826,102 @@ class StudioProApp {
     this.syncAllInspectorsWithActiveLayer();
   }
 
+  /* =========================================================================
+     ART CONFIGURATION LOG (bottom half of the layers panel)
+     Built from the state: the canvas, the modules, and one line per control that is ON in the active layer.
+     ========================================================================= */
+
+  updateArtLog() {
+    const box = document.getElementById("art-log-lines");
+    if (!box) return;
+    const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const title = (s) => String(s || "").replace(/_/g, " ").replace(/^./, c => c.toUpperCase());
+    const pick = (map, key) => (map && map[key]) || title(key);
+    const line = (key, value) => `<p><span class="art-log__key">${esc(key)}</span>: ${esc(value)}</p>`;
+
+    const layers = this.getLayers();
+    const size = this.artboardSize ? `${this.artboardSize.w} × ${this.artboardSize.h} PX` : "";
+    const out = [`<p><span id="hud-resolution">${esc(size)}</span> • <span id="hud-layers-status">${layers.length} ${layers.length === 1 ? "LAYER" : "LAYERS"}</span></p>`];
+
+    const shapes = layers.filter(l => l.visible !== false).map(l => (Shapes[l.shape] || Shapes.circle).name);
+    if (shapes.length) out.push(line("Modules", shapes.join(" + ")));
+
+    const mod = this.getActiveModule();
+    const s = mod && mod.structure;
+    if (mod && s) {
+      out.push(`<p class="art-log__layer">${esc(mod.name || mod.id)}</p>`);
+      const GRIDS = { basic: "Grid", sliding: "Brick", sheared: "Diagonal", curved: "Curved", zigzag: "Zigzag", triangular: "Triangular", alternating: "Alternating", hexagonal: "Hexagonal", free: "Free" };
+      const SCHEMES = { centrifugal: "Centrifugal", concentric: "Concentric", centripetal: "Centripetal", spiral: "Spiral", multi_center: "Multiple centers" };
+      const PLACE = { centers: "Centers", intersections: "Intersections", both: "Both" };
+      const MIX = { none: "None", merge: "Merged", divide: "Divided" };
+      const KIN = { distortion: "Elastic", foreshortening: "3D tilt", rotation_wobble: "Wobble", scale_kinship: "Scale", hybrid: "Hibrid" };
+      const GATTR = { rotation: "Rotate", scale: "Scale", depth: "Depth", drift: "Drift", shape: "Shape", texture: "Texture", color: "Color" };
+      const PATH = { diagonal: "Diagonal", horizontal: "Horizontal", vertical: "Vertical", concentric: "Concentric", zigzag: "Zigzag" };
+      const ANOM = { focal: "Focal", fracture: "Rupture", swell: "Swell", tear: "Void", regrid: "Another grid" };
+      const DIM = { scale: "Scale", shape: "Shape", direction: "Angle", position: "Position", tone: "Tone", texture: "Texture", space: "Space" };
+      const SPREAD = { scattered: "Scattered", balanced: "Balanced", edge: "Toward the edges", center: "Toward the center" };
+      const CMODE = { point: "Point", void: "Void", line: "Line", line_void: "Away from line", free: "Hotspots", dense: "Dense", sparse: "Sparse" };
+
+      if (s.enabled) {
+        if (s.mode === "radiation") {
+          const r = s.radiation || {};
+          out.push(line("Structure", ["Radiation", pick(SCHEMES, r.scheme), `${r.rays} rays - ${r.rings} rings`, r.sizeMode === "actual" ? "Actual size" : "Fit to canvas"].join(" / ")));
+        } else {
+          const r = s.repetition || {};
+          out.push(line("Structure", ["Repetition", pick(GRIDS, r.gridType), `C${r.cols} - R${r.rows}`, r.sizeMode === "actual" ? "Actual size" : "Fit to canvas", pick(PLACE, r.placement || "centers"), pick(MIX, r.cellMix || "none")].join(" / ")));
+        }
+        const f = s.formalStructure;
+        if (f && f.enabled && s.mode !== "radiation") {
+          const parts = [];
+          if ((f.colRatio || 1) !== 1) parts.push(`Col ${f.colRatio}:1`);
+          if ((f.rowRatio || 1) !== 1) parts.push(`Row ${f.rowRatio}:1`);
+          if (f.colGrade) parts.push(`Col ${f.colGrade > 0 ? "+" : ""}${f.colGrade}%`);
+          if (f.rowGrade) parts.push(`Row ${f.rowGrade > 0 ? "+" : ""}${f.rowGrade}%`);
+          if (parts.length) out.push(line("Rhythm", parts.join(" / ")));
+        }
+      }
+      const sim = s.similarity;
+      if (sim && sim.enabled) {
+        const p = [pick(KIN, sim.kinshipType), `${sim.intensity}%`];
+        if (sim.association && sim.association !== "none") p.push(title(sim.association));
+        if (sim.imperfection && sim.imperfection !== "none") p.push(title(sim.imperfection));
+        out.push(line("Similarity", p.join(" / ")));
+      }
+      const g = s.gradation;
+      if (g && g.enabled) {
+        const p = [pick(GATTR, g.type), pick(PATH, g.pathway)];
+        if ((g.steps || 1) > 1) p.push(`${g.steps} cycles`);
+        if (g.reverse) p.push("Reversed");
+        out.push(line("Gradation", p.join(" / ")));
+      }
+      const an = s.anomaly;
+      if (an && an.enabled) out.push(line("Anomaly", [pick(ANOM, an.type), title(an.distribution || "single"), `${an.radius}px`].join(" / ")));
+      const co = s.contrast;
+      if (co && co.enabled) out.push(line("Contrast", [pick(DIM, co.dimension), `${co.dominanceRatio}%`, pick(SPREAD, co.spread || "scattered")].join(" / ")));
+      const cn = s.concentration;
+      if (cn && cn.enabled) out.push(line("Concentration", [pick(CMODE, cn.mode), title(cn.method || "move")].join(" / ")));
+      const tx = s.texture;
+      if (tx && tx.enabled) out.push(line("Texture", `Jitter ${tx.jitter} / Undulation ${tx.undulation}`));
+      const sp = s.space;
+      if (sp && sp.enabled) out.push(line("Space", `${title(sp.mode)} / Depth ${sp.depth}`));
+    }
+
+    const html = out.join("");
+    if (html !== this._artLogHtml) {
+      this._artLogHtml = html;
+      box.innerHTML = html;
+    }
+  }
+
   updateLayerCardsUI() {
     const container = document.getElementById("layers-stack-container");
     const addBtn = document.getElementById("btn-add-pattern");
     const layersCountBadge = document.getElementById("layers-count-badge");
-    const layersStatus = document.getElementById("hud-layers-status");
 
     const layers = this.getLayers();
     const count = layers.length;
 
     if (layersCountBadge) layersCountBadge.textContent = `${count}`;
-    if (layersStatus) layersStatus.textContent = `${count} LAYERS`;
 
     if (addBtn) {
       const isMax = count >= 5;
@@ -3917,6 +4003,7 @@ class StudioProApp {
       `;
     }).join("");
 
+    this.updateArtLog();
   }
 
   /* =========================================================================
@@ -6165,8 +6252,7 @@ class StudioProApp {
     column.style.setProperty("--artboard-w", `${w + BORDER * 2}px`);
     this.artboardSize = { w, h };
 
-    const resText = document.getElementById("hud-resolution");
-    if (resText) resText.textContent = `${w} × ${h} PX`;
+    this.updateArtLog();
   }
 
   centerArtboard() {
