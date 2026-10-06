@@ -221,19 +221,20 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .ds-card-header {
   display: flex;
   align-items: center;
-  gap: var(--spacing-4);
+  gap: var(--spacing-3);
 }
 .ds-card-title {
   flex: 1;
   min-width: 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--spacing-2);
 }
 .ds-card-title-text {
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-sm);
   font-weight: var(--typography-weight-600);
-  line-height: var(--line-height-body);
+  line-height: var(--line-height-small);
   color: var(--neutral-text-main);
   white-space: nowrap;
 }
@@ -252,7 +253,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
   line-height: var(--line-height-small);
 }
 
-/* Switch 32x20 (library "input-switch"): white track with a dark knob; off = knob left, on = knob right */
+/* Switch 32x20 (library "input-switch"): off = white track, dark knob on the left; on = dark track, white knob on the right */
 .ds-switch { position: relative; display: inline-flex; flex-shrink: 0; cursor: pointer; }
 .ds-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
 .ds-switch-track {
@@ -277,8 +278,8 @@ input[type="range"]:hover::-webkit-slider-thumb {
   background: var(--neutral-interactive-default);
   transition: transform 0.15s ease;
 }
-.ds-switch input:checked + .ds-switch-track { border-color: var(--neutral-interactive-default); }
-.ds-switch input:checked + .ds-switch-track::before { transform: translateX(var(--sizing-3)); }
+.ds-switch input:checked + .ds-switch-track { background: var(--neutral-interactive-active); border-color: var(--neutral-interactive-default); }
+.ds-switch input:checked + .ds-switch-track::before { background: var(--neutral-interactive-default-inverted); transform: translateX(var(--sizing-3)); }
 .ds-switch input:focus-visible + .ds-switch-track { outline: var(--border-weight-2) solid var(--neutral-interactive-default); outline-offset: var(--spacing-1); }
 
 /* Field + overline label */
@@ -451,10 +452,16 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .ds-color-row {
   display: flex;
   align-items: center;
-  gap: var(--spacing-4);
-  padding: 0 0 var(--spacing-3);
+  gap: var(--spacing-3);
   transition: opacity 0.15s ease;
 }
+.ds-color-row .ds-swatch { order: 1; }
+.ds-color-row .ds-color-hex { order: 2; }
+.ds-color-row .ds-color-clear { order: 3; }
+/* Module: label on the left, swatch and hex on the right, on one line (Figma inventory) */
+.ds-field:has(> .ds-color-picker) { flex-direction: row; align-items: center; gap: var(--spacing-5); }
+.ds-field:has(> .ds-color-picker) > .ds-label { flex: 1; }
+.ds-color-picker { display: flex; align-items: center; gap: var(--spacing-3); }
 .ds-color-row.is-dimmed .ds-color-clear { display: none; }
 .ds-color-clear {
   display: grid; place-items: center; flex-shrink: 0;
@@ -478,7 +485,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
   width: var(--sizing-6);
   height: var(--sizing-6);
   flex-shrink: 0;
-  border: var(--border-weight-1) solid var(--neutral-border-strong);
+  border: var(--border-weight-1) solid var(--neutral-border-main);
   border-radius: var(--border-radius-1);
   overflow: hidden;
   cursor: pointer;
@@ -508,14 +515,14 @@ input[type="range"]:hover::-webkit-slider-thumb {
   cursor: pointer;
 }
 .ds-dropdown-trigger:hover { background: var(--neutral-interactive-hover-inverted); }
+.ds-dropdown-trigger[aria-expanded="true"] { border-color: var(--neutral-interactive-default); }
 .ds-dropdown-trigger:focus-visible, .ds-dropdown-item:focus-visible { outline: var(--border-weight-2) solid var(--neutral-interactive-default); outline-offset: var(--spacing-1); }
 .ds-dropdown-current { display: flex; align-items: center; gap: var(--spacing-3); min-width: 0; }
 .ds-dropdown-menu {
   position: fixed; z-index: 60; /* floats above the panel; its place is set when it opens */
-  display: flex; flex-direction: column;
+  display: flex; flex-direction: column; gap: var(--spacing-1);
   padding: var(--spacing-2);
-  background: var(--neutral-surface-main, #fff);
-  border: var(--border-weight-1) solid var(--neutral-border-strong);
+  background: var(--neutral-bg-light);
   border-radius: var(--border-radius-1);
   box-shadow: var(--elevation-3x);
   max-height: 320px; overflow-y: auto;
@@ -523,21 +530,22 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .ds-dropdown-menu.hidden { display: none; }
 .ds-dropdown-item {
   display: flex; align-items: center; gap: var(--spacing-3);
-  padding: var(--spacing-3) var(--spacing-4);
+  min-height: var(--sizing-7);
+  padding: 0 var(--spacing-4);
   border: 0; border-radius: var(--border-radius-1);
   background: transparent; color: var(--neutral-text-main);
-  font-family: inherit; font-size: var(--font-size-sm); text-align: left; cursor: pointer;
+  font-family: inherit; font-size: var(--font-size-xs); line-height: var(--line-height-small); text-align: left; cursor: pointer;
 }
-.ds-dropdown-item:hover { background: var(--neutral-interactive-default-inverted); }
+.ds-dropdown-item:hover { background: var(--neutral-interactive-hover-inverted); }
 .ds-dropdown-item.active { background: var(--neutral-interactive-default); color: var(--neutral-text-main-inverted); }
 .ds-icon-grid { width: 20px; height: 20px; flex: none; }
 .ds-advanced > summary {
   display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-3);
   list-style: none; cursor: pointer;
-  padding: var(--spacing-3) var(--spacing-5);
+  padding: var(--spacing-3) var(--spacing-1);
   border-bottom: var(--border-weight-1) solid var(--neutral-border-main);
-  font-size: var(--font-size-md); font-weight: var(--typography-weight-400);
-  line-height: var(--line-height-body);
+  font-size: var(--font-size-sm); font-weight: var(--typography-weight-400);
+  line-height: var(--line-height-small);
   color: var(--neutral-text-main);
 }
 .ds-advanced > summary::-webkit-details-marker { display: none; }
