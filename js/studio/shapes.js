@@ -714,10 +714,10 @@ export function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
         if (fract(Math.abs(Math.sin(s * 17.3 + p * 61.7)) * 1000) >= crossing) return;
         const along = pt.along;
         const u = fract(Math.abs(Math.cos(s * 7.9 + p * 23.1)) * 1000) * 2 - 1; // -1 to 1, squared so most are near parallel
-        const ang = along + u * Math.abs(u) * (Math.PI * 14) / 180;
+        const ang = along + u * Math.abs(u) * (Math.PI * 20) / 180;
         const bend = (fract(Math.abs(Math.sin(s * 5.1 + p * 29.3)) * 1000) * 2 - 1) * (Math.PI * 10) / 180;
         const r = fract(Math.abs(Math.sin(s * 3.3 + p * 11.9)) * 1000);
-        const len = Math.min(40, size * (0.015 + 0.09 * Math.pow(r, 2)));
+        const len = Math.min(40, size * (0.03 + 0.17 * Math.pow(r, 2)));
         const hair = [{ x: pt.x, y: pt.y }];
         for (let k = 1; k <= 4; k++) {
           const t = k / 4, a2 = ang + bend * t * t;
@@ -757,8 +757,8 @@ export function texturedShape(shapeDef, tex, seed, strokeOnly) {
         ctx.save();
         ctx.beginPath();
         for (const sp of geo) for (const hair of sp.hairs || []) hair.forEach((pt, i) => (i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y)));
-        ctx.lineWidth = Math.max(0.3, ctx.lineWidth * 0.35);
-        ctx.globalAlpha *= 0.75;
+        ctx.lineWidth = Math.max(0.4, ctx.lineWidth * 0.5);
+        ctx.globalAlpha *= 0.85;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.stroke();
