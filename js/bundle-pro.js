@@ -1020,9 +1020,9 @@ const createDefaultLayerStructure = () => ({
   space: {
     enabled: false,
     mode: "isometric", // isometric, foreshortening, fluctuating, conflicting (paradox)
-    depth: 10, // extrusion depth, 10 to 80 px
-    angle: 30, // projection angle, -60 to 60
-    shading: 50, // facet shading contrast, 20 to 100
+    depthPct: 20, // extrusion depth as a % of the module size, 5 to 100
+    angle: 30, // projection angle, -180 to 180
+    shading: 50, // facet shading contrast, 5 to 100
     showIsoGuides: false
   }
 });
@@ -1145,15 +1145,15 @@ class StudioEngine {
   // Draw illusory 3D spatial form (Space)
   drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space) {
     const mode = space.mode || "isometric";
-    const rawDepth = space.depth ?? 35;
-    const depth = rawDepth * Math.max(0.18, Math.min(1.4, size / 85));
+    // The depth is a share of the module; projects saved in pixels (depth) are converted when they are opened
+    const depth = (size * (space.depthPct ?? 20)) / 100;
     const angleRad = ((space.angle ?? 30) * Math.PI) / 180;
     const shading = (space.shading ?? 65) / 100;
 
     if (mode === "foreshortening") {
       // Fig. 73b: 3D Spatial Plane Tilt (Foreshortening)
       const tiltAmount = Math.sin(angleRad) * 0.45;
-      const depthSquash = Math.max(0.2, 1 - (depth / 100) * 0.6);
+      const depthSquash = Math.max(0.2, 1 - (depth / Math.max(1, size)) * 0.6);
 
       // Subtle cast shadow on ground plane
       ctx.save();
@@ -1176,23 +1176,24 @@ class StudioEngine {
       const dir = isAlternating ? -1 : 1;
       const totalDx = Math.cos(angleRad) * depth * dir;
       const totalDy = -Math.sin(angleRad) * depth * dir;
-      const steps = Math.max(6, Math.min(20, Math.round(depth / 3)));
+      const steps = Math.max(6, Math.min(80, Math.round(depth / 3)));
 
       if (strokeOnly) {
         // Wireframe fluctuating prism
         ctx.save();
         ctx.strokeStyle = fgColor;
         ctx.lineWidth = lineWidth;
+        // The front face stays where the module is; the faint far end sits at the end of the extrusion
+        ctx.save();
+        ctx.translate(totalDx, totalDy);
         ctx.globalAlpha = 0.35;
         shapeDef.draw(ctx, size);
         ctx.stroke();
+        ctx.restore();
 
-        ctx.save();
-        ctx.translate(totalDx, totalDy);
         ctx.globalAlpha = 1.0;
         shapeDef.draw(ctx, size);
         ctx.stroke();
-        ctx.restore();
         ctx.restore();
       } else {
         // Volumetric shaded slices with alternating facet contrast
@@ -1201,7 +1202,7 @@ class StudioEngine {
         const sideAlpha = isAlternating ? (0.2 + shading * 0.35) : (0.55 - shading * 0.25);
         ctx.globalAlpha = Math.max(0.12, Math.min(0.85, sideAlpha));
 
-        for (let s = 0; s < steps; s++) {
+        for (let s = 0; s <= steps; s++) {
           const t = s / steps;
           ctx.save();
           ctx.translate(totalDx * t, totalDy * t);
@@ -1211,11 +1212,8 @@ class StudioEngine {
         }
         ctx.restore();
 
-        // Front face
-        ctx.save();
-        ctx.translate(totalDx, totalDy);
+        // Front face, in the module's own place
         this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
-        ctx.restore();
       }
 
     } else if (mode === "conflicting") {
@@ -1299,23 +1297,23 @@ class StudioEngine {
       // Default: Fig. 74d Isometric Volumetric Extrusion
       const totalDx = Math.cos(angleRad) * depth;
       const totalDy = -Math.sin(angleRad) * depth;
-      const steps = Math.max(8, Math.min(28, Math.round(depth / 2.2)));
+      const steps = Math.max(8, Math.min(120, Math.round(depth / 2.2)));
 
       if (strokeOnly) {
-        // Wireframe extrusion
+        // Wireframe extrusion: the front face stays in place, the faint far end sits at the end of the extrusion
         ctx.save();
         ctx.strokeStyle = fgColor;
         ctx.lineWidth = lineWidth;
+        ctx.save();
+        ctx.translate(totalDx, totalDy);
         ctx.globalAlpha = 0.35;
         shapeDef.draw(ctx, size);
         ctx.stroke();
+        ctx.restore();
 
-        ctx.save();
-        ctx.translate(totalDx, totalDy);
         ctx.globalAlpha = 1.0;
         shapeDef.draw(ctx, size);
         ctx.stroke();
-        ctx.restore();
         ctx.restore();
       } else {
         // Volumetric shaded extrusion body: the side is one solid tone (the figure mixed with the ground by the
@@ -1325,7 +1323,7 @@ class StudioEngine {
         const ground = bgColor || (this.state.invertFigureGround ? "#111111" : "#FAFAFA");
         ctx.fillStyle = this.mixHex(ground, fgColor, Math.max(0.12, Math.min(0.85, sideAlpha)));
 
-        for (let s = 0; s < steps; s++) {
+        for (let s = 0; s <= steps; s++) {
           const t = s / steps;
           ctx.save();
           ctx.translate(totalDx * t, totalDy * t);
@@ -1335,8 +1333,9 @@ class StudioEngine {
         }
         ctx.restore();
 
-        // Architectural facet edge contour
+        // Architectural facet edge contour, at the far end of the extrusion
         ctx.save();
+        ctx.translate(totalDx, totalDy);
         ctx.strokeStyle = fgColor;
         ctx.lineWidth = 1;
         ctx.globalAlpha = 0.3 * shading;
@@ -1344,11 +1343,8 @@ class StudioEngine {
         ctx.stroke();
         ctx.restore();
 
-        // Front face
-        ctx.save();
-        ctx.translate(totalDx, totalDy);
+        // Front face, in the module's own place
         this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
-        ctx.restore();
       }
     }
   }
@@ -3770,8 +3766,24 @@ class StudioProApp {
       return typeof src === typeof def ? src : def;
     };
 
+    // Projects saved before some controls became percentages: convert their pixels (the merge below drops keys it does not know)
+    const migrate = (src) => {
+      const st = src && src.structure;
+      if (!st || typeof st !== "object") return src;
+      const rep = st.repetition;
+      if (rep && typeof rep === "object" && rep.curveAmount === undefined && typeof rep.curveIntensity === "number") {
+        rep.curveAmount = Math.min(1, Math.round((rep.curveIntensity / (600 / Math.max(1, rep.cols || 4))) * 100) / 100);
+      }
+      const sp = st.space;
+      if (sp && typeof sp === "object" && sp.depthPct === undefined && typeof sp.depth === "number") {
+        sp.depthPct = Math.max(5, Math.min(100, Math.round((sp.depth / 85) * 100)));
+      }
+      return src;
+    };
+
     const used = new Set();
     const layers = raw.layers.slice(0, 5).map((src, i) => {
+      migrate(src);
       const layer = merge(createDefaultLayer(`layer-${i + 1}`, `Layer ${i + 1}`), src);
       if (!STUDIO_SHAPE_KEYS.includes(layer.shape)) layer.shape = "circle";
       if (!layer.id || used.has(layer.id)) layer.id = `layer-${i + 1}-${Date.now() % 100000}`;
@@ -6042,7 +6054,7 @@ class StudioProApp {
       const num = document.getElementById(numId);
       if (num) num.value = `${value}${suffix}`;
     };
-    setPair("input-space-depth", "num-space-depth", space.depth ?? 10, "px");
+    setPair("input-space-depth", "num-space-depth", space.depthPct ?? 20, "%");
     setPair("input-space-angle", "num-space-angle", space.angle ?? 30, "º");
     setPair("input-space-shading", "num-space-shading", space.shading ?? 50, "%");
 
@@ -6100,8 +6112,8 @@ class StudioProApp {
         commit(sp => { sp[key] = val; }, `Space ${label}: ${val}${suffix}`);
       });
     };
-    bindPair("input-space-depth", "num-space-depth", { min: 10, max: 80, suffix: "px", label: "Depth", key: "depth" });
-    bindPair("input-space-angle", "num-space-angle", { min: -60, max: 60, suffix: "º", label: "Angle", key: "angle" });
+    bindPair("input-space-depth", "num-space-depth", { min: 5, max: 100, suffix: "%", label: "Depth", key: "depthPct" });
+    bindPair("input-space-angle", "num-space-angle", { min: -180, max: 180, suffix: "º", label: "Angle", key: "angle" });
     bindPair("input-space-shading", "num-space-shading", { min: 5, max: 100, suffix: "%", label: "Shading", key: "shading" });
 
     document.getElementById("toggle-space-guides")?.addEventListener("change", (e) => {

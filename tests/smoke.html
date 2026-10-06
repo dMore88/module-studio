@@ -77,7 +77,7 @@
       const co = st.contrast; co.enabled = rb(); co.dimension = pick(["scale","shape","direction","position","tone","texture","space"]); co.positionShift = ri(5, 50); co.positionAngle = ri(0, 360); co.dominanceRatio = ri(50, 95); co.scaleFactor = 0.2 + rnd() * 2.8; co.contrastShape = pick(SHAPES); co.angle = ri(15, 90); co.highlightContrast = rb(); co.spread = pick(["scattered","balanced","edge","center"]);
       const cn = st.concentration; cn.enabled = rb(); cn.mode = pick(["point","void","line","line_void","free","dense","sparse"]); cn.method = pick(["move","absence"]); cn.edgeFade = rb(); cn.attractorX = 0.05 + rnd() * 0.9; cn.attractorY = 0.05 + rnd() * 0.9; cn.power = ri(20, 100); cn.radius = ri(80, 450); cn.lineAxis = pick(["horizontal","vertical"]); cn.alignToField = rb(); cn.densityScale = rb(); cn.showAttractor = rb(); cn.focusCount = ri(2, 6);
       const tx = st.texture; tx.enabled = rb(); tx.jitter = ri(0, 10); tx.skipChance = ri(0, 90); tx.crossing = ri(0, 100); tx.undulation = ri(0, 30);
-      const sp = st.space; sp.enabled = rb(); sp.mode = pick(["isometric","foreshortening","fluctuating","conflicting"]); sp.depth = ri(10, 80); sp.angle = ri(-60, 60); sp.shading = ri(20, 100); sp.showIsoGuides = rb();
+      const sp = st.space; sp.enabled = rb(); sp.mode = pick(["isometric","foreshortening","fluctuating","conflicting"]); sp.depthPct = ri(5, 100); sp.angle = ri(-180, 180); sp.shading = ri(5, 100); sp.showIsoGuides = rb();
     }
   }
 
@@ -204,6 +204,37 @@
       assert(q("#num-texture-jitter").value === "40%" && q("#num-texture-undulation").value === "50%", `Shown as ${q("#num-texture-jitter").value} / ${q("#num-texture-undulation").value}`);
       fire(q("#input-texture-jitter"), 100);
       assert(Math.abs(L.structure.texture.jitter - 10) < 1e-9, "100 % jitter should store 10 px");
+    });
+
+    await test("Space: the front face stays in place whatever the angle; depth is a share of the module; old pixel projects convert", () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: false, width: 100, height: 100 }); app.state.showSafeBounds = false;
+      L.structure.enabled = true; L.structure.mode = "repetition"; Object.assign(L.structure.repetition, { cols: 1, rows: 1, sizeMode: "fit" });
+      const dpr = cv.width / 600;
+      // The module is a 100 px square at the middle of the canvas: its centre must be ink at every angle (it is the front face)
+      const frontOk = (angle, depthPct) => {
+        L.structure.space = { enabled: true, mode: "isometric", depthPct, angle, shading: 50, showIsoGuides: false };
+        drawRaw(app);
+        const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+        const at = (x, y) => d[(Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4];
+        // a corner of the front face (inside it) is the figure colour, and the far corner of the old position is not inked by the front
+        return at(300 + 45, 300 + 45) < 100 && at(300 - 45, 300 - 45) < 100;
+      };
+      for (const a of [-170, -90, 0, 30, 90, 135, 180]) assert(frontOk(a, 40), `The front face moved at ${a} degrees`);
+      // depth as a share of the module: 50 % of a 100 px square reaches 50 px from the front
+      L.structure.space = { enabled: true, mode: "isometric", depthPct: 50, angle: 0, shading: 50, showIsoGuides: false };
+      drawRaw(app);
+      const d2 = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      const px = (x, y) => d2[(Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4];
+      assert(px(300 + 50 + 30, 300) < 230 && px(300 + 50 + 70, 300) > 230, "A depth of 50 % should reach about 50 px beyond the front face");
+      // old files: pixels become percentages
+      const saved = JSON.parse(JSON.stringify(app.state));
+      saved.layers[0].structure.space = { enabled: true, mode: "isometric", depth: 17, angle: 30, shading: 50 };
+      saved.layers[0].structure.repetition.curveIntensity = 36; saved.layers[0].structure.repetition.cols = 4; delete saved.layers[0].structure.repetition.curveAmount;
+      app.loadProjectText(JSON.stringify(saved));
+      assert(app.state.layers[0].structure.space.depthPct === 20, `17 px should open as 20 % (got ${app.state.layers[0].structure.space.depthPct})`);
+      assert(Math.abs(app.state.layers[0].structure.repetition.curveAmount - 0.24) < 1e-9, `36 px of wave on 150 px cells is 24 % (got ${app.state.layers[0].structure.repetition.curveAmount})`);
     });
 
     await test("Undo and redo restore a per-layer setting", () => {

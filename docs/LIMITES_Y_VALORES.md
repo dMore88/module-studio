@@ -160,8 +160,8 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 ### Space
 | Control | Mín. | Máx. | Paso | Razón |
 | :-- | :-- | :-- | :-- | :-- |
-| Extrusion depth | 10 | 80 px | 1 | Profundidad aparente; bajo 10 no se ve volumen. |
-| Projection angle | −60° | 60° | 1 | Dirección del volumen. |
+| Extrusion depth | 5 % | 100 % | 1 | Profundidad como % del tamaño del módulo (un módulo de 200 px con 50 % se extruye 100 px); bajo 5 % no se ve volumen. Los proyectos antiguos en px se convierten al abrirlos (85 px = 100 %). |
+| Projection angle | −180º | 180º | 1 | Dirección del volumen; con ±180 se cubren todas las direcciones. La cara frontal no se mueve. |
 | Facet shading contrast | 5 % | 100 % | 1 | Diferencia de tono entre la cara frontal y el costado: a más %, el costado es más claro. Ojo: ni 5 % ni 0 % dan caras idénticas, el costado conserva ~60 % de la tinta de la cara frontal. |
 
 ---
@@ -185,7 +185,7 @@ Una sola capa (**Layer 1**): círculo, trazo (no relleno), color `#18181f`, traz
 | **Contrast** | Scale, Dominance 80 %, Scattered, Scale 2,2×, Tone 50 %, Shift 25 % a 45°, Clash angle 45°, forma de minoría cruz, color de acento `#f43f5e` (apagado) |
 | **Concentration** | Point, Move, atractor en el centro (50 %, 50 %), Gathering pull 50 %, Field radius 250, 2 focos, eje horizontal, flujo y densidad apagados, guía del atractor apagada |
 | **Texture** | Jitter 10 %, Line skipping 10 %, Random lines 10 %, Perimeter undulation 30 % |
-| **Space** | Isometric, Extrusion depth 10, Projection angle 30°, Shading 50 %, guías isométricas apagadas |
+| **Space** | Isometric, Extrusion depth 20 %, Projection angle 30º, Shading 50 %, guías isométricas apagadas |
 | **Hide modifiers** | apagado; solo actúa con el panel Module abierto |
 
 ### Una nota

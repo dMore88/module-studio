@@ -376,8 +376,24 @@ export class StudioProApp {
       return typeof src === typeof def ? src : def;
     };
 
+    // Projects saved before some controls became percentages: convert their pixels (the merge below drops keys it does not know)
+    const migrate = (src) => {
+      const st = src && src.structure;
+      if (!st || typeof st !== "object") return src;
+      const rep = st.repetition;
+      if (rep && typeof rep === "object" && rep.curveAmount === undefined && typeof rep.curveIntensity === "number") {
+        rep.curveAmount = Math.min(1, Math.round((rep.curveIntensity / (600 / Math.max(1, rep.cols || 4))) * 100) / 100);
+      }
+      const sp = st.space;
+      if (sp && typeof sp === "object" && sp.depthPct === undefined && typeof sp.depth === "number") {
+        sp.depthPct = Math.max(5, Math.min(100, Math.round((sp.depth / 85) * 100)));
+      }
+      return src;
+    };
+
     const used = new Set();
     const layers = raw.layers.slice(0, 5).map((src, i) => {
+      migrate(src);
       const layer = merge(createDefaultLayer(`layer-${i + 1}`, `Layer ${i + 1}`), src);
       if (!STUDIO_SHAPE_KEYS.includes(layer.shape)) layer.shape = "circle";
       if (!layer.id || used.has(layer.id)) layer.id = `layer-${i + 1}-${Date.now() % 100000}`;
@@ -2648,7 +2664,7 @@ export class StudioProApp {
       const num = document.getElementById(numId);
       if (num) num.value = `${value}${suffix}`;
     };
-    setPair("input-space-depth", "num-space-depth", space.depth ?? 10, "px");
+    setPair("input-space-depth", "num-space-depth", space.depthPct ?? 20, "%");
     setPair("input-space-angle", "num-space-angle", space.angle ?? 30, "º");
     setPair("input-space-shading", "num-space-shading", space.shading ?? 50, "%");
 
@@ -2706,8 +2722,8 @@ export class StudioProApp {
         commit(sp => { sp[key] = val; }, `Space ${label}: ${val}${suffix}`);
       });
     };
-    bindPair("input-space-depth", "num-space-depth", { min: 10, max: 80, suffix: "px", label: "Depth", key: "depth" });
-    bindPair("input-space-angle", "num-space-angle", { min: -60, max: 60, suffix: "º", label: "Angle", key: "angle" });
+    bindPair("input-space-depth", "num-space-depth", { min: 5, max: 100, suffix: "%", label: "Depth", key: "depthPct" });
+    bindPair("input-space-angle", "num-space-angle", { min: -180, max: 180, suffix: "º", label: "Angle", key: "angle" });
     bindPair("input-space-shading", "num-space-shading", { min: 5, max: 100, suffix: "%", label: "Shading", key: "shading" });
 
     document.getElementById("toggle-space-guides")?.addEventListener("change", (e) => {
