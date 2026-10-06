@@ -51,7 +51,7 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | Qué | Valor | Nota |
 | :-- | :-- | :-- |
 | Módulo | 1 a 2000 px | 1:1, sin escalar |
-| Contenedor (= celda) | 10 a 2000 px | 0 significa "todo el lienzo" |
+| Contenedor (= celda) | 10 a 2000 px | Por defecto 100 × 100; en un proyecto antiguo, 0 significa "todo el lienzo". Al pasar a Actual size, si no se ha tocado, empieza del tamaño de una celda de Fit |
 | Celda mínima al dibujar | 10 px | coincide con el mínimo del contenedor |
 | Bloque máximo | 100 × 2000 = **200 000 px** de ancho y de alto | solo se ve lo que cae en el lienzo |
 | Lo que se ve | el centro del bloque, recortado al borde del lienzo | con 9 columnas de 200 px solo caben unas 3 |
@@ -169,7 +169,7 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 ## 3. Valores por defecto
 
 ### Al abrir la app
-Una sola capa (**Layer 1**): círculo, trazo (no relleno), color `#18181f`, trazo 1 px, **Width 100 × Height 100**, rotación 0°, desplazamientos 0, contenedor "todo el lienzo", *Show container* encendido, *Clip container* apagado. Layout y los siete modificadores, apagados. Proporción 1:1, guías de cuadrícula encendidas, color de guías `#f24822`.
+Una sola capa (**Layer 1**): círculo, trazo (no relleno), color `#18181f`, trazo 1 px, **Width 100 × Height 100**, rotación 0°, desplazamientos 0, **contenedor 100 × 100** (del tamaño del módulo, para verlo de un vistazo), *Show container* encendido, *Clip container* apagado. Layout y los siete modificadores, apagados. Proporción 1:1, guías de cuadrícula encendidas, color de guías `#f24822`.
 
 ### Cuando se enciende cada control
 

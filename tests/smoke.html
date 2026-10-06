@@ -964,10 +964,10 @@
       reset();
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="module"]').click(); await wait(60);
-      assert(q("#num-active-container-w").value === "600px" && q("#num-active-container-h").value === "600px", "The container should start as the whole canvas");
+      assert(q("#num-active-container-w").value === "100px" && q("#num-active-container-h").value === "100px", "The container should start as big as the module (100 x 100)");
       const cw = q("#input-active-container-w"); cw.value = 240; cw.dispatchEvent(new win.Event("input", { bubbles: true }));
       assert(app.getActiveModule().containerW === 240 && q("#num-active-container-w").value === "240px", "Container width slider out of sync");
-      app.getActiveModule().containerW = 0; app.getActiveModule().containerH = 0;
+      app.getActiveModule().containerW = 0; app.getActiveModule().containerH = 0; app.getActiveModule().containerAuto = true;
       q('[data-rail-tab="layout"]').click(); await wait(80);
       q("#toggle-layout-structure").click();
       const rep = () => app.getActiveLayerStructure().repetition;

@@ -1038,8 +1038,9 @@ const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "circle", 
   rotation,
   offsetX,
   offsetY,
-  containerW: 0, // width of the module's container in px (0 = the whole canvas)
-  containerH: 0, // height of the module's container in px (0 = the whole canvas)
+  containerW: 100, // width of the module's container in px (0 = the whole canvas); starts as big as the module
+  containerH: 100, // height of the module's container in px (0 = the whole canvas)
+  containerAuto: true, // the container has not been set by hand: Actual size may start it from the Fit cell
   showContainer: true, // draw the container as a dashed frame on the canvas (an on-screen guide, never exported)
   clipContainer: false, // cut the module at the edge of its container (Clip cell, in Layout, cuts at the cell instead)
   wireframe: true,
@@ -3775,6 +3776,8 @@ class StudioProApp {
 
     // Projects saved before some controls became percentages: convert their pixels (the merge below drops keys it does not know)
     const migrate = (src) => {
+      // A container set by hand in an older project is not "auto": Actual size must not start it again
+      if (src && typeof src === "object" && src.containerAuto === undefined && (src.containerW > 0 || src.containerH > 0)) src.containerAuto = false;
       const st = src && src.structure;
       if (!st || typeof st !== "object") return src;
       const rep = st.repetition;
@@ -4383,10 +4386,11 @@ class StudioProApp {
   // so the structure keeps its rhythm. A container that was already set is left alone.
   startContainerFromCell(cols, rows) {
     const mod = this.getActiveModule();
-    if (!mod || mod.containerW > 0 || mod.containerH > 0) return;
+    if (!mod || mod.containerAuto === false) return;
     const cfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
     mod.containerW = Math.round(cfg.w / Math.max(1, cols));
     mod.containerH = Math.round(cfg.h / Math.max(1, rows));
+    mod.containerAuto = false;
   }
 
   syncRepetitionExtras(rep) {
@@ -4778,9 +4782,10 @@ class StudioProApp {
         if (struct.radiation.sizeMode === "actual") {
           // each ring starts as thick as a Fit ring
           const mod = this.getActiveModule();
-          if (mod && !(mod.containerW > 0 || mod.containerH > 0)) {
+          if (mod && mod.containerAuto !== false) {
             const cfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
             mod.containerH = mod.containerW = Math.round((0.5 * Math.min(cfg.w, cfg.h)) / Math.max(2, struct.radiation.rings));
+            mod.containerAuto = false;
           }
         }
         struct.mode = "radiation";
@@ -6291,11 +6296,13 @@ class StudioProApp {
     this.bindSliderWithNumber("input-active-container-w", "num-active-container-w", (val) => {
       const mod = this.getActiveModule();
       mod.containerW = Math.max(10, val);
+      mod.containerAuto = false;
       this.render();
     }, "Container Width", "px");
     this.bindSliderWithNumber("input-active-container-h", "num-active-container-h", (val) => {
       const mod = this.getActiveModule();
       mod.containerH = Math.max(10, val);
+      mod.containerAuto = false;
       this.render();
     }, "Container Height", "px");
 
