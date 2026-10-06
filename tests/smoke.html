@@ -389,7 +389,7 @@
         assert(flyout.scrollWidth <= flyout.clientWidth + 1, `${btn.dataset.railTab}: the panel overflows horizontally`);
         const tops = Array.from(tab.querySelectorAll(".ds-slider .ds-value")).filter(v => v.offsetParent).map(v => Math.round(v.getBoundingClientRect().top));
         assert(new Set(tops).size === tops.length, `${btn.dataset.railTab}: two sliders share a row`);
-        assert(flyout.getBoundingClientRect().width === 340, `${btn.dataset.railTab}: the panel is not 340 px wide`);
+        assert(flyout.getBoundingClientRect().width === 300, `${btn.dataset.railTab}: the panel is not 300 px wide`);
         for (const sw of Array.from(tab.querySelectorAll(".ds-swatch")).filter(e => e.offsetParent)) assert(Math.round(sw.getBoundingClientRect().width) === 24, `${btn.dataset.railTab}: a color swatch is not 24 px`);
         const fields = Array.from(tab.querySelectorAll(".ds-field")).filter(e => e.offsetParent && e.querySelector(":scope > .ds-slider")).sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
         for (let i = 1; i < fields.length; i++) {

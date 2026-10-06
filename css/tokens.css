@@ -182,13 +182,6 @@
   --layout-margin: 48px;
   --breakpoint-min-width: 1200px;
 
-  /* ---- Values drawn in the Figma design page but NOT defined as variables there ----
-     (slider track, value box). Kept as named component tokens until Figma defines them. */
-  --ds-slider-track: #1d1d25;
-  --ds-value-bg: #f0f0f2;
-  --ds-value-border: #292932;
-  --ds-value-radius: 7px;
-  --ds-value-font: var(--typography-family-mono);
+  /* ---- Component tokens not defined as Figma variables ---- */
   --ds-canvas-dot: rgba(0, 0, 0, 0.08); /* dotted workspace background */
-  --ds-value-font-size: 15px;
 }

@@ -75,6 +75,8 @@ export class StudioProApp {
     this.setupSpace();
     this.setupTexture();
     this.setupAccessibility();
+    document.addEventListener("input", (e) => { if (e.target.matches && e.target.matches('.ds-slider input[type="range"]')) this.paintRange(e.target); });
+    this.paintAllRanges();
     this.setupShapeInspector();
 
     // Initial render
@@ -179,6 +181,7 @@ export class StudioProApp {
     this.syncSpaceInspectorWithActiveLayer();
     this.syncTextureInspectorWithActiveLayer();
     this.updateRailIndicatorDots();
+    this.paintAllRanges();
   }
 
   render() {
@@ -2892,7 +2895,7 @@ export class StudioProApp {
     const cfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
     const ratio = cfg.w / cfg.h;
 
-    const flyoutWidth = flyout ? flyout.offsetWidth : 340;
+    const flyoutWidth = flyout ? flyout.offsetWidth : 300;
     const flyoutLeft = workspace.getBoundingClientRect().right - parseFloat(getComputedStyle(workspace).getPropertyValue("--flyout-right") || 66) - flyoutWidth;
     const maxOuterW = Math.max(160, flyoutLeft - GAP - column.getBoundingClientRect().left);
 
@@ -2959,7 +2962,19 @@ export class StudioProApp {
 
   syncControlValue(inputId, value) {
     const el = document.getElementById(inputId);
-    if (el) el.value = value;
+    if (el) { el.value = value; this.paintRange(el); }
+  }
+
+  // The ink part of a slider's 4 px track: how far the value is between its min and max
+  paintRange(el) {
+    if (!el || el.type !== "range") return;
+    const min = Number(el.min || 0), max = Number(el.max || 100);
+    const share = max > min ? ((Number(el.value) - min) / (max - min)) * 100 : 0;
+    el.style.setProperty("--fill", `${Math.max(0, Math.min(100, share))}%`);
+  }
+
+  paintAllRanges() {
+    document.querySelectorAll('.ds-slider input[type="range"]').forEach(el => this.paintRange(el));
   }
 
   syncCheckbox(id, checked) {
