@@ -93,7 +93,7 @@ Cada capa es un módulo independiente. Se pueden tener hasta 5 capas con visibil
 * **`visible`**: visibilidad de la capa (icono del ojo en la tarjeta).
 * **Advanced** (sección plegable al final del panel):
   * **`containerW` / `containerH`** (*Container width* y *Container height*, 10 a 2000 px, por defecto el lienzo entero): el **contenedor**, un marco centrado en el lienzo (como un frame de Figma) dentro del que se compone el módulo. Es la celda de *Actual size* y el recorte de *Clip container*.
-  * **`showContainer`** (*Show container*, encendido por defecto): muestra u oculta el marco punteado del contenedor en el lienzo (usa el color de guías). El contenedor funciona igual aunque esté oculto.
+  * **`showContainer`** (*Show container*, encendido por defecto): muestra u oculta el marco punteado del contenedor en el lienzo (usa el color de guías). Tiene su propio interruptor: se ve aunque el botón de guías del encabezado (retícula de fondo) esté apagado, y nunca se exporta. El contenedor funciona igual aunque esté oculto.
 * **`clipContainer`** (*Clip container*, casilla en *Advanced*, debajo de *Show container*, apagada por defecto): recorta el módulo al borde de su **contenedor**. En *Fit to canvas* el contenedor conserva sus proporciones y se reduce con la misma escala que el módulo (como un frame dentro de otro frame de Figma), también en una retícula con ritmo A:B; en *Actual size* es la celda; sin retícula es el marco centrado del lienzo; en radial acompaña al módulo en su anillo. Se puede usar a la vez que *Clip cell*: el módulo se recorta por los dos. Jerarquía: celda → contenedor → módulo.
 * **Hide modifiers** (casilla en *Advanced*, debajo de *Show container* porque son del mismo grupo: ver el contenedor del módulo; apagada por defecto): ayuda de edición solo de pantalla. Mientras el panel *Module* está abierto, la capa activa se dibuja **sola, sin su Layout structure y sin sus siete modificadores** (Similarity, Gradation, Anomaly, Contrast, Concentration, Texture y Space): solo el módulo dentro de su contenedor. Para ajustarlo con los vecinos, se desmarca la casilla o se enciende la retícula a mano. Al abrir otro panel o cerrar el flyout, todo vuelve solo. No cambia el proyecto, no se guarda y **nunca afecta a una exportación**. Mientras actúa, el registro *Art log* muestra `Modifiers: hidden`.
 
@@ -224,7 +224,7 @@ Introduce una zona de irregularidad donde prevalece una estructura regular previ
 Establece disparidad formal entre una **mayoría dominante** y una **minoría discordante**. Requiere retícula. Estado en `layer.structure.contrast`.
 
 * **`dimension`** (*Dimension*, dropdown con siete opciones):
-  * `scale`: minoría monumental (`scaleFactor`, *Contrast Scale Multiplier*, 0,2 a 5x, por defecto 2,2).
+  * `scale`: minoría monumental (`scaleFactor`, *Contrast Scale Multiplier*, 0,2 a 5x, por defecto 2).
   * `shape`: minoría con glifo discordante (`contrastShape`, *Minority Shape*, la lista de 22 formas, en dropdown).
   * `direction` (*Angle*): minoría rotada (`angle`, *Clash Angle*, 5º a 90º).
   * `position` (*Position*): la minoría se desplaza dentro de su celda: **`positionShift`** (*Shift*, 0 a 50 % del lado menor de la celda, por defecto 25) en la dirección **`positionAngle`** (*Shift direction*, 0 a 360º). La mayoría queda centrada.

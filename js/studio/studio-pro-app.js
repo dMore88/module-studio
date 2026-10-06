@@ -2357,7 +2357,7 @@ export class StudioProApp {
     const numDominance = document.getElementById("num-contrast-dominance");
     if (numDominance) numDominance.value = `${dominance}%`;
 
-    const scale = con.scaleFactor ?? 2.2;
+    const scale = con.scaleFactor ?? 2;
     this.syncControlValue("input-contrast-scale", scale);
     const numScale = document.getElementById("num-contrast-scale");
     if (numScale) numScale.value = `${scale}x`;

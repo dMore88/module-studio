@@ -237,6 +237,20 @@
       assert(Math.abs(app.state.layers[0].structure.repetition.curveAmount - 0.24) < 1e-9, `36 px of wave on 150 px cells is 24 % (got ${app.state.layers[0].structure.repetition.curveAmount})`);
     });
 
+    await test("Show container draws its frame even with the coordinate grid off, and never in an export", () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const L = app.state.layers[0]; Object.assign(L, { containerW: 300, containerH: 300, showContainer: true });
+      app.state.showSafeBounds = false;
+      const guide = () => { drawRaw(app); const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 200 && d[i + 1] < 120 && d[i + 2] < 90) n++; return n; };
+      assert(guide() > 500, "The container frame is missing with the grid off");
+      L.showContainer = false;
+      assert(guide() === 0, "Show container off should hide the frame");
+      L.showContainer = true; app.engine.exporting = true;
+      assert(guide() === 0, "The frame must never reach an export");
+      app.engine.exporting = false;
+    });
+
     await test("Undo and redo restore a per-layer setting", () => {
       reset();
       app.history = []; app.historyLabels = []; app.historyIndex = -1;
@@ -904,7 +918,7 @@
         const st = JSON.parse(JSON.stringify(app.state));
         st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = guides; st.guideColor = "#222222"; st.aspectRatio = "1:1";
         const L = st.layers[0];
-        Object.assign(L, { shape: "square", width: 100, height: 100, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false, containerW: 150, containerH: 150 }, layer);
+        Object.assign(L, { shape: "square", width: 100, height: 100, offsetX: 0, offsetY: 0, rotation: 0, wireframe: false, containerW: 150, containerH: 150, showContainer: guides }, layer);
         L.structure.enabled = true; L.structure.mode = mode;
         Object.assign(L.structure.repetition, { cols: 3, rows: 3, gridType: "basic", sizeMode: "actual", activeClipping: false }, rep);
         Object.assign(L.structure.radiation, { rays: 12, rings: 4, scheme: "centrifugal", sizeMode: "fit" }, rad);

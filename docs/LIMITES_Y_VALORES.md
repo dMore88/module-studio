@@ -182,7 +182,7 @@ Una sola capa (**Layer 1**): círculo, trazo (no relleno), color `#18181f`, traz
 | **Similarity** | Elastic, intensidad 50 %, jitter 0, asociación None (mix 50 %), imperfección None (cantidad 30 %), semilla 42 |
 | **Gradation** | Rotate, Diagonal, Range 180, Cycles 1, Restart, Speed 0, filas alternas apagado, *Reverse* apagado, Becomes triangle, End color `#f43f5e` |
 | **Anomaly** | Focal, un punto en el centro (50 %, 50 %), Radius 150, Severity 60, Single, Count 5, Seed 7, se desvía en forma, escala, rotación y posición, forma intrusa triángulo, zona Another grid = Brick, color de acento `#f43f5e` (apagado), punto visible |
-| **Contrast** | Scale, Dominance 80 %, Scattered, Scale 2,2×, Tone 50 %, Shift 25 % a 45°, Clash angle 45°, forma de minoría cruz, color de acento `#f43f5e` (apagado) |
+| **Contrast** | Scale, Dominance 80 %, Scattered, Scale 2×, Tone 50 %, Shift 25 % a 45°, Clash angle 45°, forma de minoría cruz, color de acento `#f43f5e` (apagado) |
 | **Concentration** | Point, Move, atractor en el centro (50 %, 50 %), Gathering pull 50 %, Field radius 250, 2 focos, eje horizontal, flujo y densidad apagados, guía del atractor apagada |
 | **Texture** | Jitter 10 %, Line skipping 10 %, Random lines 10 %, Perimeter undulation 30 % |
 | **Space** | Isometric, Extrusion depth 20 %, Projection angle 30º, Shading 50 %, guías isométricas apagadas |

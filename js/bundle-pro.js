@@ -987,7 +987,7 @@ const createDefaultLayerStructure = () => ({
     dominanceRatio: 80, // % majority regular (50 to 95)
     spread: "scattered", // where the minority sits: scattered (at random), balanced (evenly spread), edge (pulled to the borders) or center
     contrastShape: "cross", // shape for shape contrast
-    scaleFactor: 2.2, // scale multiplier for scale contrast (0.2 to 3.0)
+    scaleFactor: 2, // scale multiplier for scale contrast (0.2 to 5)
     angle: 45, // clash angle for direction contrast
     toneAmount: 50, // tone contrast: how far the minority moves toward the ground colour (0 = same colour, 100 = the ground)
     positionShift: 25, // position contrast: how far the minority moves inside its cell (% of the cell)
@@ -1926,7 +1926,7 @@ class StudioEngine {
   applyContrast(ctx, contrast, k, palette, cell, loc = null) {
     if (!this.isContrastMinority(contrast, k, loc)) return;
     if (contrast.dimension === "scale") {
-      cell.scaleMul *= contrast.scaleFactor ?? 2.2;
+      cell.scaleMul *= contrast.scaleFactor ?? 2;
     } else if (contrast.dimension === "shape") {
       if (!cell.shapeLocked) cell.shape = contrast.contrastShape || "cross";
     } else if (contrast.dimension === "direction") {
@@ -2946,14 +2946,21 @@ class StudioEngine {
       ctx.lineWidth = 1.2;
       ctx.strokeRect(margin, margin, usableW, usableH);
 
-      // The container of each module that has one: a frame centred on the canvas
+      ctx.restore();
+    }
+
+    // The container of each module that has one: a frame centred on the canvas. It has its own switch
+    // (Show container), so it does not depend on the coordinate grid button; it is never exported
+    if (!this.exporting) {
+      ctx.save();
       ctx.strokeStyle = this.guideColor();
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1.2;
       for (const l of this.getLayers()) {
         if (l.visible === false || l.showContainer === false || !(l.containerW > 0 || l.containerH > 0)) continue;
         const cs = this.containerSize(l, width, height);
         ctx.strokeRect(width / 2 - cs.w / 2, height / 2 - cs.h / 2, cs.w, cs.h);
       }
-
       ctx.restore();
     }
 
@@ -5747,7 +5754,7 @@ class StudioProApp {
     const numDominance = document.getElementById("num-contrast-dominance");
     if (numDominance) numDominance.value = `${dominance}%`;
 
-    const scale = con.scaleFactor ?? 2.2;
+    const scale = con.scaleFactor ?? 2;
     this.syncControlValue("input-contrast-scale", scale);
     const numScale = document.getElementById("num-contrast-scale");
     if (numScale) numScale.value = `${scale}x`;
