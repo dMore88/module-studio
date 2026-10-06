@@ -166,7 +166,8 @@ Jitter y Plane wave se muestran de 0 % a 100 %; por dentro se guardan en px para
 | :-- | :-- | :-- | :-- | :-- | :-- |
 | Jitter | 0 % | 100 % | 1 % | 10 % | Temblor fino de los vértices. 100 % = 10 px para un módulo de 100 px. |
 | Line skipping | 0 % | 90 % | 1 % | 10 % | Probabilidad de que cada vértice se omita y el trazo se corte; a 90 % las figuras complejas quedan casi deshechas. Solo en trazos. |
-| Random lines | 0 % | 100 % | 1 % | 10 % | Probabilidad de que cada punto del trazo saque un pelo: hebra fina (50 % del grosor) y algo tenue, casi paralela al trazo y del mismo sentido, de largo variable (máx. 40 px). En trazo y en relleno (no bajo un volumen de Space). |
+| Random lines | 0 % | 100 % | 1 % | 10 % | Probabilidad de que cada punto del trazo saque un pelo. Largo (1–50 % de un módulo de referencia de máx. 100 px), grosor (10–80 % del trazo, en cuatro niveles), curvatura (10–60 %) y ángulo son aleatorios y sin control. En trazo y en relleno (no bajo un volumen de Space). |
+| Random lines opacity (Advanced) | 10 % | 100 % | 1 % | 85 % | Opacidad base de los pelos; los más finos son algo más tenues. |
 | Plane wave | 0 % | 100 % | 1 % | 30 % | Cuánto se ondula el módulo entero, como una hoja. 100 % = 30 px para un módulo de 100 px (la onda desplaza los puntos hasta un 21 % del módulo). |
 | Waves (Advanced) | 1 | 6 | 1 | 2 | Cuántas ondas cruzan el módulo. |
 | Wave direction (Advanced) | 0º | 360º | 5º | 0º | Hacia dónde viaja la onda; los puntos se mueven de lado respecto a esa dirección. |

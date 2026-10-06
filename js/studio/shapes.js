@@ -713,18 +713,23 @@ export function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly, hai
       }
       origins.forEach((pt, p) => {
         if (fract(Math.abs(Math.sin(s * 17.3 + p * 61.7)) * 1000) >= crossing) return;
-        const along = pt.along;
         const u = fract(Math.abs(Math.cos(s * 7.9 + p * 23.1)) * 1000) * 2 - 1; // -1 to 1, squared so most are near parallel
-        const ang = along + u * Math.abs(u) * (Math.PI * 20) / 180;
-        const bend = (fract(Math.abs(Math.sin(s * 5.1 + p * 29.3)) * 1000) * 2 - 1) * (Math.PI * 10) / 180;
+        const ang = pt.along + u * Math.abs(u) * (Math.PI * 20) / 180;
+        // Curvature: 10 to 60 % of a 90 degree bend over the length of the hair, to either side
+        const cu = 0.1 + 0.5 * fract(Math.abs(Math.sin(s * 5.1 + p * 29.3)) * 1000);
+        const bend = (fract(Math.abs(Math.sin(s * 8.7 + p * 41.9)) * 1000) < 0.5 ? -1 : 1) * cu * (Math.PI / 2);
+        // Length: 1 to 50 % of the module (measured on a reference module of at most 100 px), many short and a few long
         const r = fract(Math.abs(Math.sin(s * 3.3 + p * 11.9)) * 1000);
-        const len = Math.min(40, size * (0.03 + 0.17 * Math.pow(r, 2)));
+        const len = Math.min(size, 100) * (0.01 + 0.49 * Math.pow(r, 2));
+        // Thickness: one of four, from 10 to 80 % of the stroke (the strands are drawn in four strokes, one per thickness)
+        const level = Math.min(3, Math.floor(fract(Math.abs(Math.cos(s * 2.9 + p * 17.3)) * 1000) * 4));
         const hair = [{ x: pt.x, y: pt.y }];
         for (let k = 1; k <= 4; k++) {
           const t = k / 4, a2 = ang + bend * t * t;
           const prev = hair[k - 1];
           hair.push({ x: prev.x + Math.cos(a2) * len / 4, y: prev.y + Math.sin(a2) * len / 4 });
         }
+        hair.level = level;
         strays.push(hair);
       });
     }
@@ -757,13 +762,23 @@ export function texturedShape(shapeDef, tex, seed, strokeOnly, hairsOn = strokeO
       if (geo.some(sp => sp.hairs && sp.hairs.length)) {
         ctx.save();
         if (!strokeOnly) ctx.strokeStyle = ctx.fillStyle; // a filled shape: the strands take its colour
-        ctx.beginPath();
-        for (const sp of geo) for (const hair of sp.hairs || []) hair.forEach((pt, i) => (i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y)));
-        ctx.lineWidth = Math.max(0.4, ctx.lineWidth * 0.5);
-        ctx.globalAlpha *= 0.85;
+        const baseWidth = ctx.lineWidth, baseAlpha = ctx.globalAlpha * Math.max(0.1, Math.min(1, (tex.hairOpacity ?? 85) / 100));
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
-        ctx.stroke();
+        for (let level = 0; level < 4; level++) {
+          const part = 0.1 + (0.7 * level) / 3; // 10, 33, 57 and 80 % of the stroke: never as thick as the stroke
+          ctx.beginPath();
+          let any = false;
+          for (const sp of geo) for (const hair of sp.hairs || []) {
+            if (hair.level !== level) continue;
+            any = true;
+            hair.forEach((pt, i) => (i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y)));
+          }
+          if (!any) continue;
+          ctx.lineWidth = Math.max(0.3, baseWidth * part);
+          ctx.globalAlpha = baseAlpha * (0.7 + 0.3 * (level / 3)); // the finer strands are fainter too
+          ctx.stroke();
+        }
         ctx.restore();
       }
       ctx.beginPath();
