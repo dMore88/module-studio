@@ -922,7 +922,7 @@ export class StudioEngine {
   anomalySpots(anom, width, height) {
     const mode = anom.distribution || "single";
     if (mode === "single") return [{ x: (anom.epicenterX ?? 0.5) * width, y: (anom.epicenterY ?? 0.5) * height }];
-    const n = Math.max(2, Math.min(12, anom.count || 5));
+    const n = Math.max(1, Math.min(10, anom.count || 5));
     const key = `${mode}|${n}|${anom.seed}|${width}|${height}`;
     if (this._spotsKey === key) return this._spots;
     const spots = [];

@@ -125,9 +125,9 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 ### Anomaly
 | Control | Mín. | Máx. | Paso | Razón |
 | :-- | :-- | :-- | :-- | :-- |
-| Count | 2 | 12 | 1 | Cantidad de zonas dispersas. |
+| Count | 1 | 10 | 1 | Cantidad de zonas dispersas; con más de 10 el patrón original cambia por completo. |
 | Seed | 1 | 99 | 1 | Qué disposición al azar sale. |
-| Radius | 50 | 350 px | 5 | Tamaño de la zona; 350 cubre más de la mitad del lienzo. |
+| Radius | 10 px | 350 px | 5 | Tamaño de la zona; 10 permite composiciones de módulos pequeños, 350 cubre más de la mitad del lienzo. |
 | Severity | 10 | 100 | 1 | Cuánto se desvía; por debajo de 10 no se nota. |
 | Epicentro (clic en el lienzo) | 10 % | 90 % | continuo | Mantiene la zona dentro del lienzo. |
 

@@ -214,7 +214,7 @@ Introduce una zona de irregularidad donde prevalece una estructura regular previ
 * **`distribution`** (*Distribution*): `single` (un epicentro), `regular` (`count` anomalías en retícula escalonada) o `random` (al azar sin tocarse, fig. 56b). Con varias, aparecen **`count`** (2 a 12) y, solo en `random`, **`seed`** (1 a 99).
 * **`attrs`** (*Deviates in*, chips múltiples): en qué atributos se desvía (forma, escala, rotación, posición). **`anomalousShape`** (*Focal Intruder Shape*, la lista de 22 formas, en dropdown).
 * **`zoneGrid`** (*Grid inside the zone*, solo con `regrid`): Brick, Diagonal, Curved, Zigzag, Triangular o Alternating; las celdas cuyo centro cae dentro de la zona (radio *Radius*, alrededor de cada epicentro) siguen esa variación y el resto la retícula de Layout. Solo aplica a la retícula, no al radial; con `regrid` se ocultan *Deviates in* y *Severity*. La casilla de acento tiñe los módulos de la zona.
-* **`radius`** (*Radius*, 50 a 350 px) e **`intensity`** (*Severity*, 10 a 100 %).
+* **`radius`** (*Radius*, 10 a 350 px) e **`intensity`** (*Severity*, 10 a 100 %).
 * **Punto focal.** Ya no hay sliders X / Y: el punto está **visible por defecto** al activar el control y se mueve con un **clic en el lienzo** con la pestaña Anomaly abierta (`epicenterX / epicenterY`). La casilla **`showReticle`** (*Show focal point*) lo oculta. Se dibuja con el color de guías y no se exporta.
 * **Color de acento:** la fila *Accent color* (`accentColor`) resalta los módulos anómalos. Elegir un color enciende el resaltado (`highlightColor`); el botón **×** lo quita (la fila muestra *None*).
 
