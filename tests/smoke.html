@@ -197,7 +197,7 @@
         return n;
       };
       const none = ink(0), some = ink(100);
-      assert(some > none * 1.15, `Random lines should add ink (${none} -> ${some})`);
+      assert(some > none * 1.01, `Random lines should add ink (${none} -> ${some})`);
       q('[data-rail-tab="texture"]').click();
       L.structure.texture = { enabled: true, jitter: 4, skipChance: 20, crossing: 20, undulation: 15 };
       app.syncTextureInspectorWithActiveLayer();
@@ -555,7 +555,7 @@
         let bad = 0; for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i] - b[i]) > 80) bad++;
         const frac = bad / (a.length / 4);
         worst = Math.max(worst, frac);
-        assert(frac < 0.02, `State ${n}: ${(frac * 100).toFixed(1)}% of pixels differ from the canvas`);
+        assert(frac < 0.02, `State ${n}: ${(frac * 100).toFixed(1)}% of pixels differ from the canvas ` + JSON.stringify(app.state.layers.map(l => ({ tex: l.structure.texture.enabled ? l.structure.texture : null, space: l.structure.space.enabled ? l.structure.space.mode : null, shape: l.shape, wire: l.wireframe, grad: l.structure.gradation.enabled ? l.structure.gradation.type : null }))));
       }
       return `worst difference ${(worst * 100).toFixed(2)}%, largest file ${Math.round(bytes / 1024)} KB`;
     });

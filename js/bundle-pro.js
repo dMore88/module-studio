@@ -854,20 +854,45 @@ function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
       });
     }
 
-    // Random lines: short strokes that leave the outline mostly along it (a share of the vertices grows one).
-    // The angle leans toward the direction of the stroke, either way, and the length varies a lot: many short, a few long
+    // Random lines: fine strands that leave the outline like combed hair (a share of the vertices grows one).
+    // They all lean the way the stroke runs, a few degrees off and with a slight bend, and the length varies: many short,
+    // a few long (never more than 40 px). They are drawn thinner and fainter than the stroke (see texturedShape)
     const fract = (v) => v - Math.floor(v);
     const strays = [];
     if (crossing > 0 && n > 2) {
-      pts.forEach((pt, p) => {
-        if (fract(Math.abs(Math.sin(s * 17.3 + p * 61.7)) * 1000) >= crossing / density) return;
-        const a = pts[Math.max(0, p - 1)], b = pts[Math.min(n - 1, p + 1)];
-        const along = Math.atan2(b.y - a.y, b.x - a.x) + (fract(Math.abs(Math.sin(s * 5.1 + p * 29.3)) * 1000) < 0.5 ? 0 : Math.PI);
+      // Places along the outline, one every ~0.6 % of the module (at most 500), each growing a hair by chance
+      const origins = [];
+      const hairGap = Math.max(1.5, size * 0.006);
+      let toNext = 0; // distance left until the next place
+      const segCount = sp.closed ? n : n - 1;
+      for (let i = 0; i < segCount && origins.length < 500; i++) {
+        const a = pts[i], b = pts[(i + 1) % n];
+        const L = Math.hypot(b.x - a.x, b.y - a.y);
+        if (L === 0) continue;
+        const ang0 = Math.atan2(b.y - a.y, b.x - a.x);
+        let pos = toNext;
+        while (pos <= L && origins.length < 500) {
+          const t = pos / L;
+          origins.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, along: ang0 });
+          pos += hairGap;
+        }
+        toNext = pos - L;
+      }
+      origins.forEach((pt, p) => {
+        if (fract(Math.abs(Math.sin(s * 17.3 + p * 61.7)) * 1000) >= crossing) return;
+        const along = pt.along;
         const u = fract(Math.abs(Math.cos(s * 7.9 + p * 23.1)) * 1000) * 2 - 1; // -1 to 1, squared so most are near parallel
-        const ang = along + u * Math.abs(u) * (Math.PI * 55) / 180;
+        const ang = along + u * Math.abs(u) * (Math.PI * 14) / 180;
+        const bend = (fract(Math.abs(Math.sin(s * 5.1 + p * 29.3)) * 1000) * 2 - 1) * (Math.PI * 10) / 180;
         const r = fract(Math.abs(Math.sin(s * 3.3 + p * 11.9)) * 1000);
-        const len = size * (0.02 + 0.22 * Math.pow(r, 2.2));
-        strays.push([{ x: pt.x, y: pt.y }, { x: pt.x + Math.cos(ang) * len, y: pt.y + Math.sin(ang) * len }]);
+        const len = Math.min(40, size * (0.015 + 0.09 * Math.pow(r, 2)));
+        const hair = [{ x: pt.x, y: pt.y }];
+        for (let k = 1; k <= 4; k++) {
+          const t = k / 4, a2 = ang + bend * t * t;
+          const prev = hair[k - 1];
+          hair.push({ x: prev.x + Math.cos(a2) * len / 4, y: prev.y + Math.sin(a2) * len / 4 });
+        }
+        strays.push(hair);
       });
     }
 
@@ -884,8 +909,7 @@ function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
     } else {
       segments.push(pts);
     }
-    strays.forEach(st => segments.push(st));
-    out.push({ segments, closed: sp.closed && skipChance === 0 });
+    out.push({ segments, hairs: strays, closed: sp.closed && skipChance === 0 });
   });
   return out;
 }
@@ -896,6 +920,18 @@ function texturedShape(shapeDef, tex, seed, strokeOnly) {
     ...shapeDef,
     draw(ctx, size) {
       const geo = buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly);
+      // The strands go first, on their own: thinner and fainter than the stroke, which the caller draws afterwards
+      if (geo.some(sp => sp.hairs && sp.hairs.length)) {
+        ctx.save();
+        ctx.beginPath();
+        for (const sp of geo) for (const hair of sp.hairs || []) hair.forEach((pt, i) => (i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y)));
+        ctx.lineWidth = Math.max(0.3, ctx.lineWidth * 0.35);
+        ctx.globalAlpha *= 0.75;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.stroke();
+        ctx.restore();
+      }
       ctx.beginPath();
       for (const sp of geo) {
         for (const seg of sp.segments) {
