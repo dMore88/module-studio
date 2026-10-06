@@ -87,8 +87,8 @@ export const createDefaultLayerStructure = () => ({
     type: "focal", // focal, fracture, swell, tear
     epicenterX: 0.5, // 0.1 to 0.9
     epicenterY: 0.5, // 0.1 to 0.9
-    radius: 160, // 50 to 350 px
-    intensity: 65, // severity, 10 to 100
+    radius: 150, // 10 to 350 px
+    intensity: 60, // severity, 5 to 100
     distribution: "single", // single (one epicenter), regular or random (several scattered anomalies)
     count: 5, // number of scattered anomalies (2 to 12)
     seed: 7, // random layout seed (1 to 99)
@@ -967,7 +967,7 @@ export class StudioEngine {
     const on = (k) => attrs[k] !== false;
     const inZone = dist < anom.radius;
     const factor = inZone ? (1 - dist / anom.radius) : 0;
-    const severity = (anom.intensity ?? 65) / 100;
+    const severity = (anom.intensity ?? 60) / 100;
     const accent = anom.accentColor || palette.accent;
 
     if (anom.type === "focal") {

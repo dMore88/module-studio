@@ -966,8 +966,8 @@ const createDefaultLayerStructure = () => ({
     type: "focal", // focal, fracture, swell, tear
     epicenterX: 0.5, // 0.1 to 0.9
     epicenterY: 0.5, // 0.1 to 0.9
-    radius: 160, // 50 to 350 px
-    intensity: 65, // severity, 10 to 100
+    radius: 150, // 10 to 350 px
+    intensity: 60, // severity, 5 to 100
     distribution: "single", // single (one epicenter), regular or random (several scattered anomalies)
     count: 5, // number of scattered anomalies (2 to 12)
     seed: 7, // random layout seed (1 to 99)
@@ -1843,7 +1843,7 @@ class StudioEngine {
     const on = (k) => attrs[k] !== false;
     const inZone = dist < anom.radius;
     const factor = inZone ? (1 - dist / anom.radius) : 0;
-    const severity = (anom.intensity ?? 65) / 100;
+    const severity = (anom.intensity ?? 60) / 100;
     const accent = anom.accentColor || palette.accent;
 
     if (anom.type === "focal") {
@@ -5551,7 +5551,7 @@ class StudioProApp {
       const num = document.getElementById(numId);
       if (num) num.value = `${value}${suffix}`;
     };
-    setPair("input-anom-radius", "num-anom-radius", anom.radius ?? 160, "px");
+    setPair("input-anom-radius", "num-anom-radius", anom.radius ?? 150, "px");
     setPair("input-anom-count", "num-anom-count", anom.count ?? 5, "");
     setPair("input-anom-seed", "num-anom-seed", anom.seed ?? 7, "");
 
@@ -5577,7 +5577,7 @@ class StudioProApp {
     document.getElementById("anom-position-block")?.classList.toggle("hidden", dist !== "single");
     document.getElementById("anom-count-block")?.classList.toggle("hidden", dist === "single");
     document.getElementById("anom-seed-block")?.classList.toggle("hidden", dist !== "random");
-    setPair("input-anom-intensity", "num-anom-intensity", anom.intensity ?? 65, "%");
+    setPair("input-anom-intensity", "num-anom-intensity", anom.intensity ?? 60, "%");
 
     this.syncAccentColorRow("anom", anom.accentColor, !!anom.highlightColor);
     this.syncCheckbox("toggle-anom-reticle", !!anom.showReticle);
@@ -5664,7 +5664,7 @@ class StudioProApp {
     bindPair("input-anom-count", "num-anom-count", { min: 1, max: 10, suffix: "", toStored: v => v, label: "Count", key: "count" });
     bindPair("input-anom-seed", "num-anom-seed", { min: 1, max: 99, suffix: "", toStored: v => v, label: "Seed", key: "seed" });
     bindPair("input-anom-radius", "num-anom-radius", { min: 10, max: 350, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
-    bindPair("input-anom-intensity", "num-anom-intensity", { min: 10, max: 100, suffix: "%", toStored: v => v, label: "Severity", key: "intensity" });
+    bindPair("input-anom-intensity", "num-anom-intensity", { min: 5, max: 100, suffix: "%", toStored: v => v, label: "Severity", key: "intensity" });
 
     // Removing the accent colour turns the highlight off
     document.getElementById("anom-accent-clear")?.addEventListener("click", () => {

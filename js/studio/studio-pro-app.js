@@ -2160,7 +2160,7 @@ export class StudioProApp {
       const num = document.getElementById(numId);
       if (num) num.value = `${value}${suffix}`;
     };
-    setPair("input-anom-radius", "num-anom-radius", anom.radius ?? 160, "px");
+    setPair("input-anom-radius", "num-anom-radius", anom.radius ?? 150, "px");
     setPair("input-anom-count", "num-anom-count", anom.count ?? 5, "");
     setPair("input-anom-seed", "num-anom-seed", anom.seed ?? 7, "");
 
@@ -2186,7 +2186,7 @@ export class StudioProApp {
     document.getElementById("anom-position-block")?.classList.toggle("hidden", dist !== "single");
     document.getElementById("anom-count-block")?.classList.toggle("hidden", dist === "single");
     document.getElementById("anom-seed-block")?.classList.toggle("hidden", dist !== "random");
-    setPair("input-anom-intensity", "num-anom-intensity", anom.intensity ?? 65, "%");
+    setPair("input-anom-intensity", "num-anom-intensity", anom.intensity ?? 60, "%");
 
     this.syncAccentColorRow("anom", anom.accentColor, !!anom.highlightColor);
     this.syncCheckbox("toggle-anom-reticle", !!anom.showReticle);
@@ -2273,7 +2273,7 @@ export class StudioProApp {
     bindPair("input-anom-count", "num-anom-count", { min: 1, max: 10, suffix: "", toStored: v => v, label: "Count", key: "count" });
     bindPair("input-anom-seed", "num-anom-seed", { min: 1, max: 99, suffix: "", toStored: v => v, label: "Seed", key: "seed" });
     bindPair("input-anom-radius", "num-anom-radius", { min: 10, max: 350, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
-    bindPair("input-anom-intensity", "num-anom-intensity", { min: 10, max: 100, suffix: "%", toStored: v => v, label: "Severity", key: "intensity" });
+    bindPair("input-anom-intensity", "num-anom-intensity", { min: 5, max: 100, suffix: "%", toStored: v => v, label: "Severity", key: "intensity" });
 
     // Removing the accent colour turns the highlight off
     document.getElementById("anom-accent-clear")?.addEventListener("click", () => {

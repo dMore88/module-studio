@@ -128,7 +128,7 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | Count | 1 | 10 | 1 | Cantidad de zonas dispersas; con más de 10 el patrón original cambia por completo. |
 | Seed | 1 | 99 | 1 | Qué disposición al azar sale. |
 | Radius | 10 px | 350 px | 5 | Tamaño de la zona; 10 permite composiciones de módulos pequeños, 350 cubre más de la mitad del lienzo. |
-| Severity | 10 | 100 | 1 | Cuánto se desvía; por debajo de 10 no se nota. |
+| Severity | 5 % | 100 % | 1 | Cuánto se desvía; 5 % sirve para anomalías muy sutiles. |
 | Epicentro (clic en el lienzo) | 10 % | 90 % | continuo | Mantiene la zona dentro del lienzo. |
 
 ### Contrast
@@ -181,7 +181,7 @@ Una sola capa (**Layer 1**): círculo, trazo (no relleno), color `#18181f`, traz
 | :-- | :-- |
 | **Similarity** | Elastic, intensidad 50 %, jitter 0, asociación None (mix 50 %), imperfección None (cantidad 30 %), semilla 42 |
 | **Gradation** | Rotate, Diagonal, Range 180, Cycles 1, Restart, Speed 0, filas alternas apagado, *Reverse* apagado, Becomes triangle, End color `#f43f5e` |
-| **Anomaly** | Focal, un punto en el centro (50 %, 50 %), Radius 160, Severity 65, Single, Count 5, Seed 7, se desvía en forma, escala, rotación y posición, forma intrusa triángulo, zona Another grid = Brick, color de acento `#f43f5e` (apagado), punto visible |
+| **Anomaly** | Focal, un punto en el centro (50 %, 50 %), Radius 150, Severity 60, Single, Count 5, Seed 7, se desvía en forma, escala, rotación y posición, forma intrusa triángulo, zona Another grid = Brick, color de acento `#f43f5e` (apagado), punto visible |
 | **Contrast** | Scale, Dominance 80 %, Scattered, Scale 2,2×, Tone 50 %, Shift 25 % a 45°, Clash angle 45°, forma de minoría cruz, color de acento `#f43f5e` (apagado) |
 | **Concentration** | Point, Move, atractor en el centro (50 %, 50 %), Gathering pull 50 %, Field radius 240, 2 focos, eje horizontal, flujo y densidad apagados, guía del atractor apagada |
 | **Texture** | Jitter 1, Line skipping 10 %, Strand crossing 10 %, Perimeter undulation 10 |
