@@ -19,7 +19,7 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | B5 | **Forma**: todo lo que se ve tiene forma | Elementos visuales | Module › Shape (22 formas) | ✅ |  |
 | B6 | **Medida**: tamaño de una forma | Elementos visuales | Module › Width, Height (5 a 2000 px) | ✅ |  |
 | B7 | **Color**: blanco, negro, grises y cromáticos | Elementos visuales | Module › Shape color; Contrast › Tone y Accent color; botón de invertir figura/fondo | 🟡 | Un color por capa; más colores con varias capas. Color por zonas: pendiente (ver C4) |
-| B8 | **Textura**: cualidades de la superficie | Elementos visuales | Texture › Jitter, Line skipping, Strand crossing, Perimeter undulation | ✅ | Deforma la geometría; ver Textura |
+| B8 | **Textura**: cualidades de la superficie | Elementos visuales | Texture › Jitter, Line skipping, Random lines, Plane wave | ✅ | Deforma la geometría; ver Textura |
 | B9 | **Dirección**: depende de cómo se relaciona la forma con el observador o el marco | Elementos de relación | Module › Rotation; Layout › Direction; Contrast › Angle; Gradation › Rotate | ✅ |  |
 | B10 | **Posición**: se juzga por su relación con el marco o la estructura | Elementos de relación | Module › Offset X / Y; Layout › Module placement; Contrast › Position; Anomaly | ✅ |  |
 | B11 | **Espacio**: ocupado o vacío, liso o ilusorio | Elementos de relación | Space (panel entero); Checkerboard inversion; botón de figura/fondo | ✅ | Ver Espacio |
@@ -38,7 +38,7 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | F3 | **La forma como plano — geométricas**: construidas matemáticamente | Formas planas | Module › Shape (círculo, cuadrado, triángulo, hexágono, paralelogramo, cruz) | ✅ |  |
 | F4 | **Formas planas — orgánicas**: curvas libres | Formas planas | Module › Shape (onda, herradura, creciente, gota) | 🟡 | Hay cuatro; no se dibujan formas libres |
 | F5 | **Formas planas — rectilíneas e irregulares** | Formas planas | — | ⏳ | La app no permite dibujar formas propias; solo hay la biblioteca de 15 |
-| F6 | **Formas planas — manuscritas y accidentales** | Formas planas | Texture › Jitter y Perimeter undulation | 🟡 | La textura de geometría imita el trazo a mano |
+| F6 | **Formas planas — manuscritas y accidentales** | Formas planas | Texture › Jitter y Plane wave | 🟡 | La textura de geometría imita el trazo a mano |
 | F7 | **La forma como volumen**: ilusoria, se trata en el cap. 12 | Forma y elementos conceptuales | Space | ✅ | Ilusoria; ver Espacio |
 | F8 | **Formas positivas y negativas**: ocupa un espacio / es un espacio vacío | Figura y fondo | Botón de invertir figura/fondo; Layout › Checkerboard inversion; Contrast › Space | ✅ |  |
 | F9 | **Distribución del color**: forma blanca/negra sobre fondo blanco/negro | Figura y fondo | Botón de invertir figura/fondo; Module › Stroke / Fill; Shape color | 🟡 | Las cuatro combinaciones de dos colores sí; las 16 variantes de cuatro zonas no |
@@ -239,7 +239,7 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | ID | Concepto | Grupo | Control en la app | Estado | Notas |
 | :-- | :-- | :-- | :-- | :-: | :-- |
 | T1 | **Textura decorativa**: adorna la superficie y queda subordinada a la figura | Textura visual | — | ➖ | Descartada; se eliminó al reemplazar el control |
-| T2 | **Textura espontánea**: parte del proceso de creación; figura y textura inseparables | Textura visual | Texture › Jitter, Line skipping, Strand crossing, Perimeter undulation | ✅ | Deformación de geometría |
+| T2 | **Textura espontánea**: parte del proceso de creación; figura y textura inseparables | Textura visual | Texture › Jitter, Line skipping, Random lines, Plane wave | ✅ | Deformación de geometría |
 | T3 | **Textura mecánica**: granulado fotográfico, retícula, tipografía | Textura visual | — | ➖ |  |
 | T4 | **Dibujo y pintura**: líneas a mano alzada | Fabricación de la textura visual | Texture › Jitter | 🟡 |  |
 | T5 | **Raspado y rascado** | Fabricación de la textura visual | Texture › Line skipping | 🟡 |  |
@@ -260,7 +260,7 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | SP5 | **Cambio en tamaño**: más grande = más cerca | Formas lisas en espacio ilusorio | Gradation › `Scale` | 🟡 | Falta la perspectiva con disminución de tamaño (ver SP11) |
 | SP6 | **Cambio en color y en textura** como señal de profundidad | Formas lisas en espacio ilusorio | Space › Facet shading contrast | 🟡 | Falta: pistas de profundidad por tamaño, tono y textura |
 | SP7 | **Cambio en el punto de vista** | Formas lisas en espacio ilusorio | Space › `3D tilt`; Gradation › `Depth` | ✅ |  |
-| SP8 | **Curvatura o quebrantamiento** de formas lisas | Formas lisas en espacio ilusorio | Texture › Perimeter undulation | 🟡 |  |
+| SP8 | **Curvatura o quebrantamiento** de formas lisas | Formas lisas en espacio ilusorio | Texture › Plane wave | 🟡 |  |
 | SP9 | **Agregado de sombra**: unida o separada | Formas lisas en espacio ilusorio | — | ⏳ |  |
 | SP10 | **Volumen y profundidad**: sistemas isométricos de proyección | Volumen y profundidad | Space › `Isometric` con Extrusion depth, Projection angle | ✅ |  |
 | SP11 | **Perspectiva** con disminución gradual de tamaño | Volumen y profundidad | — | ⏳ |  |

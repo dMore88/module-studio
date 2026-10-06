@@ -794,6 +794,8 @@ function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
   const k = size / (shapeDef.textureRef || FLAT_REF_SIZE); // texture px are relative to the module size
   const jitter = (tex.jitter || 0) * k;
   const undulation = (tex.undulation || 0) * k * 0.7;
+  const waves = Math.max(1, Math.min(6, Math.round(tex.waves ?? 2)));
+  const waveRad = (((tex.waveAngle ?? 0) % 360) * Math.PI) / 180;
   // Skipping and random lines only read on strokes; they are ignored on filled shapes.
   const skipChance = strokeOnly ? (tex.skipChance || 0) / 100 : 0;
   const crossing = strokeOnly ? (tex.crossing || 0) / 100 : 0;
@@ -833,17 +835,14 @@ function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
     }
     const density = n / nOrig; // how many points now stand for one original point
 
-    // Perimeter undulation: sine displacement along the outline normal
+    // Plane wave: the whole module is bent like one sheet. A wave travels across it in one direction and every point
+    // moves sideways to that direction by the wave at its own position (the same for every subpath and every module)
     if (undulation > 0 && n > 2) {
-      const periods = sp.closed ? 3 : 2;
-      const phase = s * 0.37;
-      pts = pts.map((pt, i) => {
-        const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)];
-        let nx = -(b.y - a.y), ny = b.x - a.x;
-        const nl = Math.hypot(nx, ny) || 1;
-        nx /= nl; ny /= nl;
-        const off = Math.sin(pt.u * Math.PI * 2 * periods + phase) * undulation;
-        return { x: pt.x + nx * off, y: pt.y + ny * off, u: pt.u };
+      const cosA = Math.cos(waveRad), sinA = Math.sin(waveRad);
+      pts = pts.map((pt) => {
+        const along = (pt.x * cosA + pt.y * sinA) / Math.max(1, size);
+        const off = Math.sin(along * Math.PI * 2 * waves) * undulation;
+        return { x: pt.x - sinA * off, y: pt.y + cosA * off, u: pt.u };
       });
     }
 
@@ -1041,7 +1040,9 @@ const createDefaultLayerStructure = () => ({
     jitter: 1, // px for a 100px module, 0 to 10 (shown as 0 to 100 %)
     skipChance: 10, // line skipping %, 0 to 90 (strokes only)
     crossing: 10, // random lines %, 0 to 100: share of the vertices that grow a short line (strokes only)
-    undulation: 9 // perimeter undulation, px for a 100px module, 0 to 30 (shown as 0 to 100 %)
+    undulation: 9, // plane wave amount, px for a 100px module, 0 to 30 (shown as 0 to 100 %)
+    waves: 2, // plane wave: how many waves cross the module (1 to 6)
+    waveAngle: 0 // plane wave: the direction it travels, in degrees (0 to 360)
   },
   space: {
     enabled: false,
@@ -1128,6 +1129,7 @@ class StudioEngine {
         enabled: true,
         jitter: (base.jitter || 0) * k,
         undulation: (base.undulation || 0) * k,
+        waves: base.waves, waveAngle: base.waveAngle,
         skipChance: (base.skipChance || 0) * k,
         crossing: (base.crossing || 0) * k
       };
@@ -4120,7 +4122,7 @@ class StudioProApp {
         if (tx.jitter > 0) parts.push(`Jitter ${Math.round(tx.jitter / 0.1)}%`);
         if (tx.skipChance > 0) parts.push(`Line skipping ${Math.round(tx.skipChance)}%`);
         if (tx.crossing > 0) parts.push(`Random lines ${Math.round(tx.crossing)}%`);
-        if (tx.undulation > 0) parts.push(`Undulation ${Math.round(tx.undulation / 0.3)}%`);
+        if (tx.undulation > 0) parts.push(`Plane wave ${Math.round(tx.undulation / 0.3)}% (${tx.waves ?? 2} waves, ${tx.waveAngle ?? 0}º)`);
         out.push(line("Texture", parts.length ? parts.join(" / ") : "none"));
       }
       const sp = s.space;
@@ -6171,7 +6173,7 @@ class StudioProApp {
   /* =========================================================================
      TEXTURE INSPECTOR & CONTROLLER (Per Active Layer)
      Geometry deformations that read as texture: Jitter, Line skipping,
-     Random lines, Perimeter undulation. Autonomous modifier.
+     Random lines, Plane wave. Autonomous modifier.
      Jitter and undulation are px for a 100px module (scaled to the real size).
      Skipping and crossing only read on strokes.
      ========================================================================= */
@@ -6203,6 +6205,8 @@ class StudioProApp {
     setPair("input-texture-skip", "num-texture-skip", tex.skipChance ?? 10, "%");
     setPair("input-texture-crossing", "num-texture-crossing", tex.crossing ?? 10, "%");
     setPair("input-texture-undulation", "num-texture-undulation", tex.undulation ?? 9, "%", 0.3);
+    setPair("input-texture-waves", "num-texture-waves", tex.waves ?? 2, "");
+    setPair("input-texture-waveangle", "num-texture-waveangle", tex.waveAngle ?? 0, "º");
 
     this.updateRailIndicatorDots();
   }
@@ -6253,7 +6257,9 @@ class StudioProApp {
     bindPair("input-texture-jitter", "num-texture-jitter", { min: 0, max: 100, suffix: "%", label: "Jitter", key: "jitter", unit: 0.1 });
     bindPair("input-texture-skip", "num-texture-skip", { min: 0, max: 90, suffix: "%", label: "Line Skipping", key: "skipChance" });
     bindPair("input-texture-crossing", "num-texture-crossing", { min: 0, max: 100, suffix: "%", label: "Random Lines", key: "crossing" });
-    bindPair("input-texture-undulation", "num-texture-undulation", { min: 0, max: 100, suffix: "%", label: "Undulation", key: "undulation", unit: 0.3 });
+    bindPair("input-texture-undulation", "num-texture-undulation", { min: 0, max: 100, suffix: "%", label: "Plane Wave", key: "undulation", unit: 0.3 });
+    bindPair("input-texture-waves", "num-texture-waves", { min: 1, max: 6, suffix: "", label: "Waves", key: "waves" });
+    bindPair("input-texture-waveangle", "num-texture-waveangle", { min: 0, max: 360, suffix: "º", label: "Wave Direction", key: "waveAngle" });
   }
 
   /* =========================================================================

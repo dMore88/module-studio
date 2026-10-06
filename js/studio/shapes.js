@@ -626,6 +626,8 @@ export function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
   const k = size / (shapeDef.textureRef || FLAT_REF_SIZE); // texture px are relative to the module size
   const jitter = (tex.jitter || 0) * k;
   const undulation = (tex.undulation || 0) * k * 0.7;
+  const waves = Math.max(1, Math.min(6, Math.round(tex.waves ?? 2)));
+  const waveRad = (((tex.waveAngle ?? 0) % 360) * Math.PI) / 180;
   // Skipping and random lines only read on strokes; they are ignored on filled shapes.
   const skipChance = strokeOnly ? (tex.skipChance || 0) / 100 : 0;
   const crossing = strokeOnly ? (tex.crossing || 0) / 100 : 0;
@@ -665,17 +667,14 @@ export function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
     }
     const density = n / nOrig; // how many points now stand for one original point
 
-    // Perimeter undulation: sine displacement along the outline normal
+    // Plane wave: the whole module is bent like one sheet. A wave travels across it in one direction and every point
+    // moves sideways to that direction by the wave at its own position (the same for every subpath and every module)
     if (undulation > 0 && n > 2) {
-      const periods = sp.closed ? 3 : 2;
-      const phase = s * 0.37;
-      pts = pts.map((pt, i) => {
-        const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)];
-        let nx = -(b.y - a.y), ny = b.x - a.x;
-        const nl = Math.hypot(nx, ny) || 1;
-        nx /= nl; ny /= nl;
-        const off = Math.sin(pt.u * Math.PI * 2 * periods + phase) * undulation;
-        return { x: pt.x + nx * off, y: pt.y + ny * off, u: pt.u };
+      const cosA = Math.cos(waveRad), sinA = Math.sin(waveRad);
+      pts = pts.map((pt) => {
+        const along = (pt.x * cosA + pt.y * sinA) / Math.max(1, size);
+        const off = Math.sin(along * Math.PI * 2 * waves) * undulation;
+        return { x: pt.x - sinA * off, y: pt.y + cosA * off, u: pt.u };
       });
     }
 

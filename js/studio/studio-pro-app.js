@@ -696,7 +696,7 @@ export class StudioProApp {
         if (tx.jitter > 0) parts.push(`Jitter ${Math.round(tx.jitter / 0.1)}%`);
         if (tx.skipChance > 0) parts.push(`Line skipping ${Math.round(tx.skipChance)}%`);
         if (tx.crossing > 0) parts.push(`Random lines ${Math.round(tx.crossing)}%`);
-        if (tx.undulation > 0) parts.push(`Undulation ${Math.round(tx.undulation / 0.3)}%`);
+        if (tx.undulation > 0) parts.push(`Plane wave ${Math.round(tx.undulation / 0.3)}% (${tx.waves ?? 2} waves, ${tx.waveAngle ?? 0}º)`);
         out.push(line("Texture", parts.length ? parts.join(" / ") : "none"));
       }
       const sp = s.space;
@@ -2747,7 +2747,7 @@ export class StudioProApp {
   /* =========================================================================
      TEXTURE INSPECTOR & CONTROLLER (Per Active Layer)
      Geometry deformations that read as texture: Jitter, Line skipping,
-     Random lines, Perimeter undulation. Autonomous modifier.
+     Random lines, Plane wave. Autonomous modifier.
      Jitter and undulation are px for a 100px module (scaled to the real size).
      Skipping and crossing only read on strokes.
      ========================================================================= */
@@ -2779,6 +2779,8 @@ export class StudioProApp {
     setPair("input-texture-skip", "num-texture-skip", tex.skipChance ?? 10, "%");
     setPair("input-texture-crossing", "num-texture-crossing", tex.crossing ?? 10, "%");
     setPair("input-texture-undulation", "num-texture-undulation", tex.undulation ?? 9, "%", 0.3);
+    setPair("input-texture-waves", "num-texture-waves", tex.waves ?? 2, "");
+    setPair("input-texture-waveangle", "num-texture-waveangle", tex.waveAngle ?? 0, "º");
 
     this.updateRailIndicatorDots();
   }
@@ -2829,7 +2831,9 @@ export class StudioProApp {
     bindPair("input-texture-jitter", "num-texture-jitter", { min: 0, max: 100, suffix: "%", label: "Jitter", key: "jitter", unit: 0.1 });
     bindPair("input-texture-skip", "num-texture-skip", { min: 0, max: 90, suffix: "%", label: "Line Skipping", key: "skipChance" });
     bindPair("input-texture-crossing", "num-texture-crossing", { min: 0, max: 100, suffix: "%", label: "Random Lines", key: "crossing" });
-    bindPair("input-texture-undulation", "num-texture-undulation", { min: 0, max: 100, suffix: "%", label: "Undulation", key: "undulation", unit: 0.3 });
+    bindPair("input-texture-undulation", "num-texture-undulation", { min: 0, max: 100, suffix: "%", label: "Plane Wave", key: "undulation", unit: 0.3 });
+    bindPair("input-texture-waves", "num-texture-waves", { min: 1, max: 6, suffix: "", label: "Waves", key: "waves" });
+    bindPair("input-texture-waveangle", "num-texture-waveangle", { min: 0, max: 360, suffix: "º", label: "Wave Direction", key: "waveAngle" });
   }
 
   /* =========================================================================

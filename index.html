@@ -1383,12 +1383,31 @@
           </div>
         </div>
         <div class="ds-field">
-          <div class="ds-label">Perimeter undulation</div>
+          <div class="ds-label">Plane wave</div>
           <div class="ds-slider">
             <input type="range" id="input-texture-undulation" min="0" max="100" step="1" value="30">
             <input type="text" id="num-texture-undulation" class="ds-value" value="30%" inputmode="numeric">
           </div>
         </div>
+        <details id="texture-advanced" class="ds-advanced">
+          <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced</span></summary>
+          <div class="ds-stack">
+        <div class="ds-field">
+          <div class="ds-label">Waves</div>
+          <div class="ds-slider">
+            <input type="range" id="input-texture-waves" min="1" max="6" step="1" value="2">
+            <input type="text" id="num-texture-waves" class="ds-value" value="2" inputmode="numeric">
+          </div>
+        </div>
+        <div class="ds-field">
+          <div class="ds-label">Wave direction</div>
+          <div class="ds-slider">
+            <input type="range" id="input-texture-waveangle" min="0" max="360" step="5" value="0">
+            <input type="text" id="num-texture-waveangle" class="ds-value" value="0º" inputmode="numeric">
+          </div>
+        </div>
+          </div>
+        </details>
       </div>
 
       <!-- ===================================================================
@@ -1458,7 +1477,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=9b8e2b9d"></script>
+  <script src="js/bundle-pro.js?v=20f05bb3"></script>
 
 </body>
 </html>

@@ -133,7 +133,9 @@ export const createDefaultLayerStructure = () => ({
     jitter: 1, // px for a 100px module, 0 to 10 (shown as 0 to 100 %)
     skipChance: 10, // line skipping %, 0 to 90 (strokes only)
     crossing: 10, // random lines %, 0 to 100: share of the vertices that grow a short line (strokes only)
-    undulation: 9 // perimeter undulation, px for a 100px module, 0 to 30 (shown as 0 to 100 %)
+    undulation: 9, // plane wave amount, px for a 100px module, 0 to 30 (shown as 0 to 100 %)
+    waves: 2, // plane wave: how many waves cross the module (1 to 6)
+    waveAngle: 0 // plane wave: the direction it travels, in degrees (0 to 360)
   },
   space: {
     enabled: false,
@@ -223,6 +225,7 @@ export class StudioEngine {
         enabled: true,
         jitter: (base.jitter || 0) * k,
         undulation: (base.undulation || 0) * k,
+        waves: base.waves, waveAngle: base.waveAngle,
         skipChance: (base.skipChance || 0) * k,
         crossing: (base.crossing || 0) * k
       };

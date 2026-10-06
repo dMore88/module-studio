@@ -76,7 +76,7 @@
       const an = st.anomaly; an.enabled = rb(); an.type = pick(["focal","fracture","swell","tear","regrid"]); an.zoneGrid = pick(["sliding","sheared","curved","zigzag","triangular","alternating"]); an.epicenterX = 0.1 + rnd() * 0.8; an.epicenterY = 0.1 + rnd() * 0.8; an.radius = ri(50, 350); an.intensity = ri(10, 100); an.anomalousShape = pick(SHAPES); an.highlightColor = rb(); an.showReticle = rb(); an.distribution = pick(["single","regular","random"]); an.count = ri(2, 12); an.seed = ri(1, 99); an.attrs = { shape: rb(), scale: rb(), rotation: rb(), position: rb() };
       const co = st.contrast; co.enabled = rb(); co.dimension = pick(["scale","shape","direction","position","tone","texture","space"]); co.positionShift = ri(5, 50); co.positionAngle = ri(0, 360); co.dominanceRatio = ri(50, 95); co.scaleFactor = 0.2 + rnd() * 2.8; co.contrastShape = pick(SHAPES); co.angle = ri(15, 90); co.highlightContrast = rb(); co.spread = pick(["scattered","balanced","edge","center"]);
       const cn = st.concentration; cn.enabled = rb(); cn.mode = pick(["point","void","line","line_void","free","dense","sparse"]); cn.method = pick(["move","absence"]); cn.edgeFade = rb(); cn.attractorX = 0.05 + rnd() * 0.9; cn.attractorY = 0.05 + rnd() * 0.9; cn.power = ri(20, 100); cn.radius = ri(80, 450); cn.lineAxis = pick(["horizontal","vertical"]); cn.alignToField = rb(); cn.densityScale = rb(); cn.showAttractor = rb(); cn.focusCount = ri(2, 6);
-      const tx = st.texture; tx.enabled = rb(); tx.jitter = ri(0, 10); tx.skipChance = ri(0, 90); tx.crossing = ri(0, 100); tx.undulation = ri(0, 30);
+      const tx = st.texture; tx.enabled = rb(); tx.jitter = ri(0, 10); tx.skipChance = ri(0, 90); tx.crossing = ri(0, 100); tx.undulation = ri(0, 30); tx.waves = ri(1, 6); tx.waveAngle = ri(0, 360);
       const sp = st.space; sp.enabled = rb(); sp.mode = pick(["isometric","foreshortening","fluctuating","conflicting"]); sp.depthPct = ri(5, 100); sp.angle = ri(-180, 180); sp.shading = ri(5, 100); sp.showIsoGuides = rb();
     }
   }
@@ -257,10 +257,33 @@
       const st = app.getActiveLayerStructure();
       st.texture = { enabled: true, jitter: 5.8, skipChance: 20, crossing: 100, undulation: 8.4 };
       app.render();
-      assert(/Jitter 58%/.test(log()) && /Line skipping 20%/.test(log()) && /Random lines 100%/.test(log()) && /Undulation 28%/.test(log()), "The Texture line is incomplete: " + log());
+      assert(/Jitter 58%/.test(log()) && /Line skipping 20%/.test(log()) && /Random lines 100%/.test(log()) && /Plane wave 28% \(2 waves, 0º\)/.test(log()), "The Texture line is incomplete: " + log());
       st.texture = { enabled: true, jitter: 0, skipChance: 0, crossing: 0, undulation: 3 };
       app.render();
-      assert(/Texture: Undulation 10%/.test(log()) && !/Jitter|skipping|Random/.test(log()), "Controls at 0 should stay out of the line: " + log());
+      assert(/Texture: Plane wave 10%/.test(log()) && !/Jitter|skipping|Random/.test(log()), "Controls at 0 should stay out of the line: " + log());
+    });
+
+    await test("Plane wave bends the whole module like one sheet, in the direction chosen", () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: true, width: 300, height: 300, strokeWidth: 2 }); app.state.showSafeBounds = false; L.showContainer = false;
+      L.structure.enabled = true; L.structure.mode = "repetition"; Object.assign(L.structure.repetition, { cols: 1, rows: 1, sizeMode: "fit" });
+      const dpr = cv.width / 600;
+      // Spread of the top edge (y of the first ink pixel going down, for each column across the middle of the square)
+      const spread = (angle, amount) => {
+        L.structure.texture = { enabled: true, jitter: 0, skipChance: 0, crossing: 0, undulation: amount, waves: 2, waveAngle: angle };
+        drawRaw(app);
+        const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+        let lo = 1e9, hi = -1;
+        for (let x = 190; x <= 410; x += 4) {
+          for (let y = 100; y < 300; y++) { if (d[(Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4] < 120) { lo = Math.min(lo, y); hi = Math.max(hi, y); break; } }
+        }
+        return hi - lo;
+      };
+      const flat = spread(0, 0), along = spread(0, 18), across = spread(90, 18);
+      assert(flat <= 2, `A square without the wave should have a straight top edge (${flat})`);
+      assert(along > 8, `With the wave travelling sideways the top edge should ripple (${along})`);
+      assert(across < along / 2, `With the wave travelling downward the top edge only slides, it does not ripple (${across})`);
     });
 
     await test("Undo and redo restore a per-layer setting", () => {
