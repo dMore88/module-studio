@@ -918,8 +918,8 @@ export class StudioProApp {
       });
       this.syncControlValue("input-layout-rays", rad.rays || 12);
       this.syncControlValue("num-layout-rays", rad.rays || 12);
-      this.syncControlValue("input-layout-rings", rad.rings || 5);
-      this.syncControlValue("num-layout-rings", rad.rings || 5);
+      this.syncControlValue("input-layout-rings", rad.rings || 6);
+      this.syncControlValue("num-layout-rings", rad.rings || 6);
       this.syncControlValue("input-layout-centers", rad.centerCount || 2);
       this.syncControlValue("num-layout-centers", rad.centerCount || 2);
       document.getElementById("rad-centers-block")?.classList.toggle("hidden", rad.scheme !== "multi_center");
@@ -1322,7 +1322,7 @@ export class StudioProApp {
     this.bindSliderWithNumber("input-layout-centers", "num-layout-centers", (val) => {
       const struct = this.getActiveLayerStructure();
       if (!struct) return;
-      struct.radiation.centerCount = Math.max(2, Math.min(6, Math.round(val)));
+      struct.radiation.centerCount = Math.max(2, Math.min(8, Math.round(val)));
       struct.mode = "radiation";
       this.render();
     }, "Centers");

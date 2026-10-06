@@ -1426,6 +1426,8 @@
       const dark = (d, x, y) => d[(Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4] < 110;
       // The outer ring of each centre has radius 0.32 * 600 * 0.84... measure where rings pass instead: with 2 centres the foci are left and right
       const two = render(2), three = render(3), four = render(4);
+      const eight = render(8), seven = render(7);
+      assert(JSON.stringify(Array.from(eight)) !== JSON.stringify(Array.from(seven)) && eight.some((v) => v < 110), "Eight centres draw something, and not the same as seven");
       const ringsAt = (d, cx, cy, r) => dark(d, cx + r, cy) || dark(d, cx - r, cy) || dark(d, cx, cy + r) || dark(d, cx, cy - r);
       const refR = 600 * 0.32 * 0.84; // usable = 600 minus the 0% margin, refR = 0.32 * 600
       assert(JSON.stringify(Array.from(two)) !== JSON.stringify(Array.from(three)) && JSON.stringify(Array.from(three)) !== JSON.stringify(Array.from(four)), "Each number of centres should draw something different");

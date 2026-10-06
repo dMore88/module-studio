@@ -31,7 +31,7 @@ export const createDefaultLayerStructure = () => ({
   radiation: {
     scheme: "centrifugal", // centrifugal, centripetal, concentric, spiral, multi_center
     orientation: "auto", // auto (by scheme), outward, inward, tangent, fixed
-    centerOpen: 0, // open center: hole radius as a percentage of the radius (0 to 70)
+    centerOpen: 0, // open center: hole radius as a percentage of the radius (0 to 90)
     ringRotation: 0,
     centerCount: 2, // number of focal centres of the multi-center scheme (2 to 6)
     ringShape: "circle", // circle, triangle, square, pentagon, hexagon or octagon: the shape of every ring (Wong, fig. 49) // degrees each ring is rotated more than the previous one (-90 to 90)
@@ -40,7 +40,7 @@ export const createDefaultLayerStructure = () => ({
         lineColor: "", // empty = the layer's ink colour
     lineWidth: 1, // thickness of the visible rays and rings, 0.5 to 6 px
     rays: 12,
-    rings: 5,
+    rings: 6,
     spiralTwist: 45,
     activeClipping: false,
     showRays: false,
@@ -1617,10 +1617,10 @@ export class StudioEngine {
     const cx = width / 2 + (rad.centerX || 0);
     const cy = height / 2 + (rad.centerY || 0);
 
-    const rays = Math.max(4, rad.rays);
+    const rays = Math.max(3, rad.rays);
     const twistRad = ((rad.spiralTwist || 0) * Math.PI) / 180;
     // Open center: the rings start at the hole radius instead of the centre
-    const openR = refR * Math.max(0, Math.min(70, rad.centerOpen || 0)) / 100;
+    const openR = refR * Math.max(0, Math.min(90, rad.centerOpen || 0)) / 100;
 
     // Actual size: the module keeps its real size and each ring is as thick as the container's height, so the
     // structure can run past the canvas. In fit mode the rings divide a set radius.
@@ -1655,8 +1655,8 @@ export class StudioEngine {
     };
 
     // Centers list (if multi_center, we have two focal centers creating Moiré)
-    // Multi-center: 2 to 6 foci spread evenly on a small circle (two foci sit left and right of the middle)
-    const centerCount = Math.max(2, Math.min(6, Math.round(rad.centerCount || 2)));
+    // Multi-center: 2 to 8 foci spread evenly on a small circle (two foci sit left and right of the middle)
+    const centerCount = Math.max(2, Math.min(8, Math.round(rad.centerCount || 2)));
     const centers = isMultiCenter
       ? centerCount === 2
         ? [{ x: cx - refR * 0.35, y: cy }, { x: cx + refR * 0.35, y: cy }]

@@ -158,8 +158,8 @@ Genera el espacio desde uno o varios centros focales con coordenadas polares $(r
   * `centripetal` (fig. 50): los ángulos de las líneas estructurales apuntan hacia el centro. Orientación automática hacia dentro; las guías son chevrones anidados.
   * `concentric`: anillos que se expanden desde el epicentro.
   * `spiral`: rayos curvos continuos con torsión angular acumulada.
-  * `multi_center` (*Multi-center*): de 2 a 6 focos concurrentes con interferencia mutua. Con 2 los focos quedan a izquierda y derecha; con más se reparten parejos en un círculo pequeño.
-* **`rays`** (*Angular rays*, 4 a 36) y **`rings`** (*Concentric rings*, 2 a 16).
+  * `multi_center` (*Multi-center*): de 2 a 8 focos concurrentes con interferencia mutua. Con 2 los focos quedan a izquierda y derecha; con más se reparten parejos en un círculo pequeño.
+* **`rays`** (*Angular rays*, 3 a 60) y **`rings`** (*Concentric rings*, 2 a 20).
 * **`centerCount`** (*Centers*, 2 a 6, por defecto 2): solo con *Multi-center*.
 * **`spiralTwist`** (*Spiral twist*, −180º a 180º): torsión acumulada.
 * **`sizeMode`** (*Module size*): `actual` hace lo mismo que en la cuadrícula: el módulo conserva su tamaño real y cada anillo tiene de grosor la *Container height*.
@@ -168,7 +168,7 @@ Genera el espacio desde uno o varios centros focales con coordenadas polares $(r
 * **`orientation`** (*Module orientation*, dropdown, `auto`): `auto` depende del esquema; `outward`, `inward`, `tangent` o `fixed` (sin giro).
 * **`direction`** (*Direction*, `repeated`): igual que en la cuadrícula, encima de la orientación.
 * **`ringShape`** (*Ring shape*, dropdown, `circle`; fig. 49b y 49g): la forma de cada anillo: `circle`, `triangle` y `pentagon` (punta arriba), `square`, `hexagon` u `octagon` (lado plano arriba). Los módulos, las líneas visibles, los sectores del recorte y la inversión figura-fondo siguen al polígono; *Ring rotation* gira cada polígono. No aplica a `spiral` ni `centripetal`.
-* **`centerOpen`** (*Open center*, 0 a 70 %): radio del agujero central; anillos y rayos empiezan en su borde (fig. 48d).
+* **`centerOpen`** (*Open center*, 0 a 90 %): radio del agujero central; anillos y rayos empiezan en su borde (fig. 48d).
 * **`ringRotation`** (*Ring rotation*, −90º a 90º): grados que cada anillo gira más que el interior (fig. 49g).
 * *Clip cell*, *Checkerboard inversion* y **Visible lines** (`showRays` / `showRings`, con **`lineColor`** y **`lineWidth`**, 0,5 a 6 px): igual que en la cuadrícula; son diseño y se exportan.
 * `centerX / centerY`: foco excéntrico (en el estado).

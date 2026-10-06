@@ -34,7 +34,7 @@ Por eso un módulo con **Width igual al lado del lienzo (600 en 1:1) llena exact
 | Width / Height que llena la celda | = lado del lienzo (600) | 100 % de la celda |
 | Width / Height máximo | 2000 px | 333 % de la celda (el módulo se sale de ella y de sus vecinos) |
 | Módulos máximos | 100 columnas × 100 filas | 10 000 |
-| Radial | 4 a 36 rayos × 2 a 16 anillos | de 8 a 576 módulos |
+| Radial | 3 a 60 rayos × 2 a 20 anillos | de 6 a 1 200 módulos |
 | **Alcance del radial en Fit** | el último anillo termina al **50 % del lado menor** del lienzo (un círculo inscrito que toca el borde); en *Multi-center* al **37 %**, para que los focos (a 35 % del radio) queden dentro | Es una constante del código (`refR`), no un límite de los sliders. Cambió el 6 oct 2026: antes era 42 % y 32 %, con un margen de 8 % por lado. La retícula siempre llena el lienzo porque sus celdas lo cubren por completo |
 
 **Topes internos, en porcentaje.** El "5 %" que aparece en varios sitios es un piso del código, no del slider:
@@ -98,11 +98,11 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 ### Layout › Radiation
 | Control | Mín. | Máx. | Paso | Razón |
 | :-- | :-- | :-- | :-- | :-- |
-| Angular rays | 4 | 36 | 1 | Con menos de 4 no se lee como radial; 36 ya es muy denso. |
-| Concentric rings | 2 | 16 | 1 | Hasta 16 anillos por legibilidad y rendimiento. |
-| Centers (multi-center) | 2 | 6 | 1 | De dos centros a seis focos. |
+| Angular rays | 3 | 60 | 1 | 3 es el reparto mínimo (triangular); 60 rayos con 20 anillos son 1 200 módulos, que el motor dibuja sin problema. |
+| Concentric rings | 2 | 20 | 1 | Hasta 20 anillos; un valor redondo que el motor aguanta bien. |
+| Centers (multi-center) | 2 | 8 | 1 | De dos a ocho focos, repartidos en círculo (ocho = un octágono). |
 | Spiral twist | −180° | 180° | 1 | Sentido y cantidad del giro de la espiral. |
-| Open center | 0 % | 70 % | 1 | Hueco central; 70 % deja aún espacio para los anillos. |
+| Open center | 0 % | 90 % | 1 | Hueco central; con 100 % los anillos tendrían grosor cero y no se vería nada, 90 % deja una corona fina. |
 | Ring rotation | −90° | 90° | 1 | Giro acumulativo de cada anillo respecto al anterior. |
 | Line width | 0,5 px | 10 px | 0,5 | Rayos y anillos visibles. |
 | Ring shape (dropdown) | círculo | octágono | — | Círculo, triángulo, cuadrado, pentágono, hexágono y octágono (el polígono más cercano al círculo). |
@@ -174,7 +174,7 @@ Una sola capa (**Layer 1**): círculo, trazo (no relleno), color `#18181f`, traz
 ### Cuando se enciende cada control
 
 **Layout › Repetition** (modo por defecto): variación Grid, 4 × 4, Fit to canvas, módulos en los centros, sin mezcla de celdas, dirección repetida, sin reflejo, *Clip cell* apagado, *Checkerboard* apagado, *Visible lines* apagado (grosor 1,5, color de la capa, ambas direcciones, todas las líneas). Variación: Row offset 50 %, Shear angle 15°, Wave amount 10 %. Tamaño de intersección 50 %. Free seed 7.
-**Layout › Radiation:** esquema Centrifugal, orientación automática, 12 rayos × 5 anillos, Spiral twist 45°, centro cerrado, sin giro de anillos, 2 centros, anillos circulares, Fit to canvas, líneas apagadas (grosor 1).
+**Layout › Radiation:** esquema Centrifugal, orientación automática, 12 rayos × 6 anillos, Spiral twist 45°, centro cerrado, sin giro de anillos, 2 centros, anillos circulares, Fit to canvas, líneas apagadas (grosor 1).
 **Ritmo A:B (Advanced):** Col y Row ratio 1, gradaciones 0 %.
 
 | Panel | Por defecto al encenderlo |
