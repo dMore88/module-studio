@@ -314,6 +314,57 @@
       assert(/Space: Isometric \/ Depth 35% \/ -90º \/ Shading 60%/.test(log()) && !/undefined|NaN/.test(log()), "The Space line is wrong: " + log());
     });
 
+    const fire0 = (el, v) => { el.value = v; el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
+    await test("Block: the layout lives in a rectangle of the canvas, in Fit, Actual size and Radiation", async () => {
+      reset();
+      const d = win.document, cv = d.getElementById("studio-canvas");
+      const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: false, width: 100, height: 100, showContainer: false }); app.state.showSafeBounds = false;
+      const st = L.structure; st.enabled = true; st.mode = "repetition"; Object.assign(st.repetition, { cols: 4, rows: 4, gridType: "basic", sizeMode: "fit" });
+      const dpr = cv.width / 600;
+      const bounds = () => {
+        drawRaw(app);
+        const px = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+        let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
+        for (let y = 0; y < cv.height; y += 2) for (let x = 0; x < cv.width; x += 2) if (px[(y * cv.width + x) * 4] < 110) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+        return { x0: x0 / dpr, y0: y0 / dpr, x1: x1 / dpr, y1: y1 / dpr };
+      };
+      const plain = bounds();
+      delete st.block; const noBlock = (drawRaw(app), cv.toDataURL());
+      st.block = { x: 50, y: 50, w: 100, h: 100 }; drawRaw(app);
+      assert(cv.toDataURL() === noBlock, "The default block should draw exactly what a layout without a block draws");
+      // Fit: a block of 50 % x 50 % centred at 25 % / 25 % keeps the whole grid in the top-left quarter
+      st.block = { x: 25, y: 25, w: 50, h: 50 };
+      const fit = bounds();
+      assert(fit.x1 <= 301 && fit.y1 <= 301 && fit.x0 < 60 && fit.y0 < 60 && fit.x1 > 240 && fit.y1 > 240, `Fit: the grid should fill the top-left quarter (${JSON.stringify(fit)}), plain was ${JSON.stringify(plain)}`);
+      // Actual size: the block size does not count, only its centre: the grid block moves, the canvas is not cropped
+      Object.assign(st.repetition, { sizeMode: "actual", cols: 2, rows: 2 }); L.containerW = 100; L.containerH = 100; L.containerAuto = false;
+      st.block = { x: 50, y: 50, w: 100, h: 100 };
+      const mid = bounds();
+      st.block = { x: 80, y: 20, w: 30, h: 30 };
+      const act = bounds();
+      assert(Math.abs((act.x0 + act.x1) / 2 - 480) < 6 && Math.abs((act.y0 + act.y1) / 2 - 120) < 6, `Actual size should be centred at 80 % / 20 % (${JSON.stringify(act)})`);
+      assert(Math.abs((act.x1 - act.x0) - (mid.x1 - mid.x0)) < 4, "Actual size keeps the size of its cells, whatever the block size");
+      // Radiation: the rings are centred on the block and its smaller side is their reach
+      st.mode = "radiation"; Object.assign(st.radiation, { sizeMode: "fit", scheme: "concentric", rays: 12, rings: 4, centerOpen: 0, showRings: true, lineWidth: 3, lineColor: "" });
+      st.block = { x: 25, y: 50, w: 40, h: 40 };
+      const rad = bounds();
+      assert(rad.x1 <= 150 + 120 + 2 && rad.x0 >= 150 - 120 - 2 && Math.abs((rad.x0 + rad.x1) / 2 - 150) < 8, `Radiation should be centred at 25 % with a reach of 120 px (${JSON.stringify(rad)})`);
+      // The click on the canvas lands inside the layout's block (anomaly focal point, attractor)
+      st.mode = "repetition"; Object.assign(st.repetition, { sizeMode: "fit" }); st.block = { x: 25, y: 25, w: 50, h: 50 };
+      const rect = cv.getBoundingClientRect();
+      const at = app.layoutPointFromClick({ clientX: rect.left + rect.width * 0.25, clientY: rect.top + rect.height * 0.25 });
+      assert(Math.abs(at.x - 0.5) < 1e-6 && Math.abs(at.y - 0.5) < 1e-6, `The middle of the block is 50 % / 50 % of the layout (${JSON.stringify(at)})`);
+      // The inspector: four sliders, the size ones hidden in Actual size, and the art log says it
+      d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
+      assert(d.getElementById("num-block-x").value === "25%" && d.getElementById("num-block-w").value === "50%", "The block sliders should show the block");
+      assert(!d.getElementById("block-size-fields").classList.contains("hidden"), "Fit shows the block size");
+      st.repetition.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer(); app.render();
+      assert(d.getElementById("block-size-fields").classList.contains("hidden"), "Actual size hides the block size");
+      assert(/Block: at 25% \/ 25%/.test(d.getElementById("art-log-lines").textContent), "The log should mention the block: " + d.getElementById("art-log-lines").textContent);
+      fire0(d.getElementById("input-block-x"), 70);
+      assert(st.block.x === 70, "The block X slider did not apply");
+    });
+
     await test("Undo and redo restore a per-layer setting", () => {
       reset();
       app.history = []; app.historyLabels = []; app.historyIndex = -1;

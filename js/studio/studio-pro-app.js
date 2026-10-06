@@ -651,13 +651,23 @@ export class StudioProApp {
       const SPREAD = { scattered: "Scattered", balanced: "Balanced", edge: "Toward the edges", center: "Toward the center" };
       const CMODE = { point: "Point", void: "Void", line: "Line", line_void: "Away from line", free: "Hotspots", dense: "Dense", sparse: "Sparse" };
 
+      // Block: only when it is not the whole canvas
+      const blockLine = () => {
+        const b = s.block;
+        if (!b || (b.x === 50 && b.y === 50 && b.w === 100 && b.h === 100)) return;
+        const cur = s.mode === "radiation" ? s.radiation : s.repetition;
+        const actual = !!cur && (cur.sizeMode === "actual" || cur.sizeMode === "fixed");
+        out.push(line("Block", `${actual ? "" : `${b.w}% x ${b.h}% `}at ${b.x}% / ${b.y}%`));
+      };
       if (s.enabled) {
         if (s.mode === "radiation") {
           const r = s.radiation || {};
           out.push(line("Structure", ["Radiation", pick(SCHEMES, r.scheme), `${r.rays} rays - ${r.rings} rings`, r.sizeMode === "actual" ? "Actual size" : "Fit to canvas"].join(" / ")));
+          blockLine();
         } else {
           const r = s.repetition || {};
           out.push(line("Structure", ["Repetition", pick(GRIDS, r.gridType), `C${r.cols} - R${r.rows}`, r.sizeMode === "actual" ? "Actual size" : "Fit to canvas", pick(PLACE, r.placement || "centers"), pick(MIX, r.cellMix || "none")].join(" / ")));
+          blockLine();
         }
         const f = s.formalStructure;
         if (f && f.enabled && s.mode !== "radiation") {
@@ -917,10 +927,36 @@ export class StudioProApp {
     });
   }
 
+  // A click on the canvas as a position inside the active layer's layout (0 to 1 of its block), which is where the
+  // anomaly's focal point and the attractor live
+  layoutPointFromClick(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width, py = (e.clientY - rect.top) / rect.height;
+    const struct = this.getActiveLayerStructure();
+    if (!struct || !struct.enabled) return { x: px, y: py };
+    const cfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
+    const bf = this.engine.blockFrame(struct, cfg.w, cfg.h);
+    return { x: (px * cfg.w - bf.tx) / bf.w, y: (py * cfg.h - bf.ty) / bf.h };
+  }
+
+  // Block (Layout): position of the layout on the canvas and, in Fit and Radiation, its size
+  syncBlockInspector(struct) {
+    const b = { x: 50, y: 50, w: 100, h: 100, ...(struct.block || {}) };
+    for (const [k, id] of [["x", "block-x"], ["y", "block-y"], ["w", "block-w"], ["h", "block-h"]]) {
+      this.syncControlValue(`input-${id}`, b[k]);
+      const num = document.getElementById(`num-${id}`);
+      if (num) num.value = `${Math.round(b[k])}%`;
+    }
+    const cur = struct.mode === "radiation" ? struct.radiation : struct.repetition;
+    const actual = !!cur && (cur.sizeMode === "actual" || cur.sizeMode === "fixed");
+    document.getElementById("block-size-fields")?.classList.toggle("hidden", actual);
+  }
+
   syncStructureInspectorWithActiveLayer() {
     const mod = this.getActiveModule();
     const struct = this.getActiveLayerStructure();
     if (!struct) return;
+    this.syncBlockInspector(struct);
 
     const toggleSwitch = document.getElementById("toggle-layout-structure");
     const btnRep = document.getElementById("btn-layout-repetition");
@@ -1270,6 +1306,17 @@ export class StudioProApp {
 
     btnRep?.addEventListener("click", () => setMode("repetition"));
     btnRad?.addEventListener("click", () => setMode("radiation"));
+
+    // Block: the rectangle the layout lives in (position of its centre and, in Fit / Radiation, its size, in % of the canvas)
+    for (const [key, id, label] of [["x", "block-x", "Block X"], ["y", "block-y", "Block Y"], ["w", "block-w", "Block Width"], ["h", "block-h", "Block Height"]]) {
+      this.bindSliderWithNumber(`input-${id}`, `num-${id}`, (val) => {
+        const struct = this.getActiveLayerStructure();
+        if (!struct) return;
+        struct.block = { x: 50, y: 50, w: 100, h: 100, ...(struct.block || {}) };
+        struct.block[key] = key === "w" || key === "h" ? Math.max(10, Math.min(100, val)) : Math.max(0, Math.min(100, val));
+        this.render();
+      }, label, "%");
+    }
 
     // Repetition Variations (Grid, Curved, Brick, Diagonal, Zigzag, Triangular, Alternating)
     document.querySelectorAll("[data-grid-var]").forEach(btn => {
@@ -2282,9 +2329,9 @@ export class StudioProApp {
     this.canvas?.addEventListener("click", (e) => {
       if (!this.isFlyoutOpen || this.activeRailTab !== "anomaly") return;
       if ((this.getActiveAnomaly()?.distribution || "single") !== "single") return; // scattered layouts have no single focal point
-      const rect = this.canvas.getBoundingClientRect();
-      const nx = Math.max(0.1, Math.min(0.9, (e.clientX - rect.left) / rect.width));
-      const ny = Math.max(0.1, Math.min(0.9, (e.clientY - rect.top) / rect.height));
+      const at = this.layoutPointFromClick(e);
+      const nx = Math.max(0.1, Math.min(0.9, at.x));
+      const ny = Math.max(0.1, Math.min(0.9, at.y));
       commit(a => { a.epicenterX = nx; a.epicenterY = ny; }, "Anomaly Focal Point");
     });
   }
@@ -2595,9 +2642,9 @@ export class StudioProApp {
     // Click on the canvas moves the attractor while the Concentration tab is open.
     this.canvas?.addEventListener("click", (e) => {
       if (!this.isFlyoutOpen || this.activeRailTab !== "concentration") return;
-      const rect = this.canvas.getBoundingClientRect();
-      const nx = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      const ny = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+      const at = this.layoutPointFromClick(e);
+      const nx = Math.max(0, Math.min(1, at.x));
+      const ny = Math.max(0, Math.min(1, at.y));
       commit(c => { c.attractorX = nx; c.attractorY = ny; }, "Concentration Attractor");
     });
   }

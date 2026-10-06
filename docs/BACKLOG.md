@@ -22,6 +22,8 @@ Sale de las filas ⏳ del mapa de conceptos, más las mejoras de filas 🟡 que 
 
 | — | **Posición individual de cada foco** (Concentration › Hotspots) | Hoy X / Y y el puntero mueven solo el foco 1; los demás son copias suyas giradas alrededor del centro (2 focos = espejo). Propuesta: una fila de chips 1, 2, 3… para elegir el foco que mueven los sliders y el puntero (cada foco guarda su posición), y un interruptor **Regular / Free** que mantiene la figura regular actual o activa posiciones libres. Con *Regular* nada cambia y los proyectos viejos se ven igual |
 
+| — | **Block, fase 2** (el 7 oct 2026 se hizo la fase 1: el bloque con posición y tamaño) | (1) **Marco punteado del bloque** en el lienzo, con el color de guías, que no se exporta (como el del contenedor). (2) **Clic en el lienzo para mover el bloque** con el panel Layout abierto (como el foco de Anomaly y el atractor de Concentration). (3) **Tamaño hasta 200 %** para fondos sangrados |
+
 ### P3 — por evaluar con el filtro de juego
 | ID | Concepto | Notas |
 | :-- | :-- | :-- |

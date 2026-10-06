@@ -106,6 +106,11 @@ Cada capa es un módulo independiente. Se pueden tener hasta 5 capas con visibil
 ### 4.1 Layout › Repetition (Retícula Cartesiana)
 Multiplica el módulo en una retícula ortogonal sobre el plano cartesiano $X, Y$. El panel *Layout* tiene un interruptor general y un selector *Structure mode* (Repetition / Radiation, excluyentes).
 
+**Block** (sección plegable al principio de *Layout*, abierta por defecto; vale para los dos modos): el **rectángulo del lienzo donde vive el layout de la capa**, para componer varias capas (por ejemplo una retícula a la izquierda y otra polar a la derecha). Se guarda en `layer.structure.block` y el layout se dibuja como si el bloque fuera un lienzo pequeño, con todo lo suyo dentro (módulos, líneas visibles, y las posiciones de Anomaly y Concentration, que son relativas al bloque).
+* **`x` / `y`** (*Position X* y *Position Y*, 0 a 100 % del lienzo, por defecto 50 %): el **centro** del bloque. En *Actual size* mueve el bloque entero sin recortarlo.
+* **`w` / `h`** (*Block width* y *Block height*, 10 a 100 % del lienzo, por defecto 100 %): el tamaño del bloque. En *Fit to canvas* la retícula se reparte dentro de él; en *Radiation* el radio máximo sale de su lado menor. En *Actual size* no cuenta (el bloque mide lo que midan sus celdas), y los dos sliders se ocultan.
+* Con los valores por defecto el dibujo es idéntico al de siempre. En Anomaly y Concentration, el clic en el lienzo se convierte en una posición dentro del bloque. El *Art log* añade `Block: 40% x 50% at 25% / 50%` cuando no es el lienzo entero.
+
 **Visible al abrir:**
 * **`gridType`** (*Grid structure variation*, dropdown con un icono por retícula):
   * `basic` (*Grid*): retícula ortogonal $M_{i,j}$.

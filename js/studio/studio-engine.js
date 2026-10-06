@@ -5,6 +5,9 @@ import { CanvasUtils } from '../canvas-utils.js';
 export const createDefaultLayerStructure = () => ({
   enabled: false,
   mode: "repetition", // "repetition" | "radiation"
+  // Block: where the layout lives on the canvas, in % of the canvas. x / y is the centre of the block and w / h its
+  // size (Fit to canvas and Radiation; in Actual size the block is as big as its cells, so only x / y count)
+  block: { x: 50, y: 50, w: 100, h: 100 },
   repetition: {
     gridType: "basic", // basic, sliding, sheared, curved, zigzag, triangular
     cols: 4,
@@ -898,6 +901,32 @@ export class StudioEngine {
     }
   }
 
+  // Block: the rectangle a layer's layout lives in. Returns the size of the "small canvas" the layout is drawn on (w, h),
+  // where its origin sits on the real canvas (tx, ty) and the rectangle the layout must be cut to, in its own coordinates.
+  // Fit to canvas and Radiation: the block is the small canvas. Actual size: the cells fix the size, so the small canvas
+  // is the whole canvas, moved to the block's centre. The default block (centre, 100 %) is the plain canvas.
+  blockFrame(struct, width, height) {
+    const b = (struct && struct.block) || {};
+    const bx = Number.isFinite(b.x) ? b.x : 50, by = Number.isFinite(b.y) ? b.y : 50;
+    const bw = Number.isFinite(b.w) ? b.w : 100, bh = Number.isFinite(b.h) ? b.h : 100;
+    const isDefault = bx === 50 && by === 50 && bw === 100 && bh === 100;
+    if (isDefault) return { w: width, h: height, tx: 0, ty: 0, clip: null, isDefault: true };
+    const cx = (bx / 100) * width, cy = (by / 100) * height;
+    const mode = struct.mode === "radiation" ? struct.radiation : struct.repetition;
+    const actual = !!mode && (mode.sizeMode === "actual" || mode.sizeMode === "fixed");
+    if (actual) {
+      const tx = cx - width / 2, ty = cy - height / 2;
+      return { w: width, h: height, tx, ty, clip: [-tx, -ty, width, height], isDefault: false };
+    }
+    const w = Math.max(10, (bw / 100) * width), h = Math.max(10, (bh / 100) * height);
+    return { w, h, tx: cx - w / 2, ty: cy - h / 2, clip: null, isDefault: false };
+  }
+
+  // The rectangle a layout is cut to: its own small canvas, or (Actual size) the real canvas seen from inside the block
+  layoutClipRect(margin, usableW, usableH) {
+    return this.layoutClip || [margin, margin, usableW, usableH];
+  }
+
   // The canvas margin where layouts stop. 0: the design runs to the edge of the canvas.
   safeMargin(width, height) {
     return 0;
@@ -1258,7 +1287,7 @@ export class StudioEngine {
     // Wrap in outer bounding clip so shapes never bleed outside master safe bounds
     ctx.save();
     ctx.beginPath();
-    ctx.rect(margin, margin, usableW, usableH);
+    ctx.rect(...this.layoutClipRect(margin, usableW, usableH));
     ctx.clip();
 
     const seed = sim.seed || 42;
@@ -1677,7 +1706,7 @@ export class StudioEngine {
     // Clip to master safe bounds area
     ctx.save();
     ctx.beginPath();
-    ctx.rect(margin, margin, usableW, usableH);
+    ctx.rect(...this.layoutClipRect(margin, usableW, usableH));
     ctx.clip();
 
     const seed = sim.seed || 42;
@@ -2117,11 +2146,18 @@ export class StudioEngine {
       const layerStruct = mod.structure;
       if (usesStructure(layerStruct)) {
         anyLayerStructure = true;
+        // The layout is drawn as if the block were its own small canvas, then placed on the real one
+        const bf = this.blockFrame(layerStruct, width, height);
+        ctx.save();
+        ctx.translate(bf.tx, bf.ty);
+        this.layoutClip = bf.clip;
         if (layerStruct.mode === "radiation") {
-          this.renderRadiation(ctx, width, height, palette, margin, usableW, usableH, mod, layerStruct.radiation);
+          this.renderRadiation(ctx, bf.w, bf.h, palette, bf.isDefault ? margin : 0, bf.isDefault ? usableW : bf.w, bf.isDefault ? usableH : bf.h, mod, layerStruct.radiation);
         } else {
-          this.renderRepetitionGrid(ctx, width, height, palette, margin, usableW, usableH, mod, layerStruct.repetition);
+          this.renderRepetitionGrid(ctx, bf.w, bf.h, palette, bf.isDefault ? margin : 0, bf.isDefault ? usableW : bf.w, bf.isDefault ? usableH : bf.h, mod, layerStruct.repetition);
         }
+        this.layoutClip = null;
+        ctx.restore();
       } else {
         // Layer rendered as a single element centered on the canvas
         this.renderSingleLayerModule(ctx, mod, width, height, palette);

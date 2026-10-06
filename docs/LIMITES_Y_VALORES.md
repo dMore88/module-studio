@@ -84,6 +84,14 @@ El **valor por defecto** es el que tiene el control al abrir la app o al encende
 | Offset X / Y | −1000 px | 1000 px | 1 px | 0 px | Cubre el lienzo de un lado al otro con holgura (el lienzo mide 450 a 800 px) y permite sacar el módulo del lienzo. |
 | Container width / height | 10 px | 2000 px | 1 px | 100 px | Marco en el que se compone el módulo; 10 px evita celdas degeneradas. Por defecto del tamaño del módulo, para verlo de un vistazo. |
 
+### Layout › Block
+Vale para Repetition y Radiation; es el rectángulo del lienzo donde vive el layout de la capa. En Actual size solo cuenta la posición.
+
+| Control | Mín. | Máx. | Paso | Por defecto | Razón |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| Position X / Y | 0 % | 100 % | 1 % | 50 % | Centro del bloque en el lienzo. |
+| Block width / height | 10 % | 100 % | 1 % | 100 % | Tamaño del bloque en Fit y Radiation; con 100 % ocupa todo el lienzo, como siempre. (Fase 2: hasta 200 % para fondos sangrados.) |
+
 ### Layout › Repetition
 | Control | Mín. | Máx. | Paso | Por defecto | Razón |
 | :-- | :-- | :-- | :-- | :-- | :-- |
