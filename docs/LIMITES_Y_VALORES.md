@@ -33,7 +33,7 @@ Por eso un módulo con **Width igual al lado del lienzo (600 en 1:1) llena exact
 | Width / Height mínimo | 1 px | 0,17 % de la celda (un punto) |
 | Width / Height que llena la celda | = lado del lienzo (600) | 100 % de la celda |
 | Width / Height máximo | 2000 px | 333 % de la celda (el módulo se sale de ella y de sus vecinos) |
-| Módulos máximos | 50 columnas × 50 filas | 2 500 |
+| Módulos máximos | 100 columnas × 100 filas | 10 000 |
 | Radial | 4 a 36 rayos × 2 a 16 anillos | de 8 a 576 módulos |
 | **Alcance del radial en Fit** | el último anillo termina al **50 % del lado menor** del lienzo (un círculo inscrito que toca el borde); en *Multi-center* al **37 %**, para que los focos (a 35 % del radio) queden dentro | Es una constante del código (`refR`), no un límite de los sliders. Cambió el 6 oct 2026: antes era 42 % y 32 %, con un margen de 8 % por lado. La retícula siempre llena el lienzo porque sus celdas lo cubren por completo |
 
@@ -53,7 +53,7 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | Módulo | 1 a 2000 px | 1:1, sin escalar |
 | Contenedor (= celda) | 10 a 2000 px | 0 significa "todo el lienzo" |
 | Celda mínima al dibujar | 10 px | coincide con el mínimo del contenedor |
-| Bloque máximo | 50 × 2000 = **100 000 px** de ancho y de alto | solo se ve lo que cae en el lienzo |
+| Bloque máximo | 100 × 2000 = **200 000 px** de ancho y de alto | solo se ve lo que cae en el lienzo |
 | Lo que se ve | el centro del bloque, recortado al borde del lienzo | con 9 columnas de 200 px solo caben unas 3 |
 
 ### 1.4 Otras medidas relevantes
@@ -77,7 +77,7 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | :-- | :-- | :-- | :-- | :-- |
 | Stroke width | 0,2 | 10 | 0,1 | Del hilo casi invisible al trazo grueso, sin que el trazo se coma el módulo. |
 | Width | 1 | 2000 | 1 | 1 permite el punto (concepto de punto de Wong); 2000 permite módulos tres veces mayores que el lienzo (fondos, recortes). |
-| Height | 5 | 2000 | 1 | Igual que Width; la línea no usa Height. |
+| Height | 1 | 2000 | 1 | Igual que Width; la línea no usa Height. |
 | Rotation | 0 | 360 | 0,5 | Vuelta completa; el medio grado afina la alineación. |
 | Offset X / Y | −1000 | 1000 | 1 | Cubre el lienzo de un lado al otro con holgura (el lienzo mide 450 a 800). |
 | Container width / height | 10 | 2000 | 1 | Marco en el que se compone el módulo; 10 evita celdas degeneradas. |
@@ -85,13 +85,13 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 ### Layout › Repetition
 | Control | Mín. | Máx. | Paso | Razón |
 | :-- | :-- | :-- | :-- | :-- |
-| Columns / Rows | 1 | 50 | 1 | Hasta 2 500 módulos, que el motor dibuja en menos de 25 ms. |
+| Columns / Rows | 1 | 100 | 1 | Hasta 10 000 módulos; el motor los dibuja en ~213 ms (mejor con pocas capas y sin Texture). |
 | Variation param (Row offset) | 0 % | 100 % | 1 | Desplazamiento de las filas impares, de ninguno a una celda entera. |
 | Variation param (Shear angle) | 0° | 45° | 1 | Más de 45° deja de leerse como retícula. |
 | Variation param (Wave amount) | 0 px | 60 px | 1 | Amplitud de la onda de Curved y Zigzag. |
 | Free seed | 1 | 99 | 1 | Distribución de Free; la semilla elige cuál sale. |
 | Intersection size | 10 % | 100 % | 5 | Tamaño de los módulos en los cruces respecto a los de los centros. |
-| Col / Row ratio [A:B] | 1 | 4 | 0,1 | A es hasta 4 veces B; más hace desaparecer las B. |
+| Col / Row ratio [A:B] | 100 % | 400 % | 10 | Tamaño de A respecto a B: 100 % = iguales, 400 % = A cuatro veces B. Es relativo entre A y B, no depende del lienzo. Internamente se guarda como factor 1 a 4. |
 | Col / Row gradation | −30 % | 30 % | 1 | Cada columna o fila crece o se achica ese % respecto a la anterior; más de ±30 % explota en pocos pasos. |
 | Line width | 0,5 | 6 | 0,5 | Grosor de las líneas visibles (son parte del diseño). |
 

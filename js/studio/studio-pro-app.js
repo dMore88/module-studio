@@ -644,8 +644,8 @@ export class StudioProApp {
         const f = s.formalStructure;
         if (f && f.enabled && s.mode !== "radiation") {
           const parts = [];
-          if ((f.colRatio || 1) !== 1) parts.push(`Col ${f.colRatio}:1`);
-          if ((f.rowRatio || 1) !== 1) parts.push(`Row ${f.rowRatio}:1`);
+          if ((f.colRatio || 1) !== 1) parts.push(`Col A ${Math.round(f.colRatio * 100)}% of B`);
+          if ((f.rowRatio || 1) !== 1) parts.push(`Row A ${Math.round(f.rowRatio * 100)}% of B`);
           if (f.colGrade) parts.push(`Col ${f.colGrade > 0 ? "+" : ""}${f.colGrade}%`);
           if (f.rowGrade) parts.push(`Row ${f.rowGrade > 0 ? "+" : ""}${f.rowGrade}%`);
           if (parts.length) out.push(line("Rhythm", parts.join(" / ")));
@@ -1481,14 +1481,14 @@ export class StudioProApp {
       toggle.disabled = isRadActive;
     }
 
-    this.syncControlValue("input-struct-col-ratio", fs.colRatio !== undefined ? fs.colRatio : 1);
-    this.syncControlValue("num-struct-col-ratio", fs.colRatio !== undefined ? fs.colRatio : 1);
+    this.syncControlValue("input-struct-col-ratio", Math.round((fs.colRatio !== undefined ? fs.colRatio : 1) * 100));
+    this.syncControlValue("num-struct-col-ratio", `${Math.round((fs.colRatio !== undefined ? fs.colRatio : 1) * 100)}%`);
     this.syncControlValue("input-struct-col-grade", fs.colGrade || 0);
     this.syncControlValue("num-struct-col-grade", `${fs.colGrade || 0}%`);
     this.syncControlValue("input-struct-row-grade", fs.rowGrade || 0);
     this.syncControlValue("num-struct-row-grade", `${fs.rowGrade || 0}%`);
-    this.syncControlValue("input-struct-row-ratio", fs.rowRatio !== undefined ? fs.rowRatio : 1);
-    this.syncControlValue("num-struct-row-ratio", fs.rowRatio !== undefined ? fs.rowRatio : 1);
+    this.syncControlValue("input-struct-row-ratio", Math.round((fs.rowRatio !== undefined ? fs.rowRatio : 1) * 100));
+    this.syncControlValue("num-struct-row-ratio", `${Math.round((fs.rowRatio !== undefined ? fs.rowRatio : 1) * 100)}%`);
     this.syncCheckbox("chk-struct-gridlines", !!fs.showGridLines);
 
     this.updateRailIndicatorDots();
@@ -1544,7 +1544,7 @@ export class StudioProApp {
       if (!mod.structure.formalStructure) {
         mod.structure.formalStructure = { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false };
       }
-      mod.structure.formalStructure.colRatio = val;
+      mod.structure.formalStructure.colRatio = Math.max(1, Math.min(4, val / 100));
       mod.structure.formalStructure.enabled = true;
       mod.structure.enabled = true;
       if (mod.structure.mode === "radiation") {
@@ -1555,7 +1555,7 @@ export class StudioProApp {
       this.syncFormalStructureInspectorWithActiveLayer();
       this.render();
       this.updateLayerCardsUI();
-    }, "Col Ratio");
+    }, "Col Ratio", "%");
 
     this.bindSliderWithNumber("input-struct-row-ratio", "num-struct-row-ratio", (val) => {
       const mod = this.getActiveModule();
@@ -1563,7 +1563,7 @@ export class StudioProApp {
       if (!mod.structure.formalStructure) {
         mod.structure.formalStructure = { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false };
       }
-      mod.structure.formalStructure.rowRatio = val;
+      mod.structure.formalStructure.rowRatio = Math.max(1, Math.min(4, val / 100));
       mod.structure.formalStructure.enabled = true;
       mod.structure.enabled = true;
       if (mod.structure.mode === "radiation") {
@@ -1574,7 +1574,7 @@ export class StudioProApp {
       this.syncFormalStructureInspectorWithActiveLayer();
       this.render();
       this.updateLayerCardsUI();
-    }, "Row Ratio");
+    }, "Row Ratio", "%");
 
     const chkGrid = document.getElementById("chk-struct-gridlines");
     if (chkGrid) {
