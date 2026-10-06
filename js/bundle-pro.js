@@ -2216,6 +2216,7 @@ class StudioEngine {
     const colEdge = isFixed ? colStarts[cols - 1] + colWidths[cols - 1] : margin + usableW;
     const rowEdge = isFixed ? rowStarts[rows - 1] + rowHeights[rows - 1] : margin + usableH;
     this.gridFrame = { top: rowStarts[0], h: rowEdge - rowStarts[0], rowY, cw: (colEdge - colStarts[0]) / cols };
+    this.layoutExtent = { x: colStarts[0], y: rowStarts[0], w: colEdge - colStarts[0], h: rowEdge - rowStarts[0] }; // where the grid really is (for the Block guide)
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -2571,6 +2572,7 @@ class StudioEngine {
     let maxR = refR;
     if (isFixed) maxR = openR + rings * spacing;
     const span = maxR - openR;
+    this.layoutExtent = isFixed ? { x: width / 2 + (rad.centerX || 0) - maxR, y: height / 2 + (rad.centerY || 0) - maxR, w: maxR * 2, h: maxR * 2 } : null; // Fit: the block itself
     // Each ring is turned a bit more than the one inside it, so their subdivisions do not line up
     const ringRotRad = ((rad.ringRotation || 0) * Math.PI) / 180;
 
@@ -3041,6 +3043,7 @@ class StudioEngine {
     const renderStack = [...order].reverse();
 
     // Each layer has its own independent layout structure & properties
+    const blockGuides = [];
     const usesStructure = (struct) => !!(struct && (struct.enabled || (struct.formalStructure && struct.formalStructure.enabled)));
     let anyLayerStructure = false;
     for (const layerId of renderStack) {
@@ -3055,6 +3058,7 @@ class StudioEngine {
         ctx.save();
         ctx.translate(bf.tx, bf.ty);
         this.layoutClip = bf.clip;
+        this.layoutExtent = null;
         if (layerStruct.mode === "radiation") {
           this.renderRadiation(ctx, bf.w, bf.h, palette, bf.isDefault ? margin : 0, bf.isDefault ? usableW : bf.w, bf.isDefault ? usableH : bf.h, mod, layerStruct.radiation);
         } else {
@@ -3062,10 +3066,24 @@ class StudioEngine {
         }
         this.layoutClip = null;
         ctx.restore();
+        // Block guide: the rectangle the layout really occupies (an on-screen aid for the layer being edited)
+        if (!this.exporting && !bf.isDefault && this.blockGuideLayerId === mod.id) {
+          const e = this.layoutExtent || { x: 0, y: 0, w: bf.w, h: bf.h };
+          blockGuides.push([bf.tx + e.x, bf.ty + e.y, e.w, e.h]);
+        }
       } else {
         // Layer rendered as a single element centered on the canvas
         this.renderSingleLayerModule(ctx, mod, width, height, palette);
       }
+    }
+
+    if (blockGuides.length) {
+      ctx.save();
+      ctx.strokeStyle = this.guideColor();
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([8, 4]);
+      for (const g of blockGuides) ctx.strokeRect(g[0], g[1], g[2], g[3]);
+      ctx.restore();
     }
 
     ctx.restore(); // end master artboard clip
@@ -3658,6 +3676,8 @@ class StudioProApp {
     if (!this.engine || !this.canvas) return;
     this.engine.state = this.state;
     this.engine.viewState = this.isHidingModifiers() ? this.stateWithoutModifiers() : null;
+    // The Block frame shows only for the layer being edited, while the Layout panel is open
+    this.engine.blockGuideLayerId = this.isFlyoutOpen && this.activeRailTab === "layout" ? this.activeLayerId : null;
     const palette = this.getActivePalette();
     try {
       this.engine.render(palette);
@@ -4354,7 +4374,8 @@ class StudioProApp {
     });
 
     // Hide modifiers only acts while the Module panel is open
-    if (this.hideModifiers) this.render();
+    // Hide modifiers and the Block frame both depend on which panel is open
+    this.render();
   }
 
   updateRailIndicatorDots() {

@@ -196,6 +196,8 @@ export class StudioProApp {
     if (!this.engine || !this.canvas) return;
     this.engine.state = this.state;
     this.engine.viewState = this.isHidingModifiers() ? this.stateWithoutModifiers() : null;
+    // The Block frame shows only for the layer being edited, while the Layout panel is open
+    this.engine.blockGuideLayerId = this.isFlyoutOpen && this.activeRailTab === "layout" ? this.activeLayerId : null;
     const palette = this.getActivePalette();
     try {
       this.engine.render(palette);
@@ -892,7 +894,8 @@ export class StudioProApp {
     });
 
     // Hide modifiers only acts while the Module panel is open
-    if (this.hideModifiers) this.render();
+    // Hide modifiers and the Block frame both depend on which panel is open
+    this.render();
   }
 
   updateRailIndicatorDots() {

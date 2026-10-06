@@ -368,6 +368,35 @@
       assert(d.getElementById("layout-block").nextElementSibling === d.getElementById("rad-advanced"), "In Radiation the Block should move before the Radiation Advanced section");
     });
 
+    await test("Block frame: a dashed guide of the block while the Layout panel is open, never when it is the whole canvas or in an export", async () => {
+      reset();
+      const d = win.document, cv = d.getElementById("studio-canvas");
+      const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: false, width: 100, height: 100, showContainer: false }); app.state.showSafeBounds = false;
+      const st = L.structure; st.enabled = true; st.mode = "repetition"; Object.assign(st.repetition, { cols: 3, rows: 3, gridType: "basic", sizeMode: "fit" });
+      const guide = () => { app.render(); const px = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < px.length; i += 4) if (px[i] > 200 && px[i + 1] < 120 && px[i + 2] < 90) n++; return n; };
+      st.block = { x: 30, y: 30, w: 40, h: 40 };
+      app.activeRailTab = "layout"; app.isFlyoutOpen = true;
+      assert(guide() > 300, "The block frame should show while the Layout panel is open");
+      app.activeRailTab = "contrast";
+      assert(guide() === 0, "The block frame should hide when another panel is open");
+      app.activeRailTab = "layout"; app.isFlyoutOpen = false;
+      assert(guide() === 0, "The block frame should hide when the panel is closed");
+      app.isFlyoutOpen = true; st.block = { x: 50, y: 50, w: 100, h: 100 };
+      assert(guide() === 0, "A block that is the whole canvas has no frame");
+      st.block = { x: 30, y: 30, w: 40, h: 40 }; app.engine.exporting = true;
+      assert(guide() === 0, "The frame must never reach an export");
+      app.engine.exporting = false;
+      // Actual size: the frame wraps the cells (3 x 3 of 100 px), moved by the offset
+      Object.assign(st.repetition, { sizeMode: "actual" }); L.containerW = 100; L.containerH = 100; L.containerAuto = false;
+      st.block = { x: 70, y: 50, w: 100, h: 100 };
+      app.render();
+      const px = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; const dpr = cv.width / 600;
+      const at = (x, y) => { const i = (Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4; return px[i] > 200 && px[i + 1] < 120 && px[i + 2] < 90; };
+      let left = false; for (let x = 266; x <= 274; x++) for (let y = 160; y < 440; y++) if (at(x, y)) left = true;
+      assert(left, "In Actual size the frame should wrap the cells: its left edge is at 270 px (centre 420 px minus 150 px)");
+      app.activeRailTab = "module"; app.isFlyoutOpen = true;
+    });
+
     await test("Undo and redo restore a per-layer setting", () => {
       reset();
       app.history = []; app.historyLabels = []; app.historyIndex = -1;
