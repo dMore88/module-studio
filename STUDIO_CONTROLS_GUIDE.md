@@ -92,8 +92,9 @@ Cada capa es un módulo independiente. Se pueden tener hasta 5 capas con visibil
 * **`offsetX / offsetY`**: desplazamiento relativo al centro, de −1000 a 1000 px.
 * **`visible`**: visibilidad de la capa (icono del ojo en la tarjeta).
 * **Advanced** (sección plegable al final del panel):
-  * **`containerW` / `containerH`** (*Container width* y *Container height*, 20 a 2000 px, por defecto el lienzo entero): el **contenedor**, un marco centrado en el lienzo (como un frame de Figma) dentro del que se compone el módulo. Es la celda de *Actual size* y el recorte de *Clip cell*.
+  * **`containerW` / `containerH`** (*Container width* y *Container height*, 20 a 2000 px, por defecto el lienzo entero): el **contenedor**, un marco centrado en el lienzo (como un frame de Figma) dentro del que se compone el módulo. Es la celda de *Actual size* y el recorte de *Clip container*.
   * **`showContainer`** (*Show container*, encendido por defecto): muestra u oculta el marco punteado del contenedor en el lienzo (usa el color de guías). El contenedor funciona igual aunque esté oculto.
+* **`clipContainer`** (*Clip container*, casilla en *Advanced*, debajo de *Show container*, apagada por defecto): recorta el módulo al borde de su **contenedor**. En *Fit to canvas* el contenedor se reduce con la celda; en *Actual size* es la celda; sin retícula es el marco centrado del lienzo; en radial acompaña al módulo en su anillo. Se puede usar a la vez que *Clip cell*: el módulo se recorta por los dos. Jerarquía: celda → contenedor → módulo.
 * **Hide modifiers** (casilla en *Advanced*, debajo de *Show container* porque son del mismo grupo: ver el contenedor del módulo; apagada por defecto): ayuda de edición solo de pantalla. Mientras el panel *Module* está abierto, la capa activa se dibuja **sola, sin su Layout structure y sin sus siete modificadores** (Similarity, Gradation, Anomaly, Contrast, Concentration, Texture y Space): solo el módulo dentro de su contenedor. Para ajustarlo con los vecinos, se desmarca la casilla o se enciende la retícula a mano. Al abrir otro panel o cerrar el flyout, todo vuelve solo. No cambia el proyecto, no se guarda y **nunca afecta a una exportación**. Mientras actúa, el registro *Art log* muestra `Modifiers: hidden`.
 
 ---
@@ -126,7 +127,7 @@ Multiplica el módulo en una retícula ortogonal sobre el plano cartesiano $X, Y
 * **`reflection`** (*Reflection*, dropdown): espeja el módulo en las columnas impares (`columns`), en las filas impares (`rows`) o en ambas (`both`). No invierte las rotaciones de Gradation ni los campos de Concentration.
 * **`direction`** (*Direction*, dropdown, `repeated`): hacia dónde mira cada módulo. `repeated` todos igual; `alternated` las celdas alternas giran 180º; `undefined` cada módulo mira hacia un lado distinto, siempre el mismo para el mismo estado.
 * **Ritmo y gradación de estructura** (sección 4.2).
-* **`activeClipping`** (*Clip cell*): recorta cada módulo al borde de su celda (de su contenedor en *Fit* con contenedor propio).
+* **`activeClipping`** (*Clip cell*): recorta cada módulo al borde de su **celda**, con la forma real de la celda en cada variación de retícula. No tiene que ver con el contenedor: para eso está *Clip container* en el panel Module.
 * **`checkerInvert`** (*Checkerboard inversion*): en casillas alternadas la celda se rellena con el color del módulo y el módulo se dibuja con el color del fondo (inversión figura-fondo, con cualquier color de módulo).
 * **`showGridLines`** (*Visible lines*): dibuja las líneas de la retícula. **Son parte del diseño (Wong)**: llevan color y grosor y **se exportan**. Opciones:
   * **`lineColor`** (*Line color*, vacío = el color de la capa). Para una línea que corte los módulos basta elegir el color del fondo (fig. 20b y 20c).

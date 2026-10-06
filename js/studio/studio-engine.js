@@ -159,6 +159,7 @@ export const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "ci
   containerW: 0, // width of the module's container in px (0 = the whole canvas)
   containerH: 0, // height of the module's container in px (0 = the whole canvas)
   showContainer: true, // draw the container as a dashed frame on the canvas (an on-screen guide, never exported)
+  clipContainer: false, // cut the module at the edge of its container (Clip cell, in Layout, cuts at the cell instead)
   wireframe: true,
   strokeWidth: 1,
   color: "#18181f",
@@ -531,6 +532,12 @@ export class StudioEngine {
     ctx.translate(width / 2, height / 2);
     this.cellSeed = 0;
     this.cellAlt = false;
+    if (mod.clipContainer) {
+      const cs = this.containerSize(mod, width, height);
+      ctx.beginPath();
+      ctx.rect(-cs.w / 2, -cs.h / 2, cs.w, cs.h);
+      ctx.clip();
+    }
     this.drawSingleLayerShape(ctx, mod, MODULE_UNIT, palette.fg, palette.bg);
     ctx.restore();
   }
@@ -1345,16 +1352,17 @@ export class StudioEngine {
             flipped = true;
           }
 
-          // Active clipping: restrict drawing strictly to cell boundaries (in Fit to canvas, to the
-          // container scaled down with the module)
+          // Clip cell: cut the module at the edge of its cell (the real shape of the cell in every grid variation)
           if (rep.activeClipping && !extra) {
-            if (!isFixed && customContainer) {
-              const bw = (cW * cont.w) / usableW, bh = (cH * cont.h) / usableH;
-              ctx.beginPath();
-              ctx.rect(cellCx - bw / 2, cellCy - bh / 2, bw, bh);
-            } else {
-              this.buildCellPath(ctx, r, c, rows, cols, cellCx, cellCy, cW, cH, repCell, cellStartX);
-            }
+            this.buildCellPath(ctx, r, c, rows, cols, cellCx, cellCy, cW, cH, repCell, cellStartX);
+            ctx.clip();
+          }
+          // Clip container: cut it at the edge of its container (in Fit to canvas the container shrinks with the cell;
+          // in Actual size it is the cell). Both clips can be on: the module is cut by the two
+          if (targetMod.clipContainer && !extra) {
+            const bw = isFixed ? cW : (cW * cont.w) / usableW, bh = isFixed ? cH : (cH * cont.h) / usableH;
+            ctx.beginPath();
+            ctx.rect(cellCx - bw / 2, cellCy - bh / 2, bw, bh);
             ctx.clip();
           }
 
@@ -1811,6 +1819,17 @@ export class StudioEngine {
             ctx.rotate(Math.PI);
           } else if (rad.direction === "undefined") {
             ctx.rotate(this.cellDirection(i + centerIdx * 100, j));
+          }
+
+          // Clip container: the container turns with the module's place in the ring and shrinks with its sector
+          if (targetMod.clipContainer) {
+            const cs = this.containerSize(targetMod, width, height);
+            const rt = span / rings, aw = (ringRadius * 2 * Math.PI) / rays;
+            const sector = Math.min(rt, Math.max(rt * 0.5, aw));
+            const base = isFixed ? 1 : (sector / usableW) * (0.75 + (i / rings) * 0.45) * (isMultiCenter ? 0.7 : 1);
+            ctx.beginPath();
+            ctx.rect((-cs.w * base) / 2, (-cs.h * base) / 2, cs.w * base, cs.h * base);
+            ctx.clip();
           }
 
           // Gradation on polar radiation (drift slides along the module's local x axis, up to ~one ring)

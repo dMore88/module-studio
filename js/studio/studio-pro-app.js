@@ -2878,6 +2878,13 @@ export class StudioProApp {
       this.render();
     }, "Container Height", "px");
 
+    document.getElementById("chk-active-clip-container")?.addEventListener("change", (e) => {
+      const mod = this.getActiveModule();
+      mod.clipContainer = e.target.checked;
+      this.render();
+      this.pushHistory(`Layer ${this.activeLayerId} Clip Container: ${e.target.checked ? "ON" : "OFF"}`);
+    });
+
     document.getElementById("chk-hide-modifiers")?.addEventListener("change", (e) => {
       this.hideModifiers = e.target.checked;
       this.render();
@@ -2965,6 +2972,7 @@ export class StudioProApp {
     this.syncControlValue("input-active-container-h", contH);
     this.syncControlValue("num-active-container-h", `${contH}px`);
     this.syncCheckbox("chk-active-show-container", mod.showContainer !== false);
+    this.syncCheckbox("chk-active-clip-container", !!mod.clipContainer);
 
     // Sync Mode (per active layer)
     const btnStroke = document.getElementById("btn-mode-stroke");

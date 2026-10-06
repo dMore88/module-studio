@@ -1614,6 +1614,34 @@
       assert(left.every(([x, y]) => Math.abs(x - e.gridShift(curved, y)) < 1e-9), "The clip's left side is not the grid line");
     });
 
+    await test("Clip cell cuts at the cell and Clip container at the container, as two separate things", () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const ink = () => { drawRaw(app); const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] < 100) n++; return n; };
+      const L = app.state.layers[0];
+      Object.assign(L, { shape: "square", wireframe: false, width: 900, height: 900, containerW: 100, containerH: 100, showContainer: false });
+      app.state.showSafeBounds = false;
+      L.structure.enabled = true; L.structure.mode = "repetition";
+      Object.assign(L.structure.repetition, { cols: 3, rows: 3, gridType: "basic", sizeMode: "fit", activeClipping: false });
+      L.clipContainer = false;
+      const none = ink();
+      L.structure.repetition.activeClipping = true; const cell = ink();
+      L.structure.repetition.activeClipping = false; L.clipContainer = true; const container = ink();
+      L.structure.repetition.activeClipping = true; const both = ink();
+      assert(cell > container * 2, `Clip cell should cut at the cell, not at the small container (cell ${cell}, container ${container})`);
+      assert(container < none * 0.6, `Clip container should cut the module at its container (container ${container}, none ${none})`);
+      assert(Math.abs(both - container) < container * 0.02 + 50, `With both on, the smaller one rules (both ${both}, container ${container})`);
+      // A single module (no layout) is cut at its container too
+      L.structure.enabled = false; L.structure.repetition.activeClipping = false;
+      L.clipContainer = false; const alone = ink(); L.clipContainer = true; const aloneClipped = ink();
+      assert(aloneClipped < alone * 0.2, `A single module should be cut at its container (${aloneClipped} vs ${alone})`);
+      // The checkbox lives in Module > Advanced, under Show container
+      const d = win.document, adv = d.getElementById("module-advanced");
+      const chk = d.getElementById("chk-active-clip-container");
+      assert(adv && adv.contains(chk) && adv.contains(d.getElementById("chk-active-show-container")), "Clip container belongs in Module > Advanced next to Show container");
+      reset();
+    });
+
     await test("Hide modifiers: the active layer is drawn without its modifiers only while the Module panel is open, and never in an export", async () => {
       reset();
       const d = win.document, cv = d.getElementById("studio-canvas");
