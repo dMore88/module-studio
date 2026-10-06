@@ -29,7 +29,7 @@ export class StudioProApp {
     this.artboardSize = { w: 0, h: 0 };
 
     // Active Layer Management (Each layer is a module!)
-    this.activeLayerId = "layer-2"; // 'layer-1' (Form A) or 'layer-2' (Form B)
+    this.activeLayerId = "layer-1";
 
     // Palette (Abstract Studio default: Clean Monochrome / Paper White & Deep Ink)
     this.activePaletteId = "monochrome";
@@ -2918,8 +2918,8 @@ export class StudioProApp {
     this.syncControlValue("num-active-height", mod.height || mod.scale || 50);
     this.syncControlValue("input-active-rotation", mod.rotation || 0);
     this.syncControlValue("num-active-rotation", mod.rotation || 0);
-    this.syncControlValue("input-active-stroke", mod.strokeWidth || 1.2);
-    this.syncControlValue("num-active-stroke", `${mod.strokeWidth || 1.2}px`);
+    this.syncControlValue("input-active-stroke", mod.strokeWidth || 1);
+    this.syncControlValue("num-active-stroke", `${mod.strokeWidth || 1}px`);
     this.syncControlValue("input-active-offset-x", mod.offsetX !== undefined ? mod.offsetX : 0);
     this.syncControlValue("num-active-offset-x", mod.offsetX !== undefined ? mod.offsetX : 0);
     this.syncControlValue("input-active-offset-y", mod.offsetY !== undefined ? mod.offsetY : 0);

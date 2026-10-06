@@ -142,9 +142,17 @@
       return `${ink} dark pixels`;
     });
 
+    await test("The app opens with round values: one circle layer, 1 px stroke, no turn, 100 x 100, centred", () => {
+      reset();
+      assert(app.state.layers.length === 1, "It should open with one layer, got " + app.state.layers.length);
+      const L = app.state.layers[0];
+      assert(L.shape === "circle" && L.strokeWidth === 1 && L.rotation === 0 && L.width === 100 && L.height === 100 && L.offsetX === 0 && L.offsetY === 0 && L.wireframe === true, "The first layer is not the round default: " + JSON.stringify({ s: L.shape, w: L.strokeWidth, r: L.rotation, wd: L.width, h: L.height, x: L.offsetX, y: L.offsetY }));
+      assert(app.activeLayerId === L.id, "The only layer should be the active one");
+    });
+
     await test("All 15 shapes draw in stroke and fill mode", () => {
       for (const shape of SHAPES) for (const wire of [true, false]) {
-        reset(); const L = app.state.layers[1]; L.shape = shape; L.wireframe = wire;
+        reset(); const L = app.state.layers[0]; L.shape = shape; L.wireframe = wire;
         drawRaw(app);
         assert(inkPixels(win) > 100, `${shape} (${wire ? "stroke" : "fill"}) drew nothing`);
       }
@@ -170,7 +178,7 @@
 
     await test("Texture is deterministic (same settings, same picture)", () => {
       reset();
-      const L = app.state.layers[1]; L.structure.enabled = true; L.structure.texture = { enabled: true, jitter: 4, skipChance: 20, crossing: 20, undulation: 12 };
+      const L = app.state.layers[0]; L.structure.enabled = true; L.structure.texture = { enabled: true, jitter: 4, skipChance: 20, crossing: 20, undulation: 12 };
       drawRaw(app); const a = win.document.getElementById("studio-canvas").toDataURL();
       drawRaw(app); const b = win.document.getElementById("studio-canvas").toDataURL();
       assert(a === b, "Two identical renders differ (texture flickers)");
@@ -1604,7 +1612,7 @@
       reset();
       const d = win.document, log = () => d.getElementById("art-log-lines").textContent;
       app.render();
-      assert(/Canvas: \d+ × \d+ PX/.test(log()) && /2 LAYERS/.test(log()) && /Modules: /.test(log()) && /Module: /.test(log()), "The log should start with the canvas, the layers and the modules: " + log());
+      assert(/Canvas: \d+ × \d+ PX/.test(log()) && /1 LAYER/.test(log()) && /Modules: /.test(log()) && /Module: /.test(log()), "The log should start with the canvas, the layers and the modules: " + log());
       assert(!/Structure|Gradation|Contrast/.test(log()), "Nothing is on yet, so the log should list no controls");
       const st = app.getActiveLayerStructure();
       st.enabled = true; st.mode = "repetition"; st.gradation.enabled = true; st.contrast.enabled = true; st.contrast.dimension = "tone";

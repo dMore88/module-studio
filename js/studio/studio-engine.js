@@ -150,9 +150,9 @@ export const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "ci
   visible: true,
   enabled: true,
   shape,
-  scale: 50,
-  width: 50,
-  height: 50,
+  scale: 100,
+  width: 100,
+  height: 100,
   rotation,
   offsetX,
   offsetY,
@@ -160,18 +160,18 @@ export const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "ci
   containerH: 0, // height of the module's container in px (0 = the whole canvas)
   showContainer: true, // draw the container as a dashed frame on the canvas (an on-screen guide, never exported)
   wireframe: true,
-  strokeWidth: 1.2,
+  strokeWidth: 1,
   color: "#18181f",
   structure: createDefaultLayerStructure()
 });
 
-const defaultLayer1 = createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5);
-const defaultLayer2 = createDefaultLayer("layer-2", "Layer 2", "square", 65, 0, 0);
+// The app opens with one round layer: a circle, 1 px stroke, no turn, 100 x 100, centred
+const defaultLayer1 = createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 0);
 
 export const defaultStudioState = {
   aspectRatio: "1:1",
-  layers: [defaultLayer1, defaultLayer2],
-  layerOrder: ["layer-2", "layer-1"],
+  layers: [defaultLayer1],
+  layerOrder: ["layer-1"],
   invertFigureGround: false,
 
   // Mat / Canvas display settings

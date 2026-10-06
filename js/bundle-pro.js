@@ -945,9 +945,9 @@ const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "circle", 
   visible: true,
   enabled: true,
   shape,
-  scale: 50,
-  width: 50,
-  height: 50,
+  scale: 100,
+  width: 100,
+  height: 100,
   rotation,
   offsetX,
   offsetY,
@@ -955,17 +955,17 @@ const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "circle", 
   containerH: 0, // height of the module's container in px (0 = the whole canvas)
   showContainer: true, // draw the container as a dashed frame on the canvas (an on-screen guide, never exported)
   wireframe: true,
-  strokeWidth: 1.2,
+  strokeWidth: 1,
   color: "#18181f",
   structure: createDefaultLayerStructure()
 });
 
-const defaultLayer1 = createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5);
-const defaultLayer2 = createDefaultLayer("layer-2", "Layer 2", "square", 65, 0, 0);
+// The app opens with one round layer: a circle, 1 px stroke, no turn, 100 x 100, centred
+const defaultLayer1 = createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 0);
 const defaultStudioState = {
   aspectRatio: "1:1",
-  layers: [defaultLayer1, defaultLayer2],
-  layerOrder: ["layer-2", "layer-1"],
+  layers: [defaultLayer1],
+  layerOrder: ["layer-1"],
   invertFigureGround: false,
 
   // Mat / Canvas display settings
@@ -3287,7 +3287,7 @@ class StudioProApp {
     this.artboardSize = { w: 0, h: 0 };
 
     // Active Layer Management (Each layer is a module!)
-    this.activeLayerId = "layer-2"; // 'layer-1' (Form A) or 'layer-2' (Form B)
+    this.activeLayerId = "layer-1";
 
     // Palette (Abstract Studio default: Clean Monochrome / Paper White & Deep Ink)
     this.activePaletteId = "monochrome";
@@ -6176,8 +6176,8 @@ class StudioProApp {
     this.syncControlValue("num-active-height", mod.height || mod.scale || 50);
     this.syncControlValue("input-active-rotation", mod.rotation || 0);
     this.syncControlValue("num-active-rotation", mod.rotation || 0);
-    this.syncControlValue("input-active-stroke", mod.strokeWidth || 1.2);
-    this.syncControlValue("num-active-stroke", `${mod.strokeWidth || 1.2}px`);
+    this.syncControlValue("input-active-stroke", mod.strokeWidth || 1);
+    this.syncControlValue("num-active-stroke", `${mod.strokeWidth || 1}px`);
     this.syncControlValue("input-active-offset-x", mod.offsetX !== undefined ? mod.offsetX : 0);
     this.syncControlValue("num-active-offset-x", mod.offsetX !== undefined ? mod.offsetX : 0);
     this.syncControlValue("input-active-offset-y", mod.offsetY !== undefined ? mod.offsetY : 0);
