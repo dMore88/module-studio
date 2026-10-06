@@ -1600,11 +1600,11 @@
       assert(left.every(([x, y]) => Math.abs(x - e.gridShift(curved, y)) < 1e-9), "The clip's left side is not the grid line");
     });
 
-    await test("Art configuration log fills in as controls are turned on and empties when they are turned off", async () => {
+    await test("Art log fills in as controls are turned on and empties when they are turned off", async () => {
       reset();
       const d = win.document, log = () => d.getElementById("art-log-lines").textContent;
       app.render();
-      assert(/\d+ × \d+ PX/.test(log()) && /2 LAYERS/.test(log()) && /Modules: /.test(log()), "The log should start with the size, the layers and the modules: " + log());
+      assert(/Canvas: \d+ × \d+ PX/.test(log()) && /2 LAYERS/.test(log()) && /Modules: /.test(log()) && /Module: /.test(log()), "The log should start with the canvas, the layers and the modules: " + log());
       assert(!/Structure|Gradation|Contrast/.test(log()), "Nothing is on yet, so the log should list no controls");
       const st = app.getActiveLayerStructure();
       st.enabled = true; st.mode = "repetition"; st.gradation.enabled = true; st.contrast.enabled = true; st.contrast.dimension = "tone";

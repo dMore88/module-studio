@@ -3827,8 +3827,8 @@ class StudioProApp {
   }
 
   /* =========================================================================
-     ART CONFIGURATION LOG (bottom half of the layers panel)
-     Built from the state: the canvas, the modules, and one line per control that is ON in the active layer.
+     ART LOG (bottom half of the layers panel)
+     Built from the state: the canvas, the modules, then the active layer (its module and one line per control that is ON).
      ========================================================================= */
 
   updateArtLog() {
@@ -3841,7 +3841,7 @@ class StudioProApp {
 
     const layers = this.getLayers();
     const size = this.artboardSize ? `${this.artboardSize.w} × ${this.artboardSize.h} PX` : "";
-    const out = [`<p><span id="hud-resolution">${esc(size)}</span> • <span id="hud-layers-status">${layers.length} ${layers.length === 1 ? "LAYER" : "LAYERS"}</span></p>`];
+    const out = [`<p><span class="art-log__key">Canvas</span>: <span id="hud-resolution">${esc(size)}</span> • <span id="hud-layers-status">${layers.length} ${layers.length === 1 ? "LAYER" : "LAYERS"}</span></p>`];
 
     const shapes = layers.filter(l => l.visible !== false).map(l => (Shapes[l.shape] || Shapes.circle).name);
     if (shapes.length) out.push(line("Modules", shapes.join(" + ")));
@@ -3850,6 +3850,7 @@ class StudioProApp {
     const s = mod && mod.structure;
     if (mod && s) {
       out.push(`<p class="art-log__layer">${esc(mod.name || mod.id)}</p>`);
+      out.push(line("Module", (Shapes[mod.shape] || Shapes.circle).name));
       const GRIDS = { basic: "Grid", sliding: "Brick", sheared: "Diagonal", curved: "Curved", zigzag: "Zigzag", triangular: "Triangular", alternating: "Alternating", hexagonal: "Hexagonal", free: "Free" };
       const SCHEMES = { centrifugal: "Centrifugal", concentric: "Concentric", centripetal: "Centripetal", spiral: "Spiral", multi_center: "Multiple centers" };
       const PLACE = { centers: "Centers", intersections: "Intersections", both: "Both" };

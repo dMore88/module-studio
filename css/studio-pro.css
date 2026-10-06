@@ -945,7 +945,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .rail-btn.active { box-shadow: 0 0 0 var(--border-weight-2) var(--neutral-bg-light), 0 0 0 var(--border-weight-3) var(--neutral-interactive-default); }
 .rail-btn:focus-visible { outline: var(--border-weight-2) solid var(--primary-interactive-focus); outline-offset: var(--spacing-1); }
 
-/* Art configuration (Figma "Layer list" bottom half): DM Mono 12, a line above, soft text with dark keys */
+/* Art log (Figma "Layer list" bottom half): DM Mono 12, a line above, soft text with dark keys */
 .ds-art-log {
   display: flex;
   flex-direction: column;
@@ -961,7 +961,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
   font-weight: var(--typography-weight-500);
   user-select: text;
 }
-.art-log__title { margin: 0; line-height: var(--line-height-body); color: var(--neutral-text-main); }
+.art-log__title { margin: 0; line-height: var(--line-height-body); color: var(--neutral-text-main); text-transform: uppercase; }
 .art-log__lines { color: var(--neutral-text-subtle); line-height: var(--line-height-body); overflow-wrap: anywhere; }
 .art-log__lines p { margin: 0; }
 .art-log__key, .art-log__layer { color: var(--neutral-text-main); }
