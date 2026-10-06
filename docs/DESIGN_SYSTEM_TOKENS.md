@@ -7,7 +7,7 @@ Fuente: archivo de Figma **Web apps**, con dos páginas:
 
 Este documento describe los tokens y componentes **tal como están en Figma** y cómo se usan en el código. Los tokens viven en `css/tokens.css`.
 
-> **Revisión del 5 oct 2026 (Figma actualizado):** la página *Components pack* cambió de forma (tamaños más chicos, otra tipografía, otros radios y paddings, más aspecto de software). La **sección 11** lista todo lo que cambió respecto a lo que describen las secciones 2 a 5, y las decisiones que quedan abiertas. **El código (`css/tokens.css`, `css/studio-pro.css`) todavía usa los valores anteriores**; las secciones 2 a 5 siguen describiendo lo que la app tiene hoy, salvo donde se indica.
+> **Revisión del 5 oct 2026 (Figma actualizado):** la página *Components pack* cambió de forma (tamaños más chicos, otra tipografía, otros radios y paddings, más aspecto de software). La **sección 11** lista todo lo que cambió respecto a lo que describen las secciones 2 a 5, y las decisiones que quedan abiertas. **Paso 1 aplicado (5 oct 2026):** `css/tokens.css` ya tiene los valores nuevos (tipografía, tamaños de texto, radios, sizing, colores `--inverted` y variables nuevas) y la fuente Be Vietnam Pro / DM Mono se carga en `css/studio-pro.css`. **Los componentes todavía no cambian de medida:** para que se vean igual que antes, el CSS usa los nombres nuevos que equivalen a los valores viejos (radio 8 = `--border-radius-2`, 16 = `-4`, 20 = `-5`; 40 px = `--sizing-9`, 48 = `-10`, 56 = `-11`). Las medidas de cada componente (11.3) se aplican en los pasos 2 a 4. Las tablas de las secciones 2 a 5 describen los valores anteriores salvo donde se indica.
 
 > **Estado de la migración:** toda la interfaz usa estos tokens: los diez paneles del inspector, la barra superior, la barra del lienzo, el panel de capas, el riel de herramientas y la línea de estado. El tema antiguo (`css/design-system.css`, variables `--bs-*`) se eliminó.
 
@@ -435,9 +435,8 @@ Resumen del criterio: **todos los controles de la interfaz miden 32 de alto** (b
 
 ### 11.5 Cómo aplicarlo (cuando se decida)
 
-1. Actualizar `css/tokens.css`: familia, tamaños, radios (renombrando para que `--border-radius-3` valga 12 y el 20 pase a `--border-radius-5`), sizing, `default--inverted`/`hover--inverted`, y las variables nuevas.
-2. Cargar **Be Vietnam Pro** en lugar de Inter (`@import` de `css/studio-pro.css`, línea 6).
-3. Ajustar los componentes `.ds-*` de la tabla 11.3 y los tamaños que dependen de `sizing/7` (que pasa de 40 a 32).
+1. ✅ **Hecho:** `css/tokens.css` actualizado (familia, tamaños, radios renombrados para que `--border-radius-3` valga 12 y el 20 sea `--border-radius-5`, sizing, `default--inverted`/`hover--inverted` y variables nuevas), y fuente cargada: **Be Vietnam Pro** en lugar de Inter (`@import` de `css/studio-pro.css`) y **DM Mono** para los valores. Los componentes usan los nombres nuevos que equivalen a sus medidas de antes.
+2. (Pendiente, es el paso 2 de 12.5)  Ajustar los componentes `.ds-*` de la tabla 11.3 y los tamaños que dependen de `sizing/7` (que pasa de 40 a 32).
 4. Comparar capturas antes y después de cada paso y correr `tests/smoke.html` (hay pruebas que miden alturas y fuentes).
 
 ---
@@ -453,9 +452,10 @@ Fuente: página *Abstract studio* (nodo `5763:1691`): el frame del editor (`5763
 | **Nombre de la aplicación** | **Module Studio** (vuelve a usarse en la cabecera; sustituye a «Abstract Studio» de la sección 5.14) |
 | **Botón Open** | Se queda donde está. El mockup no lo muestra solo porque es una muestra |
 | **Riel** | Se mantienen los 9 paneles actuales; el décimo icono del mockup no cuenta |
-| **Ancho del panel de controles** | **300 px** (el inventario muestra 320; se redujo a 300) |
+| **Ancho del panel de controles** | **300 px** con relleno 24, o sea **252 de contenido** (confirmado): el deslizante mide 184 + 12 + 56 |
 | **Panel y lienzo** | Se mantiene la regla: **el panel nunca tapa el lienzo**. El ancho del lienzo tiene un tope que deja libre el panel; si hace falta, el lienzo baja de alto |
 | **Registro «Art configuration»** | Sí. Muestra la capa activa más cabeceras globales (ver 12.3) |
+| **Texto de 10 px** | Aceptado: es el estilo *Label* del Figma (10 / 500) |
 | **Barras de scroll** | Discretas: color negro al 50 % de opacidad, finas, para que no dañen el diseño |
 
 ### 12.2 Estructura nueva

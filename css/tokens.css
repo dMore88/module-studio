@@ -38,8 +38,8 @@
   --neutral-interactive-hover: #4b4d5f;
   --neutral-interactive-active: #282a36;
   --neutral-interactive-disabled: #cfd0dd;
-  --neutral-interactive-default-inverted: #eeeef4;
-  --neutral-interactive-hover-inverted: #cfd0dd;
+  --neutral-interactive-default-inverted: #ffffff;
+  --neutral-interactive-hover-inverted: #e1e2eb;
   --neutral-interactive-active-inverted: #eeeef4;
 
   --neutral-icon-main: #4b4d5f;
@@ -60,8 +60,12 @@
   --primary-text-link: #1f63ca;
   --primary-icon-main: #2371e7;
   --primary-icon-subtle: #97bcf5;
+  --primary-interactive-default: #2371e7;
   --primary-interactive-hover: #4385eb;
+  --primary-interactive-active: #194d9c;
   --primary-interactive-focus: #97bcf5;
+  --primary-border-strong: #194d9c;
+  --primary-text-link-visited: #0f2648;
 
   /* ---- Status ---- */
   --success-bg-main: #17c84d;
@@ -96,23 +100,26 @@
   --info-text-default: #1b6d75;
 
   /* ---- Typography ---- */
-  --typography-family-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --typography-family-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --typography-family-body: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --typography-family-heading: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --typography-family-mono: 'DM Mono', 'JetBrains Mono', monospace;
   --typography-weight-400: 400;
   --typography-weight-500: 500;
   --typography-weight-600: 600;
-  --font-size-xs: 12px;
-  --font-size-sm: 14px;
-  --font-size-md: 16px;
+  --typography-color-n-default: #282a36;
+  --typography-color-n-soft: #63657b;
+  --typography-color-n-inverted: #eeeef4;
+  --font-size-xs: 10px;
+  --font-size-sm: 12px;
+  --font-size-md: 15px;
   --font-size-xl: 20px;
   --font-size-2xl: 24px;
   --font-size-3xl: 30px;
-  --font-size-4xl: 36px;
   --line-height-tight: 1;
   --line-height-body: 1.5;
   --line-height-small: 1.7;
-  --letter-spacing-overline: 0.02em; /* Overline style: 2% */
+  --letter-spacing-label: 0.1px; /* Label style: 10 / 500 */
+  --letter-spacing-overline: 0.02em; /* Overline style: 2% (kept until the labels move to the Label style) */
 
   /* ---- Spacing ---- */
   --spacing-0: 0px;
@@ -135,28 +142,32 @@
   --sizing-4: 16px;
   --sizing-5: 20px;
   --sizing-6: 24px;
-  --sizing-7: 40px;
-  --sizing-8: 48px;
-  --sizing-9: 56px;
-  --sizing-10: 64px;
-  --sizing-11: 68px;
-  --sizing-12: 80px;
-  --sizing-13: 96px;
-  --sizing-14: 128px;
-  --sizing-15: 144px;
-  --sizing-16: 224px;
-  --sizing-17: 256px;
-  --sizing-18: 288px;
+  --sizing-7: 32px;
+  --sizing-8: 36px;
+  --sizing-9: 40px;
+  --sizing-10: 48px;
+  --sizing-11: 56px;
+  --sizing-12: 64px;
+  --sizing-13: 68px;
+  --sizing-14: 72px;
+  --sizing-15: 80px;
+  --sizing-16: 96px;
+  --sizing-17: 128px;
+  --sizing-18: 168px;
 
   /* ---- Border ---- */
   --border-weight-1: 1px;
   --border-weight-2: 2px;
   --border-weight-3: 4px;
   --border-weight-4: 8px;
-  --border-radius-1: 8px;
-  --border-radius-2: 16px;
-  --border-radius-3: 20px;
+  --border-radius-1: 4px;
+  --border-radius-2: 8px;
+  --border-radius-3: 12px;
+  --border-radius-4: 16px; /* not used by the Figma components reviewed; assumed from the scale */
+  --border-radius-5: 20px;
   --border-radius-full: 99999px;
+  --opacity-disabled: 0.5;
+  --opacity-overlay: 0.8;
 
   /* ---- Elevation ---- */
   --elevation-1x: 0 1px 2px rgba(15, 38, 72, 0.12), 0 1px 3px rgba(15, 38, 72, 0.24);
@@ -177,7 +188,7 @@
   --ds-value-bg: #f0f0f2;
   --ds-value-border: #292932;
   --ds-value-radius: 7px;
-  --ds-value-font: 'Roboto Mono', 'JetBrains Mono', monospace;
+  --ds-value-font: var(--typography-family-mono);
   --ds-canvas-dot: rgba(0, 0, 0, 0.08); /* dotted workspace background */
   --ds-value-font-size: 15px;
 }
