@@ -5335,9 +5335,10 @@ class StudioProApp {
     this.syncControlValue("input-grad-steps", steps);
     this.syncControlValue("num-grad-steps", steps);
 
-    const easing = grad.easing ?? 0;
-    this.syncControlValue("input-grad-easing", easing);
-    this.syncControlValue("num-grad-easing", easing > 0 ? `+${easing}` : `${easing}`);
+    // Speed is shown the other way round from the stored easing: + reaches the full effect early, - late
+    const speed = grad.easing ? -grad.easing : 0;
+    this.syncControlValue("input-grad-easing", speed);
+    this.syncControlValue("num-grad-easing", speed > 0 ? `+${speed}` : `${speed}`);
 
     document.querySelectorAll("#card-gradation [data-grad-sequence]").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.gradSequence === (grad.sequence || "restart"));
@@ -5425,7 +5426,7 @@ class StudioProApp {
       commit(g => { g.range = val; }, `Gradation Range: ${val}º`);
     });
 
-    // Cycles (1 to 4)
+    // Cycles (1 to 10)
     const inputSteps = document.getElementById("input-grad-steps");
     const numSteps = document.getElementById("num-grad-steps");
     inputSteps?.addEventListener("input", (e) => {
@@ -5438,26 +5439,26 @@ class StudioProApp {
     });
     numSteps?.addEventListener("change", (e) => {
       const raw = parseInt(e.target.value, 10);
-      const val = isNaN(raw) ? 1 : Math.max(1, Math.min(4, raw));
+      const val = isNaN(raw) ? 1 : Math.max(1, Math.min(10, raw));
       commit(g => { g.steps = val; }, `Gradation Cycles: ${val}`);
     });
 
-    // Acceleration (-100 brakes, 100 accelerates)
+    // Speed (-100 slow, 100 fast); stored as easing with the opposite sign
     const inputEasing = document.getElementById("input-grad-easing");
     const numEasing = document.getElementById("num-grad-easing");
     const showEasing = (v) => { if (numEasing) numEasing.value = v > 0 ? `+${v}` : `${v}`; };
     inputEasing?.addEventListener("input", (e) => {
       const val = parseInt(e.target.value, 10);
-      commit(g => { g.easing = val; }, null, { resync: false });
+      commit(g => { g.easing = val ? -val : 0; }, null, { resync: false });
       showEasing(val);
     });
     inputEasing?.addEventListener("change", (e) => {
-      this.pushHistory(`Layer ${this.activeLayerId} Gradation Acceleration: ${e.target.value}`);
+      this.pushHistory(`Layer ${this.activeLayerId} Gradation Speed: ${e.target.value}`);
     });
     numEasing?.addEventListener("change", (e) => {
       const raw = parseInt(e.target.value.replace(/[^0-9-]/g, ""), 10);
       const val = isNaN(raw) ? 0 : Math.max(-100, Math.min(100, raw));
-      commit(g => { g.easing = val; }, `Gradation Acceleration: ${val}`);
+      commit(g => { g.easing = val ? -val : 0; }, `Gradation Speed: ${val}`);
     });
 
     document.querySelectorAll("#card-gradation [data-grad-sequence]").forEach(btn => {

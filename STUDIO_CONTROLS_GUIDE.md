@@ -195,11 +195,11 @@ Genera una ilusión de movimiento, velocidad o dimensión mediante una progresi�
 **Visible:**
 * **`type`** (*Attribute*, dropdown): `rotation`, `scale`, `depth`, `drift` (desplazamiento acumulado), `shape` (la forma se convierte paso a paso en `targetShape`, *Becomes*, la lista de 22 formas en dropdown, interpolando contornos) `texture` (la deformación de Texture crece a lo largo del recorrido) y `color` (el color del módulo viaja hacia *End color* a lo largo del recorrido; *Range* controla cuánto avanza; los módulos de acento de Anomaly o Contrast conservan su color).
 * **`pathway`** (*Pathway direction*, dropdown): `diagonal`, `horizontal`, `vertical`, `concentric` y `zigzag` (camino en serpiente, fig. 41).
-* **`range`** (*Range*, 5º a 360º): magnitud total de la transición. **`steps`** (*Cycles*, 1 a 4).
+* **`range`** (*Range*, 5º a 360º): magnitud total de la transición. **`steps`** (*Cycles*, 1 a 10).
 
 **En *Advanced*:**
 * **`sequence`** (*Sequence*, dropdown): `restart` (1-2-3-1-2-3) o `pingpong` (1-2-3-2-1).
-* **`easing`** (*Acceleration*, −100 a 100): positivo arranca lento y acelera; negativo arranca rápido y frena (fig. 38).
+* **`easing`** (*Speed*, −100 a 100): el slider muestra la velocidad con la que el efecto llega a su máximo: **+100 llega enseguida** (rápido) y **−100 llega tarde** (lento); 0 es un reparto parejo. Se guarda en `easing` con el signo contrario (positivo guardado = arranca lento), así que los proyectos antiguos se ven igual (fig. 38).
 * **`alternate`** (*Alternate rows*): las filas impares corren en sentido contrario (fig. 43). Con *Ping-pong*, que va y vuelve igual, las filas impares quedan desfasadas medio ciclo. Se oculta en el recorrido *Zigzag*, que ya corre de ida y vuelta.
 * **`reverse`** (*Reverse Gradient Direction*): invierte el sentido. Con *Ping-pong* la onda empieza por el otro extremo (arranca en lo alto en vez de en lo bajo).
 

@@ -71,7 +71,7 @@
       rd.spiralTwist = ri(-180, 180); rd.centerX = ri(-200, 200); rd.centerY = ri(-200, 200); rd.showRays = rb(); rd.showRings = rb(); rd.activeClipping = rb(); rd.direction = pick(["repeated","alternated","undefined"]); rd.lineColor = pick(["","#2244cc"]); rd.ringShape = pick(["circle","triangle","square","hexagon"]); rd.centerCount = ri(2, 6); rd.lineWidth = ri(1, 12) / 2;
       const fs = st.formalStructure; fs.enabled = rnd() < 0.4; fs.colRatio = 1 + rnd() * 2; fs.rowRatio = 1 + rnd() * 2; fs.showGridLines = rb();
       const sm = st.similarity; sm.enabled = rb(); sm.kinshipType = pick(["distortion","foreshortening","rotation_wobble","scale_kinship","hybrid"]); sm.intensity = ri(0, 100); sm.cellJitter = ri(0, 30); sm.association = pick(["none","round","angular","lines","characters"]); sm.assocMix = ri(0, 100); sm.imperfection = pick(["none","cut","broken"]); sm.imperfAmount = ri(0, 100);
-      const g = st.gradation; g.enabled = rb(); g.type = pick(["rotation","scale","depth","drift","shape","texture","color"]); g.pathway = pick(["diagonal","horizontal","vertical","concentric","zigzag"]); g.range = ri(15, 360); g.steps = ri(1, 4); g.reverse = rb();
+      const g = st.gradation; g.enabled = rb(); g.type = pick(["rotation","scale","depth","drift","shape","texture","color"]); g.pathway = pick(["diagonal","horizontal","vertical","concentric","zigzag"]); g.range = ri(15, 360); g.steps = ri(1, 10); g.reverse = rb();
       g.sequence = pick(["restart","pingpong"]); g.easing = ri(-100, 100); g.alternate = rb(); g.targetShape = pick(SHAPES);
       const an = st.anomaly; an.enabled = rb(); an.type = pick(["focal","fracture","swell","tear","regrid"]); an.zoneGrid = pick(["sliding","sheared","curved","zigzag","triangular","alternating"]); an.epicenterX = 0.1 + rnd() * 0.8; an.epicenterY = 0.1 + rnd() * 0.8; an.radius = ri(50, 350); an.intensity = ri(10, 100); an.anomalousShape = pick(SHAPES); an.highlightColor = rb(); an.showReticle = rb(); an.distribution = pick(["single","regular","random"]); an.count = ri(2, 12); an.seed = ri(1, 99); an.attrs = { shape: rb(), scale: rb(), rotation: rb(), position: rb() };
       const co = st.contrast; co.enabled = rb(); co.dimension = pick(["scale","shape","direction","position","tone","texture","space"]); co.positionShift = ri(5, 50); co.positionAngle = ri(0, 360); co.dominanceRatio = ri(50, 95); co.scaleFactor = 0.2 + rnd() * 2.8; co.contrastShape = pick(SHAPES); co.angle = ri(15, 90); co.highlightContrast = rb(); co.spread = pick(["scattered","balanced","edge","center"]);
@@ -431,7 +431,7 @@
       assert(near(e.gradationValue(pp, 0), 0) && near(e.gradationValue(pp, 0.5), 1) && near(e.gradationValue(pp, 1), 0), "Ping-pong should go up and come back");
       assert(Math.abs(e.gradationValue(g({ steps: 2 }), 0.25) - 0.5) < 1e-3 && Math.abs(e.gradationValue(g({ steps: 2 }), 0.75) - 0.5) < 1e-3, "Restart with 2 cycles should repeat the ramp");
       assert(near(e.gradationValue(g({}), 0.3), 0.3), "The default sequence changed");
-      // Acceleration: positive starts slow, negative starts fast
+      // Stored easing: positive starts slow, negative starts fast (the Speed slider shows it the other way round)
       assert(e.gradationValue(g({ easing: 100 }), 0.5) < 0.4 && e.gradationValue(g({ easing: -100 }), 0.5) > 0.6, "Acceleration does not bend the ramp");
     });
 
@@ -554,7 +554,7 @@
       q('[data-grad-sequence="pingpong"]').click();
       assert(g().sequence === "pingpong" && q('[data-grad-sequence="pingpong"]').classList.contains("active"), "Ping-pong did not apply");
       fire(q("#input-grad-easing"), 40);
-      assert(g().easing === 40 && q("#num-grad-easing").value === "+40", `Acceleration value box shows ${q("#num-grad-easing").value}`);
+      assert(g().easing === -40 && q("#num-grad-easing").value === "+40", `Speed value box shows ${q("#num-grad-easing").value}`);
       q("#toggle-grad-alternate").click();
       assert(g().alternate === true, "Alternate rows did not apply");
       // each layer keeps its own settings

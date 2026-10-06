@@ -119,8 +119,8 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | Control | Mín. | Máx. | Paso | Razón |
 | :-- | :-- | :-- | :-- | :-- |
 | Range | 5º | 360º | 5 | Alcance del efecto: 360° de giro, o hasta el máximo en los otros atributos; 5º se nota en figuras con vértices. |
-| Cycles | 1 | 4 | 1 | Repeticiones de la rampa; más ciclos dejan de leerse como gradación. |
-| Acceleration | −100 | 100 | 5 | Curva del reparto: arranca rápido o lento. |
+| Cycles | 1 | 10 | 1 | Repeticiones de la rampa; en retículas chicas muchos ciclos parecen ruido, pero eso lo juzga quien diseña. |
+| Speed | −100 | 100 | 5 | Qué tan pronto llega el efecto a su máximo: +100 enseguida, −100 muy tarde, 0 parejo. (Se guarda como `easing` con el signo contrario.) |
 
 ### Anomaly
 | Control | Mín. | Máx. | Paso | Razón |
@@ -180,7 +180,7 @@ Una sola capa (**Layer 1**): círculo, trazo (no relleno), color `#18181f`, traz
 | Panel | Por defecto al encenderlo |
 | :-- | :-- |
 | **Similarity** | Elastic, intensidad 50 %, jitter 0, asociación None (mix 50 %), imperfección None (cantidad 30 %), semilla 42 |
-| **Gradation** | Rotate, Diagonal, Range 180, Cycles 1, Restart, Acceleration 0, filas alternas apagado, *Reverse* apagado, Becomes triangle, End color `#f43f5e` |
+| **Gradation** | Rotate, Diagonal, Range 180, Cycles 1, Restart, Speed 0, filas alternas apagado, *Reverse* apagado, Becomes triangle, End color `#f43f5e` |
 | **Anomaly** | Focal, un punto en el centro (50 %, 50 %), Radius 160, Severity 65, Single, Count 5, Seed 7, se desvía en forma, escala, rotación y posición, forma intrusa triángulo, zona Another grid = Brick, color de acento `#f43f5e` (apagado), punto visible |
 | **Contrast** | Scale, Dominance 80 %, Scattered, Scale 2,2×, Tone 50 %, Shift 25 % a 45°, Clash angle 45°, forma de minoría cruz, color de acento `#f43f5e` (apagado) |
 | **Concentration** | Point, Move, atractor en el centro (50 %, 50 %), Gathering pull 50 %, Field radius 240, 2 focos, eje horizontal, flujo y densidad apagados, guía del atractor apagada |
