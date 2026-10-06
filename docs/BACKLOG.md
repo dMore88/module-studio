@@ -17,6 +17,8 @@ Sale de las filas ⏳ del mapa de conceptos, más las mejoras de filas 🟡 que 
 ### P3 — ideas que parecen divertidas (probar primero)
 | ID | Concepto | Notas |
 | :-- | :-- | :-- |
+| — | **Plano ondulado** (idea de Abstract Studio / UJI): una onda armónica sobre todo el plano, no módulo por módulo | Sin control dedicado: con los controles que hay. (1) *Layout › Curved* con un segundo parámetro **Cycles** y que deforme también las filas: líneas, celdas y módulos ya siguen la misma curva. (2) *Gradation › Drift* con **dirección** (a lo largo o transversal al recorrido), con *Cycles* y *Ping-pong*. Resuelve de paso A8 en esas variaciones |
+| — | **Cadena acumulativa estilo UJI**: cientos o miles de copias donde cada una hereda escala, giro y movimiento de la anterior | Modo de Layout nuevo; hay que medir el rendimiento antes (render por lotes y limitar los repintados). Las letras A, S, R y los números son la semilla natural |
 
 ### P3 — por evaluar con el filtro de juego
 | ID | Concepto | Notas |
