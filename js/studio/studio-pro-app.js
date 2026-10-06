@@ -960,8 +960,8 @@ export class StudioProApp {
     return {
       sliding: { label: "Row offset", key: "slideOffset", min: 0, max: 100, step: 1, suffix: "%", toUi: v => Math.round(v * 100), fromUi: v => v / 100 },
       sheared: { label: "Shear angle", key: "shearAngle", min: 0, max: 45, step: 1, suffix: "º", toUi: v => v, fromUi: v => v },
-      curved: { label: "Wave amount", key: "curveIntensity", min: 0, max: 60, step: 1, suffix: "px", toUi: v => v, fromUi: v => v },
-      zigzag: { label: "Wave amount", key: "curveIntensity", min: 0, max: 60, step: 1, suffix: "px", toUi: v => v, fromUi: v => v },
+      curved: { label: "Wave amount", key: "curveAmount", min: 0, max: 100, step: 1, suffix: "%", toUi: v => Math.round(v * 100), fromUi: v => v / 100 },
+      zigzag: { label: "Wave amount", key: "curveAmount", min: 0, max: 100, step: 1, suffix: "%", toUi: v => Math.round(v * 100), fromUi: v => v / 100 },
       free: { label: "Seed", key: "freeSeed", min: 1, max: 99, step: 1, suffix: "", toUi: v => v, fromUi: v => v }
     };
   }
@@ -985,7 +985,9 @@ export class StudioProApp {
       if (slider) { slider.min = spec.min; slider.max = spec.max; slider.step = spec.step; }
       const label = document.getElementById("rep-param-label");
       if (label) label.textContent = spec.label;
-      const val = spec.toUi(rep[spec.key] ?? 0);
+      // A project saved in pixels (curveIntensity) is shown as a share of the cell width, without touching the file
+      const legacy = spec.key === "curveAmount" && rep.curveAmount === undefined && rep.curveIntensity !== undefined;
+      const val = spec.toUi(legacy ? Math.min(1, (rep.curveIntensity || 0) / (600 / Math.max(1, rep.cols || 4))) : (rep[spec.key] ?? 0));
       this.syncControlValue("input-layout-param", val);
       const num = document.getElementById("num-layout-param");
       if (num) num.value = `${val}${spec.suffix}`;

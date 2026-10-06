@@ -88,7 +88,7 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | Columns / Rows | 1 | 100 | 1 | Hasta 10 000 módulos; el motor los dibuja en ~213 ms (mejor con pocas capas y sin Texture). |
 | Variation param (Row offset) | 0 % | 100 % | 1 | Desplazamiento de las filas impares, de ninguno a una celda entera. |
 | Variation param (Shear angle) | 0° | 45° | 1 | Más de 45° deja de leerse como retícula. |
-| Variation param (Wave amount) | 0 px | 60 px | 1 | Amplitud de la onda de Curved y Zigzag. |
+| Variation param (Wave amount) | 0 % | 100 % | 1 | Amplitud de la onda de Curved y Zigzag, como % del ancho de la celda (100 % = una celda entera; las líneas se mueven juntas y no se cruzan). |
 | Free seed | 1 | 99 | 1 | Distribución de Free; la semilla elige cuál sale. |
 | Intersection size | 10 % | 100 % | 5 | Tamaño de los módulos en los cruces respecto a los de los centros. |
 | Col / Row B size [% of A] | 10 % | 100 % | 5 | Tamaño de B respecto a A: 100 % = iguales, 10 % = B mide una décima parte de A. Límite elegido por criterio de diseño. Internamente se guarda como factor 10 a 1. |
@@ -172,7 +172,7 @@ Una sola capa (**Layer 1**): círculo, trazo (no relleno), color `#18181f`, traz
 
 ### Cuando se enciende cada control
 
-**Layout › Repetition** (modo por defecto): variación Grid, 4 × 4, Fit to canvas, módulos en los centros, sin mezcla de celdas, dirección repetida, sin reflejo, *Clip cell* apagado, *Checkerboard* apagado, *Visible lines* apagado (grosor 1,5, color de la capa, ambas direcciones, todas las líneas). Variación: Row offset 50 %, Shear angle 15°, Wave amount 18 px. Tamaño de intersección 50 %. Free seed 7.
+**Layout › Repetition** (modo por defecto): variación Grid, 4 × 4, Fit to canvas, módulos en los centros, sin mezcla de celdas, dirección repetida, sin reflejo, *Clip cell* apagado, *Checkerboard* apagado, *Visible lines* apagado (grosor 1,5, color de la capa, ambas direcciones, todas las líneas). Variación: Row offset 50 %, Shear angle 15°, Wave amount 10 %. Tamaño de intersección 50 %. Free seed 7.
 **Layout › Radiation:** esquema Centrifugal, orientación automática, 12 rayos × 5 anillos, Spiral twist 45°, centro cerrado, sin giro de anillos, 2 centros, anillos circulares, Fit to canvas, líneas apagadas (grosor 1).
 **Ritmo A:B (Advanced):** Col y Row ratio 1, gradaciones 0 %.
 

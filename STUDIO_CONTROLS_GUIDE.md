@@ -109,7 +109,7 @@ Multiplica el módulo en una retícula ortogonal sobre el plano cartesiano $X, Y
   * `basic` (*Grid*): retícula ortogonal $M_{i,j}$.
   * `sliding` (*Brick*): desfase alternado de filas. Parámetro **Row offset** (`slideOffset`, 0 a 100 %).
   * `sheared` (*Diagonal*): cizallamiento diagonal. Parámetro **Shear angle** (`shearAngle`, 0 a 45º).
-  * `curved` (*Curved*): deformación sinusoidal de las filas. Parámetro **Wave amount** (`curveIntensity`, 0 a 60 px).
+  * `curved` (*Curved*): deformación sinusoidal de las filas. Parámetro **Wave amount** (`curveAmount`, 0 % a 100 % del ancho de la celda, por defecto 10 %: con 100 % las líneas se desplazan una celda entera y nunca se cruzan). Los proyectos antiguos guardados en píxeles (`curveIntensity`) se siguen leyendo en píxeles hasta que se mueve el slider.
   * `zigzag` (*Zigzag*): deformación angular de las filas. Mismo parámetro *Wave amount*.
   * `triangular` (*Triangular*): filas impares desplazadas media celda.
   * `alternating` (*Alternating*): las celdas impares giran 180º.

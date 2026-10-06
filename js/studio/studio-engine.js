@@ -13,7 +13,7 @@ export const createDefaultLayerStructure = () => ({
     shearAngle: 15,
     slideOffset: 0.5,
     freeSeed: 7, // Free distribution: changes the layout of the modules (1 to 99)
-    curveIntensity: 18,
+    curveAmount: 0.1, // Curved / Zigzag: how far the lines swing, as a share of the cell width (0 to 1)
     activeClipping: false,
     showGridLines: false,
     gridLineWidth: 1.5,
@@ -547,8 +547,9 @@ export class StudioEngine {
   // Curved is one wave over the whole grid; zigzag goes through the middle of each row (alternately + and -).
   gridShift(rep, y) {
     const f = this.gridFrame;
-    const I = rep.curveIntensity || 0;
     if (!f) return 0;
+    // curveAmount is a share of the cell width; projects saved before it existed keep their pixels (curveIntensity)
+    const I = rep.curveAmount !== undefined ? rep.curveAmount * (f.cw || 0) : (rep.curveIntensity || 0);
     if (rep.gridType === "curved") return Math.sin(((y - f.top) / Math.max(1, f.h)) * Math.PI * 2) * I;
     if (rep.gridType === "sheared") return (y - (f.top + f.h / 2)) * 0.6 * Math.tan(((rep.shearAngle || 0) * Math.PI) / 180);
     const mids = f.rowY, n = mids.length;
@@ -1273,7 +1274,7 @@ export class StudioEngine {
     // Far edges of the grid (the canvas edge in fit mode; past it in fixed mode)
     const colEdge = isFixed ? colStarts[cols - 1] + colWidths[cols - 1] : margin + usableW;
     const rowEdge = isFixed ? rowStarts[rows - 1] + rowHeights[rows - 1] : margin + usableH;
-    this.gridFrame = { top: rowStarts[0], h: rowEdge - rowStarts[0], rowY };
+    this.gridFrame = { top: rowStarts[0], h: rowEdge - rowStarts[0], rowY, cw: (colEdge - colStarts[0]) / cols };
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {

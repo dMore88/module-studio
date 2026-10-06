@@ -65,7 +65,7 @@
       L.offsetX = ri(-250, 250); L.offsetY = ri(-250, 250); L.wireframe = rb(); L.strokeWidth = ri(1, 10) / 2; L.visible = rnd() < 0.9;
       const st = L.structure; st.enabled = rnd() < 0.8; st.mode = pick(["repetition", "radiation"]);
       const rp = st.repetition; rp.gridType = pick(["basic","sliding","sheared","curved","zigzag","triangular","alternating","hexagonal","free"]); rp.freeSeed = ri(1, 99); rp.lineColor = pick(["","#cc2222","#ffffff"]); rp.lineDirection = pick(["both","horizontal","vertical"]); rp.lineSpacing = pick(["all","alternate"]); rp.reflection = pick(["none","columns","rows","both"]);
-      rp.cols = ri(1, 50); rp.rows = ri(1, 50); rp.spacing = ri(0, 40); rp.shearAngle = ri(0, 45); rp.slideOffset = rnd(); rp.curveIntensity = ri(0, 60);
+      rp.cols = ri(1, 50); rp.rows = ri(1, 50); rp.spacing = ri(0, 40); rp.shearAngle = ri(0, 45); rp.slideOffset = rnd(); rp.curveAmount = Math.round(rnd() * 100) / 100;
       rp.activeClipping = rb(); rp.showGridLines = rb(); rp.checkerInvert = rb(); rp.direction = pick(["repeated","alternated","undefined"]);
       const rd = st.radiation; rd.scheme = pick(["centrifugal","centripetal","concentric","spiral","multi_center"]); rd.orientation = pick(["auto","outward","inward","tangent","fixed"]); rd.centerOpen = ri(0, 70); rd.ringRotation = ri(-90, 90); rd.rays = ri(4, 28); rd.rings = ri(2, 10);
       rd.spiralTwist = ri(-180, 180); rd.centerX = ri(-200, 200); rd.centerY = ri(-200, 200); rd.showRays = rb(); rd.showRings = rb(); rd.activeClipping = rb(); rd.direction = pick(["repeated","alternated","undefined"]); rd.lineColor = pick(["","#2244cc"]); rd.ringShape = pick(["circle","triangle","square","hexagon"]); rd.centerCount = ri(2, 6); rd.lineWidth = ri(1, 12) / 2;
@@ -271,7 +271,7 @@
       q('[data-grid-var="sheared"]').click(); fire(q("#input-layout-param"), 20);
       assert(rep().shearAngle === 20 && q("#num-layout-param").value === "20º", "Shear angle did not apply");
       q('[data-grid-var="curved"]').click(); fire(q("#input-layout-param"), 40);
-      assert(rep().curveIntensity === 40 && q("#num-layout-param").value === "40px", "Wave amount did not apply");
+      assert(rep().curveAmount === 0.4 && q("#num-layout-param").value === "40%", "Wave amount did not apply");
       assert(q("#rep-lines-block").classList.contains("hidden"), "Line width should be hidden while grid lines are off");
       q("#chk-rep-gridlines").click();
       assert(!q("#rep-lines-block").classList.contains("hidden"), "Line width should show with grid lines on");
@@ -1614,6 +1614,12 @@
       e.buildCellPath(rec, 1, 0, 3, 1, 0, 125, 100, 100, curved, 0);
       const left = pts.slice(0, pts.length / 2);
       assert(left.every(([x, y]) => Math.abs(x - e.gridShift(curved, y)) < 1e-9), "The clip's left side is not the grid line");
+      // Wave amount is a share of the cell width; the old pixels are still understood
+      e.gridFrame = { top: 0, h: 400, rowY: [50, 125, 275], cw: 150 };
+      assert(Math.abs(e.gridShift({ gridType: "curved", curveAmount: 0.2 }, 100) - 30) < 1e-9, "20 % of a 150 px cell is 30 px");
+      e.gridFrame.cw = 30;
+      assert(Math.abs(e.gridShift({ gridType: "curved", curveAmount: 0.2 }, 100) - 6) < 1e-9, "The same 20 % on a 30 px cell is 6 px");
+      assert(Math.abs(e.gridShift({ gridType: "curved", curveIntensity: 20 }, 100) - 20) < 1e-9, "A project saved in pixels keeps its pixels");
     });
 
     await test("Clip cell cuts at the cell and Clip container at the container, as two separate things", () => {

@@ -892,7 +892,7 @@ const createDefaultLayerStructure = () => ({
     shearAngle: 15,
     slideOffset: 0.5,
     freeSeed: 7, // Free distribution: changes the layout of the modules (1 to 99)
-    curveIntensity: 18,
+    curveAmount: 0.1, // Curved / Zigzag: how far the lines swing, as a share of the cell width (0 to 1)
     activeClipping: false,
     showGridLines: false,
     gridLineWidth: 1.5,
@@ -1423,8 +1423,9 @@ class StudioEngine {
   // Curved is one wave over the whole grid; zigzag goes through the middle of each row (alternately + and -).
   gridShift(rep, y) {
     const f = this.gridFrame;
-    const I = rep.curveIntensity || 0;
     if (!f) return 0;
+    // curveAmount is a share of the cell width; projects saved before it existed keep their pixels (curveIntensity)
+    const I = rep.curveAmount !== undefined ? rep.curveAmount * (f.cw || 0) : (rep.curveIntensity || 0);
     if (rep.gridType === "curved") return Math.sin(((y - f.top) / Math.max(1, f.h)) * Math.PI * 2) * I;
     if (rep.gridType === "sheared") return (y - (f.top + f.h / 2)) * 0.6 * Math.tan(((rep.shearAngle || 0) * Math.PI) / 180);
     const mids = f.rowY, n = mids.length;
@@ -2149,7 +2150,7 @@ class StudioEngine {
     // Far edges of the grid (the canvas edge in fit mode; past it in fixed mode)
     const colEdge = isFixed ? colStarts[cols - 1] + colWidths[cols - 1] : margin + usableW;
     const rowEdge = isFixed ? rowStarts[rows - 1] + rowHeights[rows - 1] : margin + usableH;
-    this.gridFrame = { top: rowStarts[0], h: rowEdge - rowStarts[0], rowY };
+    this.gridFrame = { top: rowStarts[0], h: rowEdge - rowStarts[0], rowY, cw: (colEdge - colStarts[0]) / cols };
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -4341,8 +4342,8 @@ class StudioProApp {
     return {
       sliding: { label: "Row offset", key: "slideOffset", min: 0, max: 100, step: 1, suffix: "%", toUi: v => Math.round(v * 100), fromUi: v => v / 100 },
       sheared: { label: "Shear angle", key: "shearAngle", min: 0, max: 45, step: 1, suffix: "º", toUi: v => v, fromUi: v => v },
-      curved: { label: "Wave amount", key: "curveIntensity", min: 0, max: 60, step: 1, suffix: "px", toUi: v => v, fromUi: v => v },
-      zigzag: { label: "Wave amount", key: "curveIntensity", min: 0, max: 60, step: 1, suffix: "px", toUi: v => v, fromUi: v => v },
+      curved: { label: "Wave amount", key: "curveAmount", min: 0, max: 100, step: 1, suffix: "%", toUi: v => Math.round(v * 100), fromUi: v => v / 100 },
+      zigzag: { label: "Wave amount", key: "curveAmount", min: 0, max: 100, step: 1, suffix: "%", toUi: v => Math.round(v * 100), fromUi: v => v / 100 },
       free: { label: "Seed", key: "freeSeed", min: 1, max: 99, step: 1, suffix: "", toUi: v => v, fromUi: v => v }
     };
   }
@@ -4366,7 +4367,9 @@ class StudioProApp {
       if (slider) { slider.min = spec.min; slider.max = spec.max; slider.step = spec.step; }
       const label = document.getElementById("rep-param-label");
       if (label) label.textContent = spec.label;
-      const val = spec.toUi(rep[spec.key] ?? 0);
+      // A project saved in pixels (curveIntensity) is shown as a share of the cell width, without touching the file
+      const legacy = spec.key === "curveAmount" && rep.curveAmount === undefined && rep.curveIntensity !== undefined;
+      const val = spec.toUi(legacy ? Math.min(1, (rep.curveIntensity || 0) / (600 / Math.max(1, rep.cols || 4))) : (rep[spec.key] ?? 0));
       this.syncControlValue("input-layout-param", val);
       const num = document.getElementById("num-layout-param");
       if (num) num.value = `${val}${spec.suffix}`;
