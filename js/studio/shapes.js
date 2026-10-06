@@ -641,8 +641,29 @@ export function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
       if (pt.c) { picked.push(pt); run = 0; }
       else if (++run % stride === 0) picked.push(pt);
     }
-    const n = picked.length;
+    const nOrig = picked.length;
+    let n = nOrig;
     let pts = picked.map(pt => ({ x: pt.x * f, y: pt.y * f, u: pt.u }));
+
+    // Jitter and undulation need more points than the outline has: jitter is a fine tremor (a vertex every ~1.5 % of the
+    // module, each pushed on its own) and undulation a long smooth wave. Skipping and random lines keep the old density
+    if ((jitter > 0 || undulation > 0) && nOrig > 2) {
+      const gap = Math.max(1, size * 0.015);
+      const dense = [];
+      const count = sp.closed ? nOrig : nOrig - 1;
+      for (let i = 0; i < count; i++) {
+        const a = pts[i], b = pts[(i + 1) % nOrig];
+        const bu = (i + 1 === nOrig) ? b.u + 1 : b.u;
+        const parts = Math.min(40, Math.max(1, Math.round(Math.hypot(b.x - a.x, b.y - a.y) / gap)));
+        for (let k = 0; k < parts; k++) {
+          const t = k / parts;
+          dense.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, u: a.u + (bu - a.u) * t });
+        }
+      }
+      if (!sp.closed) dense.push({ ...pts[nOrig - 1] });
+      if (dense.length <= 600) { pts = dense; n = pts.length; }
+    }
+    const density = n / nOrig; // how many points now stand for one original point
 
     // Perimeter undulation: sine displacement along the outline normal
     if (undulation > 0 && n > 2) {
@@ -672,7 +693,7 @@ export function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
     const strays = [];
     if (crossing > 0 && n > 2) {
       pts.forEach((pt, p) => {
-        if (fract(Math.abs(Math.sin(s * 17.3 + p * 61.7)) * 1000) >= crossing) return;
+        if (fract(Math.abs(Math.sin(s * 17.3 + p * 61.7)) * 1000) >= crossing / density) return;
         const a = pts[Math.max(0, p - 1)], b = pts[Math.min(n - 1, p + 1)];
         const along = Math.atan2(b.y - a.y, b.x - a.x) + (fract(Math.abs(Math.sin(s * 5.1 + p * 29.3)) * 1000) < 0.5 ? 0 : Math.PI);
         const u = fract(Math.abs(Math.cos(s * 7.9 + p * 23.1)) * 1000) * 2 - 1; // -1 to 1, squared so most are near parallel
@@ -688,7 +709,7 @@ export function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
     if (skipChance > 0) {
       let seg = [];
       pts.forEach((pt, p) => {
-        const skip = Math.abs(Math.sin(s * 43.1 + p * 97.7)) < skipChance;
+        const skip = Math.abs(Math.sin(s * 43.1 + Math.floor(p / density) * 97.7)) < skipChance;
         if (skip) { if (seg.length > 1) segments.push(seg); seg = []; }
         else seg.push(pt);
       });
