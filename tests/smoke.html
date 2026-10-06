@@ -251,6 +251,18 @@
       app.engine.exporting = false;
     });
 
+    await test("Art log lists every Texture control in use, in the units of the sliders", () => {
+      reset();
+      const d = win.document, log = () => d.getElementById("art-log-lines").textContent;
+      const st = app.getActiveLayerStructure();
+      st.texture = { enabled: true, jitter: 5.8, skipChance: 20, crossing: 100, undulation: 8.4 };
+      app.render();
+      assert(/Jitter 58%/.test(log()) && /Line skipping 20%/.test(log()) && /Random lines 100%/.test(log()) && /Undulation 28%/.test(log()), "The Texture line is incomplete: " + log());
+      st.texture = { enabled: true, jitter: 0, skipChance: 0, crossing: 0, undulation: 3 };
+      app.render();
+      assert(/Texture: Undulation 10%/.test(log()) && !/Jitter|skipping|Random/.test(log()), "Controls at 0 should stay out of the line: " + log());
+    });
+
     await test("Undo and redo restore a per-layer setting", () => {
       reset();
       app.history = []; app.historyLabels = []; app.historyIndex = -1;

@@ -154,7 +154,7 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | :-- | :-- | :-- | :-- | :-- |
 | Jitter | 0 % | 100 % | 1 | Temblor de los vértices. 100 % = 10 px para un módulo de 100 px (se escala al tamaño real). |
 | Line skipping | 0 % | 90 % | 1 | Probabilidad de que cada vértice se omita y el trazo se corte; a 90 % las figuras complejas quedan casi deshechas. Solo en trazos. |
-| Random lines | 0 % | 100 % | 1 | Probabilidad de que cada vértice saque una línea corta en ángulo al azar. Solo en trazos. |
+| Random lines | 0 % | 100 % | 1 | Probabilidad de que cada vértice saque una línea corta, casi paralela al trazo y de largo muy variable. Solo en trazos. |
 | Perimeter undulation | 0 % | 100 % | 1 | Ondulación del contorno. 100 % = 30 px para un módulo de 100 px, es decir, el contorno se desplaza hasta un 21 % del módulo. |
 
 ### Space

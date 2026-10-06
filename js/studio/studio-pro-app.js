@@ -690,7 +690,15 @@ export class StudioProApp {
       const cn = s.concentration;
       if (cn && cn.enabled) out.push(line("Concentration", [pick(CMODE, cn.mode), title(cn.method || "move")].join(" / ")));
       const tx = s.texture;
-      if (tx && tx.enabled) out.push(line("Texture", `Jitter ${tx.jitter} / Undulation ${tx.undulation}`));
+      if (tx && tx.enabled) {
+        // Every control in use, in the units the sliders show (jitter and undulation are stored in px for a 100 px module)
+        const parts = [];
+        if (tx.jitter > 0) parts.push(`Jitter ${Math.round(tx.jitter / 0.1)}%`);
+        if (tx.skipChance > 0) parts.push(`Line skipping ${Math.round(tx.skipChance)}%`);
+        if (tx.crossing > 0) parts.push(`Random lines ${Math.round(tx.crossing)}%`);
+        if (tx.undulation > 0) parts.push(`Undulation ${Math.round(tx.undulation / 0.3)}%`);
+        out.push(line("Texture", parts.length ? parts.join(" / ") : "none"));
+      }
       const sp = s.space;
       if (sp && sp.enabled) out.push(line("Space", `${title(sp.mode)} / Depth ${sp.depth}`));
     }

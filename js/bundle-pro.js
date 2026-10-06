@@ -834,14 +834,19 @@ function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
       });
     }
 
-    // Random lines: short strokes that leave the outline at random angles (a share of the vertices grows one)
+    // Random lines: short strokes that leave the outline mostly along it (a share of the vertices grows one).
+    // The angle leans toward the direction of the stroke, either way, and the length varies a lot: many short, a few long
     const fract = (v) => v - Math.floor(v);
     const strays = [];
     if (crossing > 0 && n > 2) {
       pts.forEach((pt, p) => {
         if (fract(Math.abs(Math.sin(s * 17.3 + p * 61.7)) * 1000) >= crossing) return;
-        const ang = fract(Math.abs(Math.cos(s * 7.9 + p * 23.1)) * 1000) * Math.PI * 2;
-        const len = size * (0.04 + 0.08 * fract(Math.abs(Math.sin(s * 3.3 + p * 11.9)) * 1000));
+        const a = pts[Math.max(0, p - 1)], b = pts[Math.min(n - 1, p + 1)];
+        const along = Math.atan2(b.y - a.y, b.x - a.x) + (fract(Math.abs(Math.sin(s * 5.1 + p * 29.3)) * 1000) < 0.5 ? 0 : Math.PI);
+        const u = fract(Math.abs(Math.cos(s * 7.9 + p * 23.1)) * 1000) * 2 - 1; // -1 to 1, squared so most are near parallel
+        const ang = along + u * Math.abs(u) * (Math.PI * 55) / 180;
+        const r = fract(Math.abs(Math.sin(s * 3.3 + p * 11.9)) * 1000);
+        const len = size * (0.02 + 0.22 * Math.pow(r, 2.2));
         strays.push([{ x: pt.x, y: pt.y }, { x: pt.x + Math.cos(ang) * len, y: pt.y + Math.sin(ang) * len }]);
       });
     }
@@ -4088,7 +4093,15 @@ class StudioProApp {
       const cn = s.concentration;
       if (cn && cn.enabled) out.push(line("Concentration", [pick(CMODE, cn.mode), title(cn.method || "move")].join(" / ")));
       const tx = s.texture;
-      if (tx && tx.enabled) out.push(line("Texture", `Jitter ${tx.jitter} / Undulation ${tx.undulation}`));
+      if (tx && tx.enabled) {
+        // Every control in use, in the units the sliders show (jitter and undulation are stored in px for a 100 px module)
+        const parts = [];
+        if (tx.jitter > 0) parts.push(`Jitter ${Math.round(tx.jitter / 0.1)}%`);
+        if (tx.skipChance > 0) parts.push(`Line skipping ${Math.round(tx.skipChance)}%`);
+        if (tx.crossing > 0) parts.push(`Random lines ${Math.round(tx.crossing)}%`);
+        if (tx.undulation > 0) parts.push(`Undulation ${Math.round(tx.undulation / 0.3)}%`);
+        out.push(line("Texture", parts.length ? parts.join(" / ") : "none"));
+      }
       const sp = s.space;
       if (sp && sp.enabled) out.push(line("Space", `${title(sp.mode)} / Depth ${sp.depth}`));
     }
