@@ -144,8 +144,8 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 ### Concentration
 | Control | Mín. | Máx. | Paso | Razón |
 | :-- | :-- | :-- | :-- | :-- |
-| Foci | 2 | 6 | 1 | Focos de Hotspots; con 1 es el modo Point. |
-| X / Y position | 5 % | 95 % | 1 | Mantiene el atractor dentro del lienzo. |
+| Foci | 2 | 8 | 1 | Focos de Hotspots; con 1 es el modo Point. |
+| X / Y position | 0 % | 100 % | 1 | El atractor puede ir hasta el borde o la esquina del lienzo. |
 | Gathering pull | 10 % | 100 % | 1 | Fuerza de atracción; 10 % deja una atracción muy sutil. |
 | Field radius | 10 px | 500 px | 5 | Alcance del campo; 10 px sirve para composiciones de módulos pequeños. |
 

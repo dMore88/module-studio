@@ -2592,9 +2592,9 @@ export class StudioProApp {
         commit(c => { c[key] = toStored(val); }, `Concentration ${label}: ${val}${suffix}`);
       });
     };
-    bindPair("input-conc-x", "num-conc-x", { min: 5, max: 95, suffix: "%", toStored: v => v / 100, label: "X", key: "attractorX" });
-    bindPair("input-conc-y", "num-conc-y", { min: 5, max: 95, suffix: "%", toStored: v => v / 100, label: "Y", key: "attractorY" });
-    bindPair("input-conc-foci", "num-conc-foci", { min: 2, max: 6, suffix: "", toStored: v => v, label: "Foci", key: "focusCount" });
+    bindPair("input-conc-x", "num-conc-x", { min: 0, max: 100, suffix: "%", toStored: v => v / 100, label: "X", key: "attractorX" });
+    bindPair("input-conc-y", "num-conc-y", { min: 0, max: 100, suffix: "%", toStored: v => v / 100, label: "Y", key: "attractorY" });
+    bindPair("input-conc-foci", "num-conc-foci", { min: 2, max: 8, suffix: "", toStored: v => v, label: "Foci", key: "focusCount" });
     bindPair("input-conc-power", "num-conc-power", { min: 10, max: 100, suffix: "%", toStored: v => v, label: "Pull", key: "power" });
     bindPair("input-conc-radius", "num-conc-radius", { min: 10, max: 500, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
 
@@ -2610,8 +2610,8 @@ export class StudioProApp {
     this.canvas?.addEventListener("click", (e) => {
       if (!this.isFlyoutOpen || this.activeRailTab !== "concentration") return;
       const rect = this.canvas.getBoundingClientRect();
-      const nx = Math.max(0.05, Math.min(0.95, (e.clientX - rect.left) / rect.width));
-      const ny = Math.max(0.05, Math.min(0.95, (e.clientY - rect.top) / rect.height));
+      const nx = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const ny = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
       commit(c => { c.attractorX = nx; c.attractorY = ny; }, "Concentration Attractor");
     });
   }

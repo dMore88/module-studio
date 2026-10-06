@@ -997,7 +997,7 @@ const createDefaultLayerStructure = () => ({
     mode: "point", // point, void, line, line_void (away from a line), free (hotspots), dense, sparse (the whole design)
     method: "move", // move (modules are displaced) or absence (modules vanish with the density)
     edgeFade: false, // dense / sparse: the effect fades toward the edges of the canvas
-    focusCount: 2, // hotspots: how many foci share the density (2 to 6)
+    focusCount: 2, // hotspots: how many foci share the density (2 to 8)
     attractorX: 0.5, // 0.05 to 0.95
     attractorY: 0.5, // 0.05 to 0.95
     power: 50, // gathering pull, 10 to 100
@@ -1487,7 +1487,7 @@ class StudioEngine {
   // Hotspot foci: the attractor and its copies turned around the centre of the canvas (two foci = the mirror pair)
   hotspots(conc, width, height) {
     const attX = (conc.attractorX ?? 0.5) * width, attY = (conc.attractorY ?? 0.5) * height;
-    const n = Math.max(2, Math.min(6, Math.round(conc.focusCount || 2)));
+    const n = Math.max(2, Math.min(8, Math.round(conc.focusCount || 2)));
     if (n === 2) return [{ x: attX, y: attY }, { x: width - attX, y: height - attY }];
     const cx = width / 2, cy = height / 2, dx = attX - cx, dy = attY - cy;
     return Array.from({ length: n }, (_, k) => {
@@ -5983,9 +5983,9 @@ class StudioProApp {
         commit(c => { c[key] = toStored(val); }, `Concentration ${label}: ${val}${suffix}`);
       });
     };
-    bindPair("input-conc-x", "num-conc-x", { min: 5, max: 95, suffix: "%", toStored: v => v / 100, label: "X", key: "attractorX" });
-    bindPair("input-conc-y", "num-conc-y", { min: 5, max: 95, suffix: "%", toStored: v => v / 100, label: "Y", key: "attractorY" });
-    bindPair("input-conc-foci", "num-conc-foci", { min: 2, max: 6, suffix: "", toStored: v => v, label: "Foci", key: "focusCount" });
+    bindPair("input-conc-x", "num-conc-x", { min: 0, max: 100, suffix: "%", toStored: v => v / 100, label: "X", key: "attractorX" });
+    bindPair("input-conc-y", "num-conc-y", { min: 0, max: 100, suffix: "%", toStored: v => v / 100, label: "Y", key: "attractorY" });
+    bindPair("input-conc-foci", "num-conc-foci", { min: 2, max: 8, suffix: "", toStored: v => v, label: "Foci", key: "focusCount" });
     bindPair("input-conc-power", "num-conc-power", { min: 10, max: 100, suffix: "%", toStored: v => v, label: "Pull", key: "power" });
     bindPair("input-conc-radius", "num-conc-radius", { min: 10, max: 500, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
 
@@ -6001,8 +6001,8 @@ class StudioProApp {
     this.canvas?.addEventListener("click", (e) => {
       if (!this.isFlyoutOpen || this.activeRailTab !== "concentration") return;
       const rect = this.canvas.getBoundingClientRect();
-      const nx = Math.max(0.05, Math.min(0.95, (e.clientX - rect.left) / rect.width));
-      const ny = Math.max(0.05, Math.min(0.95, (e.clientY - rect.top) / rect.height));
+      const nx = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const ny = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
       commit(c => { c.attractorX = nx; c.attractorY = ny; }, "Concentration Attractor");
     });
   }
