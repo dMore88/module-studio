@@ -33,6 +33,14 @@ Sale de las filas ⏳ del mapa de conceptos, más las mejoras de filas 🟡 que 
 | G9, S5 | Unión o sustracción dentro de la figura (en gradación y en similitud) | Ligado a las interrelaciones |
 | F5 | Formas rectilíneas e irregulares propias | La app trabaja con una biblioteca fija de 22 formas |
 
+### Rendimiento (solo si se amplían los rangos o llega la cadena acumulativa)
+Medido el 6 oct 2026 (círculo en trazo, Fit to canvas, 600 px): 100 módulos 2 ms · 900 → 9 ms · 3 600 → 32 ms · 10 000 → 213 ms · 3 600 con Texture 147 ms · con Similarity y Gradation 60 ms · con Space 61 ms. Con los límites de hoy (50 × 50 columnas y filas = 2 500 módulos; radial 36 × 16) todo queda dentro de lo fluido. **Cada acción ya dibuja una sola vez** (comprobado: un evento = un dibujo), así que agrupar repintados por cuadro no aporta nada.
+| Mejora | Cuándo |
+| :-- | :-- |
+| Un solo trazo para los módulos del mismo estilo (el mayor salto) | Junto con las interrelaciones entre capas, para no hacerlo dos veces |
+| Caché de las figuras aplanadas de Texture | Si Texture con miles de módulos se siente lento |
+| No dibujar los módulos que quedan fuera del lienzo | Con Actual size y retículas mucho más grandes que el lienzo |
+
 ### Al final de todo
 | ID | Concepto | Notas |
 | :-- | :-- | :-- |
