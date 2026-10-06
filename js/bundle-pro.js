@@ -6102,7 +6102,7 @@ class StudioProApp {
     };
     bindPair("input-space-depth", "num-space-depth", { min: 10, max: 80, suffix: "px", label: "Depth", key: "depth" });
     bindPair("input-space-angle", "num-space-angle", { min: -60, max: 60, suffix: "º", label: "Angle", key: "angle" });
-    bindPair("input-space-shading", "num-space-shading", { min: 20, max: 100, suffix: "%", label: "Shading", key: "shading" });
+    bindPair("input-space-shading", "num-space-shading", { min: 5, max: 100, suffix: "%", label: "Shading", key: "shading" });
 
     document.getElementById("toggle-space-guides")?.addEventListener("change", (e) => {
       const checked = e.target.checked;

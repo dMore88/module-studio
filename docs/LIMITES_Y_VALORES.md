@@ -162,7 +162,7 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | :-- | :-- | :-- | :-- | :-- |
 | Extrusion depth | 10 | 80 px | 1 | Profundidad aparente; bajo 10 no se ve volumen. |
 | Projection angle | −60° | 60° | 1 | Dirección del volumen. |
-| Facet shading contrast | 20 % | 100 % | 1 | Diferencia de tono entre caras. |
+| Facet shading contrast | 5 % | 100 % | 1 | Diferencia de tono entre la cara frontal y el costado: a más %, el costado es más claro. Ojo: ni 5 % ni 0 % dan caras idénticas, el costado conserva ~60 % de la tinta de la cara frontal. |
 
 ---
 

@@ -268,7 +268,7 @@ Los px de `jitter` y `undulation` están expresados para un módulo de 100 px y 
 Transforma el espacio plano en una experiencia volumétrica. Estado en `layer.structure.space`. Modificador autónomo.
 
 * **`mode`** (*Mode*, chips): `isometric` (proyección a 30º con facetas de luz y sombra), `foreshortening` (*3D tilt*), `fluctuating` (planos que avanzan y retroceden; celdas vecinas alternan la extrusión) y `conflicting` (*Paradox*: figuras imposibles).
-* **`depth`** (*Extrusion depth*, 10 a 80 px), **`angle`** (*Projection angle*, −60º a 60º, por defecto 30) y **`shading`** (*Facet shading contrast*, 20 a 100 %, por defecto 50).
+* **`depth`** (*Extrusion depth*, 10 a 80 px), **`angle`** (*Projection angle*, −60º a 60º, por defecto 30) y **`shading`** (*Facet shading contrast*, 5 a 100 %, por defecto 50).
 * **`showIsoGuides`** (*Display 30º Isometric Grid Lines*, casilla): trama isométrica de apoyo, con el color de guías; no se exporta.
 
 ---
