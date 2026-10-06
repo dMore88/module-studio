@@ -1369,11 +1369,6 @@ export class StudioProApp {
     this.syncControlValue("num-struct-row-grade", `${fs.rowGrade || 0}%`);
     this.syncControlValue("input-struct-row-ratio", fs.rowRatio !== undefined ? fs.rowRatio : 1);
     this.syncControlValue("num-struct-row-ratio", fs.rowRatio !== undefined ? fs.rowRatio : 1);
-    this.syncControlValue("input-struct-irregular", fs.irregular || 0);
-    this.syncControlValue("num-struct-irregular", `${fs.irregular || 0}%`);
-    this.syncControlValue("input-struct-irregseed", fs.irregSeed ?? 7);
-    this.syncControlValue("num-struct-irregseed", `${fs.irregSeed ?? 7}`);
-    document.getElementById("struct-irregseed-block")?.classList.toggle("hidden", !(fs.irregular > 0));
     this.syncCheckbox("chk-struct-gridlines", !!fs.showGridLines);
 
     this.updateRailIndicatorDots();
@@ -1416,13 +1411,10 @@ export class StudioProApp {
         mod.structure.enabled = true;
         if (mod.structure.mode === "radiation") mod.structure.mode = "repetition";
         this.syncStructureInspectorWithActiveLayer();
-        document.getElementById("struct-irregseed-block")?.classList.toggle("hidden", !(mod.structure.formalStructure.irregular > 0));
         this.render();
         this.updateLayerCardsUI();
       }, label, suffix);
     };
-    bindGrade("input-struct-irregular", "num-struct-irregular", "irregular", "Irregular Sizes", 0, 100);
-    bindGrade("input-struct-irregseed", "num-struct-irregseed", "irregSeed", "Irregular Seed", 1, 99, "");
     bindGrade("input-struct-col-grade", "num-struct-col-grade", "colGrade", "Col Gradation");
     bindGrade("input-struct-row-grade", "num-struct-row-grade", "rowGrade", "Row Gradation");
 
