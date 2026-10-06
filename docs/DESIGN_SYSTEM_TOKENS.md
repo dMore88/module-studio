@@ -7,6 +7,8 @@ Fuente: archivo de Figma **Web apps**, con dos páginas:
 
 Este documento describe los tokens y componentes **tal como están en Figma** y cómo se usan en el código. Los tokens viven en `css/tokens.css`.
 
+> **Revisión del 5 oct 2026 (Figma actualizado):** la página *Components pack* cambió de forma (tamaños más chicos, otra tipografía, otros radios y paddings, más aspecto de software). La **sección 11** lista todo lo que cambió respecto a lo que describen las secciones 2 a 5, y las decisiones que quedan abiertas. **El código (`css/tokens.css`, `css/studio-pro.css`) todavía usa los valores anteriores**; las secciones 2 a 5 siguen describiendo lo que la app tiene hoy, salvo donde se indica.
+
 > **Estado de la migración:** toda la interfaz usa estos tokens: los diez paneles del inspector, la barra superior, la barra del lienzo, el panel de capas, el riel de herramientas y la línea de estado. El tema antiguo (`css/design-system.css`, variables `--bs-*`) se eliminó.
 
 ---
@@ -361,3 +363,79 @@ Excepción: la flecha del selector de proporción del Figma no es de Phosphor (e
 2. Pasar el enlace del nodo.
 3. Implementarlo con clases `.ds-*` y tokens de `css/tokens.css`; sin colores ni medidas sueltas.
 4. Comprobarlo en `tests/smoke.html` y comparar los estilos calculados antes y después si se toca un componente ya existente.
+
+---
+
+## 11. Cambios del Figma del 5 oct 2026 (pendientes de aplicar en el código)
+
+Fuente: página *Components pack* (nodo `108:7436`), leída con las herramientas de Figma: variables, tamaños y estilos de cada componente. **No se revisó** la página *Abstract studio* (`5763:1691`); sus medidas (tarjetas del inspector, riel, capas) siguen como en las secciones 5.1 y 5.14 a 5.22 hasta que se confirme si cambió.
+
+### 11.1 Tokens que cambiaron
+
+| Grupo | Antes (código actual) | Ahora (Figma) |
+| :--- | :--- | :--- |
+| **Tipografía, familia** | Inter | **Be Vietnam Pro** (cuerpo y títulos) |
+| **Tamaños de texto** | xs 12 · sm 14 · md 16 · xl 20 · 2xl 24 · 3xl 30 | **xs 10 · sm 12 · md 15** · xl 20 · 2xl 24 · 3xl 30 |
+| **Radios** (`border/radius`) | 1 = 8 · 2 = 16 · 3 = 20 · full | **1 = 4 · 2 = 8 · 3 = 12 · 5 = 20** · full (el 4 no aparece en los componentes revisados; se supone 16) |
+| **Sizing** | 7 = 40 · 8 = 48 · 9 = 56 · 10 = 64 · 11 = 68 · 12 = 80 · 13 = 96 · 14 = 128 · 15 = 144 · 16 = 224 · 17 = 256 · 18 = 288 | **7 = 32 · 8 = 36 · 9 = 40 · 10 = 48 · 11 = 56 · 12 = 64 · 13 = 68 · 14 = 72 · 15 = 80 · 16 = 96 · 17 = 128 · 18 = 168** (1 a 6 igual: 4 · 8 · 12 · 16 · 20 · 24) |
+| **Spacing** | 0 a 11 | Igual |
+| **`neutral/interactive/default--inverted`** | `#eeeef4` | **`#ffffff`** (fondo de tags, botones secundarios, campos) |
+| **`neutral/interactive/hover--inverted`** | `#cfd0dd` | **`#e1e2eb`** |
+| **`neutral/interactive/active--inverted`** | `#eeeef4` | Igual |
+
+**Variables nuevas** (no están en `tokens.css`): `opacity/disabled` = 50 · `opacity/overlay` = 80 · `primary/interactive/default` `#2371e7` y `/active` `#194d9c` · `primary/border/strong` `#194d9c` · `primary/text/link-visited` `#0f2648` · `typography/color/n-default` `#282a36`, `n-soft` `#63657b`, `n-inverted` `#eeeef4` · familia de variables `scale-progression/*` (min = 1, x05 = 2, x1 = 4 … x72 = 288; la escala de 4 px de la que salen spacing y sizing).
+
+**Cuidado con los nombres.** El archivo conserva variables antiguas con otro nombre y los valores viejos: `border-radius/1` = 8, `border-radius/2` = 16, `border-radius/3` = 20 (con guion) conviven con las nuevas `border/radius/1` = 4, `/2` = 8, `/3` = 12, `/5` = 20 (con barra). También hay variables `bbs-*` (por ejemplo `bbs-spacing/0`, `bbs-font-size/button` = 14 en Arial). Al pasarlo al código hay que usar solo las de `border/radius/*` y no copiar las antiguas. Y como el 20 ahora se llama `radius/5`, **las tarjetas del inspector (hoy `--border-radius-3` = 20) pasan a `--border-radius-5`**.
+
+### 11.2 Estilos de texto nuevos
+
+| Estilo | Ahora | Antes |
+| :--- | :--- | :--- |
+| **Caption** | 10 / 400, interlineado 1,7 | 12 / 400 |
+| **Caption--Strong** | 10 / 600 | 12 / 600 |
+| **Label** (botones, etiquetas de campo) | 10 / 500, espaciado 0,1 px, interlineado 1 | 12 / 600, mayúsculas |
+| **Body small** | 12 / 400, interlineado 1,7 | 14 / 400 |
+| **Body** | 15 / 400, interlineado 1,5 | 16 / 400 |
+| **Body--Strong** | 15 / 600 | 16 / 600 |
+| **Subheading** / **--Strong** | 20 / 400 · 20 / 600, interlineado 1,5 | igual |
+| **Heading 5--Strong** | 24 / 600, interlineado 1,2 | igual |
+| **Heading 4--Strong** | 30 / 600, interlineado 1,2 | igual |
+
+En los componentes, la etiqueta de un campo ya no es el *Overline* en mayúsculas: es el estilo **Label** (10 / 500 en `neutral/text/soft`, sin mayúsculas). El estilo de código (`Code snippets`) existe en Figma pero no se pudo leer; la fuente mono de la caja de valor sigue sin decidirse (ver 8.2).
+
+### 11.3 Componentes: medidas nuevas
+
+| Componente | Antes | Ahora (Figma) |
+| :--- | :--- | :--- |
+| **Tag** (5.5) | 24 de alto, relleno 12, píldora, texto 12 | **24 de alto, relleno 4, radio 4**, separación icono-texto 2, texto 10 / 400, fondo blanco, borde 1 px en la tinta; icono de 16 y botón de cierre de 16 opcionales. Estados: normal, hover, activo, deshabilitado |
+| **Botón** (5.15) | 40 de alto, relleno 16, radio 16, texto 12 / 600 en mayúsculas | **32 de alto, relleno 12, radio 12** (`border/radius/3`), separación 4, texto 10 / 500 con espaciado 0,1, icono de 16. Jerarquías: **primary** (fondo en la tinta, texto `main-inverted`), **secondary** (borde 1 px en la tinta), **tertiary** (sin borde ni fondo), **danger** (rojo). Cada una con variante *inverted* y estados normal, foco, hover, activo y deshabilitado |
+| **Botón de icono** (5.16) | 40×40, radio 16 | **32×32, radio 12**, icono de 16 |
+| **Interruptor** (5.4) | 40×24, indicador de 20 | **32×20**, relleno 2, indicador de 16, borde 1 px en la tinta, radio completo. En la librería el estado encendido es pista blanca con indicador oscuro a la derecha (ver 8.3) |
+| **Casilla** (5.8) | 24×24 | **20×20, radio 4**, marca de 12; marcada: fondo en la tinta |
+| **Botón de radio** | no se usa | 18×20 |
+| **Deslizante** (5.6) | Pista 2 px, tirador 16 | **Pista de 4 px** en `neutral/bg/muted` (`#cfd0dd`), relleno de 4 px en la tinta, **tirador de 20** en la tinta con borde 1 px `neutral/border/strong` y sombra `elevation/1x`. Componente de 200×20 |
+| **Campo de texto** (5.7) | Etiqueta *Overline* | Etiqueta *Label* encima (separación 4), caja de **32 de alto, radio 4**, borde 1 px `neutral/border/strong`, fondo blanco, relleno 12, separación 8, texto 12 / 400 en `neutral/text/main`; texto de ayuda 10 / 400 en `neutral/text/soft`. Estado activo: borde en la tinta; error: rojo |
+| **Búsqueda** | no se usa | 32 de alto, radio 4, icono de 20 y botón de borrar de 24 |
+| **Selector** (5.17) | 40 de alto, botón oscuro a la derecha | Misma caja que el campo de texto: 32 de alto, radio 4, icono de 16 a la derecha. El dropdown de la app (`.ds-dropdown`) debería seguir esa caja |
+| **Grupo de botones** (5.11) | 40 de alto, radio 16 | Elementos de **32 de alto**, ancho mínimo 80, relleno 8, texto 12 centrado, fondo blanco |
+| **Botón de alternancia** | | 32×32 |
+
+Resumen del criterio: **todos los controles de la interfaz miden 32 de alto** (botones, campos, selectores, grupo de botones) y 20 los pequeños (casilla, interruptor, tirador); **las cajas de entrada y las etiquetas usan radio 4** y los botones radio 12.
+
+### 11.4 Decisiones abiertas nuevas
+
+| # | Qué | Observación |
+| :-- | :--- | :--- |
+| 11 | **Texto de 10 px** | Caption, Label, tags y botones bajan a 10. Es pequeño para una herramienta que se usa mucho tiempo; Body small (12) para los textos que se leen, y 10 solo para etiquetas cortas, parece un buen equilibrio. Revisar en pantalla antes de aplicarlo en todo |
+| 12 | **Interruptor encendido** | Con `default--inverted` ahora blanco, el interruptor apagado y el encendido de la librería se parecen (pista blanca, borde oscuro); solo cambia la posición del indicador. Para que se distinga, la pista encendida debería ir en la tinta (como lo muestra el diseño de la app). Decisión 8.3 sigue abierta |
+| 13 | **Radios de botón y de campo** | Botones y tarjetas 12, campos, tags y casillas 4. Es coherente (cada tipo tiene el suyo) pero conviene confirmar que los botones de forma del selector (hoy 40×40, radio 16) y las tarjetas de capa (radio 8) siguen la misma regla |
+| 14 | **Anillo de foco** | La librería lo define con `primary/interactive/focus` (`#97bcf5`), de contraste bajo sobre blanco (alrededor de 1,9:1). Para teclado conviene un anillo en la tinta o en `primary/border/strong` (`#194d9c`). Decisión 8.5 sigue abierta |
+| 15 | **Variables antiguas en el archivo** | `border-radius/*` y `bbs-*` siguen con valores viejos junto a las nuevas. Conviene limpiarlas en Figma para que no se mezclen en el código |
+| 16 | **Tamaños mayores a 3xl** | `font-size/4xl` ya no aparece en las variables usadas; no se sabe si se eliminó |
+
+### 11.5 Cómo aplicarlo (cuando se decida)
+
+1. Actualizar `css/tokens.css`: familia, tamaños, radios (renombrando para que `--border-radius-3` valga 12 y el 20 pase a `--border-radius-5`), sizing, `default--inverted`/`hover--inverted`, y las variables nuevas.
+2. Cargar **Be Vietnam Pro** en lugar de Inter (`@import` de `css/studio-pro.css`, línea 6).
+3. Ajustar los componentes `.ds-*` de la tabla 11.3 y los tamaños que dependen de `sizing/7` (que pasa de 40 a 32).
+4. Comparar capturas antes y después de cada paso y correr `tests/smoke.html` (hay pruebas que miden alturas y fuentes).
