@@ -1365,7 +1365,7 @@ export class StudioProApp {
           const mod = this.getActiveModule();
           if (mod && !(mod.containerW > 0 || mod.containerH > 0)) {
             const cfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
-            mod.containerH = mod.containerW = Math.round((0.42 * Math.min(cfg.w, cfg.h)) / Math.max(2, struct.radiation.rings));
+            mod.containerH = mod.containerW = Math.round((0.5 * Math.min(cfg.w, cfg.h)) / Math.max(2, struct.radiation.rings));
           }
         }
         struct.mode = "radiation";

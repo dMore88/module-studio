@@ -2486,7 +2486,8 @@ class StudioEngine {
     const usableW = usableWParam !== undefined ? usableWParam : width - margin * 2;
     const usableH = height - margin * 2;
     const isMultiCenter = rad.scheme === "multi_center";
-    const refR = Math.min(usableW, usableH) * (isMultiCenter ? 0.32 : 0.42);
+    // Fit: the last ring reaches the edge of the canvas (a circle inscribed in it), like the cells of a grid; with several centres the foci sit 35 % of the radius from the middle, so the whole stays inside
+    const refR = Math.min(usableW, usableH) * (isMultiCenter ? 0.37 : 0.5);
 
     const cx = width / 2 + (rad.centerX || 0);
     const cy = height / 2 + (rad.centerY || 0);
@@ -4745,7 +4746,7 @@ class StudioProApp {
           const mod = this.getActiveModule();
           if (mod && !(mod.containerW > 0 || mod.containerH > 0)) {
             const cfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
-            mod.containerH = mod.containerW = Math.round((0.42 * Math.min(cfg.w, cfg.h)) / Math.max(2, struct.radiation.rings));
+            mod.containerH = mod.containerW = Math.round((0.5 * Math.min(cfg.w, cfg.h)) / Math.max(2, struct.radiation.rings));
           }
         }
         struct.mode = "radiation";

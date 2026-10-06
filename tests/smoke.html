@@ -889,7 +889,9 @@
       assert(edge > 20, "The container frame is not drawn on its left edge");
       // Radial: each ring is as thick as the container's height
       const inkFar = (d) => { let n = 0; for (let y = 0; y < 600; y += 2) for (let x = 0; x < 600; x += 2) if (Math.hypot(x - 300, y - 300) > 330 && px(d, x, y) < 128) n++; return n; };
-      assert(inkFar(render({}, {}, "radiation")) === 0, "Fit radial should stay within its radius");
+      assert(inkFar(render({}, {}, "radiation")) === 0, "Fit radial should stay within the canvas");
+      const inkNearEdge = (d) => { let n = 0; for (let y = 0; y < 600; y++) for (let x = 0; x < 600; x++) { const r = Math.hypot(x - 300, y - 300); if (r > 225 && r <= 300 && px(d, x, y) < 128) n++; } return n; };
+      assert(inkNearEdge(render({}, {}, "radiation")) > 20, "Fit radial should reach the edge of the canvas (the last ring ends at half the side)");
       assert(inkFar(render({}, { containerH: 100 }, "radiation", { sizeMode: "actual", rings: 5 })) > 50, "Actual size radial should reach as far as its rings");
       // Inspector
       reset();
