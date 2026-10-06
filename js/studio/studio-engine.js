@@ -437,11 +437,12 @@ export class StudioEngine {
         ctx.restore();
         ctx.restore();
       } else {
-        // Volumetric shaded extrusion body
+        // Volumetric shaded extrusion body: the side is one solid tone (the figure mixed with the ground by the
+        // shading), so its silhouette is clean; stacking see-through copies left a soft, lumpy edge
         ctx.save();
-        ctx.fillStyle = fgColor;
         const sideAlpha = 0.15 + (1 - shading * 0.7) * 0.45;
-        ctx.globalAlpha = Math.max(0.12, Math.min(0.85, sideAlpha));
+        const ground = bgColor || (this.state.invertFigureGround ? "#111111" : "#FAFAFA");
+        ctx.fillStyle = this.mixHex(ground, fgColor, Math.max(0.12, Math.min(0.85, sideAlpha)));
 
         for (let s = 0; s < steps; s++) {
           const t = s / steps;

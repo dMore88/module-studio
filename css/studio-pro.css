@@ -775,7 +775,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
   gap: var(--spacing-5);
   min-width: 0;
 }
-.ds-stage { flex: 1; min-height: 0; position: relative; }
+.ds-stage { flex: 1; min-height: 0; position: relative; display: flex; align-items: center; } /* the artboard sits in the middle of the free height */
 
 /* Artboard frame (Figma "Moiré artwork": white 20px border, radius 20, elevation 5x) */
 .ds-artboard {

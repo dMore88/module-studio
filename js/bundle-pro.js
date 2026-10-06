@@ -1230,11 +1230,12 @@ class StudioEngine {
         ctx.restore();
         ctx.restore();
       } else {
-        // Volumetric shaded extrusion body
+        // Volumetric shaded extrusion body: the side is one solid tone (the figure mixed with the ground by the
+        // shading), so its silhouette is clean; stacking see-through copies left a soft, lumpy edge
         ctx.save();
-        ctx.fillStyle = fgColor;
         const sideAlpha = 0.15 + (1 - shading * 0.7) * 0.45;
-        ctx.globalAlpha = Math.max(0.12, Math.min(0.85, sideAlpha));
+        const ground = bgColor || (this.state.invertFigureGround ? "#111111" : "#FAFAFA");
+        ctx.fillStyle = this.mixHex(ground, fgColor, Math.max(0.12, Math.min(0.85, sideAlpha)));
 
         for (let s = 0; s < steps; s++) {
           const t = s / steps;
@@ -3843,19 +3844,20 @@ class StudioProApp {
     const size = this.artboardSize ? `${this.artboardSize.w} × ${this.artboardSize.h} PX` : "";
     const out = [`<p><span class="art-log__key">Canvas</span>: <span id="hud-resolution">${esc(size)}</span> • <span id="hud-layers-status">${layers.length} ${layers.length === 1 ? "LAYER" : "LAYERS"}</span></p>`];
 
-    const shapes = layers.filter(l => l.visible !== false).map(l => (Shapes[l.shape] || Shapes.circle).name);
+    const shapeName = (id) => (Shapes[id] || Shapes.circle).name.replace(/\s*\([^)]*\)\s*/g, "");
+    const shapes = layers.filter(l => l.visible !== false).map(l => shapeName(l.shape));
     if (shapes.length) out.push(line("Modules", shapes.join(" + ")));
 
     const mod = this.getActiveModule();
     const s = mod && mod.structure;
     if (mod && s) {
       out.push(`<p class="art-log__layer">${esc(mod.name || mod.id)}</p>`);
-      out.push(line("Module", (Shapes[mod.shape] || Shapes.circle).name));
+      out.push(line("Module", shapeName(mod.shape)));
       const GRIDS = { basic: "Grid", sliding: "Brick", sheared: "Diagonal", curved: "Curved", zigzag: "Zigzag", triangular: "Triangular", alternating: "Alternating", hexagonal: "Hexagonal", free: "Free" };
       const SCHEMES = { centrifugal: "Centrifugal", concentric: "Concentric", centripetal: "Centripetal", spiral: "Spiral", multi_center: "Multiple centers" };
       const PLACE = { centers: "Centers", intersections: "Intersections", both: "Both" };
       const MIX = { none: "None", merge: "Merged", divide: "Divided" };
-      const KIN = { distortion: "Elastic", foreshortening: "3D tilt", rotation_wobble: "Wobble", scale_kinship: "Scale", hybrid: "Hibrid" };
+      const KIN = { distortion: "Elastic", foreshortening: "3D tilt", rotation_wobble: "Wobble", scale_kinship: "Scale", hybrid: "Hybrid" };
       const GATTR = { rotation: "Rotate", scale: "Scale", depth: "Depth", drift: "Drift", shape: "Shape", texture: "Texture", color: "Color" };
       const PATH = { diagonal: "Diagonal", horizontal: "Horizontal", vertical: "Vertical", concentric: "Concentric", zigzag: "Zigzag" };
       const ANOM = { focal: "Focal", fracture: "Rupture", swell: "Swell", tear: "Void", regrid: "Another grid" };
@@ -4825,7 +4827,7 @@ class StudioProApp {
 
   /* =========================================================================
      SIMILARITY INSPECTOR & CONTROLLER (Per Active Layer)
-     Visual Kinship: Elastic, 3D tilt, Wobble, Scale, Hibrid
+     Visual Kinship: Elastic, 3D tilt, Wobble, Scale, Hybrid
      Fluctuation Intensity & Spatial Cell Jitter
      ========================================================================= */
 
@@ -4951,7 +4953,7 @@ class StudioProApp {
     bindSimPct("input-sim-assoc-mix", "num-sim-assoc-mix", "assocMix", "Association Mix");
     bindSimPct("input-sim-imperf-amount", "num-sim-imperf-amount", "imperfAmount", "Imperfect Modules");
 
-    // Visual Kinship Type Pills: Elastic, 3D tilt, Wobble, Scale, Hibrid
+    // Visual Kinship Type Pills: Elastic, 3D tilt, Wobble, Scale, Hybrid
     document.querySelectorAll("#card-similarity [data-kinship-type]").forEach(btn => {
       btn.addEventListener("click", () => {
         const mod = this.getActiveModule();

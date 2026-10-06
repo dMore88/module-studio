@@ -1344,7 +1344,7 @@
       const sAdv = q("#sim-advanced");
       assert(sAdv && sAdv.contains(q('[data-sim-assoc="round"]')) && sAdv.contains(q("#input-sim-jitter")) && !sAdv.contains(q("#input-sim-intensity")), "Association, Imperfection and jitter belong in Similarity > Advanced; Fluctuation stays up front");
       q('[data-kinship-type="hybrid"]').click();
-      assert(/Hibrid/.test(q('[data-kinship-type="hybrid"]').closest(".ds-dropdown").querySelector(".ds-dropdown-current").textContent), "The kinship dropdown should show the chosen type");
+      assert(/Hybrid/.test(q('[data-kinship-type="hybrid"]').closest(".ds-dropdown").querySelector(".ds-dropdown-current").textContent), "The kinship dropdown should show the chosen type");
       reset();
     });
 
@@ -1612,6 +1612,8 @@
       assert(/Structure: Repetition \/ Grid \/ C\d+ - R\d+/.test(log()) && /Gradation: /.test(log()) && /Contrast: Tone/.test(log()), "The log should list the controls that are on: " + log());
       st.gradation.enabled = false; app.render();
       assert(!/Gradation/.test(log()), "A control that is turned off should leave the log");
+      app.getActiveModule().shape = "cross"; app.render();
+      assert(/Module: Greek Cross/.test(log()) && !/\(\+\)/.test(log()), "The log should say Greek Cross, without the symbol in parentheses: " + log());
       reset();
     });
 
