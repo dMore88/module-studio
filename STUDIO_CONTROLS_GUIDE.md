@@ -167,7 +167,7 @@ Genera el espacio desde uno o varios centros focales con coordenadas polares $(r
 **En *Advanced*:**
 * **`orientation`** (*Module orientation*, dropdown, `auto`): `auto` depende del esquema; `outward`, `inward`, `tangent` o `fixed` (sin giro).
 * **`direction`** (*Direction*, `repeated`): igual que en la cuadrícula, encima de la orientación.
-* **`ringShape`** (*Ring shape*, dropdown, `circle`; fig. 49b y 49g): la forma de cada anillo: `circle`, `triangle` (punta arriba), `square` o `hexagon` (lado plano arriba). Los módulos, las líneas visibles, los sectores del recorte y la inversión figura-fondo siguen al polígono; *Ring rotation* gira cada polígono. No aplica a `spiral` ni `centripetal`.
+* **`ringShape`** (*Ring shape*, dropdown, `circle`; fig. 49b y 49g): la forma de cada anillo: `circle`, `triangle` y `pentagon` (punta arriba), `square`, `hexagon` u `octagon` (lado plano arriba). Los módulos, las líneas visibles, los sectores del recorte y la inversión figura-fondo siguen al polígono; *Ring rotation* gira cada polígono. No aplica a `spiral` ni `centripetal`.
 * **`centerOpen`** (*Open center*, 0 a 70 %): radio del agujero central; anillos y rayos empiezan en su borde (fig. 48d).
 * **`ringRotation`** (*Ring rotation*, −90º a 90º): grados que cada anillo gira más que el interior (fig. 49g).
 * *Clip cell*, *Checkerboard inversion* y **Visible lines** (`showRays` / `showRings`, con **`lineColor`** y **`lineWidth`**, 0,5 a 6 px): igual que en la cuadrícula; son diseño y se exportan.

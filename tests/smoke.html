@@ -1389,6 +1389,9 @@
       assert(dark(tri, 300, 1), "A triangle has a point up (300 px above the centre)");
       const hex = render({ ringShape: "hexagon" });
       assert(dark(hex, 300, 300 - Math.round(300 * Math.cos(Math.PI / 6))), "A hexagon has a flat side up");
+      const oct = render({ ringShape: "octagon" }), pen = render({ ringShape: "pentagon" });
+      assert(dark(oct, 300, 300 - Math.round(300 * Math.cos(Math.PI / 8))) && !dark(oct, 300, 1), "An octagon has a flat side up");
+      assert(dark(pen, 300, 1), "A pentagon has a point up");
       // Modules follow the ring: with 8 rays the module at 22.5 degrees sits closer to the centre on a square ring
       const modules = (d) => { let n = 0; for (let x = 460; x < 540; x++) for (let y = 300 - 120; y < 300 - 60; y++) if (dark(d, x, y)) n++; return n; };
       const mc = render({ showRings: false }), ms = render({ showRings: false, ringShape: "square" });

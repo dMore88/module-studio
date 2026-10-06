@@ -105,6 +105,7 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | Open center | 0 % | 70 % | 1 | Hueco central; 70 % deja aún espacio para los anillos. |
 | Ring rotation | −90° | 90° | 1 | Giro acumulativo de cada anillo respecto al anterior. |
 | Line width | 0,5 px | 10 px | 0,5 | Rayos y anillos visibles. |
+| Ring shape (dropdown) | círculo | octágono | — | Círculo, triángulo, cuadrado, pentágono, hexágono y octágono (el polígono más cercano al círculo). |
 
 ### Similarity
 | Control | Mín. | Máx. | Paso | Razón |

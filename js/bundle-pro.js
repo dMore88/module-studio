@@ -913,7 +913,7 @@ const createDefaultLayerStructure = () => ({
     centerOpen: 0, // open center: hole radius as a percentage of the radius (0 to 70)
     ringRotation: 0,
     centerCount: 2, // number of focal centres of the multi-center scheme (2 to 6)
-    ringShape: "circle", // circle, triangle, square or hexagon: the shape of every ring (Wong, fig. 49) // degrees each ring is rotated more than the previous one (-90 to 90)
+    ringShape: "circle", // circle, triangle, square, pentagon, hexagon or octagon: the shape of every ring (Wong, fig. 49) // degrees each ring is rotated more than the previous one (-90 to 90)
     sizeMode: "fit", // fit (Fit to canvas) or actual (Actual size: each ring is as thick as the module)
     direction: "repeated", // repeated, alternated or undefined (see the repetition)
         lineColor: "", // empty = the layer's ink colour
@@ -2510,7 +2510,7 @@ class StudioEngine {
     const ringRotRad = ((rad.ringRotation || 0) * Math.PI) / 180;
 
     // Ring shape: a regular polygon (circumradius = the ring radius) instead of a circle. Not for spirals or chevrons.
-    const polySides = ({ triangle: 3, square: 4, hexagon: 6 })[rad.ringShape] || 0;
+    const polySides = ({ triangle: 3, square: 4, pentagon: 5, hexagon: 6, octagon: 8 })[rad.ringShape] || 0;
     const polyOn = polySides > 0 && rad.scheme !== "spiral" && rad.scheme !== "centripetal";
     const polyOff = -Math.PI / 2 + (polySides % 2 === 0 ? Math.PI / Math.max(1, polySides) : 0); // a point up, or a flat side up
     // Radius of the polygon along the angle th, once the polygon is turned by `shift`
