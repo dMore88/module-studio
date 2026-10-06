@@ -30,7 +30,7 @@ Por eso un módulo con **Width igual al lado del lienzo (600 en 1:1) llena exact
 
 | Qué | Valor | Equivale a (1:1) |
 | :-- | :-- | :-- |
-| Width / Height mínimo | 5 px | 0,83 % de la celda |
+| Width / Height mínimo | 1 px | 0,17 % de la celda (un punto) |
 | Width / Height que llena la celda | = lado del lienzo (600) | 100 % de la celda |
 | Width / Height máximo | 2000 px | 333 % de la celda (el módulo se sale de ella y de sus vecinos) |
 | Módulos máximos | 50 columnas × 50 filas | 2 500 |
@@ -50,9 +50,9 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 
 | Qué | Valor | Nota |
 | :-- | :-- | :-- |
-| Módulo | 5 a 2000 px | 1:1, sin escalar |
-| Contenedor (= celda) | 20 a 2000 px | 0 significa "todo el lienzo" |
-| Celda mínima al dibujar | 10 px | el contenedor ya no baja de 20 |
+| Módulo | 1 a 2000 px | 1:1, sin escalar |
+| Contenedor (= celda) | 10 a 2000 px | 0 significa "todo el lienzo" |
+| Celda mínima al dibujar | 10 px | coincide con el mínimo del contenedor |
 | Bloque máximo | 50 × 2000 = **100 000 px** de ancho y de alto | solo se ve lo que cae en el lienzo |
 | Lo que se ve | el centro del bloque, recortado al borde del lienzo | con 9 columnas de 200 px solo caben unas 3 |
 
@@ -76,11 +76,11 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | Control | Mín. | Máx. | Paso | Razón |
 | :-- | :-- | :-- | :-- | :-- |
 | Stroke width | 0,2 | 10 | 0,1 | Del hilo casi invisible al trazo grueso, sin que el trazo se coma el módulo. |
-| Width | 5 | 2000 | 1 | 5 es el módulo mínimo que aún se ve; 2000 permite módulos tres veces mayores que el lienzo (fondos, recortes). |
+| Width | 1 | 2000 | 1 | 1 permite el punto (concepto de punto de Wong); 2000 permite módulos tres veces mayores que el lienzo (fondos, recortes). |
 | Height | 5 | 2000 | 1 | Igual que Width; la línea no usa Height. |
 | Rotation | 0 | 360 | 0,5 | Vuelta completa; el medio grado afina la alineación. |
 | Offset X / Y | −1000 | 1000 | 1 | Cubre el lienzo de un lado al otro con holgura (el lienzo mide 450 a 800). |
-| Container width / height | 20 | 2000 | 1 | Marco en el que se compone el módulo; 20 evita celdas degeneradas. |
+| Container width / height | 10 | 2000 | 1 | Marco en el que se compone el módulo; 10 evita celdas degeneradas. |
 
 ### Layout › Repetition
 | Control | Mín. | Máx. | Paso | Razón |

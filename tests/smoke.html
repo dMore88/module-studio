@@ -1102,13 +1102,13 @@
       // Radial
       const rr = render({}, {}, "radiation"), ra = render({}, { direction: "alternated" }, "radiation"), ru = render({}, { direction: "undefined" }, "radiation");
       assert(diff(rr, ra) > 100 && diff(rr, ru) > 100, "Radial direction should change the modules");
-      // Radial line tone and width (the rays and rings are drawn at 252 px from the centre at most)
+      // Radial line tone and width (the rays and rings are drawn at 300 px from the centre at most)
       const lines = (o) => render({}, { showRings: true, showRays: false, rings: 4, ...o }, "radiation", { width: 10, height: 10 });
-      const ringPixel = (d) => px(d, 300 + 252, 300); // outer ring, on its right
+      const ringPixel = (d) => px(d, 300 + 299, 300); // outer ring, on its right
       assert(ringPixel(lines({ lineWidth: 3 })) < 100, "Positive radial lines are not drawn in ink");
       assert(ringPixel(lines({ lineColor: "#ffffff", lineWidth: 3 })) > 200, "A white line colour should draw white rings");
       let thin = 0, thick = 0; const t1 = lines({ lineWidth: 1 }), t6 = lines({ lineWidth: 6 });
-      for (let x = 540; x < 560; x++) { if (px(t1, x, 300) < 128) thin++; if (px(t6, x, 300) < 128) thick++; }
+      for (let x = 580; x < 600; x++) { if (px(t1, x, 300) < 128) thin++; if (px(t6, x, 300) < 128) thick++; }
       assert(thick > thin * 3, `Line width did not thicken the rings (${thin} against ${thick})`);
       // Inspector
       reset();
@@ -1379,23 +1379,23 @@
       };
       const dpr = cv.width / 600;
       const dark = (d, x, y) => d[(Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4] < 110;
-      // Outer ring: radius 252. A circle passes through (552, 300); a square (flat sides) is 178 px from the centre at that angle
+      // Outer ring: radius 300. A circle passes through (600, 300); a square (flat sides) is 212 px from the centre at that angle
       const circle = render({});
-      assert(dark(circle, 552, 300) && !dark(circle, 478, 300), "The default ring is a circle");
+      assert(dark(circle, 599, 300) && !dark(circle, 512, 300), "The default ring is a circle");
       const square = render({ ringShape: "square" });
-      assert(dark(square, 478, 300) && !dark(square, 552, 300), "A square ring should pass 178 px from the centre on its flat side");
-      assert(dark(square, 478, 122) && dark(square, 122, 478), "The square ring should have its corners at 45 degrees");
+      assert(dark(square, 512, 300) && !dark(square, 599, 300), "A square ring should pass 212 px from the centre on its flat side");
+      assert(dark(square, 512, 88) && dark(square, 88, 512), "The square ring should have its corners at 45 degrees");
       const tri = render({ ringShape: "triangle" });
-      assert(dark(tri, 300, 48), "A triangle has a point up (252 px above the centre)");
+      assert(dark(tri, 300, 1), "A triangle has a point up (300 px above the centre)");
       const hex = render({ ringShape: "hexagon" });
-      assert(dark(hex, 300, 300 - Math.round(252 * Math.cos(Math.PI / 6))), "A hexagon has a flat side up");
+      assert(dark(hex, 300, 300 - Math.round(300 * Math.cos(Math.PI / 6))), "A hexagon has a flat side up");
       // Modules follow the ring: with 8 rays the module at 22.5 degrees sits closer to the centre on a square ring
       const modules = (d) => { let n = 0; for (let x = 460; x < 540; x++) for (let y = 300 - 120; y < 300 - 60; y++) if (dark(d, x, y)) n++; return n; };
       const mc = render({ showRings: false }), ms = render({ showRings: false, ringShape: "square" });
       assert(JSON.stringify(Array.from(mc)) !== JSON.stringify(Array.from(ms)), "Modules should move onto the polygon");
       // Spirals and chevrons keep their circles and hide the control
       const spiral = render({ ringShape: "square" }, "spiral");
-      assert(dark(spiral, 552, 300), "A spiral keeps circular rings");
+      assert(dark(spiral, 599, 300), "A spiral keeps circular rings");
       // Inspector
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="layout"]').click(); await wait(80); q("#toggle-layout-structure").click(); q("#btn-layout-radiation").click(); await wait(60);
@@ -1426,8 +1426,8 @@
       const ringsAt = (d, cx, cy, r) => dark(d, cx + r, cy) || dark(d, cx - r, cy) || dark(d, cx, cy + r) || dark(d, cx, cy - r);
       const refR = 600 * 0.32 * 0.84; // usable = 600 minus the 0% margin, refR = 0.32 * 600
       assert(JSON.stringify(Array.from(two)) !== JSON.stringify(Array.from(three)) && JSON.stringify(Array.from(three)) !== JSON.stringify(Array.from(four)), "Each number of centres should draw something different");
-      // 2 centres: foci at (300 -+ 0.35 * 192, 300): rings are concentric to each one
-      const r2 = 192, f = 0.35 * r2;
+      // 2 centres: foci at (300 -+ 0.35 * 222, 300): rings are concentric to each one
+      const r2 = 222, f = 0.35 * r2;
       assert(dark(two, 300 - f + r2, 300) || dark(two, 300 - f - r2, 300), "Two centres: rings around the left focus");
       // 4 centres: one focus above the middle (angle 270 degrees)
       assert(dark(four, 300, 300 - f - r2), "Four centres: a focus sits above the middle");
@@ -1460,7 +1460,7 @@
       assert(app.getActiveModule().strokeWidth === 1.3 && sb.value === "1.3px", `Stroke width: ${app.getActiveModule().strokeWidth} / ${sb.value}`);
       // limits: width cannot go under the slider's minimum
       const wb = q("#num-active-width"); wb.value = "5"; key(wb, "ArrowDown", { shiftKey: true });
-      assert(app.getActiveModule().width === 5 || app.getActiveModule().width >= 5, "The value should stop at the slider's minimum");
+      assert(app.getActiveModule().width === 1, "The value should stop at the slider's minimum");
       reset();
     });
 

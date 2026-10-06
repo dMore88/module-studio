@@ -6250,12 +6250,12 @@ class StudioProApp {
     // Container (the frame the module is composed in, centred on the canvas)
     this.bindSliderWithNumber("input-active-container-w", "num-active-container-w", (val) => {
       const mod = this.getActiveModule();
-      mod.containerW = Math.max(20, val);
+      mod.containerW = Math.max(10, val);
       this.render();
     }, "Container Width", "px");
     this.bindSliderWithNumber("input-active-container-h", "num-active-container-h", (val) => {
       const mod = this.getActiveModule();
-      mod.containerH = Math.max(20, val);
+      mod.containerH = Math.max(10, val);
       this.render();
     }, "Container Height", "px");
 
