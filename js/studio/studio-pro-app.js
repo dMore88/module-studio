@@ -195,6 +195,7 @@ export class StudioProApp {
   render() {
     if (!this.engine || !this.canvas) return;
     this.engine.state = this.state;
+    this.engine.viewState = this.isHidingModifiers() ? this.stateWithoutModifiers() : null;
     const palette = this.getActivePalette();
     try {
       this.engine.render(palette);
@@ -206,6 +207,22 @@ export class StudioProApp {
       return;
     }
     this.updateArtLog();
+  }
+
+  // Hide modifiers (an editing aid, never exported): while the Module panel is open and the box is ticked, the
+  // active layer is drawn without its modifiers, so the module can be adjusted with its neighbours around it
+  isHidingModifiers() {
+    return !!(this.hideModifiers && this.isFlyoutOpen && this.activeRailTab === "module");
+  }
+
+  stateWithoutModifiers() {
+    const off = (b) => (b ? { ...b, enabled: false } : b);
+    const layers = this.state.layers.map((l) => {
+      if (l.id !== this.activeLayerId || !l.structure) return l;
+      const s = l.structure;
+      return { ...l, structure: { ...s, similarity: off(s.similarity), gradation: off(s.gradation), anomaly: off(s.anomaly), contrast: off(s.contrast), concentration: off(s.concentration), texture: off(s.texture), space: off(s.space) } };
+    });
+    return { ...this.state, layers };
   }
 
   showRenderError(err) {
@@ -603,6 +620,7 @@ export class StudioProApp {
     if (mod && s) {
       out.push(`<p class="art-log__layer">${esc(mod.name || mod.id)}</p>`);
       out.push(line("Module", shapeName(mod.shape)));
+      if (this.isHidingModifiers()) out.push(line("Modifiers", "hidden"));
       const GRIDS = { basic: "Grid", sliding: "Brick", sheared: "Diagonal", curved: "Curved", zigzag: "Zigzag", triangular: "Triangular", alternating: "Alternating", hexagonal: "Hexagonal", free: "Free" };
       const SCHEMES = { centrifugal: "Centrifugal", concentric: "Concentric", centripetal: "Centripetal", spiral: "Spiral", multi_center: "Multiple centers" };
       const PLACE = { centers: "Centers", intersections: "Intersections", both: "Both" };
@@ -810,6 +828,8 @@ export class StudioProApp {
       tabEl.classList.toggle("hidden", !match);
     });
 
+    // Hide modifiers only acts while the Module panel is open
+    if (this.hideModifiers) this.render();
   }
 
   updateRailIndicatorDots() {
@@ -2857,6 +2877,11 @@ export class StudioProApp {
       mod.containerH = Math.max(20, val);
       this.render();
     }, "Container Height", "px");
+
+    document.getElementById("chk-hide-modifiers")?.addEventListener("change", (e) => {
+      this.hideModifiers = e.target.checked;
+      this.render();
+    });
 
     document.getElementById("chk-active-show-container")?.addEventListener("change", (e) => {
       const mod = this.getActiveModule();

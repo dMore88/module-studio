@@ -1614,6 +1614,30 @@
       assert(left.every(([x, y]) => Math.abs(x - e.gridShift(curved, y)) < 1e-9), "The clip's left side is not the grid line");
     });
 
+    await test("Hide modifiers: the active layer is drawn without its modifiers only while the Module panel is open, and never in an export", async () => {
+      reset();
+      const d = win.document, cv = d.getElementById("studio-canvas");
+      const st = app.getActiveLayerStructure();
+      st.enabled = true; st.mode = "repetition"; Object.assign(st.repetition, { cols: 4, rows: 4, gridType: "basic" });
+      Object.assign(st.contrast, { enabled: true, dimension: "scale", dominanceRatio: 50, scaleFactor: 2.5 });
+      app.state.layers[0].wireframe = false;
+      const pic = () => { app.render(); return cv.toDataURL(); };
+      const svg = () => win.StudioExporter.buildSVG(app.engine, cv, app.getActivePalette());
+      app.activeRailTab = "module"; app.isFlyoutOpen = true;
+      app.hideModifiers = false; const withMods = pic(), svgWith = svg();
+      app.hideModifiers = true; const hidden = pic();
+      assert(hidden !== withMods, "Hide modifiers should change the drawing while the Module panel is open");
+      assert(svg() === svgWith, "An export must always include the modifiers");
+      assert(/Modifiers: hidden/.test(d.getElementById("art-log-lines").textContent), "The log should say the modifiers are hidden");
+      app.activeRailTab = "contrast"; app.isFlyoutOpen = true;
+      assert(pic() === withMods, "Outside the Module panel the modifiers should be back");
+      app.activeRailTab = "module"; app.isFlyoutOpen = false;
+      assert(pic() === withMods, "With the panel closed the modifiers should be back");
+      app.hideModifiers = false; app.activeRailTab = "module"; app.isFlyoutOpen = true;
+      assert(st.contrast.enabled === true, "Hiding must not turn the modifier off in the project");
+      reset();
+    });
+
     await test("Art log fills in as controls are turned on and empties when they are turned off", async () => {
       reset();
       const d = win.document, log = () => d.getElementById("art-log-lines").textContent;

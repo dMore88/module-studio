@@ -94,6 +94,7 @@ Cada capa es un módulo independiente. Se pueden tener hasta 5 capas con visibil
 * **Advanced** (sección plegable al final del panel):
   * **`containerW` / `containerH`** (*Container width* y *Container height*, 20 a 2000 px, por defecto el lienzo entero): el **contenedor**, un marco centrado en el lienzo (como un frame de Figma) dentro del que se compone el módulo. Es la celda de *Actual size* y el recorte de *Clip cell*.
   * **`showContainer`** (*Show container*, encendido por defecto): muestra u oculta el marco punteado del contenedor en el lienzo (usa el color de guías). El contenedor funciona igual aunque esté oculto.
+* **Hide modifiers** (casilla al final de los controles de forma, apagada por defecto): ayuda de edición solo de pantalla. Mientras el panel *Module* está abierto, la capa activa se dibuja sin sus siete modificadores (Similarity, Gradation, Anomaly, Contrast, Concentration, Texture y Space) pero con su retícula, para ajustar el módulo con los vecinos alrededor. Al abrir otro panel o cerrar el flyout, los efectos vuelven solos. No cambia el proyecto, no se guarda y **nunca afecta a una exportación**. Mientras actúa, el registro *Art log* muestra `Modifiers: hidden`.
 
 ---
 

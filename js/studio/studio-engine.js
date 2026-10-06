@@ -1970,7 +1970,19 @@ export class StudioEngine {
   }
 
   // Master render method
+  // `viewState`: an alternative state used only to draw on screen (an editing aid such as Hide modifiers);
+  // an export never uses it
   render(palette) {
+    const real = this.state;
+    if (this.viewState && !this.exporting) this.state = this.viewState;
+    try {
+      return this.renderState(palette);
+    } finally {
+      this.state = real;
+    }
+  }
+
+  renderState(palette) {
     if (!this.canvas) return;
 
     const ratioMap = {
