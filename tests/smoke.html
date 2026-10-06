@@ -1770,6 +1770,14 @@
       assert(pic() === withMods, "Outside the Module panel the modifiers should be back");
       app.activeRailTab = "module"; app.isFlyoutOpen = false;
       assert(pic() === withMods, "With the panel closed the modifiers should be back");
+      // Rhythm (Layout > Advanced) also keeps a structure alive on its own: hiding must remove it too
+      st.formalStructure = { enabled: true, colRatio: 1.5, rowRatio: 1.5, colGrade: 30, rowGrade: 30, showGridLines: false };
+      st.enabled = false; app.hideModifiers = false; const rhythmRef = pic();
+      app.hideModifiers = true; app.activeRailTab = "module"; app.isFlyoutOpen = true; st.gradation.enabled = true;
+      const hiddenRhythm = pic();
+      st.formalStructure.enabled = false; st.gradation.enabled = false; app.hideModifiers = false; const alone2 = pic();
+      assert(hiddenRhythm === alone2 && hiddenRhythm !== rhythmRef, "With Rhythm on, Hide modifiers should still show the module alone");
+      st.formalStructure.enabled = false; st.enabled = true;
       app.hideModifiers = false; app.activeRailTab = "module"; app.isFlyoutOpen = true;
       assert(st.contrast.enabled === true, "Hiding must not turn the modifier off in the project");
       reset();

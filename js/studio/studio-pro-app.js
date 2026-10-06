@@ -220,7 +220,7 @@ export class StudioProApp {
     const layers = this.state.layers.map((l) => {
       if (l.id !== this.activeLayerId || !l.structure) return l;
       const s = l.structure;
-      return { ...l, structure: { ...s, enabled: false, similarity: off(s.similarity), gradation: off(s.gradation), anomaly: off(s.anomaly), contrast: off(s.contrast), concentration: off(s.concentration), texture: off(s.texture), space: off(s.space) } };
+      return { ...l, structure: { ...s, enabled: false, formalStructure: off(s.formalStructure), similarity: off(s.similarity), gradation: off(s.gradation), anomaly: off(s.anomaly), contrast: off(s.contrast), concentration: off(s.concentration), texture: off(s.texture), space: off(s.space) } };
     });
     return { ...this.state, layers };
   }
