@@ -35,6 +35,7 @@ Por eso un módulo con **Width igual al lado del lienzo (600 en 1:1) llena exact
 | Width / Height máximo | 2000 px | 333 % de la celda (el módulo se sale de ella y de sus vecinos) |
 | Módulos máximos | 50 columnas × 50 filas | 2 500 |
 | Radial | 4 a 36 rayos × 2 a 16 anillos | de 8 a 576 módulos |
+| **Alcance del radial en Fit** | el último anillo termina al **42 % del lado menor** del lienzo (84 % del ancho en 1:1); en *Multi-center* al **32 %** | Es una constante del código (`refR`), no un límite de los sliders. Deja un margen de 8 % por lado. La retícula, en cambio, siempre llena el lienzo entero porque sus celdas lo cubren por completo |
 
 **Topes internos, en porcentaje.** El "5 %" que aparece en varios sitios es un piso del código, no del slider:
 - Cada columna o fila, con *Col ratio* y *Col gradation*, no puede ser menor que el **5 %** de su tamaño base ni mayor que **20 veces** (`0,05 a 20`).
