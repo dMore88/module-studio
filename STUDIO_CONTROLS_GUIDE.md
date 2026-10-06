@@ -195,7 +195,7 @@ Genera una ilusión de movimiento, velocidad o dimensión mediante una progresi�
 **Visible:**
 * **`type`** (*Attribute*, dropdown): `rotation`, `scale`, `depth`, `drift` (desplazamiento acumulado), `shape` (la forma se convierte paso a paso en `targetShape`, *Becomes*, la lista de 22 formas en dropdown, interpolando contornos) `texture` (la deformación de Texture crece a lo largo del recorrido) y `color` (el color del módulo viaja hacia *End color* a lo largo del recorrido; *Range* controla cuánto avanza; los módulos de acento de Anomaly o Contrast conservan su color).
 * **`pathway`** (*Pathway direction*, dropdown): `diagonal`, `horizontal`, `vertical`, `concentric` y `zigzag` (camino en serpiente, fig. 41).
-* **`range`** (*Range*, 15º a 360º): magnitud total de la transición. **`steps`** (*Cycles*, 1 a 4).
+* **`range`** (*Range*, 5º a 360º): magnitud total de la transición. **`steps`** (*Cycles*, 1 a 4).
 
 **En *Advanced*:**
 * **`sequence`** (*Sequence*, dropdown): `restart` (1-2-3-1-2-3) o `pingpong` (1-2-3-2-1).

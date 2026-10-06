@@ -118,7 +118,7 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 ### Gradation
 | Control | Mín. | Máx. | Paso | Razón |
 | :-- | :-- | :-- | :-- | :-- |
-| Range | 15 | 360 | 5 | Alcance del efecto: 360° de giro, o hasta el máximo en los otros atributos; 15 es el mínimo apreciable. |
+| Range | 5º | 360º | 5 | Alcance del efecto: 360° de giro, o hasta el máximo en los otros atributos; 5º se nota en figuras con vértices. |
 | Cycles | 1 | 4 | 1 | Repeticiones de la rampa; más ciclos dejan de leerse como gradación. |
 | Acceleration | −100 | 100 | 5 | Curva del reparto: arranca rápido o lento. |
 

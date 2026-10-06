@@ -2017,7 +2017,7 @@ export class StudioProApp {
       });
     });
 
-    // Range (15º to 360º)
+    // Range (5º to 360º)
     const inputRange = document.getElementById("input-grad-range");
     const numRange = document.getElementById("num-grad-range");
     inputRange?.addEventListener("input", (e) => {
@@ -2030,7 +2030,7 @@ export class StudioProApp {
     });
     numRange?.addEventListener("change", (e) => {
       const raw = parseInt(e.target.value.replace(/[^0-9-]/g, ""), 10);
-      const val = isNaN(raw) ? 180 : Math.max(15, Math.min(360, raw));
+      const val = isNaN(raw) ? 180 : Math.max(5, Math.min(360, raw));
       commit(g => { g.range = val; }, `Gradation Range: ${val}º`);
     });
 
