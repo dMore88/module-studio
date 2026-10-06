@@ -65,7 +65,7 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | Trazo | 0,2 a 10 px |
 | Desplazamiento del módulo (Offset X/Y) | −1000 a 1000 px |
 | Rotación | 0° a 360° (pasos de 0,5°) |
-| Líneas visibles | 0,5 a 6 px |
+| Líneas visibles | 0,5 a 10 px |
 | Rendimiento (dibujo completo, medido) | 900 módulos 9 ms · 3 600 → 32 ms · 10 000 → 213 ms · con Texture 3 600 → 147 ms |
 
 ---
@@ -91,9 +91,9 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | Variation param (Wave amount) | 0 px | 60 px | 1 | Amplitud de la onda de Curved y Zigzag. |
 | Free seed | 1 | 99 | 1 | Distribución de Free; la semilla elige cuál sale. |
 | Intersection size | 10 % | 100 % | 5 | Tamaño de los módulos en los cruces respecto a los de los centros. |
-| Col / Row ratio [A:B] | 100 % | 400 % | 10 | Tamaño de A respecto a B: 100 % = iguales, 400 % = A cuatro veces B. Es relativo entre A y B, no depende del lienzo. Internamente se guarda como factor 1 a 4. |
+| Col / Row B size [% of A] | 25 % | 100 % | 5 | Tamaño de B respecto a A: 100 % = iguales, 25 % = B mide un cuarto de A (límite elegido para que B no sea una raya). Internamente se guarda como factor 4 a 1. |
 | Col / Row gradation | −30 % | 30 % | 1 | Cada columna o fila crece o se achica ese % respecto a la anterior; más de ±30 % explota en pocos pasos. |
-| Line width | 0,5 | 6 | 0,5 | Grosor de las líneas visibles (son parte del diseño). |
+| Line width | 0,5 px | 10 px | 0,5 | Grosor de las líneas visibles (son parte del diseño). |
 
 ### Layout › Radiation
 | Control | Mín. | Máx. | Paso | Razón |
@@ -104,7 +104,7 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | Spiral twist | −180° | 180° | 1 | Sentido y cantidad del giro de la espiral. |
 | Open center | 0 % | 70 % | 1 | Hueco central; 70 % deja aún espacio para los anillos. |
 | Ring rotation | −90° | 90° | 1 | Giro acumulativo de cada anillo respecto al anterior. |
-| Line width | 0,5 | 6 | 0,5 | Rayos y anillos visibles. |
+| Line width | 0,5 px | 10 px | 0,5 | Rayos y anillos visibles. |
 
 ### Similarity
 | Control | Mín. | Máx. | Paso | Razón |

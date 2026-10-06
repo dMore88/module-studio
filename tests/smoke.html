@@ -230,7 +230,7 @@
 
       q("#btn-layout-repetition").click(); await wait(60);
       assert(!q("#subpanel-repetition").classList.contains("hidden"), "Repetition sub-panel should come back");
-      fire(q("#input-struct-col-ratio"), 250);
+      fire(q("#input-struct-col-ratio"), 40);
       assert(st().formalStructure.colRatio === 2.5, "Rhythm col ratio (Layout > Advanced) did not apply");
       assert(!q('[data-rail-tab="structure"]') && !q("#card-structure"), "The Structure panel should be gone (its rhythm lives in Layout > Advanced)");
 
