@@ -87,7 +87,7 @@ Si Structure desaparece como panel, el rail pierde un icono.
 | Becomes (solo con Shape) | E |
 | Pathway direction | E, D |
 | Range, Cycles | E |
-| Sequence, Acceleration | A, F → "Ritmo" (un dropdown + intensidad) |
+| Sequence, Speed | A, F → "Ritmo" (un dropdown + intensidad) |
 | Alternate rows, Reverse | A |
 
 ### Anomaly (13 → 6 + Advanced)

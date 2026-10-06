@@ -700,7 +700,7 @@ export class StudioProApp {
         out.push(line("Texture", parts.length ? parts.join(" / ") : "none"));
       }
       const sp = s.space;
-      if (sp && sp.enabled) out.push(line("Space", `${title(sp.mode)} / Depth ${sp.depth}`));
+      if (sp && sp.enabled) out.push(line("Space", `${title(sp.mode)} / Depth ${sp.depthPct ?? 20}% / ${sp.angle ?? 30}º / Shading ${sp.shading ?? 50}%`));
     }
 
     const html = out.join("");

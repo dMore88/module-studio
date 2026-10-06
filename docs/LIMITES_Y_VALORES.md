@@ -1,6 +1,6 @@
 # Límites y valores por defecto de Module Studio
 
-Estado a 6 oct 2026, leído del código (`index.html`, `js/studio/studio-engine.js`, `js/studio/studio-pro-app.js`). Sirve para revisar los límites de la app y decidir si subir o bajar alguno. Las unidades "px" son del **lienzo de dibujo** (por ejemplo 600 en un 1:1), no de la pantalla.
+Estado a 7 oct 2026, leído del código (`index.html`, `js/studio/studio-engine.js`, `js/studio/studio-pro-app.js`). Sirve para revisar los límites de la app y decidir si subir o bajar alguno. Las unidades "px" son del **lienzo de dibujo** (por ejemplo 600 en un 1:1), no de la pantalla.
 
 ---
 
@@ -64,107 +64,111 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | Deshacer | 60 pasos |
 | Trazo | 0,2 a 10 px |
 | Desplazamiento del módulo (Offset X/Y) | −1000 a 1000 px |
-| Rotación | 0° a 360° (pasos de 0,5°) |
+| Rotación | 0º a 360º (pasos de 0,5º) |
 | Líneas visibles | 0,5 a 10 px |
 | Rendimiento (dibujo completo, medido) | 900 módulos 9 ms · 3 600 → 32 ms · 10 000 → 213 ms · con Texture 3 600 → 147 ms |
 
 ---
 
-## 2. Los controles: mínimo, máximo y razón de ser
+## 2. Los controles: mínimo, máximo, valor por defecto y razón de ser
+
+El **valor por defecto** es el que tiene el control al abrir la app o al encender su panel. Las unidades (px, %, º, ×) son las que muestra la caja de valor.
 
 ### Module
-| Control | Mín. | Máx. | Paso | Razón |
-| :-- | :-- | :-- | :-- | :-- |
-| Stroke width | 0,2 | 10 | 0,1 | Del hilo casi invisible al trazo grueso, sin que el trazo se coma el módulo. |
-| Width | 1 | 2000 | 1 | 1 permite el punto (concepto de punto de Wong); 2000 permite módulos tres veces mayores que el lienzo (fondos, recortes). |
-| Height | 1 | 2000 | 1 | Igual que Width; la línea no usa Height. |
-| Rotation | 0 | 360 | 0,5 | Vuelta completa; el medio grado afina la alineación. |
-| Offset X / Y | −1000 | 1000 | 1 | Cubre el lienzo de un lado al otro con holgura (el lienzo mide 450 a 800). |
-| Container width / height | 10 | 2000 | 1 | Marco en el que se compone el módulo; 10 evita celdas degeneradas. |
+| Control | Mín. | Máx. | Paso | Por defecto | Razón |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| Stroke width | 0,2 px | 10 px | 0,1 px | 1 px | Del hilo casi invisible al trazo grueso, sin que el trazo se coma el módulo. |
+| Width | 1 px | 2000 px | 1 px | 100 px | 1 permite el punto (concepto de punto de Wong); 2000 permite módulos tres veces mayores que el lienzo (fondos, recortes). |
+| Height | 1 px | 2000 px | 1 px | 100 px | Igual que Width; la línea no usa Height. |
+| Rotation | 0º | 360º | 0,5º | 0º | Vuelta completa; el medio grado afina la alineación. |
+| Offset X / Y | −1000 px | 1000 px | 1 px | 0 px | Cubre el lienzo de un lado al otro con holgura (el lienzo mide 450 a 800 px) y permite sacar el módulo del lienzo. |
+| Container width / height | 10 px | 2000 px | 1 px | 100 px | Marco en el que se compone el módulo; 10 px evita celdas degeneradas. Por defecto del tamaño del módulo, para verlo de un vistazo. |
 
 ### Layout › Repetition
-| Control | Mín. | Máx. | Paso | Razón |
-| :-- | :-- | :-- | :-- | :-- |
-| Columns / Rows | 1 | 100 | 1 | Hasta 10 000 módulos; el motor los dibuja en ~213 ms (mejor con pocas capas y sin Texture). |
-| Variation param (Row offset) | 0 % | 100 % | 1 | Desplazamiento de las filas impares, de ninguno a una celda entera. |
-| Variation param (Shear angle) | 0° | 45° | 1 | Más de 45° deja de leerse como retícula. |
-| Variation param (Wave amount) | 0 % | 100 % | 1 | Amplitud de la onda de Curved y Zigzag, como % del ancho de la celda (100 % = una celda entera; las líneas se mueven juntas y no se cruzan). |
-| Free seed | 1 | 99 | 1 | Distribución de Free; la semilla elige cuál sale. |
-| Intersection size | 10 % | 100 % | 5 | Tamaño de los módulos en los cruces respecto a los de los centros. |
-| Col / Row B size [% of A] | 10 % | 100 % | 5 | Tamaño de B respecto a A: 100 % = iguales, 10 % = B mide una décima parte de A. Límite elegido por criterio de diseño. Internamente se guarda como factor 10 a 1. |
-| Col / Row gradation | −30 % | 30 % | 1 | Cada columna o fila crece o se achica ese % respecto a la anterior; más de ±30 % explota en pocos pasos. |
-| Line width | 0,5 px | 10 px | 0,5 | Grosor de las líneas visibles (son parte del diseño). |
+| Control | Mín. | Máx. | Paso | Por defecto | Razón |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| Columns / Rows | 1 | 100 | 1 | 4 | Hasta 10 000 módulos; el motor los dibuja en ~213 ms (mejor con pocas capas y sin Texture). |
+| Variation param (Row offset) | 0 % | 100 % | 1 % | 50 % | Desplazamiento de las filas impares, de ninguno a una celda entera. |
+| Variation param (Shear angle) | 0º | 45º | 1º | 15º | Más de 45º deja de leerse como retícula. |
+| Variation param (Wave amount) | 0 % | 100 % | 1 % | 10 % | Amplitud de la onda de Curved y Zigzag, como % del ancho de la celda (100 % = una celda entera; las líneas se mueven juntas y no se cruzan). |
+| Free seed | 1 | 99 | 1 | 7 | Semilla del azar de Free: cada número da una disposición distinta pero repetible. |
+| Intersection size | 10 % | 100 % | 5 % | 50 % | Tamaño de los módulos en los cruces respecto a los de los centros. |
+| Col / Row B size [% of A] | 10 % | 100 % | 5 % | 100 % | Tamaño de B respecto a A: 100 % = iguales, 10 % = B mide una décima parte de A. Límite elegido por criterio de diseño. Internamente se guarda como factor 10 a 1. |
+| Col / Row gradation | −30 % | 30 % | 1 % | 0 % | Cada columna o fila crece o se achica ese % respecto a la anterior; más de ±30 % explota en pocos pasos. |
+| Line width | 0,5 px | 10 px | 0,5 px | 1,5 px | Grosor de las líneas visibles (son parte del diseño). |
 
 ### Layout › Radiation
-| Control | Mín. | Máx. | Paso | Razón |
-| :-- | :-- | :-- | :-- | :-- |
-| Angular rays | 3 | 60 | 1 | 3 es el reparto mínimo (triangular); 60 rayos con 20 anillos son 1 200 módulos, que el motor dibuja sin problema. |
-| Concentric rings | 2 | 20 | 1 | Hasta 20 anillos; un valor redondo que el motor aguanta bien. |
-| Centers (multi-center) | 2 | 8 | 1 | De dos a ocho focos, repartidos en círculo (ocho = un octágono). |
-| Spiral twist | −180° | 180° | 1 | Sentido y cantidad del giro de la espiral. |
-| Open center | 0 % | 90 % | 1 | Hueco central; con 100 % los anillos tendrían grosor cero y no se vería nada, 90 % deja una corona fina. |
-| Ring rotation | −90° | 90° | 1 | Giro acumulativo de cada anillo respecto al anterior. |
-| Line width | 0,5 px | 10 px | 0,5 | Rayos y anillos visibles. |
-| Ring shape (dropdown) | círculo | octágono | — | Círculo, triángulo, cuadrado, pentágono, hexágono y octágono (el polígono más cercano al círculo). |
+| Control | Mín. | Máx. | Paso | Por defecto | Razón |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| Angular rays | 3 | 60 | 1 | 12 | 3 es el reparto mínimo (triangular); 60 rayos con 20 anillos son 1 200 módulos, que el motor dibuja sin problema. |
+| Concentric rings | 2 | 20 | 1 | 6 | Hasta 20 anillos; un valor redondo que el motor aguanta bien. |
+| Centers (multi-center) | 2 | 8 | 1 | 2 | De dos a ocho focos, repartidos en círculo (ocho = un octágono). |
+| Spiral twist | −180º | 180º | 1º | 45º | Sentido y cantidad del giro de la espiral. |
+| Open center | 0 % | 90 % | 1 % | 0 % | Hueco central; con 100 % los anillos tendrían grosor cero y no se vería nada, 90 % deja una corona fina. |
+| Ring rotation | −90º | 90º | 1º | 0º | Giro acumulativo de cada anillo respecto al anterior. |
+| Line width | 0,5 px | 10 px | 0,5 px | 1 px | Rayos y anillos visibles. |
+| Ring shape (dropdown) | círculo | octágono | — | círculo | Círculo, triángulo, cuadrado, pentágono, hexágono y octágono (el polígono más cercano al círculo). |
 
 ### Similarity
-| Control | Mín. | Máx. | Paso | Razón |
-| :-- | :-- | :-- | :-- | :-- |
-| Fluctuation intensity | 0 % | 100 % | 1 | De módulos idénticos a la máxima variación del parentesco. |
-| Spatial cell jitter | 0 % | 90 % | 1 | Cuánto se corre cada módulo de su sitio, como % de su celda (100 % = el centro llega al borde de la celda; 90 % lo deja dentro). |
-| Association mix | 0 % | 100 % | 1 | % de módulos que cambian a otra figura de la familia. |
-| Imperfect modules | 0 % | 100 % | 1 | % de módulos cortados o rotos. |
+| Control | Mín. | Máx. | Paso | Por defecto | Razón |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| Fluctuation intensity | 0 % | 100 % | 1 % | 50 % | De módulos idénticos a la máxima variación del parentesco. |
+| Spatial cell jitter | 0 % | 90 % | 1 % | 0 % | Cuánto se corre cada módulo de su sitio, como % de su celda (100 % = el centro llega al borde de la celda; 90 % lo deja dentro). |
+| Association mix | 0 % | 100 % | 1 % | 50 % | % de módulos que cambian a otra figura de la familia. |
+| Imperfect modules | 0 % | 100 % | 1 % | 30 % | % de módulos cortados o rotos. |
 
 ### Gradation
-| Control | Mín. | Máx. | Paso | Razón |
-| :-- | :-- | :-- | :-- | :-- |
-| Range | 5º | 360º | 5 | Alcance del efecto: 360° de giro, o hasta el máximo en los otros atributos; 5º se nota en figuras con vértices. |
-| Cycles | 1 | 10 | 1 | Repeticiones de la rampa; en retículas chicas muchos ciclos parecen ruido, pero eso lo juzga quien diseña. |
-| Speed | −100 | 100 | 5 | Qué tan pronto llega el efecto a su máximo: +100 enseguida, −100 muy tarde, 0 parejo. (Se guarda como `easing` con el signo contrario.) |
+| Control | Mín. | Máx. | Paso | Por defecto | Razón |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| Range | 5º | 360º | 5º | 180º | Alcance del efecto: 360º de giro, o hasta el máximo en los otros atributos; 5º se nota en figuras con vértices. |
+| Cycles | 1 | 10 | 1 | 1 | Repeticiones de la rampa; en retículas chicas muchos ciclos parecen ruido, pero eso lo juzga quien diseña. |
+| Speed | −100 | 100 | 5 | 0 | Qué tan pronto llega el efecto a su máximo: +100 enseguida, −100 muy tarde, 0 parejo. (Se guarda como `easing` con el signo contrario.) |
 
 ### Anomaly
-| Control | Mín. | Máx. | Paso | Razón |
-| :-- | :-- | :-- | :-- | :-- |
-| Count | 1 | 10 | 1 | Cantidad de zonas dispersas; con más de 10 el patrón original cambia por completo. |
-| Seed | 1 | 99 | 1 | Qué disposición al azar sale. |
-| Radius | 10 px | 350 px | 5 | Tamaño de la zona; 10 permite composiciones de módulos pequeños, 350 cubre más de la mitad del lienzo. |
-| Severity | 5 % | 100 % | 1 | Cuánto se desvía; 5 % sirve para anomalías muy sutiles. |
-| Epicentro (clic en el lienzo) | 10 % | 90 % | continuo | Mantiene la zona dentro del lienzo. |
+| Control | Mín. | Máx. | Paso | Por defecto | Razón |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| Count | 1 | 10 | 1 | 5 | Cantidad de zonas dispersas; con más de 10 el patrón original cambia por completo. |
+| Seed | 1 | 99 | 1 | 7 | Qué disposición al azar sale. |
+| Radius | 10 px | 350 px | 5 px | 150 px | Tamaño de la zona; 10 px permite composiciones de módulos pequeños, 350 px cubre más de la mitad del lienzo. |
+| Severity | 5 % | 100 % | 1 % | 60 % | Cuánto se desvía; 5 % sirve para anomalías muy sutiles. |
+| Epicentro (clic en el lienzo) | 10 % | 90 % | continuo | 50 % / 50 % | Mantiene la zona dentro del lienzo. |
 
 ### Contrast
-| Control | Mín. | Máx. | Paso | Razón |
-| :-- | :-- | :-- | :-- | :-- |
-| Dominance ratio | 50 % | 95 % | 1 | % de la mayoría regular; por debajo de 50 la minoría sería mayoría. |
-| Contrast Scale Multiplier | 0,2× | 5× | 0,1 | De muy pequeño a cinco veces; el producto con otros multiplicadores sigue limitado a 8×. |
-| Tone | 0 % | 100 % | 5 | Mezcla del color del módulo con el color de fondo del lienzo: 0 % = su color original (sin contraste), 100 % = igual al fondo (desaparece, como un vacío). |
-| Shift | 0 % | 50 % | 1 | Cuánto se aleja el módulo de su centro, como % de la celda; 50 % lleva el centro al borde de la celda. |
-| Shift direction | 0° | 360° | 5 | Dirección del desplazamiento. |
-| Clash Angle | 5º | 90º | 5 | Ángulo de choque; 5º se nota en figuras con vértices. |
+| Control | Mín. | Máx. | Paso | Por defecto | Razón |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| Dominance ratio | 50 % | 95 % | 1 % | 80 % | % de la mayoría regular; por debajo de 50 la minoría sería mayoría. |
+| Contrast Scale Multiplier | 0,2× | 5× | 0,1× | 2× | De muy pequeño a cinco veces; el producto con otros multiplicadores sigue limitado a 8×. |
+| Tone | 0 % | 100 % | 5 % | 50 % | Mezcla del color del módulo con el color de fondo del lienzo: 0 % = su color original (sin contraste), 100 % = igual al fondo (desaparece, como un vacío). |
+| Shift | 0 % | 50 % | 1 % | 25 % | Cuánto se aleja el módulo de su centro, como % de la celda; 50 % lleva el centro al borde de la celda. |
+| Shift direction | 0º | 360º | 5º | 45º | Dirección del desplazamiento; es la misma para todos los módulos de la minoría. |
+| Clash Angle | 5º | 90º | 5º | 45º | Ángulo de choque; 5º se nota en figuras con vértices. |
 
 ### Concentration
-| Control | Mín. | Máx. | Paso | Razón |
-| :-- | :-- | :-- | :-- | :-- |
-| Foci | 2 | 8 | 1 | Focos de Hotspots; con 1 es el modo Point. |
-| X / Y position | 0 % | 100 % | 1 | El atractor puede ir hasta el borde o la esquina del lienzo. |
-| Gathering pull | 10 % | 100 % | 1 | Fuerza de atracción; 10 % deja una atracción muy sutil. |
-| Field radius | 10 px | 500 px | 5 | Alcance del campo; 10 px sirve para composiciones de módulos pequeños. |
+| Control | Mín. | Máx. | Paso | Por defecto | Razón |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| Foci (Hotspots) | 2 | 8 | 1 | 2 | Focos de Hotspots; con 1 es el modo Point. |
+| X / Y position | 0 % | 100 % | 1 % | 50 % / 50 % | El atractor puede ir hasta el borde o la esquina del lienzo. Con varios focos, estos mueven solo el primero. |
+| Gathering pull | 10 % | 100 % | 1 % | 50 % | Fuerza de atracción; 10 % deja una atracción muy sutil. |
+| Field radius | 10 px | 500 px | 5 px | 250 px | Alcance del campo; 10 px sirve para composiciones de módulos pequeños. |
 
 ### Texture
-| Control | Mín. | Máx. | Paso | Razón |
-| :-- | :-- | :-- | :-- | :-- |
-| Jitter | 0 % | 100 % | 1 | Temblor de los vértices. 100 % = 10 px para un módulo de 100 px (se escala al tamaño real). |
-| Line skipping | 0 % | 90 % | 1 | Probabilidad de que cada vértice se omita y el trazo se corte; a 90 % las figuras complejas quedan casi deshechas. Solo en trazos. |
-| Random lines | 0 % | 100 % | 1 | Probabilidad de que cada vértice saque una línea corta, casi paralela al trazo y de largo muy variable. Solo en trazos. |
-| Plane wave | 0 % | 100 % | 1 | Cuánto se ondula el módulo entero, como una hoja. 100 % = 30 px para un módulo de 100 px (la onda desplaza los puntos hasta un 21 % del módulo). |
-| Waves (Advanced) | 1 | 6 | 1 | Cuántas ondas cruzan el módulo. |
-| Wave direction (Advanced) | 0º | 360º | 5 | Hacia dónde viaja la onda; los puntos se mueven de lado respecto a esa dirección. |
+Jitter y Plane wave se muestran de 0 % a 100 %; por dentro se guardan en px para un módulo de 100 px y se escalan al tamaño real.
+
+| Control | Mín. | Máx. | Paso | Por defecto | Razón |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| Jitter | 0 % | 100 % | 1 % | 10 % | Temblor fino de los vértices. 100 % = 10 px para un módulo de 100 px. |
+| Line skipping | 0 % | 90 % | 1 % | 10 % | Probabilidad de que cada vértice se omita y el trazo se corte; a 90 % las figuras complejas quedan casi deshechas. Solo en trazos. |
+| Random lines | 0 % | 100 % | 1 % | 10 % | Probabilidad de que cada vértice saque una línea corta, casi paralela al trazo y de largo muy variable. Solo en trazos. |
+| Plane wave | 0 % | 100 % | 1 % | 30 % | Cuánto se ondula el módulo entero, como una hoja. 100 % = 30 px para un módulo de 100 px (la onda desplaza los puntos hasta un 21 % del módulo). |
+| Waves (Advanced) | 1 | 6 | 1 | 2 | Cuántas ondas cruzan el módulo. |
+| Wave direction (Advanced) | 0º | 360º | 5º | 0º | Hacia dónde viaja la onda; los puntos se mueven de lado respecto a esa dirección. |
 
 ### Space
-| Control | Mín. | Máx. | Paso | Razón |
-| :-- | :-- | :-- | :-- | :-- |
-| Extrusion depth | 5 % | 100 % | 1 | Profundidad como % del tamaño del módulo (un módulo de 200 px con 50 % se extruye 100 px); bajo 5 % no se ve volumen. Los proyectos antiguos en px se convierten al abrirlos (85 px = 100 %). |
-| Projection angle | −180º | 180º | 1 | Dirección del volumen; con ±180 se cubren todas las direcciones. La cara frontal no se mueve. |
-| Facet shading contrast | 5 % | 100 % | 1 | Diferencia de tono entre la cara frontal y el costado: a más %, el costado es más claro. Ojo: ni 5 % ni 0 % dan caras idénticas, el costado conserva ~60 % de la tinta de la cara frontal. |
+| Control | Mín. | Máx. | Paso | Por defecto | Razón |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| Extrusion depth | 5 % | 100 % | 1 % | 20 % | Profundidad como % del tamaño del módulo (un módulo de 200 px con 50 % se extruye 100 px); bajo 5 % no se ve volumen. Los proyectos antiguos en px se convierten al abrirlos (85 px = 100 %). |
+| Projection angle | −180º | 180º | 1º | 30º | Dirección del volumen; con ±180º se cubren todas las direcciones. La cara frontal no se mueve. |
+| Facet shading contrast | 5 % | 100 % | 1 % | 50 % | Diferencia de tono entre la cara frontal y el costado: a más %, el costado es más claro. Ni 5 % ni 0 % dan caras idénticas, el costado conserva ~60 % de la tinta de la cara frontal. |
 
 ---
 
@@ -189,6 +193,3 @@ Una sola capa (**Layer 1**): círculo, trazo (no relleno), color `#18181f`, traz
 | **Texture** | Jitter 10 %, Line skipping 10 %, Random lines 10 %, Plane wave 30 % (2 ondas, 0º) |
 | **Space** | Isometric, Extrusion depth 20 %, Projection angle 30º, Shading 50 %, guías isométricas apagadas |
 | **Hide modifiers** | apagado; solo actúa con el panel Module abierto |
-
-### Una nota
-El HTML conserva valores iniciales antiguos en los sliders de Module (Width 50, trazo 1,2, rotación 4,5), pero no se usan: al abrir, la app los reemplaza con los del estado de arriba.

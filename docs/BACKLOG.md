@@ -17,7 +17,7 @@ Sale de las filas ⏳ del mapa de conceptos, más las mejoras de filas 🟡 que 
 ### P3 — ideas que parecen divertidas (probar primero)
 | ID | Concepto | Notas |
 | :-- | :-- | :-- |
-| — | **Plano ondulado** (idea de Abstract Studio / UJI): una onda armónica sobre todo el plano, no módulo por módulo | Sin control dedicado: con los controles que hay. (1) *Layout › Curved* con un segundo parámetro **Cycles** y que deforme también las filas: líneas, celdas y módulos ya siguen la misma curva. (2) *Gradation › Drift* con **dirección** (a lo largo o transversal al recorrido), con *Cycles* y *Ping-pong*. Resuelve de paso A8 en esas variaciones |
+| — | **Plano ondulado** (idea de Abstract Studio / UJI) — *el 7 oct 2026 se hizo la parte del módulo: Texture › Plane wave dobla cada módulo como una hoja; queda la ola continua entre módulos y líneas (opción 3), que toca Layout*: una onda armónica sobre todo el plano, no módulo por módulo | Sin control dedicado: con los controles que hay. (1) *Layout › Curved* con un segundo parámetro **Cycles** y que deforme también las filas: líneas, celdas y módulos ya siguen la misma curva. (2) *Gradation › Drift* con **dirección** (a lo largo o transversal al recorrido), con *Cycles* y *Ping-pong*. Resuelve de paso A8 en esas variaciones |
 | — | **Cadena acumulativa estilo UJI**: cientos o miles de copias donde cada una hereda escala, giro y movimiento de la anterior | Modo de Layout nuevo; hay que medir el rendimiento antes (render por lotes y limitar los repintados). Las letras A, S, R y los números son la semilla natural |
 
 | — | **Posición individual de cada foco** (Concentration › Hotspots) | Hoy X / Y y el puntero mueven solo el foco 1; los demás son copias suyas giradas alrededor del centro (2 focos = espejo). Propuesta: una fila de chips 1, 2, 3… para elegir el foco que mueven los sliders y el puntero (cada foco guarda su posición), y un interruptor **Regular / Free** que mantiene la figura regular actual o activa posiciones libres. Con *Regular* nada cambia y los proyectos viejos se ven igual |
@@ -36,7 +36,7 @@ Sale de las filas ⏳ del mapa de conceptos, más las mejoras de filas 🟡 que 
 | F5 | Formas rectilíneas e irregulares propias | La app trabaja con una biblioteca fija de 22 formas |
 
 ### Rendimiento (solo si se amplían los rangos o llega la cadena acumulativa)
-Medido el 6 oct 2026 (círculo en trazo, Fit to canvas, 600 px): 100 módulos 2 ms · 900 → 9 ms · 3 600 → 32 ms · 10 000 → 213 ms · 3 600 con Texture 147 ms · con Similarity y Gradation 60 ms · con Space 61 ms. Con los límites de hoy (50 × 50 columnas y filas = 2 500 módulos; radial 36 × 16) todo queda dentro de lo fluido. **Cada acción ya dibuja una sola vez** (comprobado: un evento = un dibujo), así que agrupar repintados por cuadro no aporta nada.
+Medido el 6 oct 2026 (círculo en trazo, Fit to canvas, 600 px): 100 módulos 2 ms · 900 → 9 ms · 3 600 → 32 ms · 10 000 → 213 ms · 3 600 con Texture 147 ms · con Similarity y Gradation 60 ms · con Space 61 ms. Los límites subieron el 7 oct 2026 (100 × 100 columnas y filas = 10 000 módulos; radial 60 × 20 = 1 200): una retícula llena de 10 000 módulos tarda ~213 ms por dibujo, así que al arrastrar un slider con ella se siente a unos 5 cuadros por segundo. Es el momento de valorar las mejoras de abajo si se nota. **Cada acción ya dibuja una sola vez** (comprobado: un evento = un dibujo), así que agrupar repintados por cuadro no aporta nada.
 | Mejora | Cuándo |
 | :-- | :-- |
 | Un solo trazo para los módulos del mismo estilo (el mayor salto) | Junto con las interrelaciones entre capas, para no hacerlo dos veces |
@@ -72,6 +72,7 @@ Medido el 6 oct 2026 (círculo en trazo, Fit to canvas, 600 px): 100 módulos 2 
 | Q3 | Design system desde Figma | ✅ [DESIGN_SYSTEM_TOKENS.md](./DESIGN_SYSTEM_TOKENS.md) y `css/tokens.css` |
 | Q3b, Q3d | Migrar paneles, barra superior, tarjetas de capas y riel al diseño de Figma | ✅ |
 | Q3c | Decisiones de diseño pendientes: tokens para la caja de valor y la pista del slider, fuente monoespaciada (DM Mono o Roboto Mono), unificar interruptor y checkbox entre librería y diseño | ⏳ **En espera**: Diego revisará el diseño en Figma (por ejemplo, reducir el alto de los campos para un estilo más de software) y lo pasará |
+| Q4 | Revisión de salud del código (7 oct 2026) | ✅ Sin errores de JavaScript ni ids duplicados, 65 pruebas pasan. Pendientes menores: (a) el panel *Structure* antiguo ya no existe pero quedan sus manejadores en `studio-pro-app.js` (`badge-structure-layer`, `toggle-structure-active`, `chk-struct-gridlines`, `struct-controls-group`, `warning-structure-radiation`; no dan error porque comprueban que el elemento exista) → borrarlos; (b) la app carga Tailwind desde `cdn.tailwindcss.com` (avisa de que no es para producción y no funciona sin conexión; solo se usan unas 67 clases de utilidad) → sustituir por CSS propio; (c) el Art log lista todos los controles solo en Texture, el resto muestra los principales |
 | U1 | Reorganizar los controles: lo esencial visible, lo demás en *Advanced*, dropdowns, guías con color global | ✅ Ver [AUDITORIA_CONTROLES.md](./AUDITORIA_CONTROLES.md) |
 
 ## 4. Otros

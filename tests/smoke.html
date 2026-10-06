@@ -286,6 +286,15 @@
       assert(across < along / 2, `With the wave travelling downward the top edge only slides, it does not ripple (${across})`);
     });
 
+    await test("Art log shows Space with its depth, angle and shading", () => {
+      reset();
+      const d = win.document, log = () => d.getElementById("art-log-lines").textContent;
+      const st = app.getActiveLayerStructure();
+      st.space = { enabled: true, mode: "isometric", depthPct: 35, angle: -90, shading: 60, showIsoGuides: false };
+      app.render();
+      assert(/Space: Isometric \/ Depth 35% \/ -90º \/ Shading 60%/.test(log()) && !/undefined|NaN/.test(log()), "The Space line is wrong: " + log());
+    });
+
     await test("Undo and redo restore a per-layer setting", () => {
       reset();
       app.history = []; app.historyLabels = []; app.historyIndex = -1;

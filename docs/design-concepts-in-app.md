@@ -137,7 +137,7 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | G9 | **Unión o sustracción en la figura**: cambio gradual de posición de sub-módulos | Gradación en la figura | — | ⏳ |  |
 | G10 | **Tensión o compresión en la figura** | Gradación en la figura | Gradation › `Shape` | 🟡 | Cambia la figura, no una deformación elástica |
 | G11 | **Camino de la gradación**: directo o indirecto, por figuras intermedias | Camino | Gradation › `Shape` › Becomes | 🟡 | Solo directo; el indirecto se hace con capas |
-| G12 | **Velocidad de gradación**: pocos pasos = rápida, muchos = lenta | Velocidad | Gradation › Range, Cycles, Acceleration | ✅ |  |
+| G12 | **Velocidad de gradación**: pocos pasos = rápida, muchos = lenta | Velocidad | Gradation › Range, Cycles, Speed | ✅ |  |
 | G13 | **Movimiento paralelo** | Modelos de gradación | Gradation › Pathway `Horizontal`, `Vertical`, `Diagonal` | ✅ |  |
 | G14 | **Movimiento concéntrico** | Modelos de gradación | Gradation › Pathway `Concentric` | ✅ |  |
 | G15 | **Movimiento en zigzag** | Modelos de gradación | Gradation › Pathway `Zigzag` | ✅ |  |
