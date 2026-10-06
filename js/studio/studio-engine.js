@@ -121,8 +121,8 @@ export const createDefaultLayerStructure = () => ({
     focusCount: 2, // hotspots: how many foci share the density (2 to 6)
     attractorX: 0.5, // 0.05 to 0.95
     attractorY: 0.5, // 0.05 to 0.95
-    power: 50, // gathering pull, 20 to 100
-    radius: 240, // field radius, 80 to 450 px
+    power: 50, // gathering pull, 10 to 100
+    radius: 250, // field radius, 10 to 500 px
     lineAxis: "horizontal", // horizontal, vertical (line mode)
     alignToField: false,
     densityScale: false,
@@ -625,7 +625,7 @@ export class StudioEngine {
     const attX = (conc.attractorX ?? 0.5) * width;
     const attY = (conc.attractorY ?? 0.5) * height;
     const power = (conc.power ?? 65) / 100;
-    const radius = conc.radius ?? 240;
+    const radius = conc.radius ?? 250;
     const vertical = conc.lineAxis === "vertical";
 
     // Concentration by absence: modules stay where they are and vanish with the density field.
@@ -2145,7 +2145,7 @@ export class StudioEngine {
   drawAttractorGuide(ctx, width, height, palette, conc) {
     const attX = (conc.attractorX ?? 0.5) * width;
     const attY = (conc.attractorY ?? 0.5) * height;
-    const radius = conc.radius ?? 240;
+    const radius = conc.radius ?? 250;
 
     ctx.save();
     ctx.strokeStyle = this.guideColor();

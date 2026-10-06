@@ -20,6 +20,8 @@ Sale de las filas ⏳ del mapa de conceptos, más las mejoras de filas 🟡 que 
 | — | **Plano ondulado** (idea de Abstract Studio / UJI): una onda armónica sobre todo el plano, no módulo por módulo | Sin control dedicado: con los controles que hay. (1) *Layout › Curved* con un segundo parámetro **Cycles** y que deforme también las filas: líneas, celdas y módulos ya siguen la misma curva. (2) *Gradation › Drift* con **dirección** (a lo largo o transversal al recorrido), con *Cycles* y *Ping-pong*. Resuelve de paso A8 en esas variaciones |
 | — | **Cadena acumulativa estilo UJI**: cientos o miles de copias donde cada una hereda escala, giro y movimiento de la anterior | Modo de Layout nuevo; hay que medir el rendimiento antes (render por lotes y limitar los repintados). Las letras A, S, R y los números son la semilla natural |
 
+| — | **Posición individual de cada foco** (Concentration › Hotspots) | Hoy X / Y y el puntero mueven solo el foco 1; los demás son copias suyas giradas alrededor del centro (2 focos = espejo). Propuesta: una fila de chips 1, 2, 3… para elegir el foco que mueven los sliders y el puntero (cada foco guarda su posición), y un interruptor **Regular / Free** que mantiene la figura regular actual o activa posiciones libres. Con *Regular* nada cambia y los proyectos viejos se ven igual |
+
 ### P3 — por evaluar con el filtro de juego
 | ID | Concepto | Notas |
 | :-- | :-- | :-- |

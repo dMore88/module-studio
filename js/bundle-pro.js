@@ -1000,8 +1000,8 @@ const createDefaultLayerStructure = () => ({
     focusCount: 2, // hotspots: how many foci share the density (2 to 6)
     attractorX: 0.5, // 0.05 to 0.95
     attractorY: 0.5, // 0.05 to 0.95
-    power: 50, // gathering pull, 20 to 100
-    radius: 240, // field radius, 80 to 450 px
+    power: 50, // gathering pull, 10 to 100
+    radius: 250, // field radius, 10 to 500 px
     lineAxis: "horizontal", // horizontal, vertical (line mode)
     alignToField: false,
     densityScale: false,
@@ -1501,7 +1501,7 @@ class StudioEngine {
     const attX = (conc.attractorX ?? 0.5) * width;
     const attY = (conc.attractorY ?? 0.5) * height;
     const power = (conc.power ?? 65) / 100;
-    const radius = conc.radius ?? 240;
+    const radius = conc.radius ?? 250;
     const vertical = conc.lineAxis === "vertical";
 
     // Concentration by absence: modules stay where they are and vanish with the density field.
@@ -3021,7 +3021,7 @@ class StudioEngine {
   drawAttractorGuide(ctx, width, height, palette, conc) {
     const attX = (conc.attractorX ?? 0.5) * width;
     const attY = (conc.attractorY ?? 0.5) * height;
-    const radius = conc.radius ?? 240;
+    const radius = conc.radius ?? 250;
 
     ctx.save();
     ctx.strokeStyle = this.guideColor();
@@ -5909,7 +5909,7 @@ class StudioProApp {
     setPair("input-conc-y", "num-conc-y", Math.round((conc.attractorY ?? 0.5) * 100), "%");
     setPair("input-conc-foci", "num-conc-foci", conc.focusCount ?? 2, "");
     setPair("input-conc-power", "num-conc-power", conc.power ?? 50, "%");
-    setPair("input-conc-radius", "num-conc-radius", conc.radius ?? 240, "px");
+    setPair("input-conc-radius", "num-conc-radius", conc.radius ?? 250, "px");
 
     this.syncCheckbox("toggle-conc-guide", !!conc.showAttractor);
 
@@ -5986,8 +5986,8 @@ class StudioProApp {
     bindPair("input-conc-x", "num-conc-x", { min: 5, max: 95, suffix: "%", toStored: v => v / 100, label: "X", key: "attractorX" });
     bindPair("input-conc-y", "num-conc-y", { min: 5, max: 95, suffix: "%", toStored: v => v / 100, label: "Y", key: "attractorY" });
     bindPair("input-conc-foci", "num-conc-foci", { min: 2, max: 6, suffix: "", toStored: v => v, label: "Foci", key: "focusCount" });
-    bindPair("input-conc-power", "num-conc-power", { min: 20, max: 100, suffix: "%", toStored: v => v, label: "Pull", key: "power" });
-    bindPair("input-conc-radius", "num-conc-radius", { min: 80, max: 450, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
+    bindPair("input-conc-power", "num-conc-power", { min: 10, max: 100, suffix: "%", toStored: v => v, label: "Pull", key: "power" });
+    bindPair("input-conc-radius", "num-conc-radius", { min: 10, max: 500, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
 
     const bindCheck = (id, key, label) => {
       document.getElementById(id)?.addEventListener("change", (e) => {

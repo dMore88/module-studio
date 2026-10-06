@@ -247,7 +247,7 @@ Agrupa o dispersa los módulos según campos de fuerza invisibles. Requiere ret�
 * **`focusCount`** (*Foci*, 2 a 6, por defecto 2): solo en `free`. El atractor y sus copias girando alrededor del centro del lienzo; con 2 son el atractor y su simétrico. Cada módulo se dirige al foco más cercano, y *Absence* usa todos los focos.
 * **Field style** (chips que se pueden **mezclar**): **`edgeFade`** (*Soft edge*, solo en `dense` y `sparse`: el efecto se debilita hacia los bordes), **`alignToField`** (*Flowing*: los módulos giran tangentes al campo) y **`densityScale`** (*Dynamic density*: la escala depende de la cercanía al polo).
 * **`attractorX / attractorY`** (*X / Y position*, 5 a 95 %): también se fija con un clic en el lienzo.
-* **`power`** (*Gathering pull*, 20 a 100 %) y **`radius`** (*Field radius*, 80 a 450 px; no en `dense` ni `sparse`).
+* **`power`** (*Gathering pull*, 10 a 100 %) y **`radius`** (*Field radius*, 10 a 500 px, por defecto 250; no en `dense` ni `sparse`).
 * **`showAttractor`** (*Display Attractor Guide*, casilla): dibuja el campo y el punto atractor con el color de guías; no se exporta.
 
 ---

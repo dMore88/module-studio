@@ -146,8 +146,8 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | :-- | :-- | :-- | :-- | :-- |
 | Foci | 2 | 6 | 1 | Focos de Hotspots; con 1 es el modo Point. |
 | X / Y position | 5 % | 95 % | 1 | Mantiene el atractor dentro del lienzo. |
-| Gathering pull | 20 % | 100 % | 1 | Fuerza de atracción; bajo 20 no se nota. |
-| Field radius | 80 | 450 px | 5 | Alcance del campo. |
+| Gathering pull | 10 % | 100 % | 1 | Fuerza de atracción; 10 % deja una atracción muy sutil. |
+| Field radius | 10 px | 500 px | 5 | Alcance del campo; 10 px sirve para composiciones de módulos pequeños. |
 
 ### Texture
 | Control | Mín. | Máx. | Paso | Razón |
@@ -183,7 +183,7 @@ Una sola capa (**Layer 1**): círculo, trazo (no relleno), color `#18181f`, traz
 | **Gradation** | Rotate, Diagonal, Range 180, Cycles 1, Restart, Speed 0, filas alternas apagado, *Reverse* apagado, Becomes triangle, End color `#f43f5e` |
 | **Anomaly** | Focal, un punto en el centro (50 %, 50 %), Radius 150, Severity 60, Single, Count 5, Seed 7, se desvía en forma, escala, rotación y posición, forma intrusa triángulo, zona Another grid = Brick, color de acento `#f43f5e` (apagado), punto visible |
 | **Contrast** | Scale, Dominance 80 %, Scattered, Scale 2,2×, Tone 50 %, Shift 25 % a 45°, Clash angle 45°, forma de minoría cruz, color de acento `#f43f5e` (apagado) |
-| **Concentration** | Point, Move, atractor en el centro (50 %, 50 %), Gathering pull 50 %, Field radius 240, 2 focos, eje horizontal, flujo y densidad apagados, guía del atractor apagada |
+| **Concentration** | Point, Move, atractor en el centro (50 %, 50 %), Gathering pull 50 %, Field radius 250, 2 focos, eje horizontal, flujo y densidad apagados, guía del atractor apagada |
 | **Texture** | Jitter 1, Line skipping 10 %, Strand crossing 10 %, Perimeter undulation 10 |
 | **Space** | Isometric, Extrusion depth 10, Projection angle 30°, Shading 50 %, guías isométricas apagadas |
 | **Hide modifiers** | apagado; solo actúa con el panel Module abierto |
