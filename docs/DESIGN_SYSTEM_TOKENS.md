@@ -326,8 +326,8 @@ Excepción: la flecha del selector de proporción del Figma no es de Phosphor (e
 
 | # | Qué | Detalle | Decisión |
 | :-- | :--- | :--- | :--- |
-| 1 | **Caja de valor y pista del slider** | En el diseño de la app usan colores sueltos (`#f0f0f2`, `#292932`, `#1d1d25`), no variables | Definir variables en Figma o mantener los tokens locales `--ds-*` |
-| 2 | **Fuente monoespaciada** | Figma define `DM Mono` (estilo `Mono`), pero el diseño de la caja de valor usa Roboto Mono. La app no carga ninguna de las dos y cae a JetBrains Mono | Elegir una, cargarla y aplicarla |
+| 1 | **Caja de valor y pista del slider** | En el diseño de la app usan colores sueltos (`#f0f0f2`, `#292932`, `#1d1d25`), no variables | **Resuelto (5 oct 2026):** la caja de valor es el *input-text* de la librería (56×32, radio 4) y la pista del slider usa tokens (ver 11.3 y 12). Los `--ds-*` se retiran al aplicarlo |
+| 2 | **Fuente monoespaciada** | Figma define `DM Mono` (estilo `Mono`), pero el diseño de la caja de valor usa Roboto Mono. La app no carga ninguna de las dos y cae a JetBrains Mono | **Resuelto (5 oct 2026):** `DM Mono` Medium (la usa el registro «Art configuration» del Figma). La app ya la importa |
 | 3 | **Interruptor encendido** | La librería lo muestra con pista clara y borde oscuro; el diseño de la app, con pista oscura e indicador blanco | Unificar la librería con el diseño |
 | 4 | **Checkbox apagado** | La librería usa fondo `neutral/interactive/default--inverted`; el diseño de la app, fondo blanco | Unificar |
 | 5 | **Anillo de foco** | La librería usa `primary/interactive/focus` (`#97bcf5`), de poco contraste sobre blanco | La app usa un contorno de 2 px en la tinta; confirmar que se mantiene |
@@ -439,3 +439,66 @@ Resumen del criterio: **todos los controles de la interfaz miden 32 de alto** (b
 2. Cargar **Be Vietnam Pro** en lugar de Inter (`@import` de `css/studio-pro.css`, línea 6).
 3. Ajustar los componentes `.ds-*` de la tabla 11.3 y los tamaños que dependen de `sizing/7` (que pasa de 40 a 32).
 4. Comparar capturas antes y después de cada paso y correr `tests/smoke.html` (hay pruebas que miden alturas y fuentes).
+
+---
+
+## 12. Rediseño del editor (Figma del 5 oct 2026) y decisiones
+
+Fuente: página *Abstract studio* (nodo `5763:1691`): el frame del editor (`5763:1692`, 1512×863) y el tablero **«Contols layout»** (`5787:3471`), que es el **inventario** de controles del panel. **El editor del Figma es una muestra de estilo, no de funcionalidad**: lo que ya está desarrollado manda (los 9 paneles del riel, el botón Open, etc.). **El panel de controles se arma siguiendo el inventario**, no el frame del editor. Nada de esto está aplicado en el código todavía.
+
+### 12.1 Decisiones tomadas (5 oct 2026)
+
+| Tema | Decisión |
+| :--- | :--- |
+| **Nombre de la aplicación** | **Module Studio** (vuelve a usarse en la cabecera; sustituye a «Abstract Studio» de la sección 5.14) |
+| **Botón Open** | Se queda donde está. El mockup no lo muestra solo porque es una muestra |
+| **Riel** | Se mantienen los 9 paneles actuales; el décimo icono del mockup no cuenta |
+| **Ancho del panel de controles** | **300 px** (el inventario muestra 320; se redujo a 300) |
+| **Panel y lienzo** | Se mantiene la regla: **el panel nunca tapa el lienzo**. El ancho del lienzo tiene un tope que deja libre el panel; si hace falta, el lienzo baja de alto |
+| **Registro «Art configuration»** | Sí. Muestra la capa activa más cabeceras globales (ver 12.3) |
+| **Barras de scroll** | Discretas: color negro al 50 % de opacidad, finas, para que no dañen el diseño |
+
+### 12.2 Estructura nueva
+
+**Cabecera (68 de alto, relleno 16).** Izquierda: marca y nombre. **Centro: los controles del lienzo**, que salen de la barra del lienzo para no competir con su tamaño: selector de proporción (32 de alto), cuadrícula, invertir y **color de las guías** (botón con un punto del color elegido; en el mockup es un punto rojo). Derecha: acciones de exportación (Config, Copy SVG, Download SVG; **Open se mantiene**) como botones secundarios de 32.
+
+**Zona de trabajo.** Relleno de 16 a los lados y 24 abajo, separación de 24 entre columnas:
+- **Panel de capas, 320 de ancho, alto completo.** Fondo `neutral/bg/strong`, radio 4. **Dividido en dos:** arriba la barra (título *LAYERS*, contador y *Add module*) y la lista de capas; abajo el registro **Art configuration**, separado por una línea `neutral/border/main`.
+- **Lienzo.** Ocupa todo el alto libre; el ancho sale de la proporción (regla de la sección 5.18) y está limitado para no pasar bajo el panel de 300. Fondo blanco, **radio 4**.
+- **Panel de controles (300) y riel de herramientas** a la derecha, como hasta ahora.
+- Desaparece la **línea de estado** de debajo del lienzo: su contenido (tamaño y número de capas) pasa al registro.
+
+**Tarjeta de capa.** 64 de alto, miniatura de 40 con radio 4, separación 12, relleno izquierdo 8 y derecho 16; línea inferior `neutral/border/main`. La activa, en la tinta (`neutral/interactive/default`), con texto `main-inverted`.
+
+### 12.3 Registro «Art configuration»
+
+- **Texto en `DM Mono` Medium** (12). Título «Art configuration» en `neutral/text/main`; las líneas en `neutral/text/subtle` y la palabra que nombra cada línea (*Modules*, *Structure*…) en `neutral/text/main`.
+- **Cabeceras globales:** primero el tamaño y el número de capas (`800 × 800 PX • 2 LAYERS`, el mismo texto de la línea de estado), luego `Modules:` con las formas de todas las capas.
+- **Después, la capa activa:** una línea por cada control **encendido**, en el orden de los paneles, con los mismos nombres que muestran los controles (por ejemplo `Structure: Repetition / Grid / C4 - R4 / Fit to canvas / Centers / None`). Se va llenando al encender controles y se vacía al apagarlos.
+- Se genera a partir del estado; no guarda nada propio.
+- **Scroll:** si el texto no cabe, scroll interno con la barra descrita arriba. No es un aria-live (anunciaría cada cambio de slider); es una región estática con nombre.
+
+### 12.4 Panel de controles según el inventario («Contols layout»)
+
+Medidas del inventario (320 de ancho, relleno 24, contenido 272) adaptadas al ancho de **300**: con relleno 24 el contenido mide **252**, por lo que el deslizante queda en 184 + 12 + 56. *Confirmar que el relleno sigue siendo 24 al bajar a 300.*
+
+| Elemento | Medida |
+| :--- | :--- |
+| **Separación entre grupos** | **24 en todos** (arriba, hoy 16 entre grupos y 24 entre deslizantes) |
+| **Cabecera** | Título (Heading), badge de capa, interruptor 32×20 y cierre **solo con icono de 16**, sin botón |
+| **Botones de forma** | 32×32, radio 12, borde en la tinta; separación 8; el activo, en la tinta. Etiqueta encima a 8 |
+| **Grupo de botones** (Stroke / Fill, Repetition / Radiation) | 40 de alto: relleno 4, fondo `neutral/bg/main`, borde 1 px `neutral/border/main`, botones de 32 |
+| **Selector (dropdown)** | Etiqueta Label encima (4) y caja de 32 con radio 4 (ver 11.3) |
+| **Tags** | 24 de alto, separados 4, etiqueta encima |
+| **Deslizante + caja de valor** | Etiqueta encima; pista de 4 px y tirador de 20; la caja de valor es el *input-text* de 56×32 a la derecha, con 12 de separación |
+| **Color** | Etiqueta, muestra de 24 y texto hex al lado |
+| **Casillas** | Filas de 36 con la casilla de 20 a la derecha |
+| **Advanced** | Acordeón de 40 de alto, con título y flecha |
+
+### 12.5 Cómo aplicarlo, en orden
+
+1. Tokens y fuente (11.5).
+2. Controles del panel, con el ancho de 300 y las medidas de 12.4; comparar capturas antes y después.
+3. Cabecera con los controles del lienzo (el tope de ancho del lienzo cuenta ahora con 300 + 24 de aire).
+4. Panel de capas dividido y registro.
+5. Barras de scroll discretas en toda la interfaz.
