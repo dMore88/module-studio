@@ -1627,7 +1627,10 @@
       app.hideModifiers = false; const withMods = pic(), svgWith = svg();
       app.hideModifiers = true; const hidden = pic();
       assert(hidden !== withMods, "Hide modifiers should change the drawing while the Module panel is open");
+      assert(st.enabled === true, "Hiding must not turn the layout off in the project");
       assert(svg() === svgWith, "An export must always include the modifiers");
+      st.enabled = false; app.hideModifiers = false; const aloneRef = pic(); st.enabled = true; app.hideModifiers = true; app.render();
+      assert(pic() === aloneRef, "Hidden should look exactly like the module alone (layout off)");
       assert(/Modifiers: hidden/.test(d.getElementById("art-log-lines").textContent), "The log should say the modifiers are hidden");
       app.activeRailTab = "contrast"; app.isFlyoutOpen = true;
       assert(pic() === withMods, "Outside the Module panel the modifiers should be back");
