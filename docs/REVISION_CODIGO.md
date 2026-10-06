@@ -94,7 +94,7 @@ El resto son problemas de orden interno que no se ven hoy pero encarecen cada ca
 
 ### 9. Dependencias de internet sin verificación
 
-- **Qué pasa:** la app carga Tailwind (en su versión de pruebas), los iconos y las fuentes desde internet, sin comprobar su integridad. Sin conexión, la app no se ve bien.
+- **Qué pasa:** la app carga los iconos (Phosphor, desde unpkg) y las fuentes (Google Fonts) desde internet, sin comprobar su integridad. *(Tailwind, que también venía de internet, se quitó el 7 oct 2026: las pocas clases que se usaban viven ahora en `css/studio-pro.css`.)* Sin conexión, la app no se ve bien.
 - **Por qué importa:** es lento, puede parpadear al cargar sin estilos y depende de que esos servidores sigan disponibles. Los iconos sí están fijados a una versión, lo cual está bien.
 - **Propuesta:** a futuro, empaquetar iconos y fuentes en el propio repositorio. No urgente.
 

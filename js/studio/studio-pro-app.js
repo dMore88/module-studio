@@ -672,23 +672,52 @@ export class StudioProApp {
       const sim = s.similarity;
       if (sim && sim.enabled) {
         const p = [pick(KIN, sim.kinshipType), `${sim.intensity}%`];
-        if (sim.association && sim.association !== "none") p.push(title(sim.association));
-        if (sim.imperfection && sim.imperfection !== "none") p.push(title(sim.imperfection));
+        const jit = sim.cellJitterAmount > 0 ? Math.round(sim.cellJitterAmount * 100) : (sim.cellJitter > 0 ? `${sim.cellJitter}px` : 0);
+        if (jit) p.push(`Jitter ${typeof jit === "number" ? jit + "%" : jit}`);
+        if (sim.association && sim.association !== "none") p.push(`${title(sim.association)} ${sim.assocMix ?? 50}%`);
+        if (sim.imperfection && sim.imperfection !== "none") p.push(`${title(sim.imperfection)} ${sim.imperfAmount ?? 30}%`);
         out.push(line("Similarity", p.join(" / ")));
       }
       const g = s.gradation;
       if (g && g.enabled) {
         const p = [pick(GATTR, g.type), pick(PATH, g.pathway)];
+        if (g.type === "rotation") p.push(`Range ${g.range ?? 180}º`);
+        if (g.type === "shape") p.push(`to ${title(g.targetShape || "triangle")}`);
+        if (g.type === "color") p.push(`to ${g.endColor || "#f43f5e"}`);
         if ((g.steps || 1) > 1) p.push(`${g.steps} cycles`);
+        if (g.sequence === "pingpong") p.push("Ping-pong");
+        if (g.easing) p.push(`Speed ${g.easing < 0 ? "+" : ""}${-g.easing}`);
+        if (g.alternate) p.push("Alternate rows");
         if (g.reverse) p.push("Reversed");
         out.push(line("Gradation", p.join(" / ")));
       }
       const an = s.anomaly;
-      if (an && an.enabled) out.push(line("Anomaly", [pick(ANOM, an.type), title(an.distribution || "single"), `${an.radius}px`].join(" / ")));
+      if (an && an.enabled) {
+        const p = [pick(ANOM, an.type), title(an.distribution || "single")];
+        if ((an.distribution || "single") !== "single") p.push(`${an.count ?? 5} zones`, `Seed ${an.seed ?? 7}`);
+        p.push(`${an.radius}px`);
+        if (an.type !== "regrid") p.push(`Severity ${an.intensity ?? 60}%`);
+        out.push(line("Anomaly", p.join(" / ")));
+      }
       const co = s.contrast;
-      if (co && co.enabled) out.push(line("Contrast", [pick(DIM, co.dimension), `${co.dominanceRatio}%`, pick(SPREAD, co.spread || "scattered")].join(" / ")));
+      if (co && co.enabled) {
+        const p = [pick(DIM, co.dimension), `${co.dominanceRatio}%`, pick(SPREAD, co.spread || "scattered")];
+        if (co.dimension === "scale") p.push(`${co.scaleFactor ?? 2}x`);
+        if (co.dimension === "shape") p.push(title(co.contrastShape || "cross"));
+        if (co.dimension === "direction") p.push(`${co.angle ?? 45}º`);
+        if (co.dimension === "tone") p.push(`Tone ${co.toneAmount ?? 50}%`);
+        if (co.dimension === "position") p.push(`Shift ${co.positionShift ?? 25}% at ${co.positionAngle ?? 45}º`);
+        out.push(line("Contrast", p.join(" / ")));
+      }
       const cn = s.concentration;
-      if (cn && cn.enabled) out.push(line("Concentration", [pick(CMODE, cn.mode), title(cn.method || "move")].join(" / ")));
+      if (cn && cn.enabled) {
+        const p = [pick(CMODE, cn.mode), title(cn.method || "move")];
+        if (cn.mode === "free") p.push(`${cn.focusCount ?? 2} foci`);
+        if (cn.mode !== "dense" && cn.mode !== "sparse") p.push(`Pull ${cn.power ?? 50}%`, `Radius ${cn.radius ?? 250}px`);
+        else p.push(`Pull ${cn.power ?? 50}%`);
+        if (cn.mode !== "line" && cn.mode !== "line_void") p.push(`at ${Math.round((cn.attractorX ?? 0.5) * 100)}% / ${Math.round((cn.attractorY ?? 0.5) * 100)}%`);
+        out.push(line("Concentration", p.join(" / ")));
+      }
       const tx = s.texture;
       if (tx && tx.enabled) {
         // Every control in use, in the units the sliders show (jitter and undulation are stored in px for a 100 px module)
@@ -729,12 +758,8 @@ export class StudioProApp {
 
     const activeMod = this.getActiveModule();
     const activeName = activeMod?.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
-    const badgeModule = document.getElementById("active-layer-indicator-badge");
-    if (badgeModule) badgeModule.textContent = activeName;
     const badgeLayout = document.getElementById("badge-layout-layer");
     if (badgeLayout) badgeLayout.textContent = activeName;
-    const badgeStructure = document.getElementById("badge-structure-layer");
-    if (badgeStructure) badgeStructure.textContent = activeName;
     const badgeSimilarity = document.getElementById("badge-similarity-layer");
     if (badgeSimilarity) badgeSimilarity.textContent = activeName;
     const badgeGradation = document.getElementById("badge-gradation-layer");
@@ -1298,8 +1323,6 @@ export class StudioProApp {
             struct.formalStructure.showGridLines = e.target.checked;
           }
         }
-        const structGrid = document.getElementById("chk-struct-gridlines");
-        if (structGrid) structGrid.checked = e.target.checked;
         if (struct) this.syncRepetitionExtras(struct.repetition);
         this.render();
       });
@@ -1490,27 +1513,6 @@ export class StudioProApp {
 
     const fs = mod.structure.formalStructure;
 
-    // Update layer badge
-    const badge = document.getElementById("badge-structure-layer");
-    if (badge) badge.textContent = mod?.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
-
-    // Dynamic warning: This control cannot be used when Radiation is active in Layout structure control
-    const isRadActive = !!(mod.structure.enabled && mod.structure.mode === "radiation");
-    const warnBox = document.getElementById("warning-structure-radiation");
-    const controlsGroup = document.getElementById("struct-controls-group");
-    const toggle = document.getElementById("toggle-structure-active");
-
-    if (warnBox) warnBox.classList.toggle("hidden", !isRadActive);
-    if (controlsGroup) {
-      controlsGroup.classList.toggle("opacity-40", isRadActive);
-      controlsGroup.classList.toggle("pointer-events-none", isRadActive);
-    }
-
-    if (toggle) {
-      toggle.checked = !!fs.enabled;
-      toggle.disabled = isRadActive;
-    }
-
     this.syncControlValue("input-struct-col-ratio", Math.round(100 / (fs.colRatio || 1)));
     this.syncControlValue("num-struct-col-ratio", `${Math.round(100 / (fs.colRatio || 1))}%`);
     this.syncControlValue("input-struct-col-grade", fs.colGrade || 0);
@@ -1519,35 +1521,11 @@ export class StudioProApp {
     this.syncControlValue("num-struct-row-grade", `${fs.rowGrade || 0}%`);
     this.syncControlValue("input-struct-row-ratio", Math.round(100 / (fs.rowRatio || 1)));
     this.syncControlValue("num-struct-row-ratio", `${Math.round(100 / (fs.rowRatio || 1))}%`);
-    this.syncCheckbox("chk-struct-gridlines", !!fs.showGridLines);
 
     this.updateRailIndicatorDots();
   }
 
   setupFormalStructure() {
-    const toggle = document.getElementById("toggle-structure-active");
-
-    toggle?.addEventListener("change", (e) => {
-      const mod = this.getActiveModule();
-      if (!mod || !mod.structure) return;
-      if (!mod.structure.formalStructure) {
-        mod.structure.formalStructure = { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false };
-      }
-      const enabled = e.target.checked;
-      mod.structure.formalStructure.enabled = enabled;
-      if (enabled) {
-        mod.structure.enabled = true;
-        if (mod.structure.mode === "radiation") {
-          mod.structure.mode = "repetition";
-        }
-      }
-      this.syncStructureInspectorWithActiveLayer();
-      this.syncFormalStructureInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      this.pushHistory(`Layer ${this.activeLayerId} Formal Structure: ${enabled ? "ON" : "OFF"}`);
-    });
-
     // Gradation of structure: columns / rows that grow or shrink step by step
     const bindGrade = (inputId, numId, key, label, lo = -30, hi = 30, suffix = "%") => {
       this.bindSliderWithNumber(inputId, numId, (val) => {
@@ -1580,7 +1558,6 @@ export class StudioProApp {
       if (mod.structure.mode === "radiation") {
         mod.structure.mode = "repetition";
       }
-      if (toggle) toggle.checked = true;
       this.syncStructureInspectorWithActiveLayer();
       this.syncFormalStructureInspectorWithActiveLayer();
       this.render();
@@ -1599,30 +1576,11 @@ export class StudioProApp {
       if (mod.structure.mode === "radiation") {
         mod.structure.mode = "repetition";
       }
-      if (toggle) toggle.checked = true;
       this.syncStructureInspectorWithActiveLayer();
       this.syncFormalStructureInspectorWithActiveLayer();
       this.render();
       this.updateLayerCardsUI();
     }, "Row Ratio", "%");
-
-    const chkGrid = document.getElementById("chk-struct-gridlines");
-    if (chkGrid) {
-      chkGrid.addEventListener("change", (e) => {
-        const mod = this.getActiveModule();
-        if (!mod || !mod.structure) return;
-        if (!mod.structure.formalStructure) {
-          mod.structure.formalStructure = { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false };
-        }
-        mod.structure.formalStructure.showGridLines = e.target.checked;
-        if (mod.structure.repetition) {
-          mod.structure.repetition.showGridLines = e.target.checked;
-        }
-        const repGrid = document.getElementById("chk-rep-gridlines");
-        if (repGrid) repGrid.checked = e.target.checked;
-        this.render();
-      });
-    }
   }
 
   /* =========================================================================

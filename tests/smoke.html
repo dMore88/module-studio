@@ -286,6 +286,25 @@
       assert(across < along / 2, `With the wave travelling downward the top edge only slides, it does not ripple (${across})`);
     });
 
+    await test("Art log lists the values in use of every modifier", () => {
+      reset();
+      const d = win.document, log = () => d.getElementById("art-log-lines").textContent;
+      const st = app.getActiveLayerStructure();
+      Object.assign(st.similarity, { enabled: true, intensity: 40, cellJitterAmount: 0.3, association: "round", assocMix: 60, imperfection: "cut", imperfAmount: 20 });
+      Object.assign(st.gradation, { enabled: true, type: "rotation", range: 90, steps: 3, sequence: "pingpong", easing: -40, alternate: true, reverse: true });
+      Object.assign(st.anomaly, { enabled: true, type: "focal", distribution: "random", count: 4, seed: 9, radius: 120, intensity: 30 });
+      Object.assign(st.contrast, { enabled: true, dimension: "position", dominanceRatio: 70, positionShift: 35, positionAngle: 90 });
+      Object.assign(st.concentration, { enabled: true, mode: "free", method: "move", focusCount: 3, power: 80, radius: 200, attractorX: 0.25, attractorY: 0.75 });
+      app.render();
+      const l = log();
+      assert(/Jitter 30%/.test(l) && /Round 60%/.test(l) && /Cut 20%/.test(l), "Similarity is incomplete: " + l);
+      assert(/Range 90º/.test(l) && /3 cycles/.test(l) && /Ping-pong/.test(l) && /Speed \+40/.test(l) && /Alternate rows/.test(l) && /Reversed/.test(l), "Gradation is incomplete: " + l);
+      assert(/4 zones/.test(l) && /Seed 9/.test(l) && /120px/.test(l) && /Severity 30%/.test(l), "Anomaly is incomplete: " + l);
+      assert(/Shift 35% at 90º/.test(l), "Contrast is incomplete: " + l);
+      assert(/3 foci/.test(l) && /Pull 80%/.test(l) && /Radius 200px/.test(l) && /at 25% \/ 75%/.test(l), "Concentration is incomplete: " + l);
+      assert(!/undefined|NaN/.test(l), "The log has an undefined value: " + l);
+    });
+
     await test("Art log shows Space with its depth, angle and shading", () => {
       reset();
       const d = win.document, log = () => d.getElementById("art-log-lines").textContent;

@@ -74,9 +74,9 @@ export const createDefaultLayerStructure = () => ({
     type: "rotation", // rotation, scale, depth, drift, shape, texture, color
     pathway: "diagonal", // diagonal, horizontal, vertical, concentric, zigzag
     range: 180, // degrees of total rotation (rotation type); 180 is the full reach for the other types
-    steps: 1, // cycles (1 to 4)
+    steps: 1, // cycles (1 to 10)
     sequence: "restart", // restart (1-2-3-1-2-3) or pingpong (1-2-3-2-1)
-    easing: 0, // -100 (starts fast, brakes) to 100 (starts slow, accelerates)
+    easing: 0, // -100 (starts fast, brakes) to 100 (starts slow, accelerates); the Speed slider shows it the other way round
     alternate: false, // alternate rows (or columns) run in opposite directions
     targetShape: "triangle", // shape reached by the "shape" attribute
     endColor: "#f43f5e", // colour reached by the "color" attribute (the module colour is the start)
@@ -90,7 +90,7 @@ export const createDefaultLayerStructure = () => ({
     radius: 150, // 10 to 350 px
     intensity: 60, // severity, 5 to 100
     distribution: "single", // single (one epicenter), regular or random (several scattered anomalies)
-    count: 5, // number of scattered anomalies (2 to 12)
+    count: 5, // number of scattered anomalies (1 to 10)
     seed: 7, // random layout seed (1 to 99)
     attrs: { shape: true, scale: true, rotation: true, position: true }, // which attributes the anomaly deviates in
     anomalousShape: "triangle",
@@ -119,8 +119,8 @@ export const createDefaultLayerStructure = () => ({
     method: "move", // move (modules are displaced) or absence (modules vanish with the density)
     edgeFade: false, // dense / sparse: the effect fades toward the edges of the canvas
     focusCount: 2, // hotspots: how many foci share the density (2 to 8)
-    attractorX: 0.5, // 0.05 to 0.95
-    attractorY: 0.5, // 0.05 to 0.95
+    attractorX: 0.5, // 0 to 1
+    attractorY: 0.5, // 0 to 1
     power: 50, // gathering pull, 10 to 100
     radius: 250, // field radius, 10 to 500 px
     lineAxis: "horizontal", // horizontal, vertical (line mode)

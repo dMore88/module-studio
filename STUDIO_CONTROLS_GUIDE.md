@@ -53,6 +53,8 @@ El panel estructura la generación gráfica en tres niveles. Cada **capa** (hast
 
 **Paneles del riel** (de arriba abajo): Module, Layout, Similarity, Gradation, Anomaly, Contrast, Concentration, Texture, Space. El antiguo panel *Structure* ya no existe: sus proporciones viven en *Layout › Advanced* (sección 4.2).
 
+**Art log** (columna izquierda, bajo la lista de capas): resumen en texto del diseño, que se actualiza solo. Muestra el lienzo (tamaño y número de capas), los módulos, y para la capa activa su forma, su estructura (Layout y ritmo) y, de cada modificador encendido, los valores en uso con las unidades de los sliders: por ejemplo `Gradation: Rotate / Diagonal / Range 90º / 3 cycles / Ping-pong`, `Texture: Jitter 58% / Plane wave 28% (2 waves, 0º)` o `Space: Isometric / Depth 20% / 30º / Shading 50%`. Los controles apagados no aparecen. Describe el diseño, no lo que se ve en pantalla: con *Hide modifiers* sigue listando todo y suma `Modifiers: hidden`.
+
 ### Jerarquía espacial: celda → contenedor → módulo
 
 * La **celda** es el espacio de la retícula (columna × fila). Sobre ella actúa el ritmo A:B y la gradación de estructura.
