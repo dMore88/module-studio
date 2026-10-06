@@ -1360,7 +1360,10 @@ export class StudioEngine {
           // Clip container: cut it at the edge of its container (in Fit to canvas the container shrinks with the cell;
           // in Actual size it is the cell). Both clips can be on: the module is cut by the two
           if (targetMod.clipContainer && !extra) {
-            const bw = isFixed ? cW : (cW * cont.w) / usableW, bh = isFixed ? cH : (cH * cont.h) / usableH;
+            // The container keeps its own proportions and shrinks with the same scale as the module (Figma frame inside a frame)
+            const rk = rhythmOn ? Math.min(MAX_SCALE_MUL, Math.min(cW / refW, rowHeights[r] / refH)) : 1;
+            const sBase = isFixed ? rk : (rhythmOn ? Math.min(refW / usableW, refH / usableH) * rk : Math.min(cW / usableW, cH / usableH));
+            const bw = cont.w * sBase, bh = cont.h * sBase;
             ctx.beginPath();
             ctx.rect(cellCx - bw / 2, cellCy - bh / 2, bw, bh);
             ctx.clip();

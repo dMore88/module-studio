@@ -1642,6 +1642,29 @@
       reset();
     });
 
+    await test("Clip container keeps the container's proportions and shrinks with the module in a rhythm grid", () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const L = app.state.layers[0];
+      Object.assign(L, { shape: "square", wireframe: false, width: 900, height: 900, containerW: 100, containerH: 100, showContainer: false, clipContainer: true });
+      app.state.showSafeBounds = false;
+      L.structure.enabled = true; L.structure.mode = "repetition";
+      Object.assign(L.structure.repetition, { cols: 2, rows: 1, gridType: "basic", sizeMode: "fit", activeClipping: false });
+      L.structure.formalStructure = { enabled: true, colRatio: 3, rowRatio: 1, colGrade: 0, rowGrade: 0, showGridLines: false };
+      drawRaw(app);
+      const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      const y = Math.floor(cv.height / 2), runs = []; let start = -1;
+      for (let x = 0; x <= cv.width; x++) {
+        const dark = x < cv.width && d[(y * cv.width + x) * 4] < 100;
+        if (dark && start < 0) start = x; else if (!dark && start >= 0) { runs.push(x - start); start = -1; }
+      }
+      assert(runs.length === 2, "There should be one cut module per cell, got " + JSON.stringify(runs));
+      const unit = cv.width / 600;
+      assert(Math.abs(runs[0] / runs[1] - 3) < 0.25, `The container should shrink with its cell (3:1), got ${runs[0]}:${runs[1]}`);
+      assert(Math.abs(runs[0] - 75 * unit) < 6 * unit, `The wide cell's container should be 75 px (got ${runs[0] / unit})`);
+      reset();
+    });
+
     await test("Hide modifiers: the active layer is drawn without its modifiers only while the Module panel is open, and never in an export", async () => {
       reset();
       const d = win.document, cv = d.getElementById("studio-canvas");

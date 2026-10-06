@@ -2885,7 +2885,10 @@ export class StudioProApp {
       this.pushHistory(`Layer ${this.activeLayerId} Clip Container: ${e.target.checked ? "ON" : "OFF"}`);
     });
 
-    document.getElementById("chk-hide-modifiers")?.addEventListener("change", (e) => {
+    // The browser may restore a ticked box after a reload while the app starts with the aid off: start them in step
+    const hideBox = document.getElementById("chk-hide-modifiers");
+    if (hideBox) hideBox.checked = !!this.hideModifiers;
+    hideBox?.addEventListener("change", (e) => {
       this.hideModifiers = e.target.checked;
       this.render();
     });
