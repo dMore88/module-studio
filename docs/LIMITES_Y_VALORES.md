@@ -111,7 +111,7 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | Control | Mín. | Máx. | Paso | Razón |
 | :-- | :-- | :-- | :-- | :-- |
 | Fluctuation intensity | 0 % | 100 % | 1 | De módulos idénticos a la máxima variación del parentesco. |
-| Spatial cell jitter | 0 | 30 px | 1 | Cuánto se corre cada módulo de su sitio. |
+| Spatial cell jitter | 0 % | 90 % | 1 | Cuánto se corre cada módulo de su sitio, como % de su celda (100 % = el centro llega al borde de la celda; 90 % lo deja dentro). |
 | Association mix | 0 % | 100 % | 1 | % de módulos que cambian a otra figura de la familia. |
 | Imperfect modules | 0 % | 100 % | 1 | % de módulos cortados o rotos. |
 

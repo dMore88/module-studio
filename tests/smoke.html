@@ -1619,6 +1619,9 @@
       e.buildCellPath(rec, 1, 0, 3, 1, 0, 125, 100, 100, curved, 0);
       const left = pts.slice(0, pts.length / 2);
       assert(left.every(([x, y]) => Math.abs(x - e.gridShift(curved, y)) < 1e-9), "The clip's left side is not the grid line");
+      // Spatial cell jitter is a share of the cell: 100 % takes the centre to the cell edge; old pixels are still understood
+      assert(e.jitterReach({ cellJitterAmount: 0.4 }, 150) === 30 && e.jitterReach({ cellJitterAmount: 0.4 }, 30) === 6, "Jitter should follow the cell size");
+      assert(e.jitterReach({ cellJitterAmount: 0, cellJitter: 12 }, 150) === 12 && e.jitterReach({}, 150) === 0, "A project saved in pixels keeps its pixels");
       // Wave amount is a share of the cell width; the old pixels are still understood
       e.gridFrame = { top: 0, h: 400, rowY: [50, 125, 275], cw: 150 };
       assert(Math.abs(e.gridShift({ gridType: "curved", curveAmount: 0.2 }, 100) - 30) < 1e-9, "20 % of a 150 px cell is 30 px");

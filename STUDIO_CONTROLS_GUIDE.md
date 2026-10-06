@@ -184,7 +184,7 @@ Rompe la rigidez de la repetición pura con variaciones de parentesco entre mód
 **En *Advanced*:**
 * **`association`** (*Association*, dropdown): mezcla formas de **una misma familia visual** (`round`, `angular`, `lines`, `characters`: letras A, S, R y los números); **`assocMix`** (*Association mix*, 0 a 100 %, por defecto 50) es el porcentaje de módulos que cambian. Anomaly y Contrast mandan sobre la asociación en forma.
 * **`imperfection`** (*Imperfection*, dropdown): `cut` corta una porción con una recta; `broken` parte el módulo y desliza las mitades. **`imperfAmount`** (*Imperfect modules*, 0 a 100 %, por defecto 30).
-* **`cellJitter`** (*Spatial cell jitter*, 0 a 30 px): desplazamiento orgánico del centro de cada celda.
+* **`cellJitterAmount`** (*Spatial cell jitter*, 0 % a 90 %): desplazamiento orgánico del módulo, como porcentaje de su celda: al 100 % el centro llegaría al borde de la celda, así que 90 % lo mantiene dentro. En radial se usa el menor entre el grosor del anillo y el ancho del sector. Los proyectos antiguos en píxeles (`cellJitter`) se siguen leyendo en píxeles hasta que se mueve el slider.
 * `seed`: semilla generativa (en el estado).
 
 ---

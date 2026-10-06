@@ -1662,9 +1662,11 @@ export class StudioProApp {
     if (numIntensity) numIntensity.value = `${intensity}%`;
 
     // Sync Spatial Cell Jitter slider and numeric box (0)
-    const jitter = sim.cellJitter !== undefined ? sim.cellJitter : 0;
+    // A project saved in pixels is shown as a share of the cell, without touching the file
+    const jitter = sim.cellJitterAmount > 0 ? Math.round(sim.cellJitterAmount * 100)
+      : Math.min(90, Math.round(((sim.cellJitter || 0) / (300 / Math.max(1, this.getActiveLayerStructure()?.repetition?.cols || 4))) * 100));
     this.syncControlValue("input-sim-jitter", jitter);
-    this.syncControlValue("num-sim-jitter", jitter);
+    this.syncControlValue("num-sim-jitter", `${jitter}%`);
 
     this.updateRailIndicatorDots();
   }
@@ -1794,11 +1796,12 @@ export class StudioProApp {
       if (!mod.structure.similarity) {
         mod.structure.similarity = { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 };
       }
-      mod.structure.similarity.cellJitter = val;
+      mod.structure.similarity.cellJitterAmount = Math.max(0, Math.min(90, val)) / 100;
+      mod.structure.similarity.cellJitter = 0;
       mod.structure.similarity.enabled = true;
       if (toggle) toggle.checked = true;
       this.render();
-    }, "Cell Jitter");
+    }, "Cell Jitter", "%");
   }
 
   /* =========================================================================

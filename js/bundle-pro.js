@@ -940,7 +940,8 @@ const createDefaultLayerStructure = () => ({
     enabled: false,
     kinshipType: "distortion",
     intensity: 50,
-    cellJitter: 0,
+    cellJitter: 0, // old projects: random offset in px (kept only when cellJitterAmount is 0)
+    cellJitterAmount: 0, // random offset as a share of the cell (0 to 0.9): 1 would take the centre to the cell edge
     association: "none", // none, round, angular, lines, characters: shapes of one family mixed into the population
     assocMix: 50, // % of the modules that change to another shape of the family
     imperfection: "none", // none, cut (a slice is cut off) or broken (split in two and shifted)
@@ -1416,6 +1417,13 @@ class StudioEngine {
     }
     this.drawSingleLayerShape(ctx, mod, MODULE_UNIT, palette.fg, palette.bg);
     ctx.restore();
+  }
+
+  // Spatial cell jitter: the most a module can move away from its place, given the size of its cell.
+  // cellJitterAmount is a share of the cell (the centre reaches the edge at 1); older projects kept pixels.
+  jitterReach(sim, span) {
+    if (sim.cellJitterAmount > 0) return sim.cellJitterAmount * span * 0.5;
+    return sim.cellJitter > 0 ? sim.cellJitter : 0;
   }
 
   // Build the boundary path for a cell in the given grid variation
@@ -2187,9 +2195,9 @@ class StudioEngine {
         };
 
         // Similarity: cell spatial jitter
-        if (sim.enabled && sim.cellJitter > 0) {
-          cx += pRand(10) * sim.cellJitter;
-          cy += pRand(11) * sim.cellJitter;
+        if (sim.enabled) {
+          cx += pRand(10) * this.jitterReach(sim, cW);
+          cy += pRand(11) * this.jitterReach(sim, cH);
         }
 
         // Concentration: field displacement and density
@@ -2664,9 +2672,10 @@ class StudioEngine {
             return (val - Math.floor(val)) * 2 - 1;
           };
 
-          if (sim && sim.enabled && sim.cellJitter > 0) {
-            posX += pRand(10) * sim.cellJitter;
-            posY += pRand(11) * sim.cellJitter;
+          if (sim && sim.enabled) {
+            const reach = this.jitterReach(sim, Math.min(rOuter - rInner, (Math.PI * 2 * ringRadius) / rays));
+            posX += pRand(10) * reach;
+            posY += pRand(11) * reach;
           }
 
           ctx.translate(posX, posY);
@@ -5044,9 +5053,11 @@ class StudioProApp {
     if (numIntensity) numIntensity.value = `${intensity}%`;
 
     // Sync Spatial Cell Jitter slider and numeric box (0)
-    const jitter = sim.cellJitter !== undefined ? sim.cellJitter : 0;
+    // A project saved in pixels is shown as a share of the cell, without touching the file
+    const jitter = sim.cellJitterAmount > 0 ? Math.round(sim.cellJitterAmount * 100)
+      : Math.min(90, Math.round(((sim.cellJitter || 0) / (300 / Math.max(1, this.getActiveLayerStructure()?.repetition?.cols || 4))) * 100));
     this.syncControlValue("input-sim-jitter", jitter);
-    this.syncControlValue("num-sim-jitter", jitter);
+    this.syncControlValue("num-sim-jitter", `${jitter}%`);
 
     this.updateRailIndicatorDots();
   }
@@ -5176,11 +5187,12 @@ class StudioProApp {
       if (!mod.structure.similarity) {
         mod.structure.similarity = { enabled: false, kinshipType: "distortion", intensity: 50, cellJitter: 0, seed: 42 };
       }
-      mod.structure.similarity.cellJitter = val;
+      mod.structure.similarity.cellJitterAmount = Math.max(0, Math.min(90, val)) / 100;
+      mod.structure.similarity.cellJitter = 0;
       mod.structure.similarity.enabled = true;
       if (toggle) toggle.checked = true;
       this.render();
-    }, "Cell Jitter");
+    }, "Cell Jitter", "%");
   }
 
   /* =========================================================================
