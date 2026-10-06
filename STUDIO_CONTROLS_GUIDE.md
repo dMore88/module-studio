@@ -198,8 +198,8 @@ Genera una ilusión de movimiento, velocidad o dimensión mediante una progresi�
 **En *Advanced*:**
 * **`sequence`** (*Sequence*, dropdown): `restart` (1-2-3-1-2-3) o `pingpong` (1-2-3-2-1).
 * **`easing`** (*Acceleration*, −100 a 100): positivo arranca lento y acelera; negativo arranca rápido y frena (fig. 38).
-* **`alternate`** (*Alternate rows*): las filas impares corren en sentido contrario (fig. 43).
-* **`reverse`** (*Reverse Gradient Direction*): invierte el sentido.
+* **`alternate`** (*Alternate rows*): las filas impares corren en sentido contrario (fig. 43). Con *Ping-pong*, que va y vuelve igual, las filas impares quedan desfasadas medio ciclo. Se oculta en el recorrido *Zigzag*, que ya corre de ida y vuelta.
+* **`reverse`** (*Reverse Gradient Direction*): invierte el sentido. Con *Ping-pong* la onda empieza por el otro extremo (arranca en lo alto en vez de en lo bajo).
 
 En esquema polar, `drift` desplaza el módulo sobre su eje local hasta cerca de un anillo. Estado por capa en `layer.structure.gradation`. (No confundir con la *gradación de estructura* de la sección 4.2, que gradúa el tamaño de las celdas.)
 

@@ -453,6 +453,29 @@
       assert(e.isContrastMinority(con("scattered"), 7, { a: 1, b: 1, x: 0.5, y: 0.5 }) === e.isContrastMinority({ dominanceRatio: 75 }, 7), "Scattered changed the original behaviour");
     });
 
+    await test("Gradation: Reverse and Alternate rows change the result in both sequences", () => {
+      const e = app.engine;
+      const g = (o) => Object.assign({ enabled: true, type: "scale", pathway: "diagonal", steps: 1, sequence: "restart", easing: 0, alternate: false, reverse: false }, o);
+      // Every cell of a 4 x 4 grid, as the strength the effect would have there
+      const field = (o) => { const v = []; for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) v.push(e.gradationValue(g(o), e.gradationPathGrid(g(o), r, c, 4, 4)).toFixed(4)); return v.join(","); };
+      for (const sequence of ["restart", "pingpong"]) {
+        for (const steps of [1, 2]) {
+          const base = field({ sequence, steps });
+          assert(field({ sequence, steps, reverse: true }) !== base, `Reverse changes nothing (${sequence}, ${steps} cycles)`);
+          assert(field({ sequence, steps, alternate: true }) !== base, `Alternate rows changes nothing (${sequence}, ${steps} cycles)`);
+        }
+      }
+      // Reverse on a ping-pong starts at the other end of the wave
+      assert(Math.abs(e.gradationValue(g({ sequence: "pingpong", reverse: true }), 0) - 1) < 1e-9, "A reversed ping-pong should start high");
+      // The Alternate rows checkbox is hidden on the snake path, where it would do nothing
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      q('[data-rail-tab="gradation"]').click();
+      q('[data-grad-pathway="zigzag"]').click();
+      assert(q("#toggle-grad-alternate").closest("label").style.display === "none", "Alternate rows should be hidden on the zigzag path");
+      q('[data-grad-pathway="diagonal"]').click();
+      assert(q("#toggle-grad-alternate").closest("label").style.display === "", "Alternate rows should be back on the other paths");
+    });
+
     await test("Gradation attribute Color moves the module colour toward the end colour", () => {
       const e = app.engine;
       const pal = { fg: "#000000", bg: "#ffffff" };

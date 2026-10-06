@@ -1523,7 +1523,7 @@ class StudioEngine {
     }
     if (grad.alternate) {
       const odd = grad.pathway === "vertical" ? c % 2 === 1 : r % 2 === 1;
-      if (odd) t = 1 - t;
+      if (odd) t = this.gradationFlip(grad, t);
     }
     return t;
   }
@@ -1539,19 +1539,28 @@ class StudioEngine {
     let t = byRing ? i / rings : j / rays;
     if (grad.alternate) {
       const odd = byRing ? j % 2 === 1 : (i - 1) % 2 === 1;
-      if (odd) t = 1 - t;
+      if (odd) t = this.gradationFlip(grad, t);
     }
     return t;
+  }
+
+  // Gradation > Alternate rows: the odd rows run the other way. A ping-pong goes up and back down the same
+  // way whichever side it starts from, so there the odd rows are half a cycle out of step instead.
+  gradationFlip(grad, t) {
+    return grad.sequence === "pingpong" ? t + 0.5 / (grad.steps || 1) : 1 - t;
   }
 
   // Gradation: turns the position t into the strength 0..1 of the effect for this cell
   // (direction, number of cycles, restart or ping-pong, acceleration).
   gradationValue(grad, t) {
-    if (grad.reverse) t = 1 - t;
+    const pingpong = grad.sequence === "pingpong";
+    // Reverse: the path runs the other way; a ping-pong is the same both ways, so it starts at the other end instead
+    if (grad.reverse && !pingpong) t = 1 - t;
     let u = (t * (grad.steps || 1)) % 1.0001;
-    if (grad.sequence === "pingpong") u = 1 - Math.abs(2 * u - 1);
+    if (pingpong) u = 1 - Math.abs(2 * u - 1);
     const easing = grad.easing || 0;
     if (easing !== 0) u = Math.pow(Math.max(u, 0), Math.pow(3, easing / 100));
+    if (grad.reverse && pingpong) u = 1 - u;
     return u;
   }
 
@@ -5081,6 +5090,9 @@ class StudioProApp {
     document.getElementById("grad-color-block")?.classList.toggle("hidden", grad.type !== "color");
     this.syncAccentColorRow("grad", grad.endColor || "#f43f5e", true);
 
+    // Alternate rows has nothing to do on the snake path, which already runs back and forth
+    const altRow = document.getElementById("toggle-grad-alternate")?.closest("label");
+    if (altRow) altRow.style.display = grad.pathway === "zigzag" ? "none" : "";
     const alternate = document.getElementById("toggle-grad-alternate");
     if (alternate) alternate.checked = !!grad.alternate;
 

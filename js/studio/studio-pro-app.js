@@ -1833,6 +1833,9 @@ export class StudioProApp {
     document.getElementById("grad-color-block")?.classList.toggle("hidden", grad.type !== "color");
     this.syncAccentColorRow("grad", grad.endColor || "#f43f5e", true);
 
+    // Alternate rows has nothing to do on the snake path, which already runs back and forth
+    const altRow = document.getElementById("toggle-grad-alternate")?.closest("label");
+    if (altRow) altRow.style.display = grad.pathway === "zigzag" ? "none" : "";
     const alternate = document.getElementById("toggle-grad-alternate");
     if (alternate) alternate.checked = !!grad.alternate;
 
