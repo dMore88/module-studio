@@ -636,11 +636,11 @@ input[type="range"]:hover::-webkit-slider-thumb {
 
 /* Application header (68 high, 26 side padding) */
 .ds-app-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   height: 68px;
-  padding: 0 26px;
+  padding: 0 var(--spacing-5);
   flex-shrink: 0;
   z-index: 30;
   user-select: none;
@@ -656,7 +656,8 @@ input[type="range"]:hover::-webkit-slider-thumb {
   color: var(--neutral-text-main);
   white-space: nowrap;
 }
-.ds-export-actions { display: flex; align-items: center; gap: 10px; }
+.ds-export-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--spacing-3); }
+.ds-canvas-controls { display: flex; align-items: center; gap: var(--spacing-3); }
 
 /* Button (Figma "button", neutral): label + 16px icon */
 .ds-btn {
@@ -665,18 +666,17 @@ input[type="range"]:hover::-webkit-slider-thumb {
   justify-content: center;
   gap: var(--spacing-2);
   box-sizing: border-box;
-  height: var(--sizing-9);
-  min-width: 100px;
-  padding: 0 var(--spacing-5);
+  height: var(--sizing-7);
+  padding: 0 var(--spacing-4);
   border: none;
-  border-radius: var(--border-radius-4);
+  border-radius: var(--border-radius-3);
   background: var(--neutral-interactive-default-inverted);
   color: var(--neutral-text-main);
   font-family: var(--typography-family-body);
   font-size: var(--font-size-xs);
-  font-weight: var(--typography-weight-600);
+  font-weight: var(--typography-weight-500);
+  letter-spacing: var(--letter-spacing-label);
   line-height: var(--line-height-tight);
-  text-transform: uppercase;
   white-space: nowrap;
   cursor: pointer;
   transition: background 0.15s ease;
@@ -687,15 +687,15 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .ds-btn:focus-visible { outline: var(--border-weight-2) solid var(--neutral-interactive-default); outline-offset: var(--spacing-1); }
 .ds-btn:disabled, .ds-btn.opacity-40 { background: var(--neutral-interactive-disabled); color: var(--neutral-text-subtle); }
 
-/* Icon button 40x40 (Figma "buttonIcon") */
+/* Icon button 32x32 (Figma "buttonIcon") */
 .ds-icon-btn {
   display: grid;
   place-items: center;
   box-sizing: border-box;
-  width: var(--sizing-9);
-  height: var(--sizing-9);
+  width: var(--sizing-7);
+  height: var(--sizing-7);
   border: none;
-  border-radius: var(--border-radius-4);
+  border-radius: var(--border-radius-3);
   background: var(--neutral-interactive-default-inverted);
   color: var(--neutral-icon-main);
   font-size: var(--sizing-4);
@@ -707,15 +707,15 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .ds-icon-btn.active:hover { background: var(--neutral-interactive-hover); }
 .ds-icon-btn:focus-visible { outline: var(--border-weight-2) solid var(--neutral-interactive-default); outline-offset: var(--spacing-1); }
 
-/* Select (Figma "input-select"): box + dark dropdown button */
+/* Select (Figma "input-select"): 32 high box, radius 4, caret at the right */
 .ds-select {
   position: relative;
   display: flex;
   box-sizing: border-box;
-  width: 212px;
-  height: var(--sizing-9);
+  width: 100px;
+  height: var(--sizing-7);
   border: var(--border-weight-1) solid var(--neutral-border-strong);
-  border-radius: var(--border-radius-4);
+  border-radius: var(--border-radius-1);
   background: var(--neutral-interactive-default-inverted);
   overflow: hidden;
 }
@@ -723,49 +723,35 @@ input[type="range"]:hover::-webkit-slider-thumb {
   flex: 1;
   min-width: 0;
   height: 100%;
-  padding: 0 0 0 var(--spacing-5);
+  padding: 0 0 0 var(--spacing-4);
   border: none;
   background: transparent;
-  color: var(--neutral-text-soft);
+  color: var(--neutral-text-main);
   font-family: var(--typography-family-body);
-  font-size: var(--font-size-md);
-  line-height: var(--line-height-body);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-small);
   -webkit-appearance: none;
   appearance: none;
   cursor: pointer;
   outline: none;
 }
+.ds-select:hover { background: var(--neutral-interactive-hover-inverted); }
 .ds-select:focus-within { outline: var(--border-weight-2) solid var(--neutral-interactive-default); outline-offset: var(--spacing-1); }
 .ds-select__button {
   display: grid;
   place-items: center;
-  width: var(--sizing-9);
-  height: var(--sizing-9);
-  margin: -1px -1px -1px 0;
-  background: var(--neutral-interactive-default);
-  color: var(--neutral-icon-inverted);
-  font-size: var(--sizing-5);
+  width: var(--sizing-7);
+  height: 100%;
+  color: var(--neutral-icon-main);
+  font-size: var(--sizing-4);
   pointer-events: none;
 }
 
-/* Workspace toolbar: select on the left, view options on the right, as wide as the artboard */
-.ds-workspace-toolbar {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--spacing-6);
-  flex-shrink: 0;
-  width: var(--artboard-w, 100%);
-  min-width: 330px;
-  max-width: 100%;
-  height: var(--sizing-9);
-}
-.ds-view-options { display: flex; align-items: center; gap: var(--spacing-4); }
-/* Guide colour: an icon button that opens the colour picker; a small bar under the icon shows the chosen colour */
-.ds-guide-btn { position: relative; cursor: pointer; padding-bottom: 7px; }
+/* Guide colour: an icon button that opens the colour picker; a small dot at its corner shows the chosen colour */
+.ds-guide-btn { position: relative; cursor: pointer; }
 .ds-guide-btn::after {
   content: "";
-  position: absolute; left: 30%; right: 30%; bottom: 7px; height: 3px;
+  position: absolute; top: 4px; right: 4px; width: 6px; height: 6px;
   border-radius: var(--border-radius-full);
   background: var(--guide-color, #f24822);
 }
@@ -773,12 +759,13 @@ input[type="range"]:hover::-webkit-slider-thumb {
 
 /* Workspace: layers | canvas column | rail, with the controls panel floating over the right edge */
 .ds-workspace {
-  --flyout-right: 98px; /* 16 margin + 72 rail + 10 air */
+  --flyout-right: 90px; /* 16 margin + 64 rail + 10 air */
   position: relative;
   display: flex;
   flex: 1;
   gap: var(--spacing-6);
   min-height: 0;
+  padding: 0 var(--spacing-5) var(--spacing-6);
   overflow: hidden;
 }
 .ds-canvas-column {
@@ -787,7 +774,6 @@ input[type="range"]:hover::-webkit-slider-thumb {
   flex-direction: column;
   gap: var(--spacing-5);
   min-width: 0;
-  padding-bottom: var(--spacing-6);
 }
 .ds-stage { flex: 1; min-height: 0; position: relative; }
 
@@ -822,7 +808,6 @@ input[type="range"]:hover::-webkit-slider-thumb {
   justify-content: space-between;
   flex-shrink: 0;
   height: var(--sizing-9);
-  padding-left: var(--spacing-5);
 }
 .ds-layers-count { display: flex; align-items: center; gap: 10px; }
 .ds-layers-title {
@@ -838,7 +823,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
   gap: var(--spacing-3);
   min-height: 0;
   overflow-y: auto;
-  padding: var(--spacing-5) 0 var(--spacing-5) var(--spacing-5);
+  padding: var(--spacing-5) 0;
 }
 
 /* Layer card: 72 high, preview 56, copy, actions */
@@ -927,9 +912,9 @@ input[type="range"]:hover::-webkit-slider-thumb {
   align-self: stretch;
   gap: var(--spacing-4);
   box-sizing: border-box;
-  margin: 0 var(--spacing-5) var(--spacing-6) 0;
+  width: var(--sizing-12);
   padding: var(--spacing-5);
-  border-radius: var(--border-radius-4);
+  border-radius: var(--border-radius-1);
   background: var(--neutral-bg-light);
   box-shadow: var(--elevation-3x);
   z-index: 35;
@@ -939,10 +924,10 @@ input[type="range"]:hover::-webkit-slider-thumb {
   display: grid;
   place-items: center;
   box-sizing: border-box;
-  width: var(--sizing-9);
-  height: var(--sizing-9);
+  width: var(--sizing-7);
+  height: var(--sizing-7);
   border: var(--border-weight-1) solid var(--neutral-interactive-default);
-  border-radius: var(--border-radius-4);
+  border-radius: var(--border-radius-3);
   background: var(--neutral-bg-light);
   color: var(--neutral-icon-main);
   cursor: pointer;

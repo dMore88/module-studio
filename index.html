@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Abstract Studio — Parametric 2D Vector & Generative Studio</title>
+  <title>Module Studio — Parametric 2D Vector & Generative Studio</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -39,7 +39,31 @@
   <header class="ds-app-header">
     <div class="ds-brand">
       <span class="ds-brand-icon" aria-hidden="true"><i class="ph ph-gradient"></i></span>
-      <h1 class="ds-brand-title">Abstract Studio</h1>
+      <h1 class="ds-brand-title">Module Studio</h1>
+    </div>
+
+    <!-- Canvas controls (moved from the canvas toolbar so they do not compete with the canvas size) -->
+    <div class="ds-canvas-controls">
+      <div class="ds-select">
+        <select id="canvas-aspect-ratio" aria-label="Canvas aspect ratio">
+          <option value="1:1" selected>1 : 1</option>
+          <option value="9:16">9 : 16</option>
+          <option value="4:3">4 : 3</option>
+          <option value="3:4">3 : 4</option>
+          <option value="16:9">16 : 9</option>
+        </select>
+        <span class="ds-select__button" aria-hidden="true"><i class="ph ph-caret-down"></i></span>
+      </div>
+      <button type="button" id="btn-toggle-grid" class="ds-icon-btn active" title="Toggle Grid Guides" aria-label="Toggle grid guides">
+        <i class="ph ph-grid-nine" aria-hidden="true"></i>
+      </button>
+      <button type="button" id="btn-toggle-invert" class="ds-icon-btn" title="Toggle Figure / Ground Tone" aria-label="Toggle figure and ground tone">
+        <i class="ph ph-circle-half" aria-hidden="true"></i>
+      </button>
+      <span class="ds-icon-btn ds-guide-btn" id="btn-guide-color" title="Guide color">
+        <i class="ph ph-ruler" aria-hidden="true"></i>
+        <input type="color" id="input-guide-color" value="#f24822" aria-label="Guide color">
+      </span>
     </div>
 
     <div class="ds-export-actions">
@@ -85,32 +109,6 @@
 
     <!-- CANVAS COLUMN (Figma: canvas, node 5787:482). The artboard is sized by fitArtboard() from the free height -->
     <div id="canvas-column" class="ds-canvas-column">
-      <!-- WORKSPACE TOOLBAR (Figma: input-select + View options, nodes 5763:31782 and 5763:1730) -->
-      <div class="ds-workspace-toolbar">
-        <div class="ds-select">
-          <select id="canvas-aspect-ratio" aria-label="Canvas aspect ratio">
-            <option value="1:1" selected>1 : 1</option>
-            <option value="9:16">9 : 16</option>
-            <option value="4:3">4 : 3</option>
-            <option value="3:4">3 : 4</option>
-            <option value="16:9">16 : 9</option>
-          </select>
-          <span class="ds-select__button" aria-hidden="true"><i class="ph ph-caret-down"></i></span>
-        </div>
-        <div class="ds-view-options">
-          <button type="button" id="btn-toggle-grid" class="ds-icon-btn active" title="Toggle Grid Guides" aria-label="Toggle grid guides">
-            <i class="ph ph-grid-nine" aria-hidden="true"></i>
-          </button>
-          <button type="button" id="btn-toggle-invert" class="ds-icon-btn" title="Toggle Figure / Ground Tone" aria-label="Toggle figure and ground tone">
-            <i class="ph ph-circle-half" aria-hidden="true"></i>
-          </button>
-          <span class="ds-icon-btn ds-guide-btn" id="btn-guide-color" title="Guide color">
-            <i class="ph ph-palette" aria-hidden="true"></i>
-            <input type="color" id="input-guide-color" value="#f24822" aria-label="Guide color">
-          </span>
-        </div>
-      </div>
-
       <div id="canvas-viewport-container" class="ds-stage">
         <div id="artboard-wrapper" class="ds-artboard">
           <canvas id="studio-canvas" class="artboard-container block" width="600" height="600"></canvas>

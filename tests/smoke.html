@@ -1291,7 +1291,7 @@
       const d = win.document, q = (sel) => d.querySelector(sel);
       const cv = q("#studio-canvas");
       const input = q("#input-guide-color");
-      assert(input && input.closest(".ds-view-options") && q("#btn-guide-color").classList.contains("ds-icon-btn") && q("#btn-guide-color i.ph-palette"), "The guide colour should be an icon button next to the canvas buttons");
+      assert(input && input.closest(".ds-canvas-controls") && q("#btn-guide-color").classList.contains("ds-icon-btn") && q("#btn-guide-color i.ph-ruler"), "The guide colour should be an icon button next to the canvas buttons");
       input.value = "#00aa00"; input.dispatchEvent(new win.Event("input", { bubbles: true })); input.dispatchEvent(new win.Event("change", { bubbles: true }));
       assert(app.state.guideColor === "#00aa00" && q("#btn-guide-color").style.getPropertyValue("--guide-color") === "#00aa00", "The colour did not reach the state and the swatch");
       const greens = (data) => { let n = 0; for (let i = 0; i < data.length; i += 4) if (data[i + 1] > 120 && data[i] < 80 && data[i + 2] < 80) n++; return n; };

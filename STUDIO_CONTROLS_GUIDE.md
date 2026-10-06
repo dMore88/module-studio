@@ -2,7 +2,7 @@
 ### Wucius Wong: Principles of Two-Dimensional Design
 
 > **DOCUMENTO DE ESPECIFICACIÓN TÉCNICA Y PORTABILIDAD**
-> Este documento detalla cada parámetro, control, fórmula geométrica e interrelación del panel de **Studio** (en la interfaz, *Abstract Studio*). Su objetivo es servir como referencia canónica y manual de implementación para trasladar estas capacidades a otros entornos de diseño generativo (como [Abstract Studio](https://github.com/dMore88/abstract-studio)).
+> Este documento detalla cada parámetro, control, fórmula geométrica e interrelación del panel de **Studio** (en la interfaz, *Module Studio*). Su objetivo es servir como referencia canónica y manual de implementación para trasladar estas capacidades a otros entornos de diseño generativo (como [Abstract Studio](https://github.com/dMore88/abstract-studio)).
 >
 > Para ver **qué concepto de Wong cubre cada control**, y qué conceptos faltan o se descartaron, mira [`docs/design-concepts-in-app.md`](docs/design-concepts-in-app.md). Las prioridades pendientes están en [`docs/BACKLOG.md`](docs/BACKLOG.md). Las decisiones de usabilidad (qué va visible y qué va en *Advanced*) están en [`docs/AUDITORIA_CONTROLES.md`](docs/AUDITORIA_CONTROLES.md).
 
