@@ -236,7 +236,9 @@ export class StudioEngine {
 
     // Texture deforms the geometry itself, so it applies before any space mode.
     if (texture && texture.enabled) {
-      shapeDef = texturedShape(shapeDef, texture, seed, strokeOnly);
+      // Random lines also show on filled shapes, but not under a Space volume (it draws the shape many times)
+      const spaceOn = !!(space && space.enabled && !skipSpace && !shapeDef.skeleton);
+      shapeDef = texturedShape(shapeDef, texture, seed, strokeOnly, strokeOnly || !spaceOn);
     }
 
     // Open-path shapes (lines, digits...) are strokes: they stay flat.

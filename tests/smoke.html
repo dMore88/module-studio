@@ -251,6 +251,27 @@
       app.engine.exporting = false;
     });
 
+    await test("Random lines also grow on filled shapes, in the figure colour", () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: false, width: 200, height: 200, showContainer: false }); app.state.showSafeBounds = false;
+      L.structure.enabled = true; L.structure.mode = "repetition"; Object.assign(L.structure.repetition, { cols: 1, rows: 1, sizeMode: "fit" });
+      const dpr = cv.width / 600;
+      const outside = (crossing, space) => {
+        L.structure.texture = { enabled: true, jitter: 0, skipChance: 0, crossing, undulation: 0 };
+        L.structure.space = { enabled: !!space, mode: "isometric", depthPct: 20, angle: 30, shading: 50, showIsoGuides: false };
+        drawRaw(app);
+        const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0;
+        for (let y = 0; y < cv.height; y += 2) for (let x = 0; x < cv.width; x += 2) {
+          const r = Math.hypot(x / dpr - 300, y / dpr - 300);
+          if (r > 103 && r < 150 && d[(y * cv.width + x) * 4] < 150) n++;
+        }
+        return n;
+      };
+      const bare = outside(0, false), hairy = outside(100, false);
+      assert(bare === 0 && hairy > 15, `A filled circle should grow strands outside its edge (${bare} -> ${hairy})`);
+    });
+
     await test("Art log lists every Texture control in use, in the units of the sliders", () => {
       reset();
       const d = win.document, log = () => d.getElementById("art-log-lines").textContent;

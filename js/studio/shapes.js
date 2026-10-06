@@ -620,7 +620,7 @@ export function morphedShape(defA, defB, amount) {
 }
 
 // Deforms a shape's polylines. Returns [{ segments: [[{x,y}...]], closed }] in local px at `size`.
-export function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
+export function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly, hairsOn = strokeOnly) {
   const base = flattenShape(shapeDef);
   const f = size / FLAT_REF_SIZE; // geometry scale
   const k = size / (shapeDef.textureRef || FLAT_REF_SIZE); // texture px are relative to the module size
@@ -630,7 +630,8 @@ export function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
   const waveRad = (((tex.waveAngle ?? 0) % 360) * Math.PI) / 180;
   // Skipping and random lines only read on strokes; they are ignored on filled shapes.
   const skipChance = strokeOnly ? (tex.skipChance || 0) / 100 : 0;
-  const crossing = strokeOnly ? (tex.crossing || 0) / 100 : 0;
+  // Random lines also show on filled shapes (the strands are strokes in the figure colour); not under a Space volume
+  const crossing = hairsOn ? (tex.crossing || 0) / 100 : 0;
   const stride = Math.max(1, Math.round(Math.max(2, size * 0.04) / (FLAT_SPACING * f)));
 
   const out = [];
@@ -747,14 +748,15 @@ export function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly) {
 }
 
 // Wraps a shape so every draw() emits the deformed geometry (works with every Space mode).
-export function texturedShape(shapeDef, tex, seed, strokeOnly) {
+export function texturedShape(shapeDef, tex, seed, strokeOnly, hairsOn = strokeOnly) {
   return {
     ...shapeDef,
     draw(ctx, size) {
-      const geo = buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly);
+      const geo = buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly, hairsOn);
       // The strands go first, on their own: thinner and fainter than the stroke, which the caller draws afterwards
       if (geo.some(sp => sp.hairs && sp.hairs.length)) {
         ctx.save();
+        if (!strokeOnly) ctx.strokeStyle = ctx.fillStyle; // a filled shape: the strands take its colour
         ctx.beginPath();
         for (const sp of geo) for (const hair of sp.hairs || []) hair.forEach((pt, i) => (i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y)));
         ctx.lineWidth = Math.max(0.4, ctx.lineWidth * 0.5);
