@@ -29,7 +29,7 @@ Sale de las filas ⏳ del mapa de conceptos, más las mejoras de filas 🟡 que 
 | SP14, SP15 | Planos de textura uniforme y planos de color o textura en gradación | |
 | SP6 | Pistas de profundidad por tamaño, tono y textura | |
 | G9, S5 | Unión o sustracción dentro de la figura (en gradación y en similitud) | Ligado a las interrelaciones |
-| F5 | Formas rectilíneas e irregulares propias | La app trabaja con una biblioteca fija de 15 formas |
+| F5 | Formas rectilíneas e irregulares propias | La app trabaja con una biblioteca fija de 22 formas |
 
 ### Al final de todo
 | ID | Concepto | Notas |

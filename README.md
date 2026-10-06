@@ -112,4 +112,4 @@ git config core.hooksPath .githooks
 python3 -m http.server 5173
 # open http://localhost:5173/tests/smoke.html
 ```
-The smoke page draws all 15 shapes, runs 400 random combinations of every control, and checks determinism, undo/redo, layers, the vector SVG against the canvas, project save/open and the on-screen error notice. It must end in **All tests passed** (currently 47 checks).
+The smoke page draws all 22 shapes, runs 400 random combinations of every control, and checks determinism, undo/redo, layers, the vector SVG against the canvas, project save/open and the on-screen error notice. It must end in **All tests passed** (currently 47 checks).

@@ -85,7 +85,7 @@ Controla el soporte físico y las ayudas de pantalla. Los botones están encima 
 Cada capa es un módulo independiente. Se pueden tener hasta 5 capas con visibilidad, orden (arrastrar y soltar), forma, color y pipeline de modificadores propios.
 
 ### 3.1 Controles de capa (panel Module)
-* **`shape`**: una de las 15 formas del selector (lista canónica del mockup de Figma, `STUDIO_SHAPE_KEYS` en `js/studio/shapes.js`): `circle`, `square`, `triangle`, `wave`, `horseshoe`, `hexagon`, `line`, `parallelogram`, `hatch`, `crescent`, `teardrop`, `cross`, `digit1`, `digit5`, `digit9`. Los botones y las tarjetas de capa usan iconos Phosphor en peso *regular* (campo `phIcon` de cada forma; lista completa en `docs/DESIGN_SYSTEM_TOKENS.md`, sección 6). Los dígitos son vectoriales y `line` es una línea real.
+* **`shape`**: una de las 22 formas del selector (`STUDIO_SHAPE_KEYS` en `js/studio/shapes.js`, en el orden de la rejilla, una familia por fila): básicas `circle`, `square`, `triangle`, `line`, `cross`, `ring`; curvas y direccionales `semicircle`, `quarter`, `crescent`, `wave`, `spiral`, `arrow`; polígonos `pentagon`, `hexagon`, `octagon`, `star`; caracteres `letterA`, `letterS`, `letterR`, `digit1`, `digit5`, `digit9`. Los botones y las tarjetas de capa usan iconos Phosphor en peso *regular* (campo `phIcon`; lista en `docs/DESIGN_SYSTEM_TOKENS.md`, sección 6); el anillo se muestra con su propio dibujo y las letras con su glifo. Los caracteres son vectoriales (no dependen de ninguna fuente) y `line` es una línea real. En Gradation › *Becomes*, Contrast › *Minority Shape* y Anomaly › *Focal Intruder Shape* la misma lista se ofrece como **dropdown** con icono y nombre.
 * **`drawMode`**: *Stroke* (contorno) o *Fill* (relleno). **`color`**: color de la forma (hex). **`strokeWidth`**: grosor del trazo. En una figura estirada (ancho distinto del alto) el trazo **conserva un grosor uniforme**: se estira el contorno, no el lápiz.
 * **`width` / `height`**: tamaño del módulo **exactamente en píxeles** del lienzo, de 5 a 2000 para todas las formas (base 50). Un círculo sigue siendo círculo con valores iguales. La línea solo tiene largo (*Width*): su *Height* se oculta. Con *Fit to canvas* ese tamaño se reparte entre las celdas (con 4 columnas, un módulo de 100 ocupa 25 px); en *Actual size* mantiene sus píxeles.
 * **`rotation`**: ángulo de orientación (0 a 360º).
@@ -180,7 +180,7 @@ Rompe la rigidez de la repetición pura con variaciones de parentesco entre mód
 * `distortion` (*Elastic*): estiramiento anamórfico pseudoaleatorio. `foreshortening` (*3D tilt*): pérdida de escala en un sentido. `rotation_wobble` (*Wobble*): oscilaciones del ángulo. `scale_kinship` (*Scale*): fluctuación de tamaño. `hybrid`: todas a la vez.
 
 **En *Advanced*:**
-* **`association`** (*Association*, dropdown): mezcla formas de **una misma familia visual** (`round`, `angular`, `lines`, `numbers`); **`assocMix`** (*Association mix*, 0 a 100 %, por defecto 50) es el porcentaje de módulos que cambian. Anomaly y Contrast mandan sobre la asociación en forma.
+* **`association`** (*Association*, dropdown): mezcla formas de **una misma familia visual** (`round`, `angular`, `lines`, `characters`: letras A, S, R y los números); **`assocMix`** (*Association mix*, 0 a 100 %, por defecto 50) es el porcentaje de módulos que cambian. Anomaly y Contrast mandan sobre la asociación en forma.
 * **`imperfection`** (*Imperfection*, dropdown): `cut` corta una porción con una recta; `broken` parte el módulo y desliza las mitades. **`imperfAmount`** (*Imperfect modules*, 0 a 100 %, por defecto 30).
 * **`cellJitter`** (*Spatial cell jitter*, 0 a 30 px): desplazamiento orgánico del centro de cada celda.
 * `seed`: semilla generativa (en el estado).
@@ -210,7 +210,7 @@ Introduce una zona de irregularidad donde prevalece una estructura regular previ
 
 * **`type`** (*Type*, chips): `focal` (epicentro circular que transforma los módulos inscritos), `fracture` (*Rupture*: falla transversal que desfasa los módulos a ambos lados), `swell` (deformación que expande y empuja), `tear` (*Void*: vacío de módulos) y `regrid` (*Another grid*: dentro de la zona la retícula cambia a otra variación).
 * **`distribution`** (*Distribution*): `single` (un epicentro), `regular` (`count` anomalías en retícula escalonada) o `random` (al azar sin tocarse, fig. 56b). Con varias, aparecen **`count`** (2 a 12) y, solo en `random`, **`seed`** (1 a 99).
-* **`attrs`** (*Deviates in*, chips múltiples): en qué atributos se desvía (forma, escala, rotación, posición). **`anomalousShape`** (*Focal Intruder Shape*, las 15 formas).
+* **`attrs`** (*Deviates in*, chips múltiples): en qué atributos se desvía (forma, escala, rotación, posición). **`anomalousShape`** (*Focal Intruder Shape*, la lista de 22 formas, en dropdown).
 * **`zoneGrid`** (*Grid inside the zone*, solo con `regrid`): Brick, Diagonal, Curved, Zigzag, Triangular o Alternating; las celdas cuyo centro cae dentro de la zona (radio *Radius*, alrededor de cada epicentro) siguen esa variación y el resto la retícula de Layout. Solo aplica a la retícula, no al radial; con `regrid` se ocultan *Deviates in* y *Severity*. La casilla de acento tiñe los módulos de la zona.
 * **`radius`** (*Radius*, 50 a 350 px) e **`intensity`** (*Severity*, 10 a 100 %).
 * **Punto focal.** Ya no hay sliders X / Y: el punto está **visible por defecto** al activar el control y se mueve con un **clic en el lienzo** con la pestaña Anomaly abierta (`epicenterX / epicenterY`). La casilla **`showReticle`** (*Show focal point*) lo oculta. Se dibuja con el color de guías y no se exporta.
@@ -223,7 +223,7 @@ Establece disparidad formal entre una **mayoría dominante** y una **minoría di
 
 * **`dimension`** (*Dimension*, dropdown con siete opciones):
   * `scale`: minoría monumental (`scaleFactor`, *Contrast Scale Multiplier*, 0,2 a 3x, por defecto 2,2).
-  * `shape`: minoría con glifo discordante (`contrastShape`, *Minority Shape*, las 15 formas).
+  * `shape`: minoría con glifo discordante (`contrastShape`, *Minority Shape*, la lista de 22 formas, en dropdown).
   * `direction` (*Angle*): minoría rotada (`angle`, *Clash Angle*, 15º a 90º).
   * `position` (*Position*): la minoría se desplaza dentro de su celda: **`positionShift`** (*Shift*, 5 a 50 % del lado menor de la celda, por defecto 25) en la dirección **`positionAngle`** (*Shift direction*, 0 a 360º). La mayoría queda centrada.
   * `tone` (*Tone*): la minoría se dibuja en otro **tono del color del propio módulo**, más claro, hacia el color del fondo. **`toneAmount`** (*Tone*, 10 a 90 %, por defecto 50). Sirve igual en relleno que en contorno.
@@ -258,7 +258,7 @@ No es una textura de píxeles: son deformaciones de la geometría de cada módul
 * **`crossing`** (*Strand crossing*, 0 a 60 %, por defecto 10): intercambia vértices cercanos (solo en modo trazo).
 * **`undulation`** (*Perimeter undulation*, 0 a 30 px, por defecto 10): onda senoidal sobre la normal del contorno.
 
-Los px de `jitter` y `undulation` están expresados para un módulo de 100 px y se escalan al tamaño real (la forma `line` usa 450 px como referencia). Las formas de trazo abierto (`line`, `wave`, `horseshoe`, `hatch`, `digit1`, `digit5`, `digit9`) son rutas abiertas: en modo trazo se ven como línea fina y en relleno como trazo grueso; no usan extrusión de Space.
+Los px de `jitter` y `undulation` están expresados para un módulo de 100 px y se escalan al tamaño real (la forma `line` usa 450 px como referencia). Las formas de trazo abierto (`line`, `wave`, `spiral`, `letterA`, `letterS`, `letterR`, `digit1`, `digit5`, `digit9`) son rutas abiertas: en modo trazo se ven como línea fina y en relleno como trazo grueso; no usan extrusión de Space.
 
 ---
 

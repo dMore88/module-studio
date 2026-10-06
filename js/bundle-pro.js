@@ -167,11 +167,66 @@ const CanvasUtils = {
 };
 
 
-  // The 15 shapes available in the studio (matches the Figma shape grid).
-// `phIcon` is the Phosphor icon name, rendered with the regular weight (`ph ph-<name>`), as in the Figma shape grid.
+  // The shapes available in the studio, in the order of the shape grid (6 per row).
+// `phIcon` is the Phosphor icon name, rendered with the regular weight (`ph ph-<name>`); the ring has no Phosphor icon
+// and the letters show their own glyph (see `glyph`).
 const STUDIO_SHAPE_KEYS = [
-  "circle", "square", "triangle", "wave", "horseshoe", "hexagon", "line", "parallelogram", "hatch", "crescent", "teardrop", "cross", "digit1", "digit5", "digit9"
+  "circle", "square", "triangle", "line", "cross", "ring",
+  "semicircle", "quarter", "crescent", "wave", "spiral", "arrow",
+  "pentagon", "hexagon", "octagon", "star",
+  "letterA", "letterS", "letterR", "digit1", "digit5", "digit9"
 ];
+
+// ---- Helpers for the newer shapes: one list of path operations gives both the canvas path and the SVG path ----
+const KAPPA = 0.5522847498;
+
+// An arc from angle a0 to a1 (radians, canvas direction) as cubic curves of at most a quarter turn each
+function arcOps(cx, cy, r, a0, a1) {
+  const ops = [], total = a1 - a0, n = Math.max(1, Math.ceil(Math.abs(total) / (Math.PI / 2) - 1e-9)), step = total / n;
+  const k = (4 / 3) * Math.tan(step / 4);
+  for (let i = 0; i < n; i++) {
+    const s = a0 + i * step, e = s + step;
+    const x0 = cx + r * Math.cos(s), y0 = cy + r * Math.sin(s), x3 = cx + r * Math.cos(e), y3 = cy + r * Math.sin(e);
+    ops.push(["C", x0 - k * r * Math.sin(s), y0 + k * r * Math.cos(s), x3 + k * r * Math.sin(e), y3 - k * r * Math.cos(e), x3, y3]);
+  }
+  return ops;
+}
+
+// A full circle; `hole` runs it the other way round so it cuts a hole in the circle drawn before it
+function circleOps(cx, cy, r, hole) {
+  const a1 = hole ? -Math.PI * 2 : Math.PI * 2;
+  return [["M", cx + r, cy], ...arcOps(cx, cy, r, 0, a1), ["Z"]];
+}
+
+function polygonOps(n, r, start) {
+  const ops = [];
+  for (let i = 0; i < n; i++) {
+    const a = start + (i * Math.PI * 2) / n;
+    ops.push([i === 0 ? "M" : "L", r * Math.cos(a), r * Math.sin(a)]);
+  }
+  ops.push(["Z"]);
+  return ops;
+}
+
+// Builds `draw` and `svgPath` from `opsFor(size)`; open shapes (skeleton) are stroked in the SVG
+function pathShape(opsFor) {
+  const f = (v) => Math.round(v * 1000) / 1000;
+  return {
+    draw(ctx, size) {
+      ctx.beginPath();
+      for (const [op, ...a] of opsFor(size)) {
+        if (op === "M") ctx.moveTo(a[0], a[1]);
+        else if (op === "L") ctx.lineTo(a[0], a[1]);
+        else if (op === "C") ctx.bezierCurveTo(a[0], a[1], a[2], a[3], a[4], a[5]);
+        else ctx.closePath();
+      }
+    },
+    svgPath(size) {
+      const d = opsFor(size).map(([op, ...a]) => (op === "Z" ? "Z" : `${op} ${a.map(f).join(" ")}`)).join(" ");
+      return `<path d="${d}" />`;
+    }
+  };
+}
 const Shapes = {
   circle: {
     id: "circle",
@@ -247,27 +302,6 @@ const Shapes = {
     phIcon: "tilde"
   },
 
-  horseshoe: {
-    id: "horseshoe",
-    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
-    name: "Horseshoe",
-    category: "curved",
-    draw(ctx, size) {
-      const w = size * 0.32;
-      const h = size * 0.45;
-      ctx.beginPath();
-      ctx.moveTo(-w, -h);
-      ctx.lineTo(-w, h * 0.1);
-      ctx.arc(0, h * 0.1, w, Math.PI, 0, true);
-      ctx.lineTo(w, -h);
-    },
-    svgPath(size) {
-      const w = size * 0.32;
-      const h = size * 0.45;
-      return `<path d="M ${-w} ${-h} L ${-w} ${h*0.1} A ${w} ${w} 0 0 0 ${w} ${h*0.1} L ${w} ${-h}" fill="none" stroke="currentColor" stroke-width="4" />`;
-    },
-    phIcon: "circle-notch"
-  },
 
   hexagon: {
     id: "hexagon",
@@ -316,48 +350,7 @@ const Shapes = {
     phIcon: "minus"
   },
 
-  parallelogram: {
-    id: "parallelogram",
-    name: "Parallelogram",
-    category: "polygonal",
-    draw(ctx, size) {
-      const hw = size * 0.5;
-      const hh = size * 0.32;
-      const skew = size * 0.22;
-      ctx.beginPath();
-      ctx.moveTo(-hw + skew, -hh);
-      ctx.lineTo(hw + skew, -hh);
-      ctx.lineTo(hw - skew, hh);
-      ctx.lineTo(-hw - skew, hh);
-      ctx.closePath();
-    },
-    svgPath(size) {
-      const hw = size * 0.5;
-      const hh = size * 0.32;
-      const skew = size * 0.22;
-      return `<polygon points="${-hw + skew},${-hh} ${hw + skew},${-hh} ${hw - skew},${hh} ${-hw - skew},${hh}" />`;
-    },
-    phIcon: "parallelogram"
-  },
 
-  hatch: {
-    id: "hatch",
-    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
-    name: "Diagonal Hatch",
-    category: "linear",
-    draw(ctx, size) {
-      const s = size * 0.45;
-      ctx.beginPath();
-      ctx.moveTo(-s, s); ctx.lineTo(s, -s);
-      ctx.moveTo(-s * 0.3, s); ctx.lineTo(s, -s * 0.3);
-      ctx.moveTo(-s, s * 0.3); ctx.lineTo(s * 0.3, -s);
-    },
-    svgPath(size) {
-      const s = size * 0.45;
-      return `<g stroke="currentColor" stroke-width="3"><line x1="${-s}" y1="${s}" x2="${s}" y2="${-s}"/><line x1="${-s*0.3}" y1="${s}" x2="${s}" y2="${-s*0.3}"/><line x1="${-s}" y1="${s*0.3}" x2="${s*0.3}" y2="${-s}"/></g>`;
-    },
-    phIcon: "scribble"
-  },
 
   crescent: {
     id: "crescent",
@@ -377,26 +370,6 @@ const Shapes = {
     phIcon: "subset-proper-of"
   },
 
-  teardrop: {
-    id: "teardrop",
-    name: "Teardrop (Gota)",
-    category: "organic",
-    draw(ctx, size) {
-      const w = size * 0.65;
-      const l = size * 0.95;
-      ctx.beginPath();
-      ctx.moveTo(0, -l / 2);
-      ctx.bezierCurveTo(w / 1.5, -l / 6, w / 1.8, l / 2, 0, l / 2);
-      ctx.bezierCurveTo(-w / 1.8, l / 2, -w / 1.5, -l / 6, 0, -l / 2);
-      ctx.closePath();
-    },
-    svgPath(size) {
-      const w = size * 0.65;
-      const l = size * 0.95;
-      return `<path d="M 0 ${-l/2} C ${w/1.5} ${-l/6}, ${w/1.8} ${l/2}, 0 ${l/2} C ${-w/1.8} ${l/2}, ${-w/1.5} ${-l/6}, 0 ${-l/2} Z" />`;
-    },
-    phIcon: "drop-half-bottom"
-  },
 
   cross: {
     id: "cross",
@@ -485,6 +458,116 @@ const Shapes = {
       return `<path d="M ${0.22*s} ${-0.15*s} A ${0.22*s} ${0.22*s} 0 1 1 ${-0.22*s} ${-0.15*s} A ${0.22*s} ${0.22*s} 0 1 1 ${0.22*s} ${-0.15*s} M ${0.22*s} ${-0.15*s} C ${0.22*s} ${0.2*s} ${0.1*s} ${0.4*s} ${-0.2*s} ${0.4*s}" fill="none" stroke="currentColor" stroke-width="${s*0.14}" stroke-linecap="round" stroke-linejoin="round" />`;
     },
     phIcon: "number-nine"
+  },
+
+  ring: {
+    id: "ring",
+    name: "Ring",
+    category: "geometric",
+    ...pathShape((s) => [...circleOps(0, 0, s * 0.5, false), ...circleOps(0, 0, s * 0.27, true)]),
+    phIcon: null
+  },
+
+  semicircle: {
+    id: "semicircle",
+    name: "Semicircle",
+    category: "curved",
+    ...pathShape((s) => [["M", -s * 0.5, s * 0.25], ...arcOps(0, s * 0.25, s * 0.5, Math.PI, Math.PI * 2), ["Z"]]),
+    phIcon: "circle-half"
+  },
+
+  quarter: {
+    id: "quarter",
+    name: "Quarter Circle",
+    category: "curved",
+    ...pathShape((s) => {
+      const r = s * 0.9, cx = -r / 2, cy = r / 2;
+      return [["M", cx, cy], ["L", cx + r, cy], ...arcOps(cx, cy, r, 0, -Math.PI / 2), ["Z"]];
+    }),
+    phIcon: "chart-pie-slice"
+  },
+
+  spiral: {
+    id: "spiral",
+    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
+    name: "Spiral",
+    category: "curved",
+    ...pathShape((s) => {
+      const turns = 2.5, n = 120, ops = [];
+      for (let i = 0; i <= n; i++) {
+        const t = i / n, a = t * turns * Math.PI * 2, r = s * 0.46 * t;
+        ops.push([i === 0 ? "M" : "L", r * Math.cos(a), r * Math.sin(a)]);
+      }
+      return ops;
+    }),
+    phIcon: "spiral"
+  },
+
+  arrow: {
+    id: "arrow",
+    name: "Arrow",
+    category: "polygonal",
+    ...pathShape((s) => [["M", 0, -s * 0.5], ["L", s * 0.32, -s * 0.1], ["L", s * 0.12, -s * 0.1], ["L", s * 0.12, s * 0.5], ["L", -s * 0.12, s * 0.5], ["L", -s * 0.12, -s * 0.1], ["L", -s * 0.32, -s * 0.1], ["Z"]]),
+    phIcon: "arrow-fat-up"
+  },
+
+  pentagon: {
+    id: "pentagon",
+    name: "Pentagon",
+    category: "polygonal",
+    ...pathShape((s) => polygonOps(5, s * 0.52, -Math.PI / 2)),
+    phIcon: "pentagon"
+  },
+
+  octagon: {
+    id: "octagon",
+    name: "Octagon",
+    category: "polygonal",
+    ...pathShape((s) => polygonOps(8, s * 0.52, -Math.PI / 2 + Math.PI / 8)),
+    phIcon: "octagon"
+  },
+
+  star: {
+    id: "star",
+    name: "Star",
+    category: "polygonal",
+    ...pathShape((s) => {
+      const ro = s * 0.52, ri = s * 0.22, ops = [];
+      for (let i = 0; i < 10; i++) {
+        const a = -Math.PI / 2 + (i * Math.PI) / 5, r = i % 2 === 0 ? ro : ri;
+        ops.push([i === 0 ? "M" : "L", r * Math.cos(a), r * Math.sin(a)]);
+      }
+      ops.push(["Z"]);
+      return ops;
+    }),
+    phIcon: "star"
+  },
+
+  letterA: {
+    id: "letterA",
+    skeleton: true, // letters are drawn as strokes, like the numbers
+    name: "Letter A",
+    category: "symbolic",
+    ...pathShape((s) => [["M", -0.28 * s, 0.4 * s], ["L", 0, -0.4 * s], ["L", 0.28 * s, 0.4 * s], ["M", -0.17 * s, 0.12 * s], ["L", 0.17 * s, 0.12 * s]]),
+    glyph: "A"
+  },
+
+  letterS: {
+    id: "letterS",
+    skeleton: true,
+    name: "Letter S",
+    category: "symbolic",
+    ...pathShape((s) => [["M", 0.24 * s, -0.26 * s], ["C", 0.12 * s, -0.43 * s, -0.26 * s, -0.43 * s, -0.26 * s, -0.19 * s], ["C", -0.26 * s, 0.03 * s, 0.26 * s, -0.03 * s, 0.26 * s, 0.2 * s], ["C", 0.26 * s, 0.44 * s, -0.12 * s, 0.44 * s, -0.25 * s, 0.26 * s]]),
+    glyph: "S"
+  },
+
+  letterR: {
+    id: "letterR",
+    skeleton: true,
+    name: "Letter R",
+    category: "symbolic",
+    ...pathShape((s) => [["M", -0.2 * s, 0.4 * s], ["L", -0.2 * s, -0.4 * s], ["L", 0.05 * s, -0.4 * s], ["C", 0.3 * s, -0.4 * s, 0.3 * s, 0.02 * s, 0.05 * s, 0.02 * s], ["L", -0.2 * s, 0.02 * s], ["M", 0.03 * s, 0.02 * s], ["L", 0.26 * s, 0.4 * s]]),
+    glyph: "R"
   }
 };
 
@@ -858,7 +941,7 @@ const createDefaultLayerStructure = () => ({
     kinshipType: "distortion",
     intensity: 50,
     cellJitter: 0,
-    association: "none", // none, round, angular, lines, numbers: shapes of one family mixed into the population
+    association: "none", // none, round, angular, lines, characters: shapes of one family mixed into the population
     assocMix: 50, // % of the modules that change to another shape of the family
     imperfection: "none", // none, cut (a slice is cut off) or broken (split in two and shifted)
     imperfAmount: 30, // % of the modules that are imperfect
@@ -975,10 +1058,10 @@ const defaultStudioState = {
 
 // Shapes of the same family, mixed by Similarity > Association
 const SIMILARITY_FAMILIES = {
-  round: ["circle", "horseshoe", "crescent", "teardrop"],
-  angular: ["square", "triangle", "hexagon", "parallelogram"],
-  lines: ["line", "wave", "hatch", "cross"],
-  numbers: ["digit1", "digit5", "digit9"]
+  round: ["circle", "ring", "semicircle", "quarter", "crescent", "spiral"],
+  angular: ["square", "triangle", "pentagon", "hexagon", "octagon", "star", "arrow"],
+  lines: ["line", "wave", "cross", "spiral"],
+  characters: ["letterA", "letterS", "letterR", "digit1", "digit5", "digit9"]
 };
 
 // A module is drawn at exactly the size its Width and Height say (1 px per unit), on any canvas
@@ -3267,6 +3350,19 @@ const StudioExporter = {
  * MODULE STUDIO PRO — Master Application Controller
  * Inspired by Abstract Studio: Canvas-First, Floating Capas Stack, Shape Inspector & Procedural Stack.
  */
+
+
+
+
+
+
+// The icon of a shape: a Phosphor icon, or its own drawing (ring) or letter (A, S, R) when Phosphor has none
+function shapeIconHtml(def) {
+  if (def && def.phIcon) return `<i class="ph ph-${def.phIcon}" aria-hidden="true"></i>`;
+  if (def && def.glyph) return `<span class="ph-glyph" aria-hidden="true">${def.glyph}</span>`;
+  if (def && def.id === "ring") return '<svg class="ph-svg" viewBox="0 0 256 256" aria-hidden="true"><circle cx="128" cy="128" r="104" fill="none" stroke="currentColor" stroke-width="16"/><circle cx="128" cy="128" r="52" fill="none" stroke="currentColor" stroke-width="16"/></svg>';
+  return '<i class="ph ph-circle" aria-hidden="true"></i>';
+}
 const ASPECT_RATIOS = {
   "1:1": { label: "1:1 Square", w: 600, h: 600, css: "1 / 1" },
   "9:16": { label: "9:16 Story", w: 450, h: 800, css: "9 / 16" },
@@ -3776,7 +3872,7 @@ class StudioProApp {
     const newId = `layer-${nextNum}`;
     const newName = `Layer ${nextNum}`;
 
-    const shapesPool = ["circle", "square", "triangle", "hexagon", "parallelogram", "cross"];
+    const shapesPool = ["circle", "square", "triangle", "hexagon", "star", "cross"];
     const newShape = shapesPool[layers.length % shapesPool.length];
     const newLayer = createDefaultLayer(newId, newName, newShape, 0, 0, 0);
 
@@ -3977,7 +4073,7 @@ class StudioProApp {
       const isActive = l.id === this.activeLayerId;
       const isVis = l.visible !== false;
       const shapeDef = Shapes[l.shape] || Shapes.circle;
-      const icon = `<i class="ph ph-${shapeDef?.phIcon || "circle"}" aria-hidden="true"></i>`;
+      const icon = shapeIconHtml(shapeDef);
       const mode = l.wireframe !== false ? "stroke" : "fill";
       const s = l.structure;
       const structText = s?.enabled ? (s.mode === "radiation" ? " • radiation" : " • grid") : "";

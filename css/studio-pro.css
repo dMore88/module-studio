@@ -169,11 +169,19 @@ input[type="range"]:hover::-webkit-slider-thumb {
    REFERENCE 1 (MODULE) & REFERENCE 2 (LAYOUT STRUCTURE) WIDGET STYLES
    ========================================================================= */
 
+.ph-svg { width: 1em; height: 1em; flex: none; }
+.shape-circle-btn .ph-svg, .ds-dropdown-item .ph-svg, .ds-dropdown-current .ph-svg { width: var(--sizing-4); height: var(--sizing-4); }
+.layer-preview-box .ph-glyph { font-size: var(--sizing-7); font-weight: var(--typography-weight-400); }
+.ph-glyph { font-size: var(--font-size-md); font-weight: var(--typography-weight-500); line-height: 1; flex: none; }
+.ds-dropdown-item .ph, .ds-dropdown-current .ph { font-size: var(--sizing-4); flex: none; }
+.ds-dropdown-current { gap: var(--spacing-3); }
 .shape-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(6, var(--sizing-7));
+  gap: var(--spacing-3);
+  justify-content: start;
 }
+.shape-grid > .row-start { grid-column-start: 1; } /* each family of shapes starts a new row */
 
 .shape-circle-btn {
   width: var(--sizing-7);

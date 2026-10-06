@@ -16,7 +16,7 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | B2 | **Línea**: recorrido de un punto; largo, sin ancho | Elementos conceptuales | Module › Shape `line`, Width, Stroke width | ✅ | La línea solo tiene largo; el ancho es el grosor del trazo |
 | B3 | **Plano**: recorrido de una línea; largo y ancho, sin grosor | Elementos conceptuales | Module › Shape (círculo, cuadrado, triángulo, hexágono...) | ✅ |  |
 | B4 | **Volumen**: recorrido de un plano; en 2D es ilusorio | Elementos conceptuales | Space › Mode (Isometric, 3D tilt, Fluctuating, Paradox) | ✅ | Ver Espacio |
-| B5 | **Forma**: todo lo que se ve tiene forma | Elementos visuales | Module › Shape (15 formas) | ✅ |  |
+| B5 | **Forma**: todo lo que se ve tiene forma | Elementos visuales | Module › Shape (22 formas) | ✅ |  |
 | B6 | **Medida**: tamaño de una forma | Elementos visuales | Module › Width, Height (5 a 2000 px) | ✅ |  |
 | B7 | **Color**: blanco, negro, grises y cromáticos | Elementos visuales | Module › Shape color; Contrast › Tone y Accent color; botón de invertir figura/fondo | 🟡 | Un color por capa; más colores con varias capas. Color por zonas: pendiente (ver C4) |
 | B8 | **Textura**: cualidades de la superficie | Elementos visuales | Texture › Jitter, Line skipping, Strand crossing, Perimeter undulation | ✅ | Deforma la geometría; ver Textura |

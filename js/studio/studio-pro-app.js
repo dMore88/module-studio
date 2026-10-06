@@ -8,6 +8,14 @@ import { Shapes, STUDIO_SHAPE_KEYS } from './shapes.js';
 import { CanvasUtils } from '../canvas-utils.js';
 import { StudioExporter } from './exporter.js';
 
+// The icon of a shape: a Phosphor icon, or its own drawing (ring) or letter (A, S, R) when Phosphor has none
+export function shapeIconHtml(def) {
+  if (def && def.phIcon) return `<i class="ph ph-${def.phIcon}" aria-hidden="true"></i>`;
+  if (def && def.glyph) return `<span class="ph-glyph" aria-hidden="true">${def.glyph}</span>`;
+  if (def && def.id === "ring") return '<svg class="ph-svg" viewBox="0 0 256 256" aria-hidden="true"><circle cx="128" cy="128" r="104" fill="none" stroke="currentColor" stroke-width="16"/><circle cx="128" cy="128" r="52" fill="none" stroke="currentColor" stroke-width="16"/></svg>';
+  return '<i class="ph ph-circle" aria-hidden="true"></i>';
+}
+
 export const ASPECT_RATIOS = {
   "1:1": { label: "1:1 Square", w: 600, h: 600, css: "1 / 1" },
   "9:16": { label: "9:16 Story", w: 450, h: 800, css: "9 / 16" },
@@ -518,7 +526,7 @@ export class StudioProApp {
     const newId = `layer-${nextNum}`;
     const newName = `Layer ${nextNum}`;
 
-    const shapesPool = ["circle", "square", "triangle", "hexagon", "parallelogram", "cross"];
+    const shapesPool = ["circle", "square", "triangle", "hexagon", "star", "cross"];
     const newShape = shapesPool[layers.length % shapesPool.length];
     const newLayer = createDefaultLayer(newId, newName, newShape, 0, 0, 0);
 
@@ -719,7 +727,7 @@ export class StudioProApp {
       const isActive = l.id === this.activeLayerId;
       const isVis = l.visible !== false;
       const shapeDef = Shapes[l.shape] || Shapes.circle;
-      const icon = `<i class="ph ph-${shapeDef?.phIcon || "circle"}" aria-hidden="true"></i>`;
+      const icon = shapeIconHtml(shapeDef);
       const mode = l.wireframe !== false ? "stroke" : "fill";
       const s = l.structure;
       const structText = s?.enabled ? (s.mode === "radiation" ? " • radiation" : " • grid") : "";

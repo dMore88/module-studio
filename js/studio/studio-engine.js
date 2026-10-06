@@ -62,7 +62,7 @@ export const createDefaultLayerStructure = () => ({
     kinshipType: "distortion",
     intensity: 50,
     cellJitter: 0,
-    association: "none", // none, round, angular, lines, numbers: shapes of one family mixed into the population
+    association: "none", // none, round, angular, lines, characters: shapes of one family mixed into the population
     assocMix: 50, // % of the modules that change to another shape of the family
     imperfection: "none", // none, cut (a slice is cut off) or broken (split in two and shifted)
     imperfAmount: 30, // % of the modules that are imperfect
@@ -181,10 +181,10 @@ export const defaultStudioState = {
 
 // Shapes of the same family, mixed by Similarity > Association
 const SIMILARITY_FAMILIES = {
-  round: ["circle", "horseshoe", "crescent", "teardrop"],
-  angular: ["square", "triangle", "hexagon", "parallelogram"],
-  lines: ["line", "wave", "hatch", "cross"],
-  numbers: ["digit1", "digit5", "digit9"]
+  round: ["circle", "ring", "semicircle", "quarter", "crescent", "spiral"],
+  angular: ["square", "triangle", "pentagon", "hexagon", "octagon", "star", "arrow"],
+  lines: ["line", "wave", "cross", "spiral"],
+  characters: ["letterA", "letterS", "letterR", "digit1", "digit5", "digit9"]
 };
 
 // A module is drawn at exactly the size its Width and Height say (1 px per unit), on any canvas
