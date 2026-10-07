@@ -1009,6 +1009,7 @@ const createDefaultLayerStructure = () => ({
     showRays: false,
     showRings: false,
     checkerInvert: false,
+    raysByContainer: false, // Actual size: every ring gets as many rays as fit the container's width (not in Centripetal)
     centerX: 0,
     centerY: 0
   },
@@ -2653,10 +2654,11 @@ class StudioEngine {
       ctx.closePath();
     };
 
-    // Rays per ring. Fit to canvas: the Angular rays slider. Actual size: the cell is the container, so every ring gets as
+    // Rays per ring. The Angular rays slider; or, in Actual size with "Rays follow container", the cell is the container, so every ring gets as
     // many rays as fit its circumference at the container's width (few in the middle, more outwards)
     const contWidth = Math.max(10, this.containerSize(targetMod, width, height).w);
-    const raysOf = (i) => isFixed
+    const raysByContainer = isFixed && !!rad.raysByContainer && rad.scheme !== "centripetal"; // the chevrons of one wedge must nest from ring to ring
+    const raysOf = (i) => raysByContainer
       ? Math.max(3, Math.round((Math.PI * 2 * (openR + ((i - 0.5) / rings) * span)) / contWidth))
       : rays;
 
@@ -2969,8 +2971,8 @@ class StudioEngine {
           }
         }
 
-        if (rad.showRays && isFixed) {
-          // Actual size: every ring has its own rays, so each ring draws its own pieces
+        if (rad.showRays && raysByContainer) {
+          // Rays follow the container: every ring has its own rays, so each ring draws its own pieces
           for (let i = 1; i <= rings; i++) {
             const nI = raysOf(i), shift = (i - 1) * ringRotRad;
             const ra = openR + ((i - 1) / rings) * span, rb = openR + (i / rings) * span;
@@ -4284,7 +4286,7 @@ class StudioProApp {
       if (s.enabled) {
         if (s.mode === "radiation") {
           const r = s.radiation || {};
-          out.push(line("Structure", ["Radiation", pick(SCHEMES, r.scheme), r.sizeMode === "actual" ? `${r.rings} rings` : `${r.rays} rays - ${r.rings} rings`, r.sizeMode === "actual" ? "Actual size" : "Fit to canvas"].join(" / ")));
+          out.push(line("Structure", ["Radiation", pick(SCHEMES, r.scheme), (r.sizeMode === "actual" || r.sizeMode === "fixed") && r.raysByContainer && r.scheme !== "centripetal" ? `${r.rings} rings` : `${r.rays} rays - ${r.rings} rings`, r.sizeMode === "actual" ? "Actual size" : "Fit to canvas"].join(" / ")));
           blockLine();
         } else {
           const r = s.repetition || {};
@@ -4638,8 +4640,12 @@ class StudioProApp {
       document.querySelectorAll("[data-rad-scheme]").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.radScheme === rad.scheme);
       });
-      // In Actual size every ring gets as many rays as fit the container's width, so the slider has no meaning there
-      document.getElementById("input-layout-rays")?.closest(".ds-field")?.classList.toggle("hidden", rad.sizeMode === "actual" || rad.sizeMode === "fixed");
+      // Actual size can let every ring take as many rays as fit the container's width; then the slider has no meaning
+      const actualRad = rad.sizeMode === "actual" || rad.sizeMode === "fixed";
+      const byContainer = actualRad && !!rad.raysByContainer && rad.scheme !== "centripetal";
+      document.getElementById("rad-raysbycont-item")?.classList.toggle("hidden", !actualRad || rad.scheme === "centripetal");
+      document.getElementById("input-layout-rays")?.closest(".ds-field")?.classList.toggle("hidden", byContainer);
+      this.syncCheckbox("chk-rad-raysbycont", !!rad.raysByContainer);
       this.syncControlValue("input-layout-rays", rad.rays || 12);
       this.syncControlValue("num-layout-rays", rad.rays || 12);
       this.syncControlValue("input-layout-rings", rad.rings || 6);
@@ -5143,6 +5149,13 @@ class StudioProApp {
     });
 
     // Radiation Checkboxes
+    document.getElementById("chk-rad-raysbycont")?.addEventListener("change", (e) => {
+      const struct = this.getActiveLayerStructure();
+      if (struct) struct.radiation.raysByContainer = e.target.checked;
+      this.syncStructureInspectorWithActiveLayer();
+      this.render();
+      this.pushHistory(`Layer ${this.activeLayerId} Rays follow container: ${e.target.checked ? "ON" : "OFF"}`);
+    });
     const chkRadClip = document.getElementById("chk-rad-clip");
     if (chkRadClip) {
       chkRadClip.addEventListener("change", (e) => {

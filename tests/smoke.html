@@ -297,11 +297,11 @@
       assert(Math.abs(t[0] - t[1]) > 150 && Math.abs(t[0] - t[2]) < 40 && Math.abs(t[1] - t[3]) < 40, `Alternate sectors should swap figure and ground (${t})`);
     });
 
-    await test("Radial Actual size: each ring has as many rays as fit the container's width; Fit keeps the Angular rays", async () => {
+    await test("Radial Actual size: Angular rays stays, and Rays follow container gives each ring as many rays as fit the container's width", async () => {
       reset();
       const d = win.document, cv = d.getElementById("studio-canvas");
       const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: false, width: 10, height: 10, showContainer: false, containerW: 100, containerH: 100 }); app.state.showSafeBounds = false;
-      const st = L.structure; st.enabled = true; st.mode = "radiation"; Object.assign(st.radiation, { scheme: "concentric", rays: 60, rings: 3, centerOpen: 0, sizeMode: "actual", ringRotation: 0, checkerInvert: true, showRays: false, showRings: false });
+      const st = L.structure; st.enabled = true; st.mode = "radiation"; Object.assign(st.radiation, { scheme: "concentric", rays: 60, rings: 3, centerOpen: 0, sizeMode: "actual", ringRotation: 0, checkerInvert: true, showRays: false, showRings: false, raysByContainer: true });
       const dpr = cv.width / 600;
       const changes = (r) => {
         drawRaw(app);
@@ -328,8 +328,15 @@
       d.querySelector('[data-rep-size="actual"]').click(); await wait(40);
       assert(L.containerW === 100 && L.containerH === 100, `Grid Actual size should keep the container (${L.containerW} x ${L.containerH})`);
       st.mode = "radiation"; st.radiation.sizeMode = "actual"; st.repetition.sizeMode = "fit";
-      st.radiation.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("hidden"), "Actual size hides Angular rays");
+      st.radiation.sizeMode = "actual"; st.radiation.raysByContainer = false; app.syncAllInspectorsWithActiveLayer();
+      assert(!d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("hidden"), "Actual size keeps Angular rays unless the rays follow the container");
+      assert(!d.getElementById("rad-raysbycont-item").classList.contains("hidden"), "Actual size offers Rays follow container");
+      d.getElementById("chk-rad-raysbycont").click(); await wait(40);
+      assert(st.radiation.raysByContainer === true && d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("hidden"), "With Rays follow container the Angular rays slider is hidden");
+      st.radiation.scheme = "centripetal"; app.syncAllInspectorsWithActiveLayer();
+      assert(d.getElementById("rad-raysbycont-item").classList.contains("hidden") && !d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("hidden"), "Centripetal keeps its rays (the chevrons of a wedge must nest)");
+      st.radiation.scheme = "concentric"; st.radiation.sizeMode = "fit"; app.syncAllInspectorsWithActiveLayer();
+      assert(d.getElementById("rad-raysbycont-item").classList.contains("hidden"), "Fit to canvas has no Rays follow container");
     });
 
     await test("Clip cell in a Centripetal layout cuts the module to its chevron band, in every shape", () => {

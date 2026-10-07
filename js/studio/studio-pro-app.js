@@ -698,7 +698,7 @@ export class StudioProApp {
       if (s.enabled) {
         if (s.mode === "radiation") {
           const r = s.radiation || {};
-          out.push(line("Structure", ["Radiation", pick(SCHEMES, r.scheme), r.sizeMode === "actual" ? `${r.rings} rings` : `${r.rays} rays - ${r.rings} rings`, r.sizeMode === "actual" ? "Actual size" : "Fit to canvas"].join(" / ")));
+          out.push(line("Structure", ["Radiation", pick(SCHEMES, r.scheme), (r.sizeMode === "actual" || r.sizeMode === "fixed") && r.raysByContainer && r.scheme !== "centripetal" ? `${r.rings} rings` : `${r.rays} rays - ${r.rings} rings`, r.sizeMode === "actual" ? "Actual size" : "Fit to canvas"].join(" / ")));
           blockLine();
         } else {
           const r = s.repetition || {};
@@ -1052,8 +1052,12 @@ export class StudioProApp {
       document.querySelectorAll("[data-rad-scheme]").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.radScheme === rad.scheme);
       });
-      // In Actual size every ring gets as many rays as fit the container's width, so the slider has no meaning there
-      document.getElementById("input-layout-rays")?.closest(".ds-field")?.classList.toggle("hidden", rad.sizeMode === "actual" || rad.sizeMode === "fixed");
+      // Actual size can let every ring take as many rays as fit the container's width; then the slider has no meaning
+      const actualRad = rad.sizeMode === "actual" || rad.sizeMode === "fixed";
+      const byContainer = actualRad && !!rad.raysByContainer && rad.scheme !== "centripetal";
+      document.getElementById("rad-raysbycont-item")?.classList.toggle("hidden", !actualRad || rad.scheme === "centripetal");
+      document.getElementById("input-layout-rays")?.closest(".ds-field")?.classList.toggle("hidden", byContainer);
+      this.syncCheckbox("chk-rad-raysbycont", !!rad.raysByContainer);
       this.syncControlValue("input-layout-rays", rad.rays || 12);
       this.syncControlValue("num-layout-rays", rad.rays || 12);
       this.syncControlValue("input-layout-rings", rad.rings || 6);
@@ -1557,6 +1561,13 @@ export class StudioProApp {
     });
 
     // Radiation Checkboxes
+    document.getElementById("chk-rad-raysbycont")?.addEventListener("change", (e) => {
+      const struct = this.getActiveLayerStructure();
+      if (struct) struct.radiation.raysByContainer = e.target.checked;
+      this.syncStructureInspectorWithActiveLayer();
+      this.render();
+      this.pushHistory(`Layer ${this.activeLayerId} Rays follow container: ${e.target.checked ? "ON" : "OFF"}`);
+    });
     const chkRadClip = document.getElementById("chk-rad-clip");
     if (chkRadClip) {
       chkRadClip.addEventListener("change", (e) => {

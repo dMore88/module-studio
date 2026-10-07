@@ -49,6 +49,7 @@ export const createDefaultLayerStructure = () => ({
     showRays: false,
     showRings: false,
     checkerInvert: false,
+    raysByContainer: false, // Actual size: every ring gets as many rays as fit the container's width (not in Centripetal)
     centerX: 0,
     centerY: 0
   },
@@ -1696,10 +1697,11 @@ export class StudioEngine {
       ctx.closePath();
     };
 
-    // Rays per ring. Fit to canvas: the Angular rays slider. Actual size: the cell is the container, so every ring gets as
+    // Rays per ring. The Angular rays slider; or, in Actual size with "Rays follow container", the cell is the container, so every ring gets as
     // many rays as fit its circumference at the container's width (few in the middle, more outwards)
     const contWidth = Math.max(10, this.containerSize(targetMod, width, height).w);
-    const raysOf = (i) => isFixed
+    const raysByContainer = isFixed && !!rad.raysByContainer && rad.scheme !== "centripetal"; // the chevrons of one wedge must nest from ring to ring
+    const raysOf = (i) => raysByContainer
       ? Math.max(3, Math.round((Math.PI * 2 * (openR + ((i - 0.5) / rings) * span)) / contWidth))
       : rays;
 
@@ -2012,8 +2014,8 @@ export class StudioEngine {
           }
         }
 
-        if (rad.showRays && isFixed) {
-          // Actual size: every ring has its own rays, so each ring draws its own pieces
+        if (rad.showRays && raysByContainer) {
+          // Rays follow the container: every ring has its own rays, so each ring draws its own pieces
           for (let i = 1; i <= rings; i++) {
             const nI = raysOf(i), shift = (i - 1) * ringRotRad;
             const ra = openR + ((i - 1) / rings) * span, rb = openR + (i / rings) * span;

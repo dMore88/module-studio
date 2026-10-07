@@ -108,7 +108,7 @@ Vale para Repetition y Radiation; es el rectángulo del lienzo donde vive el lay
 ### Layout › Radiation
 | Control | Mín. | Máx. | Paso | Por defecto | Razón |
 | :-- | :-- | :-- | :-- | :-- | :-- |
-| Angular rays | 3 | 60 | 1 | 12 | Solo en Fit to canvas (en Actual size cada anillo calcula los suyos según el ancho del contenedor y el slider se oculta). 3 es el reparto mínimo (triangular); 60 rayos con 20 anillos son 1 200 módulos, que el motor dibuja sin problema. |
+| Angular rays | 3 | 60 | 1 | 12 | Los mismos rayos en todos los anillos; en Actual size, con *Rays follow container* encendida (apagada por defecto), cada anillo calcula los suyos según el ancho del contenedor y el slider se oculta. 3 es el reparto mínimo (triangular); 60 rayos con 20 anillos son 1 200 módulos, que el motor dibuja sin problema. |
 | Concentric rings | 2 | 20 | 1 | 6 | Hasta 20 anillos; un valor redondo que el motor aguanta bien. |
 | Centers (multi-center) | 2 | 8 | 1 | 2 | De dos a ocho focos, repartidos en círculo (ocho = un octágono). |
 | Spiral twist | −180º | 180º | 1º | 45º | Sentido y cantidad del giro de la espiral. |
