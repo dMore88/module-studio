@@ -24,6 +24,8 @@ Sale de las filas ⏳ del mapa de conceptos, más las mejoras de filas 🟡 que 
 
 | — | **Block, clic para mover** (fases 1 y 2 hechas el 7 oct 2026: el bloque con tamaño y desfase en px, y su marco punteado mientras el panel Layout está abierto) | **Clic en el lienzo para mover el bloque** con el panel Layout abierto (como el foco de Anomaly y el atractor de Concentration): el clic fijaría el desfase del centro del bloque |
 
+| — | **Art log como JSON y editor interno** (idea del 7 oct 2026, pendiente de definir cómo se usaría) | Hoy el Art log es una receta de texto (con *Copy*). Idea: darle **dos pestañas**, *Recipe* (la actual, en las unidades de la interfaz) y *JSON* (el proyecto compacto, con todas las capas y solo lo activo, en los valores internos exactos). Como la app rellena con valores por defecto lo que falta, un JSON compacto ya es un proyecto válido. Luego, un **editor en tiempo real** (fase 2): editar el JSON dentro de la app con un botón *Apply* que valide y cargue con la misma lógica que *Open* (que ya limpia valores dañados) y deje un paso de deshacer. Es una evolución de la app: definir antes el flujo (pegar recetas entre proyectos, pasárselas a un asistente, editar a mano). Ojo con las unidades: el JSON usa valores internos (jitter en px, Speed con el signo contrario, el Block en %, *Col B size* como factor) que no coinciden con los de los sliders |
+
 ### P3 — por evaluar con el filtro de juego
 | ID | Concepto | Notas |
 | :-- | :-- | :-- |

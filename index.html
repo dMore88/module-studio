@@ -93,7 +93,13 @@
 
       <!-- Art log: fills in as controls are turned on (built from the state) -->
       <section class="ds-art-log" aria-labelledby="art-log-title">
-        <p id="art-log-title" class="art-log__title">Art log</p>
+        <div class="art-log__head">
+          <p id="art-log-title" class="art-log__title">Art log</p>
+          <button type="button" id="btn-art-log-copy" class="ds-btn art-log__copy" title="Copy the whole log as text">
+            <span>Copy</span>
+            <i class="ph ph-copy" aria-hidden="true"></i>
+          </button>
+        </div>
         <div id="art-log-lines" class="art-log__lines"></div>
       </section>
     </div>
@@ -1507,7 +1513,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=ee152945"></script>
+  <script src="js/bundle-pro.js?v=9665cccc"></script>
 
 </body>
 </html>

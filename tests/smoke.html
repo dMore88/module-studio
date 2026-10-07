@@ -351,6 +351,28 @@
       }
     });
 
+    await test("Art log is a complete recipe: every layer, every active control with its values, checks only when on, and Copy", async () => {
+      reset();
+      const d = win.document, log = () => d.getElementById("art-log-lines").textContent;
+      const L = app.state.layers[0];
+      Object.assign(L, { shape: "square", wireframe: false, color: "#2244cc", width: 120, height: 80, rotation: 15, offsetX: 10, offsetY: -5, showContainer: true, clipContainer: true });
+      const st = L.structure; st.enabled = true; st.mode = "repetition"; Object.assign(st.repetition, { gridType: "sliding", cols: 5, rows: 3, showGridLines: true, gridLineWidth: 2, lineColor: "#112233", activeClipping: true, checkerInvert: true, reflection: "both" });
+      d.getElementById("btn-duplicate-layer").click();
+      const L2 = app.getActiveModule(); L2.name = "Second"; L2.visible = true; L2.structure.repetition.showGridLines = false; L2.structure.repetition.activeClipping = false; L2.structure.repetition.checkerInvert = false;
+      app.render();
+      const t = log();
+      assert(/Layer 1/.test(t) && /Second \(active\)/.test(t), "Every layer has its heading, the active one marked: " + t);
+      assert((t.match(/Module: Square \/ Fill \/ #2244CC/g) || []).length === 2, "Both layers list their module: " + t);
+      assert(/Size: 120 x 80px \/ rotation 15º \/ offset 10, -5px/.test(t) && /Container: 100 x 100px \/ shown \/ clip/.test(t), "Size and container are listed: " + t);
+      assert(/Reflection Both/.test(t) && /Row offset 50%/.test(t), "The structure lists all its values: " + t);
+      assert(/Visible lines: on \/ stroke 2px \/ #112233 \/ Both \/ all lines/.test(t) && /Clip cell: on/.test(t) && /Checkerboard: on/.test(t), "Checks that are on are listed with their values: " + t);
+      assert((t.match(/Visible lines/g) || []).length === 1 && (t.match(/Clip cell/g) || []).length === 1, "Checks that are off do not appear: " + t);
+      const text = app.artLogText();
+      assert(/^Canvas: /.test(text) && /\nLayer 1\nModule: /.test(text) && !/<|&lt;/.test(text), "Copy gives plain text: " + text.slice(0, 200));
+      assert(d.getElementById("btn-art-log-copy") && getComputedStyle(d.getElementById("art-log-lines")).userSelect !== "none", "The log has a Copy button and its text can be selected");
+      reset();
+    });
+
     await test("Art log lists every Texture control in use, in the units of the sliders", () => {
       reset();
       const d = win.document, log = () => d.getElementById("art-log-lines").textContent;
@@ -360,7 +382,7 @@
       assert(/Jitter 58%/.test(log()) && /Line skipping 20%/.test(log()) && /Random lines 100%/.test(log()) && /Plane wave 28% \(2 waves, 0º\)/.test(log()), "The Texture line is incomplete: " + log());
       st.texture = { enabled: true, jitter: 0, skipChance: 0, crossing: 0, undulation: 3 };
       app.render();
-      assert(/Texture: Plane wave 10%/.test(log()) && !/Jitter|skipping|Random/.test(log()), "Controls at 0 should stay out of the line: " + log());
+      assert(/Texture: Jitter 0% \/ Line skipping 0% \/ Random lines 0% \(opacity 85%\) \/ Plane wave 10%/.test(log()), "Texture lists all its values, also the ones at 0: " + log());
     });
 
     await test("Plane wave bends the whole module like one sheet, in the direction chosen", () => {
@@ -398,7 +420,7 @@
       app.render();
       const l = log();
       assert(/Jitter 30%/.test(l) && /Round 60%/.test(l) && /Cut 20%/.test(l), "Similarity is incomplete: " + l);
-      assert(/Range 90º/.test(l) && /3 cycles/.test(l) && /Ping-pong/.test(l) && /Speed \+40/.test(l) && /Alternate rows/.test(l) && /Reversed/.test(l), "Gradation is incomplete: " + l);
+      assert(/Range 90º/.test(l) && /Cycles 3/.test(l) && /Ping-pong/.test(l) && /Speed \+40/.test(l) && /Alternate rows/.test(l) && /Reversed/.test(l), "Gradation is incomplete: " + l);
       assert(/4 zones/.test(l) && /Seed 9/.test(l) && /120px/.test(l) && /Severity 30%/.test(l), "Anomaly is incomplete: " + l);
       assert(/Shift 35% at 90º/.test(l), "Contrast is incomplete: " + l);
       assert(/3 foci/.test(l) && /Pull 80%/.test(l) && /Radius 200px/.test(l) && /at 25% \/ 75%/.test(l), "Concentration is incomplete: " + l);
@@ -411,7 +433,7 @@
       const st = app.getActiveLayerStructure();
       st.space = { enabled: true, mode: "isometric", depthPct: 35, angle: -90, shading: 60, showIsoGuides: false };
       app.render();
-      assert(/Space: Isometric \/ Depth 35% \/ -90º \/ Shading 60%/.test(log()) && !/undefined|NaN/.test(log()), "The Space line is wrong: " + log());
+      assert(/Space: Isometric \/ Depth 35% \/ Angle -90º \/ Shading 60%/.test(log()) && !/undefined|NaN/.test(log()), "The Space line is wrong: " + log());
     });
 
     const fire0 = (el, v) => { el.value = v; el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
@@ -461,7 +483,7 @@
       assert(!d.getElementById("block-size-fields").classList.contains("hidden"), "Fit shows the block size");
       st.repetition.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer(); app.render();
       assert(d.getElementById("block-size-fields").classList.contains("hidden"), "Actual size hides the block size");
-      assert(/Block: offset -150 \/ -150px/.test(d.getElementById("art-log-lines").textContent), "The log should mention the block: " + d.getElementById("art-log-lines").textContent);
+      assert(/Block: offset -150, -150px/.test(d.getElementById("art-log-lines").textContent), "The log should mention the block: " + d.getElementById("art-log-lines").textContent);
       fire0(d.getElementById("input-block-x"), 60);
       assert(Math.abs(st.block.x - 60) < 1e-9, `A 60 px offset should store 60 % of the canvas away from the middle... (${st.block.x})`);
       st.mode = "radiation"; app.syncAllInspectorsWithActiveLayer();
@@ -728,7 +750,7 @@
         const tol = 41; // 20 px border on each side plus rounding
         assert(Math.abs(a.height - st.height) <= tol || Math.abs(a.width - (fl.left - 24 - a.left)) <= tol, `${key}: the artboard leaves free space on both axes`);
       }
-      assert(/^\d+ × \d+ PX/.test(d.getElementById("hud-resolution").textContent), "The status line does not show the canvas size");
+      assert(/Canvas: \d+ × \d+ PX/.test(d.getElementById("art-log-lines").textContent), "The Art log does not show the canvas size");
       for (const btn of d.querySelectorAll("#controls-rail .rail-btn")) {
         btn.click(); await wait(30);
         const tab = d.querySelector(`.flyout-tab-content[data-flyout-tab="${btn.dataset.railTab}"]`);

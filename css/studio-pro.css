@@ -1007,6 +1007,10 @@ input[type="range"]:hover::-webkit-slider-thumb {
   font-weight: var(--typography-weight-500);
   user-select: text;
 }
+/* The whole app blocks text selection (every element), so the log lines must opt in to be copied by hand */
+.ds-art-log .art-log__lines, .ds-art-log .art-log__lines * { user-select: text; -webkit-user-select: text; }
+.art-log__head { display: flex; align-items: center; justify-content: space-between; position: sticky; top: calc(var(--spacing-6) * -1); margin: calc(var(--spacing-6) * -1) calc(var(--spacing-6) * -1) 0; padding: var(--spacing-5) var(--spacing-6); background: var(--neutral-bg-strong); z-index: 1; }
+.art-log__copy { height: var(--sizing-6, 28px); padding: 0 var(--spacing-5); font-family: var(--typography-family-body); }
 .art-log__title { margin: 0; line-height: var(--line-height-body); color: var(--neutral-text-main); text-transform: uppercase; }
 .art-log__lines { color: var(--neutral-text-subtle); line-height: var(--line-height-body); overflow-wrap: anywhere; }
 .art-log__lines p { margin: 0; }
