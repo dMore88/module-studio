@@ -703,6 +703,86 @@ function flattenShape(shapeDef) {
   return subpaths;
 }
 
+// ---- Container clip as geometry (Clip container) ----
+// The shape cut by the container, as a new shape: its outline is clipped to the container's rectangle BEFORE texture and space
+// work on it, so those effects are not cut themselves (they treat the cut module as the shape). A stroked outline keeps only its
+// arcs inside (no line along the cut); a filled one becomes a polygon closed along the container's edge.
+// `corners`: the four corners of the container, in the frame the shape is drawn in, as a share of `size0` (the size it is drawn at).
+function clippedShape(shapeDef, corners, size0, strokeOnly) {
+  const r0 = size0 || 1;
+  const nc = corners.map(c => ({ x: c.x / r0, y: c.y / r0 }));
+  const key = `clip:${shapeDef.id}:${strokeOnly ? "s" : "f"}:${nc.map(c => `${Math.round(c.x * 1000)},${Math.round(c.y * 1000)}`).join(";")}`;
+  return {
+    id: key,
+    name: shapeDef.name,
+    noCache: true,
+    skeleton: shapeDef.skeleton,
+    textureRef: shapeDef.textureRef,
+    draw(ctx, size) {
+      const f = size / FLAT_REF_SIZE;
+      let q = nc.map(c => ({ x: c.x * size, y: c.y * size }));
+      let area = 0;
+      for (let i = 0; i < 4; i++) { const a = q[i], b = q[(i + 1) % 4]; area += a.x * b.y - b.x * a.y; }
+      if (area < 0) q = q.reverse(); // one orientation, so "inside" is the same side of every edge
+      const side = (a, b, p) => (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+      const edges = [0, 1, 2, 3].map(i => [q[i], q[(i + 1) % 4]]);
+      ctx.beginPath();
+      for (const sp of flattenShape(shapeDef)) {
+        const pts = sp.pts.map(p => ({ x: p.x * f, y: p.y * f }));
+        if (pts.length < 2) continue;
+        if (sp.closed && !strokeOnly && !shapeDef.skeleton) {
+          // Sutherland-Hodgman against the four edges
+          let poly = pts;
+          for (const [a, b] of edges) {
+            const out = [];
+            for (let i = 0; i < poly.length; i++) {
+              const p = poly[i], n = poly[(i + 1) % poly.length];
+              const sp1 = side(a, b, p), sn = side(a, b, n);
+              if (sp1 >= 0) out.push(p);
+              if ((sp1 >= 0) !== (sn >= 0)) { const k = sp1 / (sp1 - sn); out.push({ x: p.x + (n.x - p.x) * k, y: p.y + (n.y - p.y) * k }); }
+            }
+            poly = out;
+            if (poly.length === 0) break;
+          }
+          if (poly.length >= 3) { poly.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); }
+          continue;
+        }
+        // Outlines and open paths: keep the parts inside (Cyrus-Beck on every segment)
+        const line = sp.closed ? pts.concat([pts[0]]) : pts;
+        const runs = [];
+        let run = null, firstAtStart = false, lastOpen = false;
+        for (let i = 0; i < line.length - 1; i++) {
+          const p0 = line[i], p1 = line[i + 1];
+          let t0 = 0, t1 = 1, ok = true;
+          for (const [a, b] of edges) {
+            const f0 = side(a, b, p0), f1 = side(a, b, p1);
+            if (f0 < 0 && f1 < 0) { ok = false; break; }
+            if (f0 < 0) t0 = Math.max(t0, f0 / (f0 - f1));
+            else if (f1 < 0) t1 = Math.min(t1, f0 / (f0 - f1));
+          }
+          if (!ok || t0 > t1) { if (run) { runs.push(run); run = null; } lastOpen = false; continue; }
+          const at = (t) => ({ x: p0.x + (p1.x - p0.x) * t, y: p0.y + (p1.y - p0.y) * t });
+          if (i === 0 && t0 === 0) firstAtStart = true;
+          if (!run || t0 > 0) { if (run) runs.push(run); run = [at(t0)]; }
+          run.push(at(t1));
+          if (t1 < 1) { runs.push(run); run = null; lastOpen = false; } else lastOpen = true;
+        }
+        if (run) runs.push(run);
+        let closedWhole = false;
+        if (sp.closed && runs.length >= 1 && firstAtStart && lastOpen) {
+          if (runs.length === 1) closedWhole = true; // all of it is inside
+          else { const last = runs.pop(); runs[0] = last.concat(runs[0].slice(1)); } // the run that crosses the start of the outline
+        }
+        for (const r of runs) {
+          if (r.length < 2) continue;
+          r.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+          if (closedWhole) ctx.closePath();
+        }
+      }
+    }
+  };
+}
+
 // ---- Smart module (composite shape) ----
 // A module made of several figures, drawn as ONE shape: every modifier (texture, space, morph...) sees a single shape with
 // several outlines. A figure is { shape, size, x, y, rotation } with size, x and y as a % of the module's size.
@@ -1255,13 +1335,14 @@ class StudioEngine {
     this.state = JSON.parse(JSON.stringify(defaultStudioState));
   }
 
-  // Container clip (Clip container). With Space on, the cut is made on every slice of the volume instead (see
-  // drawSpatialShape), so the depth of the cut figure is not cut itself; `moduleClip` keeps the rectangle and the
+  // Container clip (Clip container). When texture or space will work on the module, the cut is made on its geometry
+  // instead (see drawShape), so those effects are not cut themselves; `moduleClip` keeps the rectangle and the
   // transform it was set under
   applyContainerClip(ctx, x, y, w, h, mod) {
-    const space = mod && mod.structure && mod.structure.space;
+    const s = (mod && mod.structure) || {};
     const m = ctx.getTransform ? ctx.getTransform() : null;
-    const deferred = !!(m && space && space.enabled && (space.mode || "isometric") !== "foreshortening");
+    // Texture and Space work on the cut module (see drawShape); a Gradation can bring a texture too
+    const deferred = !!(m && ((s.space && s.space.enabled) || (s.texture && s.texture.enabled) || (s.gradation && s.gradation.enabled)));
     this.moduleClip = { x, y, w, h, m, deferred };
     if (!deferred) {
       ctx.beginPath();
@@ -1308,6 +1389,15 @@ class StudioEngine {
       };
     }
 
+    // Clip container, when texture or space follow: cut the module's own geometry, so they treat the cut module as the shape
+    let hardClip = pendingClip;
+    const willTexture = !!(texture && texture.enabled);
+    const willSpace = !!(space && space.enabled && !skipSpace && !shapeDef.skeleton && (space.mode || "isometric") !== "foreshortening");
+    if (pendingClip && (willTexture || willSpace)) {
+      shapeDef = clippedShape(shapeDef, this.clipCorners(pendingClip, ctx.getTransform()), size, strokeOnly);
+      hardClip = null;
+    }
+
     // Texture deforms the geometry itself, so it applies before any space mode.
     if (texture && texture.enabled) {
       // Random lines also show on filled shapes, but not under a Space volume (it draws the shape many times)
@@ -1316,21 +1406,18 @@ class StudioEngine {
     }
 
     // Open-path shapes (lines, digits...) are strokes: they stay flat.
-    if (!space || !space.enabled || skipSpace || shapeDef.skeleton) {
-      if (pendingClip) {
-        // Space turned out not to apply (an open-path shape): the container cut is made the usual way
-        ctx.save();
-        const c = this.clipCorners(pendingClip, ctx.getTransform());
-        ctx.beginPath(); c.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); ctx.clip();
-        this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
-        ctx.restore();
-        return;
-      }
-      this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
-      return;
+    // No texture and no space (or a tilt): the container cuts the drawing the usual way
+    if (hardClip) {
+      ctx.save();
+      const c = this.clipCorners(hardClip, ctx.getTransform());
+      ctx.beginPath(); c.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); ctx.clip();
     }
-
-    this.drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space, pendingClip);
+    if (!space || !space.enabled || skipSpace || shapeDef.skeleton) {
+      this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
+    } else {
+      this.drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space);
+    }
+    if (hardClip) ctx.restore();
   }
 
   // Draw flat shape. Open-path shapes are strokes: thin in stroke mode, thick in fill mode.
@@ -1356,30 +1443,7 @@ class StudioEngine {
   }
 
   // Draw illusory 3D spatial form (Space)
-  drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space, clip = null) {
-    if (clip) {
-      // Every slice of the volume is cut by the container as it sits in the module's own frame, so the figure is cut at
-      // the container's edge and its depth is the depth of the cut figure. Each fill / stroke is redrawn under that cut
-      const real = ctx;
-      const corners = this.clipCorners(clip, real.getTransform());
-      const cut = (op) => () => {
-        real.save();
-        real.beginPath(); corners.forEach((p, i) => (i ? real.lineTo(p.x, p.y) : real.moveTo(p.x, p.y))); real.closePath(); real.clip();
-        shapeDef.draw(real, size);
-        real[op]();
-        real.restore();
-      };
-      const fill = cut("fill"), stroke = cut("stroke");
-      ctx = new Proxy(real, {
-        get(target, prop) {
-          if (prop === "fill") return fill;
-          if (prop === "stroke") return stroke;
-          const v = target[prop];
-          return typeof v === "function" ? v.bind(target) : v;
-        },
-        set(target, prop, v) { target[prop] = v; return true; }
-      });
-    }
+  drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space) {
     const mode = space.mode || "isometric";
     // The depth is a share of the module; projects saved in pixels (depth) are converted when they are opened
     const depth = (size * (space.depthPct ?? 20)) / 100;

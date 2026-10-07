@@ -2408,7 +2408,7 @@
       assert(px(300, 245) < 200, "The depth reaches beyond the container (up, 50 px) as the extrusion of the cut figure");
       assert(px(300, 340) > 230 && px(260, 300) > 230 && px(340, 300) > 230, "The figure itself is cut at the container's edge");
       const svg = win.StudioExporter.buildSVG(app.engine, cv, app.getActivePalette());
-      assert(/clip-path/.test(svg), "The SVG keeps the cut");
+      assert(/<path/.test(svg), "The SVG draws the cut volume");
       // without Space the cut is the usual one
       L.structure.space.enabled = false; drawRaw(app);
       assert(px(300, 245) > 230 && px(290, 310) < 100, "Without Space the container cuts as before");
@@ -2448,6 +2448,28 @@
       const hist = app.history.length;
       q("#btn-fig-cancel").click(); await wait(60);
       assert(L.figures.length === 0 && app.history.length === hist, "Cancel goes back to the start of the session");
+    });
+
+    await test("Clip container cuts the module, not its effects: Texture works on the cut module and is not cut itself", async () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const dpr = cv.width / 600;
+      const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: false, width: 100, height: 100, containerW: 60, containerH: 60, showContainer: false, clipContainer: true }); app.state.showSafeBounds = false;
+      const outside = () => { drawRaw(app); const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0, inside = 0; for (let y = 0; y < cv.height; y++) for (let x = 0; x < cv.width; x++) { const dark = d[(y * cv.width + x) * 4] < 128; if (!dark) continue; if (Math.abs(x / dpr - 300) > 34 || Math.abs(y / dpr - 300) > 34) n++; else inside++; } return { n, inside }; };
+      L.structure.texture = { enabled: false };
+      const plain = outside();
+      assert(plain.n === 0 && plain.inside > 3000, `Without texture the container cuts the square (${JSON.stringify(plain)})`);
+      L.structure.texture = { enabled: true, jitter: 0, skipChance: 0, crossing: 0, undulation: 30, waves: 1, waveAngle: 0 };
+      const wavy = outside();
+      assert(wavy.n > 100 && wavy.inside > 2000, `The wave should bend the cut module past the container, not be cut by it (${JSON.stringify(wavy)})`);
+      // a stroked circle half outside the container: only its arc inside is drawn, with no line along the cut
+      Object.assign(L, { shape: "circle", wireframe: true, strokeWidth: 2, width: 70, height: 70 });
+      L.structure.texture = { enabled: true, jitter: 0, skipChance: 0, crossing: 0, undulation: 0, waves: 1, waveAngle: 0 };
+      drawRaw(app);
+      const px = (x, y) => cv.getContext("2d").getImageData(Math.round(x * dpr), Math.round(y * dpr), 1, 1).data[0];
+      assert(px(330, 300) > 230 && px(300, 330) > 230 && px(300, 300) > 230, "A stroked outline cut by the container has no line along the cut");
+      assert(px(335, 300) > 230 && px(300, 335) > 230, "The parts of the circle outside the container are not drawn");
+      assert(px(300 + 24.7, 300 + 24.7) < 160 || px(300 + 24, 300 + 25) < 160, "The arcs inside the container are drawn");
     });
 
     const failed = results.filter(r => !r.ok).length;

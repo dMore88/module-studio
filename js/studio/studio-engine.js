@@ -1,5 +1,5 @@
 // Studio Composition Engine: Unified Grammar Pipeline for Wucius Wong 2D Design
-import { Shapes, texturedShape, morphedShape, compositeShape } from './shapes.js';
+import { Shapes, texturedShape, morphedShape, compositeShape, clippedShape } from './shapes.js';
 import { CanvasUtils } from '../canvas-utils.js';
 
 export const createDefaultLayerStructure = () => ({
@@ -214,13 +214,14 @@ export class StudioEngine {
     this.state = JSON.parse(JSON.stringify(defaultStudioState));
   }
 
-  // Container clip (Clip container). With Space on, the cut is made on every slice of the volume instead (see
-  // drawSpatialShape), so the depth of the cut figure is not cut itself; `moduleClip` keeps the rectangle and the
+  // Container clip (Clip container). When texture or space will work on the module, the cut is made on its geometry
+  // instead (see drawShape), so those effects are not cut themselves; `moduleClip` keeps the rectangle and the
   // transform it was set under
   applyContainerClip(ctx, x, y, w, h, mod) {
-    const space = mod && mod.structure && mod.structure.space;
+    const s = (mod && mod.structure) || {};
     const m = ctx.getTransform ? ctx.getTransform() : null;
-    const deferred = !!(m && space && space.enabled && (space.mode || "isometric") !== "foreshortening");
+    // Texture and Space work on the cut module (see drawShape); a Gradation can bring a texture too
+    const deferred = !!(m && ((s.space && s.space.enabled) || (s.texture && s.texture.enabled) || (s.gradation && s.gradation.enabled)));
     this.moduleClip = { x, y, w, h, m, deferred };
     if (!deferred) {
       ctx.beginPath();
@@ -267,6 +268,15 @@ export class StudioEngine {
       };
     }
 
+    // Clip container, when texture or space follow: cut the module's own geometry, so they treat the cut module as the shape
+    let hardClip = pendingClip;
+    const willTexture = !!(texture && texture.enabled);
+    const willSpace = !!(space && space.enabled && !skipSpace && !shapeDef.skeleton && (space.mode || "isometric") !== "foreshortening");
+    if (pendingClip && (willTexture || willSpace)) {
+      shapeDef = clippedShape(shapeDef, this.clipCorners(pendingClip, ctx.getTransform()), size, strokeOnly);
+      hardClip = null;
+    }
+
     // Texture deforms the geometry itself, so it applies before any space mode.
     if (texture && texture.enabled) {
       // Random lines also show on filled shapes, but not under a Space volume (it draws the shape many times)
@@ -275,21 +285,18 @@ export class StudioEngine {
     }
 
     // Open-path shapes (lines, digits...) are strokes: they stay flat.
-    if (!space || !space.enabled || skipSpace || shapeDef.skeleton) {
-      if (pendingClip) {
-        // Space turned out not to apply (an open-path shape): the container cut is made the usual way
-        ctx.save();
-        const c = this.clipCorners(pendingClip, ctx.getTransform());
-        ctx.beginPath(); c.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); ctx.clip();
-        this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
-        ctx.restore();
-        return;
-      }
-      this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
-      return;
+    // No texture and no space (or a tilt): the container cuts the drawing the usual way
+    if (hardClip) {
+      ctx.save();
+      const c = this.clipCorners(hardClip, ctx.getTransform());
+      ctx.beginPath(); c.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); ctx.clip();
     }
-
-    this.drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space, pendingClip);
+    if (!space || !space.enabled || skipSpace || shapeDef.skeleton) {
+      this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
+    } else {
+      this.drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space);
+    }
+    if (hardClip) ctx.restore();
   }
 
   // Draw flat shape. Open-path shapes are strokes: thin in stroke mode, thick in fill mode.
@@ -315,30 +322,7 @@ export class StudioEngine {
   }
 
   // Draw illusory 3D spatial form (Space)
-  drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space, clip = null) {
-    if (clip) {
-      // Every slice of the volume is cut by the container as it sits in the module's own frame, so the figure is cut at
-      // the container's edge and its depth is the depth of the cut figure. Each fill / stroke is redrawn under that cut
-      const real = ctx;
-      const corners = this.clipCorners(clip, real.getTransform());
-      const cut = (op) => () => {
-        real.save();
-        real.beginPath(); corners.forEach((p, i) => (i ? real.lineTo(p.x, p.y) : real.moveTo(p.x, p.y))); real.closePath(); real.clip();
-        shapeDef.draw(real, size);
-        real[op]();
-        real.restore();
-      };
-      const fill = cut("fill"), stroke = cut("stroke");
-      ctx = new Proxy(real, {
-        get(target, prop) {
-          if (prop === "fill") return fill;
-          if (prop === "stroke") return stroke;
-          const v = target[prop];
-          return typeof v === "function" ? v.bind(target) : v;
-        },
-        set(target, prop, v) { target[prop] = v; return true; }
-      });
-    }
+  drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space) {
     const mode = space.mode || "isometric";
     // The depth is a share of the module; projects saved in pixels (depth) are converted when they are opened
     const depth = (size * (space.depthPct ?? 20)) / 100;
