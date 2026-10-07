@@ -2344,15 +2344,21 @@
       assert(L.figures.length === 1 && L.figures[0].shape === "square", "Entering makes the module's own shape the first figure");
       // the canvas shows only the module, big (no 3 x 3 grid), and the module controls are in the same panel
       assert(q("#input-active-width") && q("#input-active-rotation") && q("#input-active-offset-x") && q("#input-active-container-w") && q("#btn-mode-fill") && q("#color-active-shape"), "Every module control lives in the editor");
-      // changing the module's size changes the module on screen, not the container; the container check is respected
+      // a module smaller than when the editor opened shrinks on screen and the container stays; a bigger one zooms out so it stays in view
       const view = () => app.stateForFigureEdit().layers[0];
-      const v0 = view(); fire(q("#input-active-width"), 200); const v1 = view();
-      assert(Math.abs(v1.width / v0.width - 2) < 1e-6 && v1.containerW === v0.containerW, `The module doubles on screen and the container stays (${v0.width}->${v1.width}, container ${v0.containerW}->${v1.containerW})`);
-      fire(q("#input-active-width"), 100);
+      const v0 = view(); fire(q("#input-active-width"), 50); const v1 = view();
+      assert(Math.abs(v1.width / v0.width - 0.5) < 1e-6 && v1.containerW === v0.containerW, `The module halves on screen and the container stays (${v0.width}->${v1.width}, container ${v0.containerW}->${v1.containerW})`);
+      fire(q("#input-active-width"), 1000); fire(q("#input-active-height"), 600);
+      const v2 = view();
+      assert(v2.width <= 361 && v2.height <= 361 && v2.containerW < v0.containerW, `A module bigger than the view zooms out and stays in view (${v2.width} x ${v2.height})`);
+      fire(q("#input-active-width"), 100); fire(q("#input-active-height"), 100);
       L.showContainer = false; assert(view().showContainer === false, "Show container off hides the container in the editor");
       L.showContainer = true;
+      // one untouched figure hides the figure's own size, position and rotation (they are the module's)
+      assert(q("#fig-transform-stack").classList.contains("hidden"), "A single untouched figure shows no figure size / position / rotation");
       q("#btn-fig-add").click(); await wait(30);
       assert(L.figures.length === 2 && app.figEdit.index === 1, "Add figure adds the second one and selects it");
+      assert(!q("#fig-transform-stack").classList.contains("hidden"), "With two figures each one has its own size, position and rotation");
       fire(q("#input-fig-x"), 30); fire(q("#input-fig-size"), 40);
       assert(L.figures[1].x === 30 && L.figures[1].size === 40 && q("#num-fig-size").value === "40%", "The figure sliders should edit the selected figure");
       q('#fig-shape-grid [data-fig-shape="triangle"]').click(); await wait(30);

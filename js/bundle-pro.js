@@ -6853,9 +6853,11 @@ class StudioProApp {
     const cfg = ASPECT_RATIOS[this.state.aspectRatio] || ASPECT_RATIOS["1:1"];
     const layer = this.state.layers.find(l => l.id === this.figEdit.layerId);
     if (!layer) return null;
-    // One scale for the whole session (set when the editor opened), so changing the module's size changes the module on
-    // screen and leaves the container as it is
-    const f = this.figEdit.scale || (Math.min(cfg.w, cfg.h) * 0.6) / Math.max(1, layer.width || 100, layer.height || 100);
+    // The scale is the one the editor opened with, so changing the module's size changes the module on screen and leaves the
+    // container as it is; it only zooms out when the module or the container outgrow the view, so they never leave the canvas
+    const big = Math.min(cfg.w, cfg.h) * 0.6;
+    const extentNow = Math.max(1, layer.width || 100, layer.height || 100, layer.containerW || 0, layer.containerH || 0);
+    const f = Math.min(this.figEdit.scale || big / extentNow, big / extentNow);
     const off = (b) => (b ? { ...b, enabled: false } : b);
     const s = layer.structure || {};
     const view = {
@@ -6974,6 +6976,10 @@ class StudioProApp {
     document.getElementById("btn-fig-delete")?.toggleAttribute("disabled", mod.figures.length <= 1);
     document.getElementById("btn-fig-up")?.toggleAttribute("disabled", this.figEdit.index <= 0);
     document.getElementById("btn-fig-down")?.toggleAttribute("disabled", this.figEdit.index >= mod.figures.length - 1);
+    // One untouched figure is just the module: its size, position and rotation are the module's own (Width, Height, Offset,
+    // Rotation below), so the figure's are only offered when there is more than one figure or this one has been changed
+    const plain = mod.figures.length === 1 && f && f.size === 100 && f.x === 0 && f.y === 0 && f.rotation === 0;
+    document.getElementById("fig-transform-stack")?.classList.toggle("hidden", !!plain);
     this.updateHeightVisibility(mod);
     this.render();
   }
