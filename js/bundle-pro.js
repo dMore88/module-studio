@@ -719,10 +719,23 @@ function compositeShape(figures) {
     skeleton: list.length > 0 && list.every(f => !!Shapes[f.shape].skeleton),
     draw(ctx, size) {
       // One path for all the figures: a figure's own beginPath must not wipe the ones already added
-      let first = true;
+      // An arc that starts a figure must not be joined by a line to the end of the previous figure: when no outline is
+      // open, it starts at its own first point
+      let first = true, open = false;
       const wrap = new Proxy(ctx, {
         get(target, prop) {
-          if (prop === "beginPath") return () => { if (first) { target.beginPath(); first = false; } };
+          if (prop === "beginPath") return () => { open = false; if (first) { target.beginPath(); first = false; } };
+          if (prop === "closePath") return () => { open = false; target.closePath(); };
+          if (prop === "moveTo" || prop === "lineTo" || prop === "bezierCurveTo" || prop === "quadraticCurveTo") {
+            return (...a) => { open = true; return target[prop](...a); };
+          }
+          if (prop === "arc") {
+            return (cx, cy, r, a0, a1, ccw) => {
+              if (!open) target.moveTo(cx + Math.cos(a0) * r, cy + Math.sin(a0) * r);
+              open = true;
+              return target.arc(cx, cy, r, a0, a1, ccw);
+            };
+          }
           const v = target[prop];
           return typeof v === "function" ? v.bind(target) : v;
         },
@@ -734,6 +747,7 @@ function compositeShape(figures) {
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.a);
+        open = false;
         Shapes[f.shape].draw(wrap, p.s);
         ctx.restore();
       }
