@@ -1011,7 +1011,7 @@ const createDefaultLayerStructure = () => ({
     showRays: false,
     showRings: false,
     checkerInvert: false,
-    moduleScale: "cell", // Fit: "cell" (the module shrinks with its cell) or "uniform" (the same size in every cell, proportional to the whole structure)
+    moduleScale: "uniform", // Fit: "uniform" (Base size: the same size in every cell, proportional to the whole structure) or "cell" (the module shrinks with its cell)
     raysByContainer: false, // Actual size: every ring gets as many rays as fit the container's width (not in Centripetal)
     centerX: 0,
     centerY: 0
@@ -2633,7 +2633,7 @@ class StudioEngine {
     if (isFixed) maxR = openR + rings * spacing;
     const span = maxR - openR;
     // Fit with "uniform" module scale: every module has the same size, taken from the whole structure (as in Actual size, but the structure still fits the canvas)
-    const uniform = !isFixed && rad.moduleScale === "uniform";
+    const uniform = !isFixed && rad.moduleScale !== "cell";
     const uniformK = maxR / (Math.min(usableW, usableH) * 0.5);
     this.layoutExtent = isFixed ? { x: width / 2 + (rad.centerX || 0) - maxR, y: height / 2 + (rad.centerY || 0) - maxR, w: maxR * 2, h: maxR * 2 } : null; // Fit: the block itself
     // Each ring is turned a bit more than the one inside it, so their subdivisions do not line up
@@ -3983,6 +3983,9 @@ class StudioProApp {
       if (rep && typeof rep === "object" && rep.curveAmount === undefined && typeof rep.curveIntensity === "number") {
         rep.curveAmount = Math.min(1, Math.round((rep.curveIntensity / (600 / Math.max(1, rep.cols || 4))) * 100) / 100);
       }
+      // Radiation modules used to shrink with their cell; the new default is Base size, so older projects keep what they had
+      const rd = st.radiation;
+      if (rd && typeof rd === "object" && rd.moduleScale === undefined) rd.moduleScale = "cell";
       const sp = st.space;
       if (sp && typeof sp === "object" && sp.depthPct === undefined && typeof sp.depth === "number") {
         sp.depthPct = Math.max(5, Math.min(100, Math.round((sp.depth / 85) * 100)));
@@ -4300,7 +4303,7 @@ class StudioProApp {
           const r = s.radiation || {};
           const actual = r.sizeMode === "actual" || r.sizeMode === "fixed";
           const byCont = actual && !!r.raysByContainer && r.scheme !== "centripetal";
-          const parts = ["Radiation", pick(SCHEMES, r.scheme), byCont ? `${r.rings} rings` : `${r.rays} rays - ${r.rings} rings`, actual ? "Actual size" : r.moduleScale === "uniform" ? "Fit to canvas (same size modules)" : "Fit to canvas",
+          const parts = ["Radiation", pick(SCHEMES, r.scheme), byCont ? `${r.rings} rings` : `${r.rays} rays - ${r.rings} rings`, actual ? "Actual size" : r.moduleScale === "cell" ? "Fit to canvas (modules shrink with the cell)" : "Fit to canvas",
             `Orientation ${pick(ORIENT, r.orientation || "auto")}`, `Direction ${pick(DIRS, r.direction || "repeated")}`];
           if (r.scheme !== "spiral" && r.scheme !== "centripetal") parts.push(`Ring shape ${title(r.ringShape || "circle")}`);
           parts.push(`Open center ${r.centerOpen || 0}%`, `Ring rotation ${r.ringRotation || 0}º`);
@@ -4736,7 +4739,7 @@ class StudioProApp {
       document.querySelectorAll("[data-rad-size]").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.radSize === (rad.sizeMode || "fit"));
       });
-      document.querySelectorAll("[data-rad-modscale]").forEach(btn => btn.classList.toggle("active", btn.dataset.radModscale === (rad.moduleScale || "cell")));
+      document.querySelectorAll("[data-rad-modscale]").forEach(btn => btn.classList.toggle("active", btn.dataset.radModscale === (rad.moduleScale || "uniform")));
       document.getElementById("rad-modscale-block")?.classList.toggle("hidden", rad.sizeMode === "actual" || rad.sizeMode === "fixed");
       document.querySelectorAll("[data-rad-dir]").forEach(btn => btn.classList.toggle("active", btn.dataset.radDir === (rad.direction || "repeated")));
       document.querySelectorAll("[data-rad-shape]").forEach(btn => btn.classList.toggle("active", btn.dataset.radShape === (rad.ringShape || "circle")));

@@ -49,7 +49,7 @@ export const createDefaultLayerStructure = () => ({
     showRays: false,
     showRings: false,
     checkerInvert: false,
-    moduleScale: "cell", // Fit: "cell" (the module shrinks with its cell) or "uniform" (the same size in every cell, proportional to the whole structure)
+    moduleScale: "uniform", // Fit: "uniform" (Base size: the same size in every cell, proportional to the whole structure) or "cell" (the module shrinks with its cell)
     raysByContainer: false, // Actual size: every ring gets as many rays as fit the container's width (not in Centripetal)
     centerX: 0,
     centerY: 0
@@ -1674,7 +1674,7 @@ export class StudioEngine {
     if (isFixed) maxR = openR + rings * spacing;
     const span = maxR - openR;
     // Fit with "uniform" module scale: every module has the same size, taken from the whole structure (as in Actual size, but the structure still fits the canvas)
-    const uniform = !isFixed && rad.moduleScale === "uniform";
+    const uniform = !isFixed && rad.moduleScale !== "cell";
     const uniformK = maxR / (Math.min(usableW, usableH) * 0.5);
     this.layoutExtent = isFixed ? { x: width / 2 + (rad.centerX || 0) - maxR, y: height / 2 + (rad.centerY || 0) - maxR, w: maxR * 2, h: maxR * 2 } : null; // Fit: the block itself
     // Each ring is turned a bit more than the one inside it, so their subdivisions do not line up

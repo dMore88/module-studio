@@ -244,10 +244,11 @@
       // old files: pixels become percentages
       const saved = JSON.parse(JSON.stringify(app.state));
       saved.layers[0].structure.space = { enabled: true, mode: "isometric", depth: 17, angle: 30, shading: 50 };
-      saved.layers[0].structure.repetition.curveIntensity = 36; saved.layers[0].structure.repetition.cols = 4; delete saved.layers[0].structure.repetition.curveAmount;
+      saved.layers[0].structure.repetition.curveIntensity = 36; saved.layers[0].structure.repetition.cols = 4; delete saved.layers[0].structure.repetition.curveAmount; delete saved.layers[0].structure.radiation.moduleScale;
       app.loadProjectText(JSON.stringify(saved));
       assert(app.state.layers[0].structure.space.depthPct === 20, `17 px should open as 20 % (got ${app.state.layers[0].structure.space.depthPct})`);
       assert(Math.abs(app.state.layers[0].structure.repetition.curveAmount - 0.24) < 1e-9, `36 px of wave on 150 px cells is 24 % (got ${app.state.layers[0].structure.repetition.curveAmount})`);
+      assert(app.state.layers[0].structure.radiation.moduleScale === "cell", "A project saved before Module scale opens with Shrink with cell, so it does not change");
     });
 
     await test("Show container draws its frame even with the coordinate grid off, and never in an export", () => {
@@ -300,18 +301,19 @@
       assert(Math.abs(t[0] - t[1]) > 150 && Math.abs(t[0] - t[2]) < 40 && Math.abs(t[1] - t[3]) < 40, `Alternate sectors should swap figure and ground (${t})`);
     });
 
-    await test("Radial Fit: Module scale 'Same size' keeps every module at one size taken from the whole structure, 'Shrink with cell' (default) shrinks it with the cell", async () => {
+    await test("Radial Fit: Module scale 'Base size' (default) keeps every module at one size taken from the whole structure, 'Shrink with cell' shrinks it with the cell", async () => {
       reset();
       const d = win.document, cv = d.getElementById("studio-canvas");
       const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: false, width: 60, height: 60, showContainer: false }); app.state.showSafeBounds = false;
       const st = L.structure; st.enabled = true; st.mode = "radiation"; Object.assign(st.radiation, { scheme: "concentric", rays: 12, rings: 6, centerOpen: 0, sizeMode: "fit", showRays: false, showRings: false });
-      assert(st.radiation.moduleScale === "cell", "Shrink with cell is the default");
+      assert(st.radiation.moduleScale === "uniform", "Base size is the default");
+      st.radiation.moduleScale = "cell";
       const dpr = cv.width / 600;
       const inkInside = (r) => { drawRaw(app); const ctx = cv.getContext("2d"); const w = Math.round(2 * r * dpr); const data = ctx.getImageData(Math.round((300 - r) * dpr), Math.round((300 - r) * dpr), w, w).data; let n = 0; for (let i = 0; i < data.length; i += 4) if (data[i] < 128) n++; return n / (dpr * dpr); };
       const shrink = inkInside(80);
       st.radiation.moduleScale = "uniform";
       const same = inkInside(80);
-      assert(same > shrink * 3, `Same size should leave far more ink near the centre (${shrink} -> ${same})`);
+      assert(same > shrink * 3, `Base size should leave far more ink near the centre (${shrink} -> ${same})`);
       d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
       assert(!d.getElementById("rad-modscale-block").classList.contains("hidden"), "Fit offers Module scale");
       st.radiation.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer();

@@ -387,6 +387,9 @@ export class StudioProApp {
       if (rep && typeof rep === "object" && rep.curveAmount === undefined && typeof rep.curveIntensity === "number") {
         rep.curveAmount = Math.min(1, Math.round((rep.curveIntensity / (600 / Math.max(1, rep.cols || 4))) * 100) / 100);
       }
+      // Radiation modules used to shrink with their cell; the new default is Base size, so older projects keep what they had
+      const rd = st.radiation;
+      if (rd && typeof rd === "object" && rd.moduleScale === undefined) rd.moduleScale = "cell";
       const sp = st.space;
       if (sp && typeof sp === "object" && sp.depthPct === undefined && typeof sp.depth === "number") {
         sp.depthPct = Math.max(5, Math.min(100, Math.round((sp.depth / 85) * 100)));
@@ -704,7 +707,7 @@ export class StudioProApp {
           const r = s.radiation || {};
           const actual = r.sizeMode === "actual" || r.sizeMode === "fixed";
           const byCont = actual && !!r.raysByContainer && r.scheme !== "centripetal";
-          const parts = ["Radiation", pick(SCHEMES, r.scheme), byCont ? `${r.rings} rings` : `${r.rays} rays - ${r.rings} rings`, actual ? "Actual size" : r.moduleScale === "uniform" ? "Fit to canvas (same size modules)" : "Fit to canvas",
+          const parts = ["Radiation", pick(SCHEMES, r.scheme), byCont ? `${r.rings} rings` : `${r.rays} rays - ${r.rings} rings`, actual ? "Actual size" : r.moduleScale === "cell" ? "Fit to canvas (modules shrink with the cell)" : "Fit to canvas",
             `Orientation ${pick(ORIENT, r.orientation || "auto")}`, `Direction ${pick(DIRS, r.direction || "repeated")}`];
           if (r.scheme !== "spiral" && r.scheme !== "centripetal") parts.push(`Ring shape ${title(r.ringShape || "circle")}`);
           parts.push(`Open center ${r.centerOpen || 0}%`, `Ring rotation ${r.ringRotation || 0}º`);
@@ -1140,7 +1143,7 @@ export class StudioProApp {
       document.querySelectorAll("[data-rad-size]").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.radSize === (rad.sizeMode || "fit"));
       });
-      document.querySelectorAll("[data-rad-modscale]").forEach(btn => btn.classList.toggle("active", btn.dataset.radModscale === (rad.moduleScale || "cell")));
+      document.querySelectorAll("[data-rad-modscale]").forEach(btn => btn.classList.toggle("active", btn.dataset.radModscale === (rad.moduleScale || "uniform")));
       document.getElementById("rad-modscale-block")?.classList.toggle("hidden", rad.sizeMode === "actual" || rad.sizeMode === "fixed");
       document.querySelectorAll("[data-rad-dir]").forEach(btn => btn.classList.toggle("active", btn.dataset.radDir === (rad.direction || "repeated")));
       document.querySelectorAll("[data-rad-shape]").forEach(btn => btn.classList.toggle("active", btn.dataset.radShape === (rad.ringShape || "circle")));
