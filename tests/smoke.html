@@ -2344,23 +2344,23 @@
       assert(L.figures.length === 1 && L.figures[0].shape === "square", "Entering makes the module's own shape the first figure");
       // the canvas shows only the module, big (no 3 x 3 grid), and the module controls are in the same panel
       assert(q("#input-active-width") && q("#input-active-rotation") && q("#input-active-offset-x") && q("#input-active-container-w") && q("#btn-mode-fill") && q("#color-active-shape"), "Every module control lives in the editor");
-      // a module smaller than when the editor opened shrinks on screen and the container stays; a bigger one zooms out so it stays in view
+      // the editor is a canvas of its own at the design's scale (1:1): the module is drawn at its real size, whatever it is
       const view = () => app.stateForFigureEdit().layers[0];
-      const v0 = view(); fire(q("#input-active-width"), 50); const v1 = view();
-      assert(Math.abs(v1.width / v0.width - 0.5) < 1e-6 && v1.containerW === v0.containerW, `The module halves on screen and the container stays (${v0.width}->${v1.width}, container ${v0.containerW}->${v1.containerW})`);
+      fire(q("#input-active-width"), 50);
+      assert(view().width === 50 && view().containerW === L.containerW && view().offsetX === L.offsetX, `The editor shows the module at its real size (${view().width}) and the container as it is`);
       fire(q("#input-active-width"), 1000); fire(q("#input-active-height"), 600);
-      const v2 = view();
-      assert(v2.width <= 361 && v2.height <= 361 && v2.containerW < v0.containerW, `A module bigger than the view zooms out and stays in view (${v2.width} x ${v2.height})`);
+      assert(view().width === 1000 && view().height === 600, "A big module is not rescaled");
       fire(q("#input-active-width"), 100); fire(q("#input-active-height"), 100);
       L.showContainer = false; assert(view().showContainer === false, "Show container off hides the container in the editor");
       L.showContainer = true;
-      // one untouched figure hides the figure's own size, position and rotation (they are the module's)
-      assert(q("#fig-transform-stack").classList.contains("hidden"), "A single untouched figure shows no figure size / position / rotation");
+      // one untouched figure hides the figure's own position and rotation (they are the module's)
+      assert(q("#fig-transform-stack").classList.contains("hidden"), "A single untouched figure shows no figure position / rotation");
       q("#btn-fig-add").click(); await wait(30);
       assert(L.figures.length === 2 && app.figEdit.index === 1, "Add figure adds the second one and selects it");
-      assert(!q("#fig-transform-stack").classList.contains("hidden"), "With two figures each one has its own size, position and rotation");
-      fire(q("#input-fig-x"), 30); fire(q("#input-fig-size"), 40);
-      assert(L.figures[1].x === 30 && L.figures[1].size === 40 && q("#num-fig-size").value === "40%", "The figure sliders should edit the selected figure");
+      assert(!q("#fig-transform-stack").classList.contains("hidden"), "With two figures each one has its own position and rotation");
+      assert(!q("#input-fig-size") && !q("#num-fig-size"), "There is no figure size control for now");
+      fire(q("#input-fig-x"), 30); fire(q("#input-fig-rot"), 40);
+      assert(L.figures[1].x === 30 && L.figures[1].rotation === 40 && q("#num-fig-rot").value === "40º", "The figure sliders should edit the selected figure");
       q('#fig-shape-grid [data-fig-shape="triangle"]').click(); await wait(30);
       assert(L.figures[1].shape === "triangle", "The editor's shape grid changes the selected figure");
       q("#btn-fig-up").click(); await wait(30);
@@ -2433,7 +2433,7 @@
       app.isFlyoutOpen = false; app.updateRailUI();
       q('[data-rail-tab="module"]').click(); await wait(60);
       q("#btn-fig-add").click(); await wait(30);
-      fire(q("#input-fig-x"), 30); fire(q("#input-fig-size"), 40);
+      fire(q("#input-fig-x"), 30); fire(q("#input-fig-rot"), 40);
       const guide = () => { drawRaw(app); const dd = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < dd.length; i += 4) if (dd[i] > 200 && dd[i + 1] < 120 && dd[i + 2] < 90) n++; return n; };
       assert(guide() > 30, "The selected figure should have a frame");
       app.engine.exporting = true; assert(guide() === 0, "The frame is never exported"); app.engine.exporting = false;
@@ -2442,14 +2442,14 @@
       const x2 = frameAt(); q('#fig-list [data-fig-index="0"]').click(); const x1 = frameAt();
       assert(x2 > x1 + 20, `The frame should move to the selected figure (${x1} -> ${x2})`);
       // step by step undo / redo
-      app.undo(); // back to figure 2 at size 50 (the x change before it is the step before)
-      assert(L.figures[1].size === 50 && L.figures[1].x === 30, `Undo goes back one step (size ${L.figures[1].size}, x ${L.figures[1].x})`);
+      app.undo(); // back to figure 2 at x 30, not yet turned
+      assert(L.figures[1].rotation === 0 && L.figures[1].x === 30, `Undo goes back one step (rotation ${L.figures[1].rotation}, x ${L.figures[1].x})`);
       app.undo();
       assert(L.figures[1].x === 0 && L.figures.length === 2, "Another undo reverts the position");
       app.undo();
       assert(L.figures.length === 1, "Another undo removes the added figure");
       app.redo(); app.redo(); app.redo();
-      assert(L.figures.length === 2 && L.figures[1].x === 30 && L.figures[1].size === 40, "Redo brings the steps back");
+      assert(L.figures.length === 2 && L.figures[1].x === 30 && L.figures[1].rotation === 40, "Redo brings the steps back");
       // Cancel still goes all the way back, and the project history was not touched
       const hist = app.history.length;
       q("#btn-fig-cancel").click(); await wait(60);

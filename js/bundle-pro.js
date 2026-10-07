@@ -6850,19 +6850,13 @@ class StudioProApp {
   // Alternative state used only to draw while the editor is open: the layer alone, no layout and no modifiers,
   // scaled up so the figures can be seen (the figures are a % of the module, so the proportions do not change)
   stateForFigureEdit() {
-    const cfg = ASPECT_RATIOS[this.state.aspectRatio] || ASPECT_RATIOS["1:1"];
     const layer = this.state.layers.find(l => l.id === this.figEdit.layerId);
     if (!layer) return null;
-    // The scale is the one the editor opened with, so changing the module's size changes the module on screen and leaves the
-    // container as it is; it only zooms out when the module or the container outgrow the view, so they never leave the canvas
-    const big = Math.min(cfg.w, cfg.h) * 0.6;
-    const extentNow = Math.max(1, layer.width || 100, layer.height || 100, layer.containerW || 0, layer.containerH || 0);
-    const f = Math.min(this.figEdit.scale || big / extentNow, big / extentNow);
+    // The editor is a canvas of its own, the same size as the design's and at the same scale (1:1): a pixel here is a pixel there
     const off = (b) => (b ? { ...b, enabled: false } : b);
     const s = layer.structure || {};
     const view = {
-      ...layer, visible: true, offsetX: (layer.offsetX || 0) * f, offsetY: (layer.offsetY || 0) * f, width: (layer.width || 100) * f, height: (layer.height || 100) * f,
-      containerW: layer.containerW > 0 ? layer.containerW * f : 0, containerH: layer.containerH > 0 ? layer.containerH * f : 0,
+      ...layer, visible: true,
       structure: { ...s, enabled: false, formalStructure: off(s.formalStructure), similarity: off(s.similarity), gradation: off(s.gradation), anomaly: off(s.anomaly), contrast: off(s.contrast), concentration: off(s.concentration), texture: off(s.texture), space: off(s.space) }
     };
     const fig = this.currentFigure();
@@ -6884,9 +6878,7 @@ class StudioProApp {
     const snapshot = JSON.parse(JSON.stringify(own));
     // A plain module becomes a smart one with its own shape as the first figure
     if (!mod.figures || mod.figures.length === 0) mod.figures = [{ shape: mod.shape, size: 100, x: 0, y: 0, rotation: 0 }];
-    const cfg = ASPECT_RATIOS[this.state.aspectRatio] || ASPECT_RATIOS["1:1"];
-    const extent = Math.max(1, mod.width || 100, mod.height || 100, mod.containerW || 0, mod.containerH || 0); // module and container both fit
-    this.figEdit = { layerId: mod.id, snapshot, index: 0, scale: (Math.min(cfg.w, cfg.h) * 0.6) / extent, steps: [], at: -1 };
+    this.figEdit = { layerId: mod.id, snapshot, index: 0, steps: [], at: -1 };
     this.recordFigureStep();
     this.syncFigureEditor();
   }
@@ -6971,13 +6963,13 @@ class StudioProApp {
     const f = this.currentFigure();
     document.querySelectorAll("#fig-shape-grid [data-fig-shape]").forEach(b => b.classList.toggle("active", !!f && b.dataset.figShape === f.shape));
     const set = (id, v, suffix) => { this.syncControlValue(`input-${id}`, v); const n = document.getElementById(`num-${id}`); if (n) n.value = `${v}${suffix}`; };
-    if (f) { set("fig-size", f.size, "%"); set("fig-x", f.x, "%"); set("fig-y", f.y, "%"); set("fig-rot", f.rotation, "º"); }
+    if (f) { set("fig-x", f.x, "%"); set("fig-y", f.y, "%"); set("fig-rot", f.rotation, "º"); }
     document.getElementById("btn-fig-add")?.toggleAttribute("disabled", mod.figures.length >= 4);
     document.getElementById("btn-fig-delete")?.toggleAttribute("disabled", mod.figures.length <= 1);
     document.getElementById("btn-fig-up")?.toggleAttribute("disabled", this.figEdit.index <= 0);
     document.getElementById("btn-fig-down")?.toggleAttribute("disabled", this.figEdit.index >= mod.figures.length - 1);
-    // One untouched figure is just the module: its size, position and rotation are the module's own (Width, Height, Offset,
-    // Rotation below), so the figure's are only offered when there is more than one figure or this one has been changed
+    // One untouched figure is just the module: its position and rotation are the module's own (Offset, Rotation below), so
+    // the figure's are only offered when there is more than one figure or this one has been changed
     const plain = mod.figures.length === 1 && f && f.size === 100 && f.x === 0 && f.y === 0 && f.rotation === 0;
     document.getElementById("fig-transform-stack")?.classList.toggle("hidden", !!plain);
     this.updateHeightVisibility(mod);
@@ -7031,7 +7023,6 @@ class StudioProApp {
       f[key] = Math.max(lo, Math.min(hi, val));
       this.render();
     }, `Figure ${key}`, suffix);
-    pair("fig-size", "size", 5, 200, "%");
     pair("fig-x", "x", -100, 100, "%");
     pair("fig-y", "y", -100, 100, "%");
     pair("fig-rot", "rotation", -180, 180, "º");
