@@ -470,14 +470,17 @@
       st.block = { x: 25, y: 25, w: 50, h: 50 };
       const fit = bounds();
       assert(fit.x1 <= 301 && fit.y1 <= 301 && fit.x0 < 60 && fit.y0 < 60 && fit.x1 > 240 && fit.y1 > 240, `Fit: the grid should fill the top-left quarter (${JSON.stringify(fit)}), plain was ${JSON.stringify(plain)}`);
-      // Actual size: the block size does not count, only its centre: the grid block moves, the canvas is not cropped
+      // Actual size: the cells keep their size and the grid is centred in the composition container, which cuts what is past its edge
       Object.assign(st.repetition, { sizeMode: "actual", cols: 2, rows: 2 }); L.containerW = 100; L.containerH = 100;
       st.block = { x: 50, y: 50, w: 100, h: 100 };
       const mid = bounds();
-      st.block = { x: 80, y: 20, w: 30, h: 30 };
+      st.block = { x: 80, y: 20, w: 40, h: 40 };
       const act = bounds();
       assert(Math.abs((act.x0 + act.x1) / 2 - 480) < 6 && Math.abs((act.y0 + act.y1) / 2 - 120) < 6, `Actual size should be centred at 80 % / 20 % (${JSON.stringify(act)})`);
-      assert(Math.abs((act.x1 - act.x0) - (mid.x1 - mid.x0)) < 4, "Actual size keeps the size of its cells, whatever the block size");
+      assert(Math.abs((act.x1 - act.x0) - (mid.x1 - mid.x0)) < 4, "Actual size keeps the size of its cells when the container is big enough");
+      st.block = { x: 80, y: 20, w: 20, h: 20 };
+      const cutAct = bounds();
+      assert(Math.abs((cutAct.x1 - cutAct.x0) - 120) < 6 && Math.abs((cutAct.y1 - cutAct.y0) - 120) < 6, `A smaller composition container cuts the grid at its edge (${JSON.stringify(cutAct)})`);
       // Radiation: the rings are centred on the block and its smaller side is their reach
       st.mode = "radiation"; Object.assign(st.radiation, { sizeMode: "fit", scheme: "concentric", rays: 12, rings: 4, centerOpen: 0, showRings: true, lineWidth: 3, lineColor: "" });
       st.block = { x: 25, y: 50, w: 40, h: 40 };
@@ -494,8 +497,8 @@
       assert(d.getElementById("layout-block").nextElementSibling === d.getElementById("rep-advanced"), "The Block should sit right before the Repetition Advanced section");
       assert(!d.getElementById("block-size-fields").classList.contains("hidden"), "Fit shows the block size");
       st.repetition.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer(); app.render();
-      assert(d.getElementById("block-size-fields").classList.contains("hidden"), "Actual size hides the block size");
-      assert(/Block: offset -150, -150px/.test(d.getElementById("art-log-lines").textContent), "The log should mention the block: " + d.getElementById("art-log-lines").textContent);
+      assert(!d.getElementById("block-size-fields").classList.contains("hidden"), "Actual size also shows the composition container's size (it cuts the grid)");
+      assert(/Composition container: 300 x 300px \/ offset -150, -150px/.test(d.getElementById("art-log-lines").textContent), "The log should mention the composition container: " + d.getElementById("art-log-lines").textContent);
       fire0(d.getElementById("input-block-x"), 60);
       assert(Math.abs(st.block.x - 60) < 1e-9, `A 60 px offset should store 60 % of the canvas away from the middle... (${st.block.x})`);
       st.mode = "radiation"; app.syncAllInspectorsWithActiveLayer();
@@ -520,14 +523,14 @@
       st.block = { x: 30, y: 30, w: 40, h: 40 }; app.engine.exporting = true;
       assert(guide() === 0, "The frame must never reach an export");
       app.engine.exporting = false;
-      // Actual size: the frame wraps the cells (3 x 3 of 100 px), moved by the offset
+      // Actual size: the frame is the composition container (here the size of the canvas), moved by the offset
       Object.assign(st.repetition, { sizeMode: "actual" }); L.containerW = 100; L.containerH = 100;
       st.block = { x: 70, y: 50, w: 100, h: 100 };
       app.render();
       const px = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; const dpr = cv.width / 600;
       const at = (x, y) => { const i = (Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4; return px[i] > 200 && px[i + 1] < 120 && px[i + 2] < 90; };
-      let left = false; for (let x = 266; x <= 274; x++) for (let y = 160; y < 440; y++) if (at(x, y)) left = true;
-      assert(left, "In Actual size the frame should wrap the cells: its left edge is at 270 px (centre 420 px minus 150 px)");
+      let left = false; for (let x = 116; x <= 124; x++) for (let y = 160; y < 440; y++) if (at(x, y)) left = true;
+      assert(left, "In Actual size the frame is the composition container: its left edge is at 120 px (centre 420 px minus 300 px)");
       app.activeRailTab = "module"; app.isFlyoutOpen = true;
     });
 

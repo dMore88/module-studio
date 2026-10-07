@@ -2080,12 +2080,14 @@ class StudioEngine {
     const cx = (bx / 100) * width, cy = (by / 100) * height;
     const mode = struct.mode === "radiation" ? struct.radiation : struct.repetition;
     const actual = !!mode && (mode.sizeMode === "actual" || mode.sizeMode === "fixed");
-    if (actual) {
-      const tx = cx - width / 2, ty = cy - height / 2;
-      return { w: width, h: height, tx, ty, clip: [-tx, -ty, width, height], isDefault: false };
-    }
     const w = Math.max(10, (bw / 100) * width), h = Math.max(10, (bh / 100) * height);
-    return { w, h, tx: cx - w / 2, ty: cy - h / 2, clip: null, isDefault: false };
+    // The composition container is a sheet of paper: whatever the layout draws past its edge is cut
+    if (actual) {
+      // Actual size draws the layout on the real canvas' scale, centred in the sheet; the sheet cuts it
+      const tx = cx - width / 2, ty = cy - height / 2;
+      return { w: width, h: height, tx, ty, clip: [width / 2 - w / 2, height / 2 - h / 2, w, h], isDefault: false, rect: [cx - w / 2, cy - h / 2, w, h] };
+    }
+    return { w, h, tx: cx - w / 2, ty: cy - h / 2, clip: null, isDefault: false, rect: [cx - w / 2, cy - h / 2, w, h] };
   }
 
   // The rectangle a layout is cut to: its own small canvas, or (Actual size) the real canvas seen from inside the block
@@ -3349,11 +3351,8 @@ class StudioEngine {
         }
         this.layoutClip = null;
         ctx.restore();
-        // Block guide: the rectangle the layout really occupies (an on-screen aid for the layer being edited)
-        if (!this.exporting && !bf.isDefault && this.blockGuideLayerId === mod.id) {
-          const e = this.layoutExtent || { x: 0, y: 0, w: bf.w, h: bf.h };
-          blockGuides.push([bf.tx + e.x, bf.ty + e.y, e.w, e.h]);
-        }
+        // Composition container guide: the sheet the layout is cut to (an on-screen aid for the layer being edited)
+        if (!this.exporting && !bf.isDefault && this.blockGuideLayerId === mod.id) blockGuides.push(bf.rect);
       } else {
         // Layer rendered as a single element centered on the canvas
         this.renderSingleLayerModule(ctx, mod, width, height, palette);
@@ -4528,8 +4527,7 @@ class StudioProApp {
         }
         const bp = this.blockPixels(s);
         const cur = s.mode === "radiation" ? s.radiation : s.repetition;
-        const actualBlock = !!cur && (cur.sizeMode === "actual" || cur.sizeMode === "fixed");
-        out.push({ k: "Block", v: `${actualBlock ? "" : `${bp.w} x ${bp.h}px / `}offset ${bp.x}, ${bp.y}px` });
+        out.push({ k: "Composition container", v: `${bp.w} x ${bp.h}px / offset ${bp.x}, ${bp.y}px` });
       }
       const f = s.formalStructure;
       if (f && f.enabled && s.mode !== "radiation" && s.enabled) {
@@ -4865,7 +4863,6 @@ class StudioProApp {
     }
     const cur = struct.mode === "radiation" ? struct.radiation : struct.repetition;
     const actual = !!cur && (cur.sizeMode === "actual" || cur.sizeMode === "fixed");
-    document.getElementById("block-size-fields")?.classList.toggle("hidden", actual);
     // The Block sits right under the design controls of the active mode, before its Advanced section
     const blockEl = document.getElementById("layout-block");
     const adv = document.getElementById(struct.mode === "radiation" ? "rad-advanced" : "rep-advanced");

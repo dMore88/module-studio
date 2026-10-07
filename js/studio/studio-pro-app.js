@@ -746,8 +746,7 @@ export class StudioProApp {
         }
         const bp = this.blockPixels(s);
         const cur = s.mode === "radiation" ? s.radiation : s.repetition;
-        const actualBlock = !!cur && (cur.sizeMode === "actual" || cur.sizeMode === "fixed");
-        out.push({ k: "Block", v: `${actualBlock ? "" : `${bp.w} x ${bp.h}px / `}offset ${bp.x}, ${bp.y}px` });
+        out.push({ k: "Composition container", v: `${bp.w} x ${bp.h}px / offset ${bp.x}, ${bp.y}px` });
       }
       const f = s.formalStructure;
       if (f && f.enabled && s.mode !== "radiation" && s.enabled) {
@@ -1083,7 +1082,6 @@ export class StudioProApp {
     }
     const cur = struct.mode === "radiation" ? struct.radiation : struct.repetition;
     const actual = !!cur && (cur.sizeMode === "actual" || cur.sizeMode === "fixed");
-    document.getElementById("block-size-fields")?.classList.toggle("hidden", actual);
     // The Block sits right under the design controls of the active mode, before its Advanced section
     const blockEl = document.getElementById("layout-block");
     const adv = document.getElementById(struct.mode === "radiation" ? "rad-advanced" : "rep-advanced");
