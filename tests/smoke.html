@@ -300,6 +300,24 @@
       assert(Math.abs(t[0] - t[1]) > 150 && Math.abs(t[0] - t[2]) < 40 && Math.abs(t[1] - t[3]) < 40, `Alternate sectors should swap figure and ground (${t})`);
     });
 
+    await test("Radial Fit: Module scale 'Same size' keeps every module at one size taken from the whole structure, 'Shrink with cell' (default) shrinks it with the cell", async () => {
+      reset();
+      const d = win.document, cv = d.getElementById("studio-canvas");
+      const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: false, width: 60, height: 60, showContainer: false }); app.state.showSafeBounds = false;
+      const st = L.structure; st.enabled = true; st.mode = "radiation"; Object.assign(st.radiation, { scheme: "concentric", rays: 12, rings: 6, centerOpen: 0, sizeMode: "fit", showRays: false, showRings: false });
+      assert(st.radiation.moduleScale === "cell", "Shrink with cell is the default");
+      const dpr = cv.width / 600;
+      const inkInside = (r) => { drawRaw(app); const ctx = cv.getContext("2d"); const w = Math.round(2 * r * dpr); const data = ctx.getImageData(Math.round((300 - r) * dpr), Math.round((300 - r) * dpr), w, w).data; let n = 0; for (let i = 0; i < data.length; i += 4) if (data[i] < 128) n++; return n / (dpr * dpr); };
+      const shrink = inkInside(80);
+      st.radiation.moduleScale = "uniform";
+      const same = inkInside(80);
+      assert(same > shrink * 3, `Same size should leave far more ink near the centre (${shrink} -> ${same})`);
+      d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
+      assert(!d.getElementById("rad-modscale-block").classList.contains("hidden"), "Fit offers Module scale");
+      st.radiation.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer();
+      assert(d.getElementById("rad-modscale-block").classList.contains("hidden"), "Actual size hides Module scale");
+    });
+
     await test("Radial Actual size: Angular rays stays, and Rays follow container gives each ring as many rays as fit the container's width", async () => {
       reset();
       const d = win.document, cv = d.getElementById("studio-canvas");

@@ -1011,6 +1011,7 @@ const createDefaultLayerStructure = () => ({
     showRays: false,
     showRings: false,
     checkerInvert: false,
+    moduleScale: "cell", // Fit: "cell" (the module shrinks with its cell) or "uniform" (the same size in every cell, proportional to the whole structure)
     raysByContainer: false, // Actual size: every ring gets as many rays as fit the container's width (not in Centripetal)
     centerX: 0,
     centerY: 0
@@ -2631,6 +2632,9 @@ class StudioEngine {
     let maxR = refR;
     if (isFixed) maxR = openR + rings * spacing;
     const span = maxR - openR;
+    // Fit with "uniform" module scale: every module has the same size, taken from the whole structure (as in Actual size, but the structure still fits the canvas)
+    const uniform = !isFixed && rad.moduleScale === "uniform";
+    const uniformK = maxR / (Math.min(usableW, usableH) * 0.5);
     this.layoutExtent = isFixed ? { x: width / 2 + (rad.centerX || 0) - maxR, y: height / 2 + (rad.centerY || 0) - maxR, w: maxR * 2, h: maxR * 2 } : null; // Fit: the block itself
     // Each ring is turned a bit more than the one inside it, so their subdivisions do not line up
     const ringRotRad = ((rad.ringRotation || 0) * Math.PI) / 180;
@@ -2869,7 +2873,7 @@ class StudioEngine {
             const cs = this.containerSize(targetMod, width, height);
             const rt = span / rings, aw = (ringRadius * 2 * Math.PI) / raysI;
             const sector = Math.min(rt, Math.max(rt * 0.5, aw));
-            const base = isFixed ? 1 : (sector / usableW) * (0.75 + (i / rings) * 0.45) * (isMultiCenter ? 0.7 : 1);
+            const base = isFixed ? 1 : uniform ? uniformK : (sector / usableW) * (0.75 + (i / rings) * 0.45) * (isMultiCenter ? 0.7 : 1);
             ctx.beginPath();
             ctx.rect((-cs.w * base) / 2, (-cs.h * base) / 2, cs.w * base, cs.h * base);
             ctx.clip();
@@ -2909,6 +2913,8 @@ class StudioEngine {
           const radScaleMul = isMultiCenter ? 0.7 : 1.0;
           const normScale = isFixed
             ? scaleUnit * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul)
+            : uniform
+            ? scaleUnit * uniformK * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul)
             : scaleUnit * sectorRatio * growthFactor * radScaleMul * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul);
           if (cell.texScale) this.cellTexScale = Math.max(this.cellTexScale || 0, cell.texScale);
           this.cellSeed = i * raysI + j + 1;
@@ -4294,7 +4300,7 @@ class StudioProApp {
           const r = s.radiation || {};
           const actual = r.sizeMode === "actual" || r.sizeMode === "fixed";
           const byCont = actual && !!r.raysByContainer && r.scheme !== "centripetal";
-          const parts = ["Radiation", pick(SCHEMES, r.scheme), byCont ? `${r.rings} rings` : `${r.rays} rays - ${r.rings} rings`, actual ? "Actual size" : "Fit to canvas",
+          const parts = ["Radiation", pick(SCHEMES, r.scheme), byCont ? `${r.rings} rings` : `${r.rays} rays - ${r.rings} rings`, actual ? "Actual size" : r.moduleScale === "uniform" ? "Fit to canvas (same size modules)" : "Fit to canvas",
             `Orientation ${pick(ORIENT, r.orientation || "auto")}`, `Direction ${pick(DIRS, r.direction || "repeated")}`];
           if (r.scheme !== "spiral" && r.scheme !== "centripetal") parts.push(`Ring shape ${title(r.ringShape || "circle")}`);
           parts.push(`Open center ${r.centerOpen || 0}%`, `Ring rotation ${r.ringRotation || 0}º`);
@@ -4730,6 +4736,8 @@ class StudioProApp {
       document.querySelectorAll("[data-rad-size]").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.radSize === (rad.sizeMode || "fit"));
       });
+      document.querySelectorAll("[data-rad-modscale]").forEach(btn => btn.classList.toggle("active", btn.dataset.radModscale === (rad.moduleScale || "cell")));
+      document.getElementById("rad-modscale-block")?.classList.toggle("hidden", rad.sizeMode === "actual" || rad.sizeMode === "fixed");
       document.querySelectorAll("[data-rad-dir]").forEach(btn => btn.classList.toggle("active", btn.dataset.radDir === (rad.direction || "repeated")));
       document.querySelectorAll("[data-rad-shape]").forEach(btn => btn.classList.toggle("active", btn.dataset.radShape === (rad.ringShape || "circle")));
       // Polygonal rings do not apply to spirals or chevrons
@@ -5162,6 +5170,7 @@ class StudioProApp {
         });
       });
     };
+    bindRadTags("[data-rad-modscale]", "radModscale", "moduleScale", "Module scale");
     bindRadTags("[data-rad-dir]", "radDir", "direction", "Radiation Direction");
     bindRadTags("[data-rad-shape]", "radShape", "ringShape", "Ring Shape");
     this.bindSliderWithNumber("input-layout-radline", "num-layout-radline", (val) => {

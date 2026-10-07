@@ -704,7 +704,7 @@ export class StudioProApp {
           const r = s.radiation || {};
           const actual = r.sizeMode === "actual" || r.sizeMode === "fixed";
           const byCont = actual && !!r.raysByContainer && r.scheme !== "centripetal";
-          const parts = ["Radiation", pick(SCHEMES, r.scheme), byCont ? `${r.rings} rings` : `${r.rays} rays - ${r.rings} rings`, actual ? "Actual size" : "Fit to canvas",
+          const parts = ["Radiation", pick(SCHEMES, r.scheme), byCont ? `${r.rings} rings` : `${r.rays} rays - ${r.rings} rings`, actual ? "Actual size" : r.moduleScale === "uniform" ? "Fit to canvas (same size modules)" : "Fit to canvas",
             `Orientation ${pick(ORIENT, r.orientation || "auto")}`, `Direction ${pick(DIRS, r.direction || "repeated")}`];
           if (r.scheme !== "spiral" && r.scheme !== "centripetal") parts.push(`Ring shape ${title(r.ringShape || "circle")}`);
           parts.push(`Open center ${r.centerOpen || 0}%`, `Ring rotation ${r.ringRotation || 0}º`);
@@ -1140,6 +1140,8 @@ export class StudioProApp {
       document.querySelectorAll("[data-rad-size]").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.radSize === (rad.sizeMode || "fit"));
       });
+      document.querySelectorAll("[data-rad-modscale]").forEach(btn => btn.classList.toggle("active", btn.dataset.radModscale === (rad.moduleScale || "cell")));
+      document.getElementById("rad-modscale-block")?.classList.toggle("hidden", rad.sizeMode === "actual" || rad.sizeMode === "fixed");
       document.querySelectorAll("[data-rad-dir]").forEach(btn => btn.classList.toggle("active", btn.dataset.radDir === (rad.direction || "repeated")));
       document.querySelectorAll("[data-rad-shape]").forEach(btn => btn.classList.toggle("active", btn.dataset.radShape === (rad.ringShape || "circle")));
       // Polygonal rings do not apply to spirals or chevrons
@@ -1572,6 +1574,7 @@ export class StudioProApp {
         });
       });
     };
+    bindRadTags("[data-rad-modscale]", "radModscale", "moduleScale", "Module scale");
     bindRadTags("[data-rad-dir]", "radDir", "direction", "Radiation Direction");
     bindRadTags("[data-rad-shape]", "radShape", "ringShape", "Ring Shape");
     this.bindSliderWithNumber("input-layout-radline", "num-layout-radline", (val) => {

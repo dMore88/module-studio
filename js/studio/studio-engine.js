@@ -49,6 +49,7 @@ export const createDefaultLayerStructure = () => ({
     showRays: false,
     showRings: false,
     checkerInvert: false,
+    moduleScale: "cell", // Fit: "cell" (the module shrinks with its cell) or "uniform" (the same size in every cell, proportional to the whole structure)
     raysByContainer: false, // Actual size: every ring gets as many rays as fit the container's width (not in Centripetal)
     centerX: 0,
     centerY: 0
@@ -1672,6 +1673,9 @@ export class StudioEngine {
     let maxR = refR;
     if (isFixed) maxR = openR + rings * spacing;
     const span = maxR - openR;
+    // Fit with "uniform" module scale: every module has the same size, taken from the whole structure (as in Actual size, but the structure still fits the canvas)
+    const uniform = !isFixed && rad.moduleScale === "uniform";
+    const uniformK = maxR / (Math.min(usableW, usableH) * 0.5);
     this.layoutExtent = isFixed ? { x: width / 2 + (rad.centerX || 0) - maxR, y: height / 2 + (rad.centerY || 0) - maxR, w: maxR * 2, h: maxR * 2 } : null; // Fit: the block itself
     // Each ring is turned a bit more than the one inside it, so their subdivisions do not line up
     const ringRotRad = ((rad.ringRotation || 0) * Math.PI) / 180;
@@ -1910,7 +1914,7 @@ export class StudioEngine {
             const cs = this.containerSize(targetMod, width, height);
             const rt = span / rings, aw = (ringRadius * 2 * Math.PI) / raysI;
             const sector = Math.min(rt, Math.max(rt * 0.5, aw));
-            const base = isFixed ? 1 : (sector / usableW) * (0.75 + (i / rings) * 0.45) * (isMultiCenter ? 0.7 : 1);
+            const base = isFixed ? 1 : uniform ? uniformK : (sector / usableW) * (0.75 + (i / rings) * 0.45) * (isMultiCenter ? 0.7 : 1);
             ctx.beginPath();
             ctx.rect((-cs.w * base) / 2, (-cs.h * base) / 2, cs.w * base, cs.h * base);
             ctx.clip();
@@ -1950,6 +1954,8 @@ export class StudioEngine {
           const radScaleMul = isMultiCenter ? 0.7 : 1.0;
           const normScale = isFixed
             ? scaleUnit * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul)
+            : uniform
+            ? scaleUnit * uniformK * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul)
             : scaleUnit * sectorRatio * growthFactor * radScaleMul * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul);
           if (cell.texScale) this.cellTexScale = Math.max(this.cellTexScale || 0, cell.texScale);
           this.cellSeed = i * raysI + j + 1;
