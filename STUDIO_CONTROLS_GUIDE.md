@@ -31,6 +31,15 @@
 
 ## 1. Arquitectura y Jerarquía
 
+### Glosario (los cuatro términos de la app)
+
+* **Canvas:** la mesa de trabajo. Tiene aspect ratio y un tamaño en px (600 × 600 en 1:1) y se muestra escalado a la pantalla; lo que se sale queda cortado. El editor del módulo tiene su propio canvas, del tamaño del módulo.
+* **Composition container:** la hoja de papel donde se repite el módulo (en el panel Layout). Tiene ancho, alto y desfase en px, y **corta** lo que el layout dibuje fuera de su borde. Una por capa: una capa = una composición.
+* **Module:** la pieza de papel que se repite. Es su propio canvas: solo tiene **ancho y alto** (10 a 1000 px, 100 × 100 por defecto) y **rotación**, y **siempre corta** en su borde lo que se dibuje encima, sea una o cincuenta shapes.
+* **Shape:** una figura dibujada sobre el módulo (hasta 4), con su propia forma, ancho, alto, posición y giro, en px desde el centro del módulo.
+
+Jerarquía: **canvas → composition container → celda → module → shapes**. En Wong, el módulo es la unidad que se repite (aquí, la pieza entera con sus shapes), las shapes son sus *formas* y la celda es la *subdivisión* de la estructura.
+
 El panel estructura la generación gráfica en tres niveles. Cada **capa** (hasta 5) es un módulo independiente con su propio estado de modificadores:
 
 ```
@@ -41,7 +50,7 @@ El panel estructura la generación gráfica en tres niveles. Cada **capa** (hast
                             │
 ┌───────────────────────────▼────────────────────────────┐
 │         2. CAPAS (hasta 5) · MÓDULO BASE POR CAPA       │
-│   (Forma, tamaño, rotación, offset, color, contenedor)  │
+│   (Shapes, tamaño del módulo, rotación, color, trazo)   │
 └───────────────────────────┬────────────────────────────┘
                             │
 ┌───────────────────────────▼────────────────────────────┐
@@ -54,16 +63,17 @@ El panel estructura la generación gráfica en tres niveles. Cada **capa** (hast
 **Paneles del riel** (de arriba abajo): Module, Layout, Similarity, Gradation, Anomaly, Contrast, Concentration, Texture, Space. El antiguo panel *Structure* ya no existe: sus proporciones viven en *Layout › Advanced* (sección 4.2).
 
 **Art log** (columna izquierda, bajo la lista de capas): la **receta completa del diseño** en texto, que se actualiza sola. Lista **todas las capas** en el orden de la pila (la activa marcada con `(active)`, las ocultas con `(hidden)`), y de cada una:
-* **El módulo:** `Module` (forma, trazo o relleno, color, grosor del trazo), `Size` (tamaño, rotación, offset) y `Container` (tamaño, `shown`, `clip`).
-* **El layout** si está encendido: `Structure` con todos sus valores (modo, variación, columnas y filas o rayos y anillos, Fit o Actual size, colocación, mezcla, dirección, reflejo, el parámetro de la variación, orientación, forma de anillo, centro abierto…) y `Block`; los **checks solo cuando están encendidos**, con sus valores: `Clip cell: on`, `Checkerboard: on`, `Visible lines: on / stroke 2px / #112233 / Both / all lines`, `Rays follow container: on`; y `Rhythm`.
+* **El módulo:** `Module` (ancho y alto en px y rotación), `Shapes` (cada shape con su ancho × alto, su posición y su giro; en un módulo sin abrir en el editor, `Shape`) y `Style` (relleno o trazo, color y grosor del trazo).
+* **El layout** si está encendido: `Structure` con todos sus valores (modo, variación, columnas y filas o rayos y anillos, Fit o Actual size, colocación, mezcla, dirección, reflejo, el parámetro de la variación, orientación, forma de anillo, centro abierto…) y `Composition container` (tamaño y desfase en px); los **checks solo cuando están encendidos**, con sus valores: `Clip cell: on`, `Checkerboard: on`, `Visible lines: on / stroke 2px / #112233 / Both / all lines`, `Rays follow container: on`; y `Rhythm`.
 * **Cada modificador encendido** con **todos sus valores**, en las unidades de los sliders: por ejemplo `Gradation: Rotate / Diagonal / Range 90º / Cycles 3 / Ping-pong / Speed +40 / Reversed`, `Texture: Jitter 58% / Line skipping 10% / Random lines 26% (opacity 85%) / Plane wave 28% (2 waves, 0º)` o `Space: Isometric / Depth 20% / Angle 30º / Shading 50%`.
-Lo apagado no aparece. El recuadro tiene **scroll interno** (el título y el botón quedan fijos arriba), el texto se puede **seleccionar** y el botón **Copy** lo copia entero como texto plano. Describe el diseño, no lo que se ve en pantalla: con *Hide modifiers* sigue listando todo y suma `Modifiers: hidden`.
+Lo apagado no aparece. El recuadro tiene **scroll interno** (el título y el botón quedan fijos arriba), el texto se puede **seleccionar** y el botón **Copy** lo copia entero como texto plano. Describe el diseño, no lo que se ve en pantalla.
 
-### Jerarquía espacial: celda → contenedor → módulo
+### Jerarquía espacial: composition container → celda → módulo → shapes
 
-* La **celda** es el espacio de la retícula (columna × fila). Sobre ella actúa el ritmo A:B y la gradación de estructura.
-* El **contenedor** es un marco (*Container width / height*, panel Module › Advanced) dentro de la celda. Por defecto mide 100 × 100, igual que el módulo. En *Fit to canvas* se escala con la celda; en *Actual size* **manda**: la celda toma el tamaño del contenedor, que **conserva su tamaño** al cambiar de modo (en retícula y en anillos), para que los módulos del mismo tamaño no se solapen.
-* El **módulo** vive dentro del contenedor y se escala con él, **en proporción** (sin deformarse): según Wong, una figura repetida no se deforma; deformar es cosa de Similarity.
+* El **composition container** es la hoja donde vive el layout (sección 4.1). Corta lo que sobresale de su borde.
+* La **celda** es el espacio de la retícula (columna × fila). Sobre ella actúan el ritmo A:B y la gradación de estructura.
+* El **módulo** (la pieza de papel, *Module width / height*) va dentro de la celda. En *Fit to canvas* hay dos modos (*Module scale* en *Advanced*): **Base size** (por defecto) lo deja a sus px y **Shrink with cell** lo reduce con la celda. En *Actual size* **manda**: la celda toma el tamaño del módulo.
+* Las **shapes** viven dentro del módulo y se escalan con él. El módulo las **corta** en su borde; *Clip cell* (Layout) corta además al borde de la celda.
 
 > **Nota:** el antiguo par *Form A / Form B* y sus 8 interrelaciones (detachment, touching, overlapping, penetration, union, subtraction, intersection, coincidence) fueron reemplazados por el sistema de capas. Las interrelaciones entre capas están **pendientes de rediseño** (backlog INT2, INT5 a INT9, al final de todo).
 
@@ -76,34 +86,48 @@ Controla el soporte físico y las ayudas de pantalla. Los botones están encima 
 | Parámetro / Control | Selector / Tipo | Rango / Valores | Función & Comportamiento Gráfico |
 | :--- | :--- | :--- | :--- |
 | `aspectRatio` | Dropdown | `1:1`, `9:16`, `4:3`, `3:4`, `16:9` | Modifica las dimensiones del canvas (sin margen de seguridad). Determina el tamaño de celda en retículas y el radio máximo en esquemas polares. |
-| `showSafeBounds` | Botón de icono (rejilla) | `boolean` | Muestra u oculta las guías del lienzo: retícula de coordenadas de fondo, límites y marcos de contenedor. |
+| `showSafeBounds` | Botón de icono (rejilla) | `boolean` | Muestra u oculta las guías del lienzo: retícula de coordenadas de fondo y límites. |
 | `invertFigureGround` | Botón de icono (círculo mitad) | `boolean` | Invierte ópticamente figura y fondo: la figura asume el tono del papel y el fondo el de la tinta. |
-| `guideColor` | Botón de icono (paleta) que abre el selector | color hex, por defecto `#F24822` | **Un solo color para todas las guías de pantalla** de los controles: marco del contenedor, punto focal de Anomaly, guía del atractor de Concentration y retícula isométrica de Space. Se guarda con el proyecto. La retícula de coordenadas de fondo y los límites del lienzo siguen en gris neutro. |
+| `guideColor` | Botón de icono (paleta) que abre el selector | color hex, por defecto `#F24822` | **Un solo color para todas las guías de pantalla** de los controles: marco del composition container, marco de la shape que se edita, punto focal de Anomaly, guía del atractor de Concentration y retícula isométrica de Space. Se guarda con el proyecto. La retícula de coordenadas de fondo y los límites del lienzo siguen en gris neutro. |
 | Margen de seguridad | — | — | Retirado: vale 0. Las estructuras llegan al borde del lienzo. |
 | `zoomLevel` | — | — | Retirado: el lienzo se ajusta solo al alto libre de la pantalla. |
 
-**Ninguna guía se exporta.** Ni la retícula de fondo, ni los límites, ni el marco del contenedor, ni el punto focal, ni la guía del atractor, ni la retícula isométrica salen en el SVG ni en el PNG. Lo que sí se exporta es todo lo que es diseño, incluidas las **líneas visibles** de Layout (ver 4.1).
+**Ninguna guía se exporta.** Ni la retícula de fondo, ni los límites, ni el marco del composition container ni el de la shape, ni el punto focal, ni la guía del atractor, ni la retícula isométrica salen en el SVG ni en el PNG. Lo que sí se exporta es todo lo que es diseño, incluidas las **líneas visibles** de Layout (ver 4.1).
 
 ---
 
 ## 3. Capas y Módulo Base
 
-Cada capa es un módulo independiente. Se pueden tener hasta 5 capas con visibilidad, orden (arrastrar y soltar), forma, color y pipeline de modificadores propios.
+Cada capa es un módulo independiente (su pieza de papel, sus shapes, su composition container y sus modificadores). Se pueden tener hasta 5 capas con visibilidad, orden (arrastrar y soltar), color y pipeline de modificadores propios.
 
-**Duplicate** (botón a la izquierda de *Add module*, en el panel de capas): crea una copia **exacta** de la capa activa (forma, color, trazo o relleno, Layout con su Block, los siete modificadores y todos sus valores), con el siguiente nombre libre (`Layer N`), justo **encima** de la original y activa. La copia no comparte nada con la original. Se desactiva, igual que *Add module*, cuando ya hay 5 capas, y deshacer quita solo el último duplicado.
+**Duplicate** (botón a la izquierda de *Add module*, en el panel de capas): crea una copia **exacta** de la capa activa (shapes, color, trazo o relleno, Layout con su composition container, los siete modificadores y todos sus valores), con el siguiente nombre libre (`Layer N`), justo **encima** de la original y activa. La copia no comparte nada con la original. Se desactiva, igual que *Add module*, cuando ya hay 5 capas, y deshacer quita solo el último duplicado.
 
-### 3.1 Controles de capa (panel Module)
-* **`shape`**: una de las 22 formas del selector (`STUDIO_SHAPE_KEYS` en `js/studio/shapes.js`, en el orden de la rejilla, una familia por fila): básicas `circle`, `square`, `triangle`, `line`, `cross`, `ring`; curvas y direccionales `semicircle`, `quarter`, `crescent`, `wave`, `spiral`, `arrow`; polígonos `pentagon`, `hexagon`, `octagon`, `star`; caracteres `letterA`, `letterS`, `letterR`, `digit1`, `digit5`, `digit9`. Los botones y las tarjetas de capa usan iconos Phosphor en peso *regular* (campo `phIcon`; lista en `docs/DESIGN_SYSTEM_TOKENS.md`, sección 6); el anillo se muestra con su propio dibujo y las letras con su glifo. Los caracteres son vectoriales (no dependen de ninguna fuente) y `line` es una línea real. En Gradation › *Becomes*, Contrast › *Minority Shape* y Anomaly › *Focal Intruder Shape* la misma lista se ofrece como **dropdown** con icono y nombre.
-* **`drawMode`**: *Stroke* (contorno) o *Fill* (relleno). **`color`**: color de la forma (hex). **`strokeWidth`**: grosor del trazo. En una figura estirada (ancho distinto del alto) el trazo **conserva un grosor uniforme**: se estira el contorno, no el lápiz.
-* **`width` / `height`**: tamaño del módulo **exactamente en píxeles** del lienzo, de 1 a 2000 para todas las formas (base 50). Un círculo sigue siendo círculo con valores iguales. La línea solo tiene largo (*Width*): su *Height* se oculta. Con *Fit to canvas* ese tamaño se reparte entre las celdas (con 4 columnas, un módulo de 100 ocupa 25 px); en *Actual size* mantiene sus píxeles.
-* **`rotation`**: ángulo de orientación (0 a 360º).
-* **`offsetX / offsetY`**: desplazamiento relativo al centro, de −1000 a 1000 px.
+### 3.1 El panel Module (el editor del módulo)
+
+El botón *Module* del riel abre **el editor del módulo**. Mientras está abierto, el canvas pasa a ser **el módulo mismo**: mide su ancho × alto (con cualquier proporción, sin aspect ratio), se muestra escalado para caber en la pantalla y dibuja el módulo **solo**, sin layout ni modificadores, a **1:1** (un px del editor es un px del diseño). Lo que sobresale del borde se corta. Al cerrar el panel vuelve el canvas del diseño.
+
+**Save / Cancel.** Se edita en vivo, pero con red: **Cancel** devuelve todo (shapes y controles del módulo) a cómo estaba al abrir; **Save** confirma y deja **un solo paso** en el historial del proyecto. Pasar a otro panel o cambiar de capa cuenta como *Save*. Dentro del editor, **Cmd+Z / Cmd+Shift+Z** recorren los cambios **paso a paso** (añadir una shape, moverla, cambiar un valor…).
+
+**Shapes** (de 1 a 4):
+* **Lista de shapes** con *Add shape* (la nueva sale a la mitad del módulo), subir y bajar en el orden de dibujo, y borrar (siempre queda una). Una shape seleccionada lleva un **marco fino** en el canvas del editor (guía de pantalla, nunca se exporta).
+* **Rejilla de formas** (*Shape*): una de las 22 formas (`STUDIO_SHAPE_KEYS` en `js/studio/shapes.js`: básicas `circle`, `square`, `triangle`, `line`, `cross`, `ring`; curvas y direccionales `semicircle`, `quarter`, `crescent`, `wave`, `spiral`, `arrow`; polígonos `pentagon`, `hexagon`, `octagon`, `star`; caracteres `letterA`, `letterS`, `letterR`, `digit1`, `digit5`, `digit9`). Iconos Phosphor en peso *regular* (campo `phIcon`; lista en `docs/DESIGN_SYSTEM_TOKENS.md`, sección 6); el anillo y las letras se dibujan con su propio dibujo o glifo. En Gradation › *Becomes*, Contrast › *Minority Shape* y Anomaly › *Focal Intruder Shape* la misma lista se ofrece como dropdown.
+* **`width` / `height`** (*Shape width* y *Shape height*, 1 a 2000 px): el tamaño de la shape. Un círculo con valores distintos es una elipse. La línea solo tiene largo: su *Height* se oculta. El trazo **conserva un grosor uniforme** aunque la shape se estire.
+* **`x` / `y`** (*Shape position X* y *Y*, −1000 a 1000 px): desde el centro del módulo. Mover una shape hasta que el borde la corte es el «módulo excéntrico y recortado» de Wong.
+* **`rotation`** (*Shape rotation*, −180 a 180º): gira la shape sobre su propio centro.
+
+**Módulo** (la pieza de papel):
+* **`containerW` / `containerH`** (*Module width* y *Module height*, **10 a 1000 px**, por defecto **100 × 100**): el tamaño del módulo, de cualquier proporción. En las retículas es la pieza que se repite. Los proyectos antiguos con 0 («todo el canvas») se abren con el tamaño del canvas.
+* **`rotation`** (*Module rotation*, 0 a 360º): gira la pieza entera (con su borde y sus shapes), y así aparece en la composición.
+* **`drawMode`** (*Stroke* o *Fill*), **`color`** (hex) y **`strokeWidth`** (*Stroke width*): comunes a todas las shapes del módulo. Todas las shapes heredan el color y el trazo; un color por shape queda para más adelante. Dos shapes del mismo color en *Fill* se funden en una sola mancha.
 * **`visible`**: visibilidad de la capa (icono del ojo en la tarjeta).
-* **Advanced** (sección plegable al final del panel):
-  * **`containerW` / `containerH`** (*Container width* y *Container height*, 10 a 2000 px, por defecto 100 × 100, igual que el módulo; en proyectos antiguos 0 significa el lienzo entero): el **contenedor**, un marco centrado en el lienzo (como un frame de Figma) dentro del que se compone el módulo. Es la celda de *Actual size* y el recorte de *Clip container*.
-  * **`showContainer`** (*Show container*, encendido por defecto): muestra u oculta el marco punteado del contenedor en el lienzo (usa el color de guías). Tiene su propio interruptor: se ve aunque el botón de guías del encabezado (retícula de fondo) esté apagado, y nunca se exporta. El contenedor funciona igual aunque esté oculto.
-* **`clipContainer`** (*Clip container*, casilla en *Advanced*, debajo de *Show container*, apagada por defecto): recorta el módulo al borde de su **contenedor**. En *Fit to canvas* el contenedor conserva sus proporciones y se reduce con la misma escala que el módulo (como un frame dentro de otro frame de Figma), también en una retícula con ritmo A:B; en *Actual size* es la celda; sin retícula es el marco centrado del lienzo; en radial acompaña al módulo en su anillo. Se puede usar a la vez que *Clip cell*: el módulo se recorta por los dos. Jerarquía: celda → contenedor → módulo.
-* **Hide modifiers** (casilla en *Advanced*, debajo de *Show container* porque son del mismo grupo: ver el contenedor del módulo; apagada por defecto): ayuda de edición solo de pantalla. Mientras el panel *Module* está abierto, la capa activa se dibuja **sola, sin su Layout structure y sin sus siete modificadores** (Similarity, Gradation, Anomaly, Contrast, Concentration, Texture y Space): solo el módulo dentro de su contenedor. Para ajustarlo con los vecinos, se desmarca la casilla o se enciende la retícula a mano. Al abrir otro panel o cerrar el flyout, todo vuelve solo. No cambia el proyecto, no se guarda y **nunca afecta a una exportación**. Mientras actúa, el registro *Art log* muestra `Modifiers: hidden`.
+
+**El módulo es una sola forma compuesta.** Para la retícula y para los modificadores, el módulo es una única forma con varios contornos: Gradation lo gira entero, Texture lo deforma como una pieza, Space le da profundidad a todo el bloque, y los modificadores que cambian la forma (Morph, la forma de Similarity, Contrast › *Shape*) lo sustituyen entero por otra. Desde fuera del editor no se puede tocar una shape suelta.
+
+**El borde del módulo corta la geometría, no los efectos.** Lo que sobresale se corta *antes* de aplicar Texture y Space: la shape cortada es la que se deforma o se extruye, así que sus efectos pueden salirse del borde. Con *Stroke* quedan solo los arcos de dentro, sin línea a lo largo del corte; con *Fill* queda un polígono pegado al borde.
+
+**Un módulo sin abrir en el editor** (una sola shape que viene de un proyecto antiguo o de una capa nueva) se dibuja como siempre y no corta. Al abrir el editor y guardar, pasa al modelo nuevo: la shape se convierte en la primera de la lista. Las shapes guardadas con tamaño y posición en % (formato anterior) se convierten solas a px.
+
+**Ya no existen** el *Width / Height* de la shape única (ahora cada shape tiene los suyos), *Module offset*, *Clip container*, *Show container* ni *Hide modifiers*: el módulo es su propio canvas y siempre corta, y mover una shape hace lo que hacía el offset.
 
 ---
 
@@ -112,10 +136,10 @@ Cada capa es un módulo independiente. Se pueden tener hasta 5 capas con visibil
 ### 4.1 Layout › Repetition (Retícula Cartesiana)
 Multiplica el módulo en una retícula ortogonal sobre el plano cartesiano $X, Y$. El panel *Layout* tiene un interruptor general y un selector *Structure mode* (Repetition / Radiation, excluyentes).
 
-**Block** (cuatro sliders visibles en *Layout*, justo debajo del diseño del modo activo y antes de su *Advanced*; el mismo bloque sirve a los dos modos): el **rectángulo del lienzo donde vive el layout de la capa**, para componer varias capas (por ejemplo una retícula a la izquierda y otra polar a la derecha). Se guarda en `layer.structure.block` (en % del lienzo, para que siga al lienzo si cambia la proporción) y el layout se dibuja como si el bloque fuera un lienzo pequeño, con todo lo suyo dentro (módulos, líneas visibles, y las posiciones de Anomaly y Concentration, que son relativas al bloque). Los sliders muestran **píxeles del lienzo**, como los de *Module*:
-* **`w` / `h`** (*Block width* y *Block height*, 10 a 2000 px, por defecto el tamaño del lienzo: 600 px en 1:1): en *Fit to canvas* la retícula se reparte dentro del bloque; en *Radiation* el radio máximo sale de su lado menor. En *Actual size* no cuentan (el bloque mide lo que midan sus celdas) y los dos sliders se ocultan.
-* **`x` / `y`** (*Block offset X* y *Block offset Y*, −1000 a 1000 px, por defecto 0 px): el **desfase del centro del bloque respecto al centro del lienzo**, igual que el *Offset X / Y* de Module. En *Actual size* mueve el bloque entero sin recortarlo.
-* Con los valores por defecto el dibujo es idéntico al de siempre. En Anomaly y Concentration, el clic en el lienzo se convierte en una posición dentro del bloque. **Marco del bloque:** mientras el panel *Layout* está abierto y el bloque no es el lienzo entero, la capa activa dibuja un marco punteado con el color de guías alrededor de lo que ocupa su layout (en *Fit* y *Radiation* es el bloque; en *Actual size*, las celdas o los anillos). Es una ayuda de pantalla: no se exporta y se oculta al cerrar el panel o abrir otro. El *Art log* añade `Block: 300 x 300px offset -150 / -150px` cuando no es el lienzo entero.
+**Composition container** (cuatro sliders visibles en *Layout*, justo debajo del diseño del modo activo y antes de su *Advanced*; el mismo bloque sirve a los dos modos): la **hoja de papel donde vive el layout de la capa**, para componer varias capas (por ejemplo una retícula a la izquierda y otra polar a la derecha). Se guarda en `layer.structure.block` (en % del lienzo, para que siga al lienzo si cambia la proporción) y el layout se dibuja como si el container fuera un lienzo pequeño, con todo lo suyo dentro (módulos, líneas visibles, y las posiciones de Anomaly y Concentration, que son relativas a él). **Corta** todo lo que el layout dibuje fuera de su borde, también en *Actual size*. Los sliders muestran **píxeles del lienzo**:
+* **`w` / `h`** (*Composition container width* y *height*, 10 a 2000 px, por defecto el tamaño del lienzo: 600 px en 1:1): en *Fit to canvas* la retícula se reparte dentro; en *Radiation* el radio máximo sale de su lado menor; en *Actual size* los módulos conservan su tamaño real, la cuadrícula va centrada en la hoja y la hoja corta lo que sobresale.
+* **`x` / `y`** (*Composition container offset X* y *offset Y*, −1000 a 1000 px, por defecto 0 px): el **desfase del centro de la hoja respecto al centro del lienzo**.
+* Con los valores por defecto el dibujo es idéntico al de siempre. En Anomaly y Concentration, el clic en el lienzo se convierte en una posición dentro de la hoja. **Marco:** mientras el panel *Layout* está abierto y la hoja no es el lienzo entero, la capa activa dibuja un marco punteado con el color de guías. Es una ayuda de pantalla: no se exporta y se oculta al cerrar el panel o abrir otro. El *Art log* añade `Composition container: 300 x 300px / offset -150, -150px`.
 
 **Visible al abrir:**
 * **`gridType`** (*Grid structure variation*, dropdown con un icono por retícula):
@@ -131,8 +155,8 @@ Multiplica el módulo en una retícula ortogonal sobre el plano cartesiano $X, Y
 * **Parámetro de la variación**, justo debajo del dropdown y solo con Brick, Diagonal, Curved y Zigzag.
 * **`cols` / `rows`** (*Columns* y *Rows*, 1 a 50).
 * **`sizeMode`** (*Module size*, `fit` por defecto):
-  * `fit` (*Fit to canvas*): *Columns* y *Rows* dividen el lienzo y todo lo compuesto (el módulo dentro de su contenedor) se reduce **en proporción al lienzo**.
-  * `actual` (*Actual size*): se repite **el contenedor del módulo tal cual**, *Columns* × *Rows* veces. Cada celda mide lo que mide el contenedor y el bloque queda centrado; si es mayor que el lienzo se sale por los bordes. Al activarlo con el contenedor por defecto, este arranca del tamaño de una celda de *Fit* para conservar el ritmo.
+  * `fit` (*Fit to canvas*): *Columns* y *Rows* dividen el lienzo y todo lo compuesto (el módulo con sus shapes) se reduce **en proporción al lienzo**.
+  * `actual` (*Actual size*): se repite **el módulo tal cual**, *Columns* × *Rows* veces. Cada celda mide lo que mide el módulo y la cuadrícula queda centrada en el composition container, que corta lo que sobresale de su borde. El módulo **conserva su tamaño** al cambiar de modo.
 * **`moduleScale`** (*Module scale*, en *Advanced*, solo en *Fit to canvas*): `uniform` (*Base size*, por defecto) deja a **cada módulo con su propio tamaño** (el slider *Size*, en px del lienzo) en todas las celdas, sin reducirlo a la celda; si es mayor que la celda se solapa o, con *Clip cell*, queda cortado por ella. `cell` (*Shrink with cell*) lo reduce con su celda, como antes. Con *Rhythm* el módulo conserva igualmente la proporción de su columna. Los proyectos guardados antes de esta opción se abren con `cell`.
 * **`placement`** (*Module placement*, chips Centers / Intersections / Both): dónde se colocan los módulos: en el centro de cada celda, en los cruces de las líneas, o los dos a la vez (dos clases de módulo entretejidas, fig. 23). **`interScale`** (*Intersection size*, 10 a 100 %, por defecto 50) es el tamaño de los módulos de los cruces. No aplica al panal.
 * **`cellMix`** (*Cell mix*, chips None / Merged / Divided): `merge` convierte bloques alternos de 2×2 celdas en un módulo grande; `divide` parte esos bloques en módulos más pequeños (fig. 22f y 22g). Solo en retícula básica y alternada.
@@ -141,7 +165,7 @@ Multiplica el módulo en una retícula ortogonal sobre el plano cartesiano $X, Y
 * **`reflection`** (*Reflection*, dropdown): espeja el módulo en las columnas impares (`columns`), en las filas impares (`rows`) o en ambas (`both`). No invierte las rotaciones de Gradation ni los campos de Concentration.
 * **`direction`** (*Direction*, dropdown, `repeated`): hacia dónde mira cada módulo. `repeated` todos igual; `alternated` las celdas alternas giran 180º; `undefined` cada módulo mira hacia un lado distinto, siempre el mismo para el mismo estado.
 * **Ritmo y gradación de estructura** (sección 4.2).
-* **`activeClipping`** (*Clip cell*): recorta cada módulo al borde de su **celda**, con la forma real de la celda en cada variación de retícula. No tiene que ver con el contenedor: para eso está *Clip container* en el panel Module.
+* **`activeClipping`** (*Clip cell*): recorta cada módulo al borde de su **celda**, con la forma real de la celda en cada variación de retícula. No tiene que ver con el borde del módulo, que siempre corta (panel Module).
 * **`checkerInvert`** (*Checkerboard inversion*): en casillas alternadas la celda se rellena con el color del módulo y el módulo se dibuja con el color del fondo (inversión figura-fondo, con cualquier color de módulo).
 * **`showGridLines`** (*Visible lines*): dibuja las líneas de la retícula. **Son parte del diseño (Wong)**: llevan color y grosor y **se exportan**. Opciones:
   * **`lineColor`** (*Line color*, vacío = el color de la capa). Para una línea que corte los módulos basta elegir el color del fondo (fig. 20b y 20c).
@@ -174,10 +198,10 @@ Genera el espacio desde uno o varios centros focales con coordenadas polares $(r
   * `spiral`: rayos curvos continuos con torsión angular acumulada.
   * `multi_center` (*Multi-center*): de 2 a 8 focos concurrentes con interferencia mutua. Con 2 los focos quedan a izquierda y derecha; con más se reparten parejos en un círculo pequeño.
 * **`moduleScale`** (*Module scale*, en *Advanced*, solo en *Fit to canvas*): `uniform` (*Base size*, por defecto) le da **el mismo tamaño en todas las celdas**, proporcional al conjunto de la retícula (el slider *Size* del módulo se lee como en *Actual size*, en px del lienzo), mientras la retícula sigue cabiendo en el lienzo. En el centro, donde las celdas son más pequeñas, los módulos se solapan o, con *Clip cell*, quedan cortados por la retícula. Con la retícula multicentro se escala con ella. `cell` (*Shrink with cell*) hace que el módulo se encoja con su celda; los proyectos guardados antes de esta opción se abren con `cell`, para que no cambien.
-* **`rays`** (*Angular rays*, 3 a 60) y **`rings`** (*Concentric rings*, 2 a 20). Todos los anillos tienen los mismos rayos (*Angular rays*), también en *Actual size*. En *Actual size* hay además una casilla en *Advanced*, **`raysByContainer`** (*Rays follow container*, apagada por defecto): al encenderla, **la celda es el contenedor** y cada anillo tiene **tantos rayos como caben en su circunferencia al ancho del contenedor** (`2π × radio ÷ ancho`, mínimo 3), pocos en el centro y más hacia fuera, así que todas las celdas miden más o menos lo que el contenedor y los módulos no se amontonan. Con la casilla encendida el slider *Angular rays* se oculta. No existe en *Fit to canvas* ni en *Centripetal* (los chevrones de una cuña deben anidarse de un anillo al siguiente, y con rayos distintos por anillo se desordenan).
+* **`rays`** (*Angular rays*, 3 a 60) y **`rings`** (*Concentric rings*, 2 a 20). Todos los anillos tienen los mismos rayos (*Angular rays*), también en *Actual size*. En *Actual size* hay además una casilla en *Advanced*, **`raysByContainer`** (*Rays follow container*, apagada por defecto): al encenderla, **la celda es el módulo** y cada anillo tiene **tantos rayos como caben en su circunferencia al ancho del módulo** (`2π × radio ÷ ancho`, mínimo 3), pocos en el centro y más hacia fuera, así que todas las celdas miden más o menos lo que el módulo y no se amontonan. Con la casilla encendida el slider *Angular rays* se oculta. No existe en *Fit to canvas* ni en *Centripetal* (los chevrones de una cuña deben anidarse de un anillo al siguiente, y con rayos distintos por anillo se desordenan).
 * **`centerCount`** (*Centers*, 2 a 6, por defecto 2): solo con *Multi-center*.
 * **`spiralTwist`** (*Spiral twist*, −180º a 180º): torsión acumulada.
-* **`sizeMode`** (*Module size*): `actual` hace lo mismo que en la cuadrícula: el módulo conserva su tamaño real y cada anillo tiene de grosor la *Container height*.
+* **`sizeMode`** (*Module size*): `actual` hace lo mismo que en la cuadrícula: el módulo conserva su tamaño real y cada anillo tiene de grosor la *Module height*.
 
 **En *Advanced*:**
 * **`orientation`** (*Module orientation*, dropdown, `auto`): `auto` depende del esquema; `outward`, `inward`, `tangent` o `fixed` (sin giro).

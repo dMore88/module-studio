@@ -34,7 +34,7 @@ The application is built on a clean, zero-dependency stack with high-performance
 
 | Tool | Mode | Description |
 | :--- | :--- | :--- |
-| **Module** | Base Unit | 15 glyphs (Phosphor icons), width and height up to 2000 px, rotation, offset X/Y, stroke width (uniform even on stretched shapes), fill/stroke draw mode, per-layer shape color. *Advanced*: the module's **container** (width, height) with a *Show container* option. |
+| **Module** | Base Unit | The module is a piece of paper that is repeated: its own canvas, with a width and height (10 to 1000 px) and a rotation, that always cuts what is drawn past its edge. Up to 4 **shapes** (22 forms) are placed on it, each with its own width, height, position and rotation in px; stroke width (uniform even on stretched shapes), fill/stroke draw mode and a colour are shared. It is edited in its own canvas with Save / Cancel and a step-by-step undo. |
 | **Layout** | Spatial Matrix | **Repetition** (Grid, Curved, Brick, Diagonal, Zigzag, Triangular, Alternating, Hexagonal) with *Fit to canvas* or *Actual size*, module placement (centers, intersections, both) and cell mix (merged, divided). *Advanced*: reflection, direction, **rhythm A:B** and **gradation of structure** (columns and rows that grow step by step), clip, checkerboard inversion and **visible lines** (design: colour and width, exported). **Radiation** (Centrifugal, Centripetal, Concentric, Spiral, Multi-center with 2 to 8 foci) with circular or polygonal rings (triangle to octagon), open center and ring rotation. |
 | **Similarity** | Visual Kinship | Elastic, 3D tilt, Wobble, Scale and Hybrid kinship with fluctuation intensity. *Advanced*: association of shapes, imperfection (cut, broken) and spatial cell jitter. |
 | **Gradation** | Progressive Transition | Attribute (Rotate, Scale, Depth, Drift, Shape, Texture), pathway (diagonal, horizontal, vertical, concentric, zigzag), range and cycles. *Advanced*: sequence, acceleration, alternate rows and reverse. |
@@ -47,7 +47,7 @@ The application is built on a clean, zero-dependency stack with high-performance
 Every panel shows the essentials first and keeps the rest in a collapsible **Advanced** section. Number boxes respond to the up and down arrow keys (Shift = ×10, Alt = ×0.1). All on-screen **guides** (container frame, focal point, attractor, isometric grid) share one colour, chosen next to the canvas buttons, and are never exported.
 
 --- | :--- | :--- |
-| **Module** | Base Unit | 15 glyphs (Phosphor fill icons), scale, rotation, stroke width, offset X/Y, fill/stroke draw mode, per-layer shape color. |
+| **Module** | Base Unit | A piece of paper with up to 4 shapes (width, height, position and rotation each), module width and height, rotation, stroke width, fill/stroke draw mode, per-layer shape color. |
 | **Layout Structure** | Spatial Matrix | Dual-engine spatial layout: **Repetition** (Grid, Curved, Brick, Diagonal) and **Radiation** (Centrifugal, Concentric, Spiral, Dual-center). |
 | **Structure** | Formal Cadence | Formal rhythmic subdivision with dual alternating intervals ($A:B:A:B$) for columns and rows, and visible structural grid lines. |
 | **Similarity** | Visual Kinship | Genetic morphological variation across population: *Elastic* (distortion), *3D tilt* (foreshortening), *Wobble* (rotation wobble), *Scale* (scale kinship), and *Hybrid* (hybrid fusion). Includes fluctuation intensity and spatial cell jitter. |

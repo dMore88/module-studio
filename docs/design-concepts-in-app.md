@@ -12,16 +12,16 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 
 | ID | Concepto | Grupo | Control en la app | Estado | Notas |
 | :-- | :-- | :-- | :-- | :-: | :-- |
-| B1 | **Punto**: indica posición; no tiene largo ni ancho | Elementos conceptuales | Module › Shape (círculo pequeño) y Width / Height | 🟡 | Un punto es un módulo muy pequeño; no hay "punto" como elemento aparte |
-| B2 | **Línea**: recorrido de un punto; largo, sin ancho | Elementos conceptuales | Module › Shape `line`, Width, Stroke width | ✅ | La línea solo tiene largo; el ancho es el grosor del trazo |
+| B1 | **Punto**: indica posición; no tiene largo ni ancho | Elementos conceptuales | Module › Shape (círculo pequeño) y Shape width / height | 🟡 | Un punto es un módulo muy pequeño; no hay "punto" como elemento aparte |
+| B2 | **Línea**: recorrido de un punto; largo, sin ancho | Elementos conceptuales | Module › Shape `line`, Shape width, Stroke width | ✅ | La línea solo tiene largo; el ancho es el grosor del trazo |
 | B3 | **Plano**: recorrido de una línea; largo y ancho, sin grosor | Elementos conceptuales | Module › Shape (círculo, cuadrado, triángulo, hexágono...) | ✅ |  |
 | B4 | **Volumen**: recorrido de un plano; en 2D es ilusorio | Elementos conceptuales | Space › Mode (Isometric, 3D tilt, Fluctuating, Paradox) | ✅ | Ver Espacio |
 | B5 | **Forma**: todo lo que se ve tiene forma | Elementos visuales | Module › Shape (22 formas) | ✅ |  |
-| B6 | **Medida**: tamaño de una forma | Elementos visuales | Module › Width, Height (5 a 2000 px) | ✅ |  |
+| B6 | **Medida**: tamaño de una forma | Elementos visuales | Module › Shape width / height (1 a 2000 px) y Module width / height (10 a 1000 px) | ✅ |  |
 | B7 | **Color**: blanco, negro, grises y cromáticos | Elementos visuales | Module › Shape color; Contrast › Tone y Accent color; botón de invertir figura/fondo | 🟡 | Un color por capa; más colores con varias capas. Color por zonas: pendiente (ver C4) |
 | B8 | **Textura**: cualidades de la superficie | Elementos visuales | Texture › Jitter, Line skipping, Random lines, Plane wave | ✅ | Deforma la geometría; ver Textura |
-| B9 | **Dirección**: depende de cómo se relaciona la forma con el observador o el marco | Elementos de relación | Module › Rotation; Layout › Direction; Contrast › Angle; Gradation › Rotate | ✅ |  |
-| B10 | **Posición**: se juzga por su relación con el marco o la estructura | Elementos de relación | Module › Offset X / Y; Layout › Module placement; Contrast › Position; Anomaly | ✅ |  |
+| B9 | **Dirección**: depende de cómo se relaciona la forma con el observador o el marco | Elementos de relación | Module › Module rotation y Shape rotation; Layout › Direction; Contrast › Angle; Gradation › Rotate | ✅ |  |
+| B10 | **Posición**: se juzga por su relación con el marco o la estructura | Elementos de relación | Module › Shape position X / Y; Layout › Module placement; Contrast › Position; Anomaly | ✅ |  |
 | B11 | **Espacio**: ocupado o vacío, liso o ilusorio | Elementos de relación | Space (panel entero); Checkerboard inversion; botón de figura/fondo | ✅ | Ver Espacio |
 | B12 | **Gravedad**: sensación psicológica de pesadez o liviandad | Elementos de relación | — | ➖ | Descartado como control propio: se consigue con Contrast › Position a 90º (ver C9) |
 | B13 | **Representación, significado y función** | Elementos prácticos | — | 🚫 | Pertenecen al diseño aplicado; fuera del alcance de la app |
@@ -33,7 +33,7 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 
 | ID | Concepto | Grupo | Control en la app | Estado | Notas |
 | :-- | :-- | :-- | :-- | :-: | :-- |
-| F1 | **La forma como punto**: reconocida por ser pequeña y simple | Forma y elementos conceptuales | Module › Width / Height | 🟡 | Ver B1 |
+| F1 | **La forma como punto**: reconocida por ser pequeña y simple | Forma y elementos conceptuales | Module › Shape width / height | 🟡 | Ver B1 |
 | F2 | **La forma como línea**: total, cuerpo y extremidades | Forma y elementos conceptuales | Module › Shape `line`, Stroke width | 🟡 | La forma total sí; el cuerpo y las extremidades de la línea no tienen control propio |
 | F3 | **La forma como plano — geométricas**: construidas matemáticamente | Formas planas | Module › Shape (círculo, cuadrado, triángulo, hexágono, paralelogramo, cruz) | ✅ |  |
 | F4 | **Formas planas — orgánicas**: curvas libres | Formas planas | Module › Shape (onda, herradura, creciente, gota) | 🟡 | Hay cuatro; no se dibujan formas libres |
@@ -47,7 +47,7 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 
 | ID | Concepto | Grupo | Control en la app | Estado | Notas |
 | :-- | :-- | :-- | :-- | :-: | :-- |
-| INT1 | **Distanciamiento** de dos formas | Interrelación de formas | Capas (Offset X / Y de cada capa) | 🟡 |  |
+| INT1 | **Distanciamiento** de dos formas | Interrelación de formas | Module › Shape position X / Y (shapes dentro de un módulo) y capas | ✅ | Con varias shapes en un módulo se separan, se rozan o se solapan a mano; el cálculo exacto del roce (INT2) y las operaciones (INT5 a INT8) siguen pendientes |
 | INT2 | **Toque**: las formas empiezan a tocarse | Interrelación de formas | — | ⏳ | Calcular la distancia para que se rocen |
 | INT3 | **Superposición**: una forma parece estar encima de la otra | Interrelación de formas | Capas (orden de capas) | ✅ | Cada capa tapa a la inferior |
 | INT4 | **Penetración**: ambas formas transparentes, contornos visibles | Interrelación de formas | Capas en modo Stroke | 🟡 |  |
@@ -68,8 +68,8 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | RP5 | **Direcciones en gradación** | Repetición de dirección | Gradation › Attribute `Rotate` | ✅ |  |
 | RP6 | **Direcciones similares** | Repetición de dirección | Similarity › `Wobble` | ✅ |  |
 | RP7 | **Variaciones espaciales**: superposición, penetración, unión de módulos vecinos | Repetición de posición | Módulos mayores que su celda (se superponen) | 🟡 | Falta la unión, penetración y sustracción entre módulos vecinos (ver INT) |
-| RP8 | **Submódulos**: módulos compuestos de elementos menores repetidos | Submódulos y supermódulos | — | ⏳ |  |
-| RP9 | **Supermódulos**: grupos de módulos que se usan como un solo módulo | Submódulos y supermódulos | — | ⏳ | Va al final; la app trabaja un módulo por capa |
+| RP8 | **Submódulos**: módulos compuestos de elementos menores repetidos | Submódulos y supermódulos | Module › Shapes (hasta 4 por módulo) | 🟡 | El módulo se compone de varias shapes con su ancho, alto, posición y giro; no hay una retícula dentro del módulo |
+| RP9 | **Supermódulos**: grupos de módulos que se usan como un solo módulo | Submódulos y supermódulos | Module › Shapes | 🟡 | Un módulo con varias shapes se usa como un solo módulo; no se pueden agrupar módulos de otras capas |
 | RP10 | **El encuentro de los cuatro círculos**: disposición lineal, cuadrada o rectangular, en rombo, triangular y circular | Submódulos y supermódulos | — | ⏳ | Sería un generador de supermódulos |
 | RP11 | **Reflexión**: una forma espejada, con rotaciones distintas a la original | Repetición y reflexión | Layout › Advanced › Reflection (None, Columns, Rows, Both) | ✅ |  |
 | RP12 | **Simetría**: una parte componente y su reflexión | Repetición y reflexión | Layout › Reflection | 🟡 | Se espeja el módulo, no se construye la forma simétrica |
@@ -83,7 +83,7 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | E3 | **Estructura informal**: sin líneas estructurales, organización libre | Tipos de estructura | Layout › `Free`; Concentration › `Hotspots` | ✅ | Sin líneas estructurales: los módulos se reparten libremente |
 | E4 | **Estructura inactiva**: líneas solo conceptuales; no dividen el espacio | Activa / inactiva | Layout con *Visible lines* apagado (por defecto) | ✅ |  |
 | E5 | **Estructura activa — subdivisiones independientes**: cada módulo en su espacio, con fondo propio o alternancia positivo/negativo | Estructura activa | Layout › Advanced › Checkerboard inversion; Clip cell | ✅ |  |
-| E6 | **Estructura activa — módulo excéntrico y recortado** por los límites | Estructura activa | Module › Offset X / Y con Layout › Clip cell | ✅ |  |
+| E6 | **Estructura activa — módulo excéntrico y recortado** por los límites | Estructura activa | Module › Shape position X / Y (el borde del módulo corta la shape) y Layout › Clip cell | ✅ | El borde del módulo siempre corta |
 | E7 | **Estructura activa — el módulo penetra la subdivisión vecina** | Estructura activa | Módulo mayor que la celda, sin Clip cell | 🟡 |  |
 | E8 | **Estructura activa — espacio aislado reunido con el de un vecino** | Estructura activa | Layout › Cell mix `Merged` | 🟡 | Solo bloques de 2×2 en retícula básica y alternada |
 | E9 | **Estructura invisible**: líneas conceptuales, sin grosor | Visible / invisible | Layout con *Visible lines* apagado | ✅ |  |
@@ -103,7 +103,7 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | E23 | **El enrejado hexagonal** | Variaciones del enrejado | Layout › `Hexagonal` | ✅ |  |
 | E24 | **Estructura de múltiple repetición**: más de una clase de subdivisión, entretejidas | Estructura de repetición | Layout › Module placement `Both` con Intersection size | 🟡 | Dos clases de módulo entretejidas; no dos retículas de formas distintas |
 | E25 | **Módulos en el centro o en las intersecciones** de las subdivisiones | Módulos y subdivisiones | Layout › Module placement `Centers`, `Intersections`, `Both` | ✅ |  |
-| E26 | **Módulos que ajustan, o más pequeños o más grandes** que la subdivisión | Módulos y subdivisiones | Layout › Module size; Module › Width / Height; Container | ✅ |  |
+| E26 | **Módulos que ajustan, o más pequeños o más grandes** que la subdivisión | Módulos y subdivisiones | Layout › Module size y Module scale; Module › Module width / height | ✅ |  |
 | E27 | **Repetición de posición**: todos colocados igual dentro de su subdivisión | Repetición de posición | Layout (por defecto); Contrast › Position rompe la regla | ✅ |  |
 | E28 | **Superposición de estructuras de repetición** | Superposición | Varias capas con su propia retícula | ✅ |  |
 | E29 | **Supermódulos en estructuras activas** | Submódulos y supermódulos | — | ⏳ |  |
@@ -180,7 +180,7 @@ Este documento recorre los **conceptos de diseño** en los que se basa la app, u
 | R24 | **Subdivisiones estructurales y módulos**: los módulos se ajustan y giran con ellas | Módulos en radiación | Radiation › Module orientation; Clip cell | ✅ |  |
 | R25 | **Movimiento concéntrico**: progresión hacia el centro | Módulos en radiación | Gradation › Pathway `Concentric` | ✅ |  |
 | R26 | **Módulos que son esquemas de radiación en miniatura** | Módulos en radiación | — | ⏳ |  |
-| R27 | **Módulos de tamaño mayor**, casi tan grandes como el esquema | Módulos en radiación | Module › Width / Height | 🟡 | Falta resolver sus interrelaciones (ver INT) |
+| R27 | **Módulos de tamaño mayor**, casi tan grandes como el esquema | Módulos en radiación | Module › Module width / height | 🟡 | Falta resolver sus interrelaciones (ver INT) |
 | R28 | **Radiación irregular y distorsionada**; fotografía o medios mecánicos | Variantes | Anomaly y Similarity sobre el esquema radial | 🟡 | Sin distorsión mecánica del esquema |
 
 ## Anomalía
@@ -280,7 +280,7 @@ Controles que no corresponden a un concepto de diseño, sino a la herramienta.
 | :-- | :-- | :-- |
 | Capas (hasta 5), orden y visibilidad | Un módulo por capa; superposición de estructuras | Cubre INT3, E28 y R23 |
 | Aspect ratio | El marco del diseño | Cubre B14 |
-| Guías de pantalla y su color; *Show container* | Ayudas de trabajo; no se exportan | |
+| Guías de pantalla y su color (incluidos el marco del composition container y el de la shape que se edita) | Ayudas de trabajo; no se exportan | |
 | Seed, deshacer y rehacer, guardar y abrir, exportar SVG y PNG | Herramientas de trabajo | |
 | Teclado en las cajas de valor y secciones *Advanced* | Usabilidad | Ver `STUDIO_CONTROLS_GUIDE.md`, sección 5 |
 
