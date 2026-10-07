@@ -110,7 +110,8 @@
     await wait(300);
     const app = win.studioProApp;
     const initial = JSON.stringify(app.state);
-    const reset = () => { app.state = JSON.parse(initial); app.activeLayerId = app.state.layers[0].id; app.engine.state = app.state; };
+    // Older tests were written when Repetition modules shrank with their cell; the Base size default has its own test (reset(true))
+    const reset = (keepDefaults = false) => { app.state = JSON.parse(initial); if (!keepDefaults) app.state.layers.forEach(l => { l.structure.repetition.moduleScale = "cell"; }); app.activeLayerId = app.state.layers[0].id; app.engine.state = app.state; };
     const results = [];
     const record = (name, ok, detail = "") => {
       results.push({ name, ok, detail });
@@ -244,11 +245,12 @@
       // old files: pixels become percentages
       const saved = JSON.parse(JSON.stringify(app.state));
       saved.layers[0].structure.space = { enabled: true, mode: "isometric", depth: 17, angle: 30, shading: 50 };
-      saved.layers[0].structure.repetition.curveIntensity = 36; saved.layers[0].structure.repetition.cols = 4; delete saved.layers[0].structure.repetition.curveAmount; delete saved.layers[0].structure.radiation.moduleScale;
+      saved.layers[0].structure.repetition.curveIntensity = 36; saved.layers[0].structure.repetition.cols = 4; delete saved.layers[0].structure.repetition.curveAmount; delete saved.layers[0].structure.radiation.moduleScale; delete saved.layers[0].structure.repetition.moduleScale;
       app.loadProjectText(JSON.stringify(saved));
       assert(app.state.layers[0].structure.space.depthPct === 20, `17 px should open as 20 % (got ${app.state.layers[0].structure.space.depthPct})`);
       assert(Math.abs(app.state.layers[0].structure.repetition.curveAmount - 0.24) < 1e-9, `36 px of wave on 150 px cells is 24 % (got ${app.state.layers[0].structure.repetition.curveAmount})`);
       assert(app.state.layers[0].structure.radiation.moduleScale === "cell", "A project saved before Module scale opens with Shrink with cell, so it does not change");
+      assert(app.state.layers[0].structure.repetition.moduleScale === "cell", "The same for Repetition");
     });
 
     await test("Show container draws its frame even with the coordinate grid off, and never in an export", () => {
@@ -318,6 +320,7 @@
       assert(!d.getElementById("rad-modscale-block").classList.contains("hidden"), "Fit offers Module scale");
       st.radiation.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer();
       assert(d.getElementById("rad-modscale-block").classList.contains("hidden"), "Actual size hides Module scale");
+      reset();
     });
 
     await test("Radial Actual size: Angular rays stays, and Rays follow container gives each ring as many rays as fit the container's width", async () => {
@@ -2251,6 +2254,25 @@
       assert(rc[0] > 150 && rc[1] < 80, "A coloured module should fill the inverted cell with its colour");
       reset();
     });
+
+    await test("Repetition Fit: Module scale 'Base size' (default) keeps the module at its own size in every cell, 'Shrink with cell' shrinks it", async () => {
+      reset(true);
+      const d = win.document, cv = d.getElementById("studio-canvas");
+      const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: false, width: 60, height: 60, showContainer: false }); app.state.showSafeBounds = false;
+      const st = L.structure; st.enabled = true; st.mode = "repetition"; Object.assign(st.repetition, { cols: 6, rows: 6, sizeMode: "fit", gridType: "plain", showGridLines: false });
+      assert(st.repetition.moduleScale === "uniform", "Base size is the default");
+      const ink = () => { drawRaw(app); const data = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < data.length; i += 4) if (data[i] < 128) n++; return n; };
+      const base = ink();
+      st.repetition.moduleScale = "cell";
+      const shrunk = ink();
+      assert(base > shrunk * 2, `Base size should leave far more ink than Shrink with cell (${shrunk} -> ${base})`);
+      d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
+      assert(!d.getElementById("rep-modscale-block").classList.contains("hidden"), "Fit offers Module scale in Repetition");
+      st.repetition.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer();
+      assert(d.getElementById("rep-modscale-block").classList.contains("hidden"), "Actual size hides Module scale in Repetition");
+      reset();
+    });
+
 
 
     const failed = results.filter(r => !r.ok).length;

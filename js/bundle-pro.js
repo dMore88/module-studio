@@ -990,6 +990,7 @@ const createDefaultLayerStructure = () => ({
     interScale: 50, // size (%) of the modules placed at the intersections
     cellMix: "none", // none, merge (some blocks of 2x2 cells become one big cell) or divide (some blocks split into smaller ones), fig. 22f-g
     direction: "repeated", // repeated (every module the same way), alternated (alternate cells turn 180°) or undefined (every module faces a different way)
+    moduleScale: "uniform", // Fit: "uniform" (Base size: every module keeps its own size, proportional to the whole canvas) or "cell" (the module shrinks with its cell)
     sizeMode: "fit", // fit (Fit to canvas: columns and rows divide the canvas, the module scales to its cell) or actual (Actual size: the module keeps its real size and is repeated columns x rows times)
     checkerInvert: false
   },
@@ -2151,6 +2152,7 @@ class StudioEngine {
     // is, columns x rows times, in a block centred on the canvas. A block bigger than the canvas runs
     // past its edges. Fit to canvas: the cell is the canvas divided by columns and rows.
     const isFixed = rep.sizeMode === "actual" || rep.sizeMode === "fixed";
+    const uniform = !isFixed && rep.moduleScale !== "cell"; // Base size: modules are not scaled by their cell
     const cont = this.containerSize(targetMod, width, height);
     const customContainer = targetMod.containerW > 0 || targetMod.containerH > 0;
     const fixedCW = Math.max(10, cont.w);
@@ -2365,7 +2367,7 @@ class StudioEngine {
           if (targetMod.clipContainer && !extra) {
             // The container keeps its own proportions and shrinks with the same scale as the module (Figma frame inside a frame)
             const rk = rhythmOn ? Math.min(MAX_SCALE_MUL, Math.min(cW / refW, rowHeights[r] / refH)) : 1;
-            const sBase = isFixed ? rk : (rhythmOn ? Math.min(refW / usableW, refH / usableH) * rk : Math.min(cW / usableW, cH / usableH));
+            const sBase = isFixed || uniform ? rk : (rhythmOn ? Math.min(refW / usableW, refH / usableH) * rk : Math.min(cW / usableW, cH / usableH));
             const bw = cont.w * sBase, bh = cont.h * sBase;
             ctx.beginPath();
             ctx.rect(cellCx - bw / 2, cellCy - bh / 2, bw, bh);
@@ -2419,7 +2421,7 @@ class StudioEngine {
         // A module keeps its proportions: it shrinks with the smaller side of its column and row (Wong: a repeated figure is not deformed)
         const rhythmK = rhythmOn ? Math.min(MAX_SCALE_MUL, Math.min(cW / refW, rowHeights[r] / refH)) : 1;
         const stretch = rhythmOn ? { x: rhythmK, y: rhythmK } : null;
-        const normScale = isFixed
+        const normScale = isFixed || uniform
           ? scaleUnit * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k
           : scaleUnit * cellRatio * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k;
         if (cell.texScale) this.cellTexScale = Math.max(this.cellTexScale || 0, cell.texScale);
@@ -2429,7 +2431,7 @@ class StudioEngine {
         const refl = rep.reflection || "none";
         if ((refl === "columns" || refl === "both") && c % 2 === 1) ctx.scale(-1, 1);
         if ((refl === "rows" || refl === "both") && r % 2 === 1) ctx.scale(1, -1);
-        const lineWidthMul = !isFixed && (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k : null;
+        const lineWidthMul = !isFixed && !uniform && (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k : null;
         this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor || flipped ? cellFg : null, lineWidthMul, stretch);
         ctx.restore();
       };
@@ -3986,6 +3988,7 @@ class StudioProApp {
       // Radiation modules used to shrink with their cell; the new default is Base size, so older projects keep what they had
       const rd = st.radiation;
       if (rd && typeof rd === "object" && rd.moduleScale === undefined) rd.moduleScale = "cell";
+      if (rep && typeof rep === "object" && rep.moduleScale === undefined) rep.moduleScale = "cell";
       const sp = st.space;
       if (sp && typeof sp === "object" && sp.depthPct === undefined && typeof sp.depth === "number") {
         sp.depthPct = Math.max(5, Math.min(100, Math.round((sp.depth / 85) * 100)));
@@ -4317,7 +4320,7 @@ class StudioProApp {
         } else {
           const r = s.repetition || {};
           const actual = r.sizeMode === "actual" || r.sizeMode === "fixed";
-          const parts = ["Repetition", pick(GRIDS, r.gridType), `C${r.cols} - R${r.rows}`, actual ? "Actual size" : "Fit to canvas", pick(PLACE, r.placement || "centers"), pick(MIX, r.cellMix || "none"),
+          const parts = ["Repetition", pick(GRIDS, r.gridType), `C${r.cols} - R${r.rows}`, actual ? "Actual size" : r.moduleScale === "cell" ? "Fit to canvas (modules shrink with the cell)" : "Fit to canvas", pick(PLACE, r.placement || "centers"), pick(MIX, r.cellMix || "none"),
             `Direction ${pick(DIRS, r.direction || "repeated")}`, `Reflection ${title(r.reflection || "none")}`];
           if (r.gridType === "sliding") parts.push(`Row offset ${Math.round((r.slideOffset ?? 0.5) * 100)}%`);
           if (r.gridType === "sheared") parts.push(`Shear angle ${r.shearAngle ?? 15}º`);
@@ -4812,6 +4815,8 @@ class StudioProApp {
       b.classList.toggle("active", v === value);
     });
     mark("data-rep-size", rep.sizeMode || "fit");
+    mark("data-rep-modscale", rep.moduleScale || "uniform");
+    document.getElementById("rep-modscale-block")?.classList.toggle("hidden", rep.sizeMode === "actual" || rep.sizeMode === "fixed");
     mark("data-rep-dir", rep.direction || "repeated");
     mark("data-rep-place", rep.placement || "centers");
     mark("data-rep-mix", rep.cellMix || "none");
@@ -4962,6 +4967,7 @@ class StudioProApp {
     bindTags("[data-rep-linespace]", "data-rep-linespace", "lineSpacing", "Line Spacing");
     bindTags("[data-rep-reflect]", "data-rep-reflect", "reflection", "Reflection");
     bindTags("[data-rep-size]", "data-rep-size", "sizeMode", "Module Size");
+    bindTags("[data-rep-modscale]", "data-rep-modscale", "moduleScale", "Module Scale");
     bindTags("[data-rep-dir]", "data-rep-dir", "direction", "Direction");
     bindTags("[data-rep-place]", "data-rep-place", "placement", "Module Placement");
     bindTags("[data-rep-mix]", "data-rep-mix", "cellMix", "Cell Mix");

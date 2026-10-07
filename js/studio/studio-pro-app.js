@@ -390,6 +390,7 @@ export class StudioProApp {
       // Radiation modules used to shrink with their cell; the new default is Base size, so older projects keep what they had
       const rd = st.radiation;
       if (rd && typeof rd === "object" && rd.moduleScale === undefined) rd.moduleScale = "cell";
+      if (rep && typeof rep === "object" && rep.moduleScale === undefined) rep.moduleScale = "cell";
       const sp = st.space;
       if (sp && typeof sp === "object" && sp.depthPct === undefined && typeof sp.depth === "number") {
         sp.depthPct = Math.max(5, Math.min(100, Math.round((sp.depth / 85) * 100)));
@@ -721,7 +722,7 @@ export class StudioProApp {
         } else {
           const r = s.repetition || {};
           const actual = r.sizeMode === "actual" || r.sizeMode === "fixed";
-          const parts = ["Repetition", pick(GRIDS, r.gridType), `C${r.cols} - R${r.rows}`, actual ? "Actual size" : "Fit to canvas", pick(PLACE, r.placement || "centers"), pick(MIX, r.cellMix || "none"),
+          const parts = ["Repetition", pick(GRIDS, r.gridType), `C${r.cols} - R${r.rows}`, actual ? "Actual size" : r.moduleScale === "cell" ? "Fit to canvas (modules shrink with the cell)" : "Fit to canvas", pick(PLACE, r.placement || "centers"), pick(MIX, r.cellMix || "none"),
             `Direction ${pick(DIRS, r.direction || "repeated")}`, `Reflection ${title(r.reflection || "none")}`];
           if (r.gridType === "sliding") parts.push(`Row offset ${Math.round((r.slideOffset ?? 0.5) * 100)}%`);
           if (r.gridType === "sheared") parts.push(`Shear angle ${r.shearAngle ?? 15}º`);
@@ -1216,6 +1217,8 @@ export class StudioProApp {
       b.classList.toggle("active", v === value);
     });
     mark("data-rep-size", rep.sizeMode || "fit");
+    mark("data-rep-modscale", rep.moduleScale || "uniform");
+    document.getElementById("rep-modscale-block")?.classList.toggle("hidden", rep.sizeMode === "actual" || rep.sizeMode === "fixed");
     mark("data-rep-dir", rep.direction || "repeated");
     mark("data-rep-place", rep.placement || "centers");
     mark("data-rep-mix", rep.cellMix || "none");
@@ -1366,6 +1369,7 @@ export class StudioProApp {
     bindTags("[data-rep-linespace]", "data-rep-linespace", "lineSpacing", "Line Spacing");
     bindTags("[data-rep-reflect]", "data-rep-reflect", "reflection", "Reflection");
     bindTags("[data-rep-size]", "data-rep-size", "sizeMode", "Module Size");
+    bindTags("[data-rep-modscale]", "data-rep-modscale", "moduleScale", "Module Scale");
     bindTags("[data-rep-dir]", "data-rep-dir", "direction", "Direction");
     bindTags("[data-rep-place]", "data-rep-place", "placement", "Module Placement");
     bindTags("[data-rep-mix]", "data-rep-mix", "cellMix", "Cell Mix");
