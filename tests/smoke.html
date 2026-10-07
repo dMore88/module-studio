@@ -2363,6 +2363,51 @@
     });
 
 
+    await test("Shape relations (phase 1): a shape can be coincident with the previous one or placed in a direction, touching, apart or overlapping", async () => {
+      reset();
+      const d = win.document, q = (s) => d.querySelector(s);
+      const fire = (el, v) => { el.value = String(v); el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
+      app.isFlyoutOpen = false; app.updateRailUI();
+      q('[data-rail-tab="module"]').click(); await wait(60);
+      assert(q("#fig-relation-block").classList.contains("hidden"), "The first shape has no relation");
+      fire(q("#input-fig-w"), 50); fire(q("#input-fig-h"), 50);
+      q("#btn-fig-add").click(); await wait(30);
+      assert(!q("#fig-relation-block").classList.contains("hidden") && q('[data-fig-rel="free"]').classList.contains("active"), "The second shape offers the relation, free by default");
+      const box = () => app.stateForFigureEdit().figureBox;
+      q('[data-fig-rel="coincident"]').click(); await wait(30);
+      assert(box().x === 0 && box().y === 0 && q("#fig-pos-x-field").classList.contains("hidden"), "Coincident puts the shape on the previous one and hides its position");
+      q('[data-fig-rel="distance"]').click(); await wait(30);
+      assert(!q("#fig-relation-stack").classList.contains("hidden"), "Distance shows its direction and gap");
+      assert(Math.abs(box().x - 50) < 0.6 && Math.abs(box().y) < 0.6, `Two 50 px circles touch 50 px apart (x ${box().x}, y ${box().y})`);
+      fire(q("#input-fig-gap"), -10);
+      assert(Math.abs(box().x - 40) < 0.6, `A gap of -10 overlaps them (x ${box().x})`);
+      fire(q("#input-fig-gap"), 10);
+      assert(Math.abs(box().x - 60) < 0.6, `A gap of 10 separates them (x ${box().x})`);
+      fire(q("#input-fig-angle"), 90);
+      assert(Math.abs(box().x) < 0.6 && Math.abs(box().y - 60) < 0.6, `Direction 90º places it below (x ${box().x}, y ${box().y})`);
+      fire(q("#input-fig-gap"), 0); fire(q("#input-fig-angle"), 0);
+      // a turned square touches by its corner: 25 + half the diagonal (35.36)
+      q('#fig-shape-grid [data-fig-shape="square"]').click(); fire(q("#input-fig-rot"), 45);
+      assert(Math.abs(box().x - (25 + 25 * Math.SQRT2)) < 0.8, `A turned square touches by its corner (x ${box().x})`);
+      assert(/touching at 0º/.test(d.getElementById("art-log-lines").textContent), "The Art log lists the relation");
+      // leaving the relation keeps the shape where it is
+      fire(q("#input-fig-gap"), 20);
+      const where = box().x;
+      q('[data-fig-rel="free"]').click(); await wait(30);
+      assert(Math.abs(box().x - where) < 1 && !q("#fig-pos-x-field").classList.contains("hidden") && Math.abs(Number(q("#input-fig-x").value) - Math.round(where)) < 1.5, "Free keeps the shape where the relation had put it");
+      // it follows the previous shape when that one changes
+      q('[data-fig-rel="distance"]').click(); fire(q("#input-fig-gap"), 0);
+      q('#fig-list [data-fig-index="0"]').click(); fire(q("#input-fig-w"), 100); fire(q("#input-fig-h"), 100);
+      q('#fig-list [data-fig-index="1"]').click();
+      assert(Math.abs(box().x - (50 + 25 * Math.SQRT2)) < 0.8, `The related shape follows the previous one when it grows (x ${box().x})`);
+      // saved with the project
+      q("#btn-fig-save").click(); await wait(60);
+      const L = app.state.layers[0];
+      app.loadProjectText(JSON.stringify(JSON.parse(JSON.stringify(app.state))));
+      assert(app.state.layers[0].figures[1].relation === "distance" && app.state.layers[0].figures[1].gap === 0, "The relation is saved and opened with the project");
+      reset();
+    });
+
     const failed = results.filter(r => !r.ok).length;
     summary.textContent = failed === 0 ? `All ${results.length} tests passed` : `${failed} of ${results.length} tests FAILED`;
     summary.className = failed === 0 ? "pass" : "fail";

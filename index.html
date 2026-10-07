@@ -201,6 +201,32 @@
         </div>
 
 
+        <div id="fig-relation-block" class="ds-field">
+          <div class="ds-label">Relation to the previous shape</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-fig-rel="free" title="Place it by its position">Free</button>
+            <button type="button" class="ds-tag" data-fig-rel="coincident" title="Same centre as the previous shape">Coincident</button>
+            <button type="button" class="ds-tag" data-fig-rel="distance" title="Next to the previous shape: touching, apart or overlapping">Distance</button>
+          </div>
+        </div>
+
+        <div id="fig-relation-stack" class="ds-stack hidden">
+          <div class="ds-field">
+            <div class="ds-label">Direction</div>
+            <div class="ds-slider">
+              <input type="range" id="input-fig-angle" min="0" max="360" step="1" value="0">
+              <input type="text" id="num-fig-angle" class="ds-value" value="0º" inputmode="decimal">
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Gap (0 = touching, below 0 = overlapping)</div>
+            <div class="ds-slider">
+              <input type="range" id="input-fig-gap" min="-500" max="500" step="1" value="0">
+              <input type="text" id="num-fig-gap" class="ds-value" value="0px" inputmode="decimal">
+            </div>
+          </div>
+        </div>
+
         <div id="fig-transform-stack" class="ds-stack">
           <div class="ds-field">
             <div class="ds-label">Shape width</div>
@@ -216,14 +242,14 @@
               <input type="text" id="num-fig-h" class="ds-value" value="100px" inputmode="decimal">
             </div>
           </div>
-          <div class="ds-field">
+          <div id="fig-pos-x-field" class="ds-field">
             <div class="ds-label">Shape position X</div>
             <div class="ds-slider">
               <input type="range" id="input-fig-x" min="-1000" max="1000" step="1" value="0">
               <input type="text" id="num-fig-x" class="ds-value" value="0px" inputmode="decimal">
             </div>
           </div>
-          <div class="ds-field">
+          <div id="fig-pos-y-field" class="ds-field">
             <div class="ds-label">Shape position Y</div>
             <div class="ds-slider">
               <input type="range" id="input-fig-y" min="-1000" max="1000" step="1" value="0">
@@ -1537,7 +1563,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=8c24d9c4"></script>
+  <script src="js/bundle-pro.js?v=c91be4ae"></script>
 
 </body>
 </html>

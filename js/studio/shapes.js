@@ -622,11 +622,57 @@ export function clippedShape(shapeDef, corners, size0, strokeOnly) {
 // scaled (by its cell, for example). Older figures were { shape, size, x, y, rotation } as a % of the module.
 const compositeCache = {};
 
+// Shapes related to the previous one (Wong's interrelation of forms, the placements): `relation` is "free" (the shape's own
+// x, y), "coincident" (same centre as the previous shape) or "distance" (placed in the direction `angle`, with `gap` px between
+// the two: 0 touching, positive apart, negative overlapping). The touching distance is measured on the outlines (the supports of
+// the two shapes along the direction), so it is exact for convex shapes and follows the convex hull of the others.
+function figureSupport(f, ux, uy) {
+  const def = Shapes[f.shape];
+  const w = f.width, h = f.height ?? f.width;
+  const m = f.shape === "line" ? w : Math.max(w, h);
+  if (!def || !(m > 0)) return 0;
+  const k = m / FLAT_REF_SIZE;
+  const flat = !!def.skeleton;
+  const sx = flat ? 1 : w / m, sy = flat ? 1 : h / m;
+  const a = ((f.rotation || 0) * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a);
+  let best = -Infinity;
+  for (const sp of flattenShape(def)) {
+    for (const p of sp.pts) {
+      const qx = p.x * k * sx, qy = p.y * k * sy;
+      const v = (qx * c - qy * s) * ux + (qx * s + qy * c) * uy;
+      if (v > best) best = v;
+    }
+  }
+  return best === -Infinity ? 0 : best;
+}
+
+const resolveCache = {};
+export function resolveFigures(figures) {
+  const key = JSON.stringify(figures);
+  if (resolveCache[key]) return resolveCache[key];
+  const out = [];
+  (figures || []).forEach((f0, i) => {
+    const f = { ...f0 };
+    const prev = out[i - 1];
+    if (i > 0 && prev && f.width !== undefined && f.relation === "coincident") {
+      f.x = prev.x; f.y = prev.y;
+    } else if (i > 0 && prev && f.width !== undefined && f.relation === "distance") {
+      const a = (((f.angle ?? 0) % 360) * Math.PI) / 180, ux = Math.cos(a), uy = Math.sin(a);
+      const d = figureSupport(prev, ux, uy) + figureSupport(f, -ux, -uy) + (f.gap || 0);
+      f.x = (prev.x || 0) + ux * d; f.y = (prev.y || 0) + uy * d;
+    }
+    out.push(f);
+  });
+  if (Object.keys(resolveCache).length > 200) for (const k of Object.keys(resolveCache)) delete resolveCache[k];
+  resolveCache[key] = out;
+  return out;
+}
+
 export function compositeShape(figures, ref = 100) {
   const R = ref > 0 ? ref : 100;
-  const list = (figures || []).filter(f => f && Shapes[f.shape]).map(f => (f.width !== undefined ? f : {
+  const list = resolveFigures((figures || []).filter(f => f && Shapes[f.shape]).map(f => (f.width !== undefined ? f : {
     shape: f.shape, width: ((f.size ?? 100) / 100) * R, height: ((f.size ?? 100) / 100) * R, x: ((f.x || 0) / 100) * R, y: ((f.y || 0) / 100) * R, rotation: f.rotation || 0
-  }));
+  })));
   const key = "smart:" + Math.round(R * 1000) + ":" + JSON.stringify(list.map(f => [f.shape, f.width, f.height ?? f.width, f.x || 0, f.y || 0, f.rotation || 0]));
   if (compositeCache[key]) return compositeCache[key];
   // Where a figure goes when the module is drawn at `size`; a figure keeps its own proportions (like a shape in a module)

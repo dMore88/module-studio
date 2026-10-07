@@ -31,12 +31,12 @@ Con Wong: su **módulo** es la unidad que se repite (aquí, la pieza entera con 
 6. **Editor 1:1.** Abrir el panel Module cambia el canvas por uno del tamaño del módulo (cualquier proporción), escalado a la pantalla y dibujado nítido. Un px del editor es un px del diseño. Sin reglas de escala.
 7. **Save y Cancel.** Se edita en vivo; *Cancel* vuelve al inicio de la sesión (shapes y controles del módulo); *Save* deja un solo paso en el historial. Dentro del editor, Cmd+Z va paso a paso.
 8. **Color y trazo/relleno heredados** del módulo: todas las shapes comparten color, grosor de trazo y Stroke / Fill. Dos shapes del mismo color en *Fill* se funden.
-9. **Marco de la shape seleccionada** en el canvas del editor (guía de pantalla, no se exporta).
-10. **El composition container corta,** también en Actual size, donde los módulos conservan su tamaño real y la cuadrícula se centra en la hoja.
+9. **Relaciones entre shapes, fase 1** (hecha): cada shape, desde la segunda, puede ser *Free*, *Coincident* o *Distance* (dirección + gap: 0 = se tocan, positivo separa, negativo solapa). Se coloca sola y sigue a la anterior.
+10. **Marco de la shape seleccionada** en el canvas del editor (guía de pantalla, no se exporta).
+11. **El composition container corta,** también en Actual size, donde los módulos conservan su tamaño real y la cuadrícula se centra en la hoja.
 
 ## Pendiente (fases futuras)
 
-- **Relaciones entre shapes, fase 1:** tocándose, solapadas, interpenetradas y coincidencia, con un slider de distancia (hoy se consiguen a mano con la posición).
 - **Fase 2: unión, sustracción e intersección.** Son booleanas y en el SVG exportado hay que resolverlas con máscaras o recortes, sin trazo limpio.
 - **Selector Fill / Outline por shape**, para ver una shape sobre otra sin darle color propio.
 - **Color propio por shape** (hoy heredan todas).

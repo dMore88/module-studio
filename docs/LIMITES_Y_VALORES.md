@@ -81,6 +81,8 @@ El **valor por defecto** es el que tiene el control al abrir la app o al encende
 | Shape height | 1 px | 2000 px | 1 px | 100 px (la primera); la mitad del módulo (las nuevas) | Igual que Width; la línea no usa Height. |
 | Shape position X / Y | −1000 px | 1000 px | 1 px | 0 px | Desde el centro del módulo; permite sacar la shape del módulo para que el borde la corte (módulo excéntrico y recortado). |
 | Shape rotation | −180º | 180º | 1º | 0º | Gira la shape sobre su centro. |
+| Relation › Direction | 0º | 360º | 1º | 0º | Hacia dónde se coloca la shape respecto a la anterior (0º derecha, 90º abajo). Solo con la relación *Distance*. |
+| Relation › Gap | −500 px | 500 px | 1 px | 0 px (se tocan) | Separación entre los contornos: negativa solapa (penetración), positiva separa. Cubre de una shape bien dentro de la otra a bien lejos. |
 
 **Módulo** (la pieza de papel):
 | Control | Mín. | Máx. | Paso | Por defecto | Razón |

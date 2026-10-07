@@ -790,11 +790,57 @@ function clippedShape(shapeDef, corners, size0, strokeOnly) {
 // (the piece of paper); `ref` is the container's larger side, so the figures keep their proportions when the module is
 // scaled (by its cell, for example). Older figures were { shape, size, x, y, rotation } as a % of the module.
 const compositeCache = {};
+
+// Shapes related to the previous one (Wong's interrelation of forms, the placements): `relation` is "free" (the shape's own
+// x, y), "coincident" (same centre as the previous shape) or "distance" (placed in the direction `angle`, with `gap` px between
+// the two: 0 touching, positive apart, negative overlapping). The touching distance is measured on the outlines (the supports of
+// the two shapes along the direction), so it is exact for convex shapes and follows the convex hull of the others.
+function figureSupport(f, ux, uy) {
+  const def = Shapes[f.shape];
+  const w = f.width, h = f.height ?? f.width;
+  const m = f.shape === "line" ? w : Math.max(w, h);
+  if (!def || !(m > 0)) return 0;
+  const k = m / FLAT_REF_SIZE;
+  const flat = !!def.skeleton;
+  const sx = flat ? 1 : w / m, sy = flat ? 1 : h / m;
+  const a = ((f.rotation || 0) * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a);
+  let best = -Infinity;
+  for (const sp of flattenShape(def)) {
+    for (const p of sp.pts) {
+      const qx = p.x * k * sx, qy = p.y * k * sy;
+      const v = (qx * c - qy * s) * ux + (qx * s + qy * c) * uy;
+      if (v > best) best = v;
+    }
+  }
+  return best === -Infinity ? 0 : best;
+}
+
+const resolveCache = {};
+function resolveFigures(figures) {
+  const key = JSON.stringify(figures);
+  if (resolveCache[key]) return resolveCache[key];
+  const out = [];
+  (figures || []).forEach((f0, i) => {
+    const f = { ...f0 };
+    const prev = out[i - 1];
+    if (i > 0 && prev && f.width !== undefined && f.relation === "coincident") {
+      f.x = prev.x; f.y = prev.y;
+    } else if (i > 0 && prev && f.width !== undefined && f.relation === "distance") {
+      const a = (((f.angle ?? 0) % 360) * Math.PI) / 180, ux = Math.cos(a), uy = Math.sin(a);
+      const d = figureSupport(prev, ux, uy) + figureSupport(f, -ux, -uy) + (f.gap || 0);
+      f.x = (prev.x || 0) + ux * d; f.y = (prev.y || 0) + uy * d;
+    }
+    out.push(f);
+  });
+  if (Object.keys(resolveCache).length > 200) for (const k of Object.keys(resolveCache)) delete resolveCache[k];
+  resolveCache[key] = out;
+  return out;
+}
 function compositeShape(figures, ref = 100) {
   const R = ref > 0 ? ref : 100;
-  const list = (figures || []).filter(f => f && Shapes[f.shape]).map(f => (f.width !== undefined ? f : {
+  const list = resolveFigures((figures || []).filter(f => f && Shapes[f.shape]).map(f => (f.width !== undefined ? f : {
     shape: f.shape, width: ((f.size ?? 100) / 100) * R, height: ((f.size ?? 100) / 100) * R, x: ((f.x || 0) / 100) * R, y: ((f.y || 0) / 100) * R, rotation: f.rotation || 0
-  }));
+  })));
   const key = "smart:" + Math.round(R * 1000) + ":" + JSON.stringify(list.map(f => [f.shape, f.width, f.height ?? f.width, f.x || 0, f.y || 0, f.rotation || 0]));
   if (compositeCache[key]) return compositeCache[key];
   // Where a figure goes when the module is drawn at `size`; a figure keeps its own proportions (like a shape in a module)
@@ -4187,7 +4233,7 @@ class StudioProApp {
       layer.figures = (Array.isArray(layer.figures) ? layer.figures : [])
         .filter(f => f && STUDIO_SHAPE_KEYS.includes(f.shape)).slice(0, 4)
         .map(f => (f.width !== undefined || f.height !== undefined)
-          ? { shape: f.shape, width: num(f.width, 1, 2000, 100), height: num(f.height ?? f.width, 1, 2000, 100), x: num(f.x, -1000, 1000, 0), y: num(f.y, -1000, 1000, 0), rotation: num(f.rotation, -360, 360, 0) }
+          ? { shape: f.shape, width: num(f.width, 1, 2000, 100), height: num(f.height ?? f.width, 1, 2000, 100), x: num(f.x, -1000, 1000, 0), y: num(f.y, -1000, 1000, 0), rotation: num(f.rotation, -360, 360, 0), relation: ["coincident", "distance"].includes(f.relation) ? f.relation : "free", angle: num(f.angle, 0, 360, 0), gap: num(f.gap, -500, 500, 0) }
           : { shape: f.shape, width: Math.round(num(f.size, 5, 200, 100) / 100 * old), height: Math.round(num(f.size, 5, 200, 100) / 100 * old), x: Math.round(num(f.x, -100, 100, 0) / 100 * old), y: Math.round(num(f.y, -100, 100, 0) / 100 * old), rotation: num(f.rotation, -360, 360, 0) });
       // The module's size is its container: 10 to 1000 px. Older projects used 0 for "the whole canvas"
       const ar = ASPECT_RATIOS[raw.aspectRatio] || ASPECT_RATIOS["1:1"];
@@ -4488,7 +4534,7 @@ class StudioProApp {
       const smart = !!(mod.figures && mod.figures.length);
       const cw = Math.round(mod.containerW > 0 ? mod.containerW : 100), ch = Math.round(mod.containerH > 0 ? mod.containerH : 100);
       out.push({ k: "Module", v: [`${cw} x ${ch}px`, `rotation ${num(mod.rotation || 0)}º`, ...((mod.offsetX || mod.offsetY) ? [`offset ${num(mod.offsetX || 0)}, ${num(mod.offsetY || 0)}px`] : [])].join(" / ") });
-      if (smart) out.push({ k: "Shapes", v: mod.figures.map(f => `${shapeName(f.shape)} ${num(f.width ?? f.size)} x ${num(f.height ?? f.width ?? f.size)}px (${num(f.x)}, ${num(f.y)}) ${num(f.rotation)}º`).join(" + ") });
+      if (smart) out.push({ k: "Shapes", v: resolveFigures(mod.figures).map(f => `${shapeName(f.shape)} ${num(f.width ?? f.size)} x ${num(f.height ?? f.width ?? f.size)}px (${num(f.x)}, ${num(f.y)}) ${num(f.rotation)}º${f.relation === "coincident" ? " coincident" : f.relation === "distance" ? ` ${num(f.gap || 0) === "0" ? "touching" : `gap ${num(f.gap)}px`} at ${num(f.angle || 0)}º` : ""}`).join(" + ") });
       else out.push({ k: "Shape", v: `${shapeName(mod.shape)} ${num(mod.width ?? mod.scale ?? 100)} x ${num(mod.height ?? mod.scale ?? 100)}px` });
       out.push({ k: "Style", v: [fill ? "Fill" : "Stroke", hex(mod.color || "#18181F"), ...(fill ? [] : [`stroke ${num(mod.strokeWidth || 1)}px`])].join(" / ") });
 
@@ -6808,7 +6854,7 @@ class StudioProApp {
       ...layer, visible: true, offsetX: 0, offsetY: 0, rotation: 0,
       structure: { ...s, enabled: false, formalStructure: off(s.formalStructure), similarity: off(s.similarity), gradation: off(s.gradation), anomaly: off(s.anomaly), contrast: off(s.contrast), concentration: off(s.concentration), texture: off(s.texture), space: off(s.space) }
     };
-    const fig = this.currentFigure();
+    const fig = this.currentFigure() ? resolveFigures(layer.figures || [])[this.figEdit.index] : null;
     return { ...this.state, layers: [view], layerOrder: [layer.id], showSafeBounds: false, figureEdit: true, canvasOverride: { w: layer.containerW, h: layer.containerH }, figureBox: fig ? { layerId: layer.id, width: fig.width, height: fig.height, x: fig.x, y: fig.y, rotation: fig.rotation } : null };
   }
 
@@ -6921,6 +6967,14 @@ class StudioProApp {
     document.getElementById("btn-fig-delete")?.toggleAttribute("disabled", mod.figures.length <= 1);
     document.getElementById("btn-fig-up")?.toggleAttribute("disabled", this.figEdit.index <= 0);
     document.getElementById("btn-fig-down")?.toggleAttribute("disabled", this.figEdit.index >= mod.figures.length - 1);
+    // Relation to the previous shape (the first one has none): a related shape is placed by the relation, not by its position
+    const rel = this.figEdit.index > 0 ? (f && f.relation) || "free" : "free";
+    document.getElementById("fig-relation-block")?.classList.toggle("hidden", this.figEdit.index === 0);
+    document.querySelectorAll("[data-fig-rel]").forEach(b => b.classList.toggle("active", b.dataset.figRel === rel));
+    document.getElementById("fig-relation-stack")?.classList.toggle("hidden", rel !== "distance");
+    document.getElementById("fig-pos-x-field")?.classList.toggle("hidden", rel !== "free");
+    document.getElementById("fig-pos-y-field")?.classList.toggle("hidden", rel !== "free");
+    if (f) { set("fig-angle", f.angle ?? 0, "º"); set("fig-gap", f.gap ?? 0, "px"); }
     this.updateHeightVisibility();
     this.render();
   }
@@ -6970,6 +7024,19 @@ class StudioProApp {
     document.getElementById("btn-fig-up")?.addEventListener("click", () => move(-1));
     document.getElementById("btn-fig-down")?.addEventListener("click", () => move(1));
 
+    document.querySelectorAll("[data-fig-rel]").forEach(btn => btn.addEventListener("click", () => {
+      const m = mod(), f = this.currentFigure();
+      if (!m || !f || this.figEdit.index === 0) return;
+      const next = btn.dataset.figRel;
+      // leaving a relation keeps the shape where it is
+      if (next === "free" && f.relation && f.relation !== "free") { const r = resolveFigures(m.figures)[this.figEdit.index]; f.x = Math.round(r.x); f.y = Math.round(r.y); }
+      f.relation = next;
+      if (f.angle === undefined) f.angle = 0;
+      if (f.gap === undefined) f.gap = 0;
+      this.recordFigureStep();
+      this.syncFigureEditor();
+    }));
+
     const pair = (id, key, lo, hi, suffix) => this.bindSliderWithNumber(`input-${id}`, `num-${id}`, (val) => {
       const f = this.currentFigure(); if (!f) return;
       f[key] = Math.max(lo, Math.min(hi, val));
@@ -6980,6 +7047,8 @@ class StudioProApp {
     pair("fig-x", "x", -1000, 1000, "px");
     pair("fig-y", "y", -1000, 1000, "px");
     pair("fig-rot", "rotation", -180, 180, "º");
+    pair("fig-angle", "angle", 0, 360, "º");
+    pair("fig-gap", "gap", -500, 500, "px");
   }
 
   setupShapeInspector() {

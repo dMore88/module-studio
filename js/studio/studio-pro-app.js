@@ -4,7 +4,7 @@
  */
 
 import { StudioEngine, defaultStudioState, createDefaultLayerStructure, createDefaultLayer } from './studio-engine.js';
-import { Shapes, STUDIO_SHAPE_KEYS } from './shapes.js';
+import { Shapes, STUDIO_SHAPE_KEYS, resolveFigures } from './shapes.js';
 import { CanvasUtils } from '../canvas-utils.js';
 import { StudioExporter } from './exporter.js';
 
@@ -406,7 +406,7 @@ export class StudioProApp {
       layer.figures = (Array.isArray(layer.figures) ? layer.figures : [])
         .filter(f => f && STUDIO_SHAPE_KEYS.includes(f.shape)).slice(0, 4)
         .map(f => (f.width !== undefined || f.height !== undefined)
-          ? { shape: f.shape, width: num(f.width, 1, 2000, 100), height: num(f.height ?? f.width, 1, 2000, 100), x: num(f.x, -1000, 1000, 0), y: num(f.y, -1000, 1000, 0), rotation: num(f.rotation, -360, 360, 0) }
+          ? { shape: f.shape, width: num(f.width, 1, 2000, 100), height: num(f.height ?? f.width, 1, 2000, 100), x: num(f.x, -1000, 1000, 0), y: num(f.y, -1000, 1000, 0), rotation: num(f.rotation, -360, 360, 0), relation: ["coincident", "distance"].includes(f.relation) ? f.relation : "free", angle: num(f.angle, 0, 360, 0), gap: num(f.gap, -500, 500, 0) }
           : { shape: f.shape, width: Math.round(num(f.size, 5, 200, 100) / 100 * old), height: Math.round(num(f.size, 5, 200, 100) / 100 * old), x: Math.round(num(f.x, -100, 100, 0) / 100 * old), y: Math.round(num(f.y, -100, 100, 0) / 100 * old), rotation: num(f.rotation, -360, 360, 0) });
       // The module's size is its container: 10 to 1000 px. Older projects used 0 for "the whole canvas"
       const ar = ASPECT_RATIOS[raw.aspectRatio] || ASPECT_RATIOS["1:1"];
@@ -707,7 +707,7 @@ export class StudioProApp {
       const smart = !!(mod.figures && mod.figures.length);
       const cw = Math.round(mod.containerW > 0 ? mod.containerW : 100), ch = Math.round(mod.containerH > 0 ? mod.containerH : 100);
       out.push({ k: "Module", v: [`${cw} x ${ch}px`, `rotation ${num(mod.rotation || 0)}º`, ...((mod.offsetX || mod.offsetY) ? [`offset ${num(mod.offsetX || 0)}, ${num(mod.offsetY || 0)}px`] : [])].join(" / ") });
-      if (smart) out.push({ k: "Shapes", v: mod.figures.map(f => `${shapeName(f.shape)} ${num(f.width ?? f.size)} x ${num(f.height ?? f.width ?? f.size)}px (${num(f.x)}, ${num(f.y)}) ${num(f.rotation)}º`).join(" + ") });
+      if (smart) out.push({ k: "Shapes", v: resolveFigures(mod.figures).map(f => `${shapeName(f.shape)} ${num(f.width ?? f.size)} x ${num(f.height ?? f.width ?? f.size)}px (${num(f.x)}, ${num(f.y)}) ${num(f.rotation)}º${f.relation === "coincident" ? " coincident" : f.relation === "distance" ? ` ${num(f.gap || 0) === "0" ? "touching" : `gap ${num(f.gap)}px`} at ${num(f.angle || 0)}º` : ""}`).join(" + ") });
       else out.push({ k: "Shape", v: `${shapeName(mod.shape)} ${num(mod.width ?? mod.scale ?? 100)} x ${num(mod.height ?? mod.scale ?? 100)}px` });
       out.push({ k: "Style", v: [fill ? "Fill" : "Stroke", hex(mod.color || "#18181F"), ...(fill ? [] : [`stroke ${num(mod.strokeWidth || 1)}px`])].join(" / ") });
 
@@ -3027,7 +3027,7 @@ export class StudioProApp {
       ...layer, visible: true, offsetX: 0, offsetY: 0, rotation: 0,
       structure: { ...s, enabled: false, formalStructure: off(s.formalStructure), similarity: off(s.similarity), gradation: off(s.gradation), anomaly: off(s.anomaly), contrast: off(s.contrast), concentration: off(s.concentration), texture: off(s.texture), space: off(s.space) }
     };
-    const fig = this.currentFigure();
+    const fig = this.currentFigure() ? resolveFigures(layer.figures || [])[this.figEdit.index] : null;
     return { ...this.state, layers: [view], layerOrder: [layer.id], showSafeBounds: false, figureEdit: true, canvasOverride: { w: layer.containerW, h: layer.containerH }, figureBox: fig ? { layerId: layer.id, width: fig.width, height: fig.height, x: fig.x, y: fig.y, rotation: fig.rotation } : null };
   }
 
@@ -3140,6 +3140,14 @@ export class StudioProApp {
     document.getElementById("btn-fig-delete")?.toggleAttribute("disabled", mod.figures.length <= 1);
     document.getElementById("btn-fig-up")?.toggleAttribute("disabled", this.figEdit.index <= 0);
     document.getElementById("btn-fig-down")?.toggleAttribute("disabled", this.figEdit.index >= mod.figures.length - 1);
+    // Relation to the previous shape (the first one has none): a related shape is placed by the relation, not by its position
+    const rel = this.figEdit.index > 0 ? (f && f.relation) || "free" : "free";
+    document.getElementById("fig-relation-block")?.classList.toggle("hidden", this.figEdit.index === 0);
+    document.querySelectorAll("[data-fig-rel]").forEach(b => b.classList.toggle("active", b.dataset.figRel === rel));
+    document.getElementById("fig-relation-stack")?.classList.toggle("hidden", rel !== "distance");
+    document.getElementById("fig-pos-x-field")?.classList.toggle("hidden", rel !== "free");
+    document.getElementById("fig-pos-y-field")?.classList.toggle("hidden", rel !== "free");
+    if (f) { set("fig-angle", f.angle ?? 0, "º"); set("fig-gap", f.gap ?? 0, "px"); }
     this.updateHeightVisibility();
     this.render();
   }
@@ -3189,6 +3197,19 @@ export class StudioProApp {
     document.getElementById("btn-fig-up")?.addEventListener("click", () => move(-1));
     document.getElementById("btn-fig-down")?.addEventListener("click", () => move(1));
 
+    document.querySelectorAll("[data-fig-rel]").forEach(btn => btn.addEventListener("click", () => {
+      const m = mod(), f = this.currentFigure();
+      if (!m || !f || this.figEdit.index === 0) return;
+      const next = btn.dataset.figRel;
+      // leaving a relation keeps the shape where it is
+      if (next === "free" && f.relation && f.relation !== "free") { const r = resolveFigures(m.figures)[this.figEdit.index]; f.x = Math.round(r.x); f.y = Math.round(r.y); }
+      f.relation = next;
+      if (f.angle === undefined) f.angle = 0;
+      if (f.gap === undefined) f.gap = 0;
+      this.recordFigureStep();
+      this.syncFigureEditor();
+    }));
+
     const pair = (id, key, lo, hi, suffix) => this.bindSliderWithNumber(`input-${id}`, `num-${id}`, (val) => {
       const f = this.currentFigure(); if (!f) return;
       f[key] = Math.max(lo, Math.min(hi, val));
@@ -3199,6 +3220,8 @@ export class StudioProApp {
     pair("fig-x", "x", -1000, 1000, "px");
     pair("fig-y", "y", -1000, 1000, "px");
     pair("fig-rot", "rotation", -180, 180, "º");
+    pair("fig-angle", "angle", 0, 360, "º");
+    pair("fig-gap", "gap", -500, 500, "px");
   }
 
   setupShapeInspector() {
