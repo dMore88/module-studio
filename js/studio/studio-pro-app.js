@@ -3022,13 +3022,14 @@ export class StudioProApp {
     const cfg = ASPECT_RATIOS[this.state.aspectRatio] || ASPECT_RATIOS["1:1"];
     const layer = this.state.layers.find(l => l.id === this.figEdit.layerId);
     if (!layer) return null;
-    const big = Math.min(cfg.w, cfg.h) * 0.6;
-    const f = big / Math.max(1, Math.max(layer.width || 100, layer.height || 100));
+    // One scale for the whole session (set when the editor opened), so changing the module's size changes the module on
+    // screen and leaves the container as it is
+    const f = this.figEdit.scale || (Math.min(cfg.w, cfg.h) * 0.6) / Math.max(1, layer.width || 100, layer.height || 100);
     const off = (b) => (b ? { ...b, enabled: false } : b);
     const s = layer.structure || {};
     const view = {
       ...layer, visible: true, offsetX: (layer.offsetX || 0) * f, offsetY: (layer.offsetY || 0) * f, width: (layer.width || 100) * f, height: (layer.height || 100) * f,
-      containerW: layer.containerW > 0 ? layer.containerW * f : 0, containerH: layer.containerH > 0 ? layer.containerH * f : 0, showContainer: true,
+      containerW: layer.containerW > 0 ? layer.containerW * f : 0, containerH: layer.containerH > 0 ? layer.containerH * f : 0,
       structure: { ...s, enabled: false, formalStructure: off(s.formalStructure), similarity: off(s.similarity), gradation: off(s.gradation), anomaly: off(s.anomaly), contrast: off(s.contrast), concentration: off(s.concentration), texture: off(s.texture), space: off(s.space) }
     };
     return { ...this.state, layers: [view], layerOrder: [layer.id], showSafeBounds: false };
@@ -3049,7 +3050,9 @@ export class StudioProApp {
     const snapshot = JSON.parse(JSON.stringify(own));
     // A plain module becomes a smart one with its own shape as the first figure
     if (!mod.figures || mod.figures.length === 0) mod.figures = [{ shape: mod.shape, size: 100, x: 0, y: 0, rotation: 0 }];
-    this.figEdit = { layerId: mod.id, snapshot, index: 0 };
+    const cfg = ASPECT_RATIOS[this.state.aspectRatio] || ASPECT_RATIOS["1:1"];
+    const extent = Math.max(1, mod.width || 100, mod.height || 100, mod.containerW || 0, mod.containerH || 0); // module and container both fit
+    this.figEdit = { layerId: mod.id, snapshot, index: 0, scale: (Math.min(cfg.w, cfg.h) * 0.6) / extent };
     this.syncFigureEditor();
   }
 
