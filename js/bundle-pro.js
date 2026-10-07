@@ -860,6 +860,8 @@ function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly, hairsOn = 
     // a few long (never more than 40 px). They are drawn thinner and fainter than the stroke (see texturedShape)
     const fract = (v) => v - Math.floor(v);
     const strays = [];
+    // Line skipping decides which vertices are dropped; an edge touching a dropped vertex is not drawn, and hairs do not grow there
+    const skipped = pts.map((pt, p) => skipChance > 0 && Math.abs(Math.sin(s * 43.1 + Math.floor(p / density) * 97.7)) < skipChance);
     if (crossing > 0 && n > 2) {
       // Places along the outline, one every ~0.6 % of the module (at most 500), each growing a hair by chance
       const origins = [];
@@ -874,12 +876,13 @@ function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly, hairsOn = 
         let pos = toNext;
         while (pos <= L && origins.length < 500) {
           const t = pos / L;
-          origins.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, along: ang0 });
+          origins.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, along: ang0, gap: skipped[i] || skipped[(i + 1) % n] });
           pos += hairGap;
         }
         toNext = pos - L;
       }
       origins.forEach((pt, p) => {
+        if (pt.gap) return;
         if (fract(Math.abs(Math.sin(s * 17.3 + p * 61.7)) * 1000) >= crossing) return;
         const u = fract(Math.abs(Math.cos(s * 7.9 + p * 23.1)) * 1000) * 2 - 1; // -1 to 1, squared so most are near parallel
         const ang = pt.along + u * Math.abs(u) * (Math.PI * 20) / 180;
@@ -907,8 +910,7 @@ function buildTexturedGeometry(shapeDef, size, tex, seed, strokeOnly, hairsOn = 
     if (skipChance > 0) {
       let seg = [];
       pts.forEach((pt, p) => {
-        const skip = Math.abs(Math.sin(s * 43.1 + Math.floor(p / density) * 97.7)) < skipChance;
-        if (skip) { if (seg.length > 1) segments.push(seg); seg = []; }
+        if (skipped[p]) { if (seg.length > 1) segments.push(seg); seg = []; }
         else seg.push(pt);
       });
       if (seg.length > 1) segments.push(seg);

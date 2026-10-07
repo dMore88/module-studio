@@ -214,6 +214,9 @@
         return n;
       };
       assert(strokeInk(100) > strokeInk(15), "A lower opacity should leave less ink")
+      // hairs follow the skipped outline: with most of the line skipped, the strands add far less ink than with no skipping
+      const hairInk = (skip) => { const f = (c) => { L.structure.texture = { enabled: true, jitter: 0, skipChance: skip, crossing: c, undulation: 0, hairOpacity: 100 }; drawRaw(app); const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) n += 255 - d[i]; return n; }; return f(100) - f(0); };
+      assert(hairInk(70) < hairInk(0) * 0.7, "Random lines should thin out together with Line skipping")
     });
 
     await test("Space: the front face stays in place whatever the angle; depth is a share of the module; old pixel projects convert", () => {
