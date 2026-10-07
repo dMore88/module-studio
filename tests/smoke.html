@@ -297,6 +297,33 @@
       assert(Math.abs(t[0] - t[1]) > 150 && Math.abs(t[0] - t[2]) < 40 && Math.abs(t[1] - t[3]) < 40, `Alternate sectors should swap figure and ground (${t})`);
     });
 
+    await test("Radial Actual size: each ring has as many rays as fit the container's width; Fit keeps the Angular rays", async () => {
+      reset();
+      const d = win.document, cv = d.getElementById("studio-canvas");
+      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: false, width: 10, height: 10, showContainer: false, containerW: 100, containerH: 100, containerAuto: false }); app.state.showSafeBounds = false;
+      const st = L.structure; st.enabled = true; st.mode = "radiation"; Object.assign(st.radiation, { scheme: "concentric", rays: 60, rings: 3, centerOpen: 0, sizeMode: "actual", ringRotation: 0, checkerInvert: true, showRays: false, showRings: false });
+      const dpr = cv.width / 600;
+      const changes = (r) => {
+        drawRaw(app);
+        const ctx = cv.getContext("2d"); let prev = null, n = 0;
+        for (let k = 0; k <= 720; k++) {
+          const a = (k / 720) * Math.PI * 2 + 0.0005;
+          const v = ctx.getImageData(Math.round((300 + r * Math.cos(a)) * dpr), Math.round((300 + r * Math.sin(a)) * dpr), 1, 1).data[0] > 128 ? 1 : 0;
+          if (prev !== null && v !== prev) n++;
+          prev = v;
+        }
+        return n;
+      };
+      // ring 3 (200 to 300 px from the centre) is 250 px in the middle: 2 x pi x 250 / 100 = 15.7, so 16 cells (read off the module, at 215 px)
+      assert(changes(215) === 16, `Ring 3 of a 100 px container should have 16 cells (colour changes: ${changes(215)})`);
+      st.radiation.sizeMode = "fit"; st.radiation.rings = 3; st.radiation.rays = 8;
+      assert(changes(120) === 8, "Fit to canvas keeps the Angular rays");
+      d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
+      assert(!d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("hidden"), "Fit shows Angular rays");
+      st.radiation.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer();
+      assert(d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("hidden"), "Actual size hides Angular rays");
+    });
+
     await test("Art log lists every Texture control in use, in the units of the sliders", () => {
       reset();
       const d = win.document, log = () => d.getElementById("art-log-lines").textContent;

@@ -700,7 +700,7 @@ export class StudioProApp {
       if (s.enabled) {
         if (s.mode === "radiation") {
           const r = s.radiation || {};
-          out.push(line("Structure", ["Radiation", pick(SCHEMES, r.scheme), `${r.rays} rays - ${r.rings} rings`, r.sizeMode === "actual" ? "Actual size" : "Fit to canvas"].join(" / ")));
+          out.push(line("Structure", ["Radiation", pick(SCHEMES, r.scheme), r.sizeMode === "actual" ? `${r.rings} rings` : `${r.rays} rays - ${r.rings} rings`, r.sizeMode === "actual" ? "Actual size" : "Fit to canvas"].join(" / ")));
           blockLine();
         } else {
           const r = s.repetition || {};
@@ -1054,6 +1054,8 @@ export class StudioProApp {
       document.querySelectorAll("[data-rad-scheme]").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.radScheme === rad.scheme);
       });
+      // In Actual size every ring gets as many rays as fit the container's width, so the slider has no meaning there
+      document.getElementById("input-layout-rays")?.closest(".ds-field")?.classList.toggle("hidden", rad.sizeMode === "actual" || rad.sizeMode === "fixed");
       this.syncControlValue("input-layout-rays", rad.rays || 12);
       this.syncControlValue("num-layout-rays", rad.rays || 12);
       this.syncControlValue("input-layout-rings", rad.rings || 6);

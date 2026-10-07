@@ -1697,6 +1697,13 @@ export class StudioEngine {
       ctx.closePath();
     };
 
+    // Rays per ring. Fit to canvas: the Angular rays slider. Actual size: the cell is the container, so every ring gets as
+    // many rays as fit its circumference at the container's width (few in the middle, more outwards)
+    const contWidth = Math.max(10, this.containerSize(targetMod, width, height).w);
+    const raysOf = (i) => isFixed
+      ? Math.max(3, Math.round((Math.PI * 2 * (openR + ((i - 0.5) / rings) * span)) / contWidth))
+      : rays;
+
     // Centers list (if multi_center, we have two focal centers creating Moiré)
     // Multi-center: 2 to 8 foci spread evenly on a small circle (two foci sit left and right of the middle)
     const centerCount = Math.max(2, Math.min(8, Math.round(rad.centerCount || 2)));
@@ -1723,10 +1730,11 @@ export class StudioEngine {
         const rOuter = openR + (i / rings) * span;
         const ringRadius = (rInner + rOuter) * 0.5;
         const ringShift = (i - 1) * ringRotRad;
+        const raysI = raysOf(i); // rays of this ring (Actual size: as many as fit the container's width)
 
-        for (let j = 0; j < rays; j++) {
-          const rayAngleStart = (j / rays) * Math.PI * 2 + ringShift;
-          const rayAngleEnd = ((j + 1) / rays) * Math.PI * 2 + ringShift;
+        for (let j = 0; j < raysI; j++) {
+          const rayAngleStart = (j / raysI) * Math.PI * 2 + ringShift;
+          const rayAngleEnd = ((j + 1) / raysI) * Math.PI * 2 + ringShift;
           const baseAngle = (rayAngleStart + rayAngleEnd) * 0.5;
           let angle = baseAngle;
 
@@ -1818,7 +1826,7 @@ export class StudioEngine {
 
           // Checkerboard inversion (alternate sectors, like the cells of a grid) and Contrast > Space (the minority) draw
           // the sector in the figure colour and the module in the ground colour; the two cancel out
-          const spaceFlip = !!(contrast.enabled && contrast.dimension === "space" && this.isContrastMinority(contrast, centerIdx * 1000 + i * rays + j, { a: j, b: i, x: x / width, y: y / height }));
+          const spaceFlip = !!(contrast.enabled && contrast.dimension === "space" && this.isContrastMinority(contrast, centerIdx * 1000 + i * raysI + j, { a: j, b: i, x: x / width, y: y / height }));
           const checkerFlip = !!(rad.checkerInvert && (i + j) % 2 === 1);
           const flip = checkerFlip !== spaceFlip;
           const flipFill = checkerFlip ? (targetMod.color || palette.fg) : palette.fg;
@@ -1836,7 +1844,7 @@ export class StudioEngine {
           };
 
           if (sim && sim.enabled) {
-            const reach = this.jitterReach(sim, Math.min(rOuter - rInner, (Math.PI * 2 * ringRadius) / rays));
+            const reach = this.jitterReach(sim, Math.min(rOuter - rInner, (Math.PI * 2 * ringRadius) / raysI));
             posX += pRand(10) * reach;
             posY += pRand(11) * reach;
           }
@@ -1877,7 +1885,7 @@ export class StudioEngine {
           // Clip container: the container turns with the module's place in the ring and shrinks with its sector
           if (targetMod.clipContainer) {
             const cs = this.containerSize(targetMod, width, height);
-            const rt = span / rings, aw = (ringRadius * 2 * Math.PI) / rays;
+            const rt = span / rings, aw = (ringRadius * 2 * Math.PI) / raysI;
             const sector = Math.min(rt, Math.max(rt * 0.5, aw));
             const base = isFixed ? 1 : (sector / usableW) * (0.75 + (i / rings) * 0.45) * (isMultiCenter ? 0.7 : 1);
             ctx.beginPath();
@@ -1887,7 +1895,7 @@ export class StudioEngine {
 
           // Gradation on polar radiation (drift slides along the module's local x axis, up to ~one ring)
           if (grad.enabled) {
-            this.applyGradation(ctx, grad, this.gradationPathRadial(grad, i, j, rings, rays), (span / rings) * 0.9);
+            this.applyGradation(ctx, grad, this.gradationPathRadial(grad, i, j, rings, raysI), (span / rings) * 0.9);
           }
 
           // Similarity on radiation
@@ -1901,7 +1909,7 @@ export class StudioEngine {
             ctx.restore();
             continue;
           }
-          if (contrast.enabled) this.applyContrast(ctx, contrast, centerIdx * 1000 + i * rays + j, palette, cell, { a: j, b: i, x: x / width, y: y / height });
+          if (contrast.enabled) this.applyContrast(ctx, contrast, centerIdx * 1000 + i * raysI + j, palette, cell, { a: j, b: i, x: x / width, y: y / height });
           this.applyGradationColor(grad, palette, cell);
           const cellShapeA = cell.shape;
           const cellWireframe = cell.wireframe;
@@ -1912,7 +1920,7 @@ export class StudioEngine {
           // Natural centrifugal growth scale: outer modules larger, inner smaller, proportional to sector size
           const scaleUnit = MODULE_UNIT;
           const ringThickness = span / rings;
-          const arcWidth = (ringRadius * 2 * Math.PI) / rays;
+          const arcWidth = (ringRadius * 2 * Math.PI) / raysI;
           const sectorSize = Math.min(ringThickness, Math.max(ringThickness * 0.5, arcWidth));
           const sectorRatio = sectorSize / usableW;
           const growthFactor = 0.75 + (i / rings) * 0.45;
@@ -1921,7 +1929,7 @@ export class StudioEngine {
             ? scaleUnit * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul)
             : scaleUnit * sectorRatio * growthFactor * radScaleMul * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul);
           if (cell.texScale) this.cellTexScale = Math.max(this.cellTexScale || 0, cell.texScale);
-          this.cellSeed = i * rays + j + 1;
+          this.cellSeed = i * raysI + j + 1;
           this.cellAlt = (i + j) % 2 === 1;
           this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== palette.fg ? cellFg : null);
           ctx.restore();
@@ -1946,14 +1954,14 @@ export class StudioEngine {
           }
           if (rad.scheme === "centripetal") {
             // Nested chevrons: each is the sector wedge pushed outward, its point aimed at the centre
-            const delta = (Math.PI * 2) / rays;
             ctx.save();
             ctx.beginPath();
             ctx.arc(center.x, center.y, maxR, 0, Math.PI * 2);
             ctx.clip();
             for (let i = 1; i <= rings; i++) {
               const r = openR + (i / rings) * span;
-              for (let j = 0; j < rays; j++) {
+              const nI = raysOf(i), delta = (Math.PI * 2) / nI;
+              for (let j = 0; j < nI; j++) {
                 const a0 = j * delta + (i - 1) * ringRotRad;
                 const mid = a0 + delta / 2;
                 const ax = r * Math.cos(mid), ay = r * Math.sin(mid);
@@ -1983,7 +1991,23 @@ export class StudioEngine {
           }
         }
 
-        if (rad.showRays) {
+        if (rad.showRays && isFixed) {
+          // Actual size: every ring has its own rays, so each ring draws its own pieces
+          for (let i = 1; i <= rings; i++) {
+            const nI = raysOf(i), shift = (i - 1) * ringRotRad;
+            const ra = openR + ((i - 1) / rings) * span, rb = openR + (i / rings) * span;
+            for (let j = 0; j < nI; j++) {
+              const base = (j / nI) * Math.PI * 2 + shift;
+              const aa = base + (rad.scheme === "spiral" ? twistRad * (ra / maxR) : 0);
+              const ab = base + (rad.scheme === "spiral" ? twistRad * (rb / maxR) : 0);
+              const pa = shapeR(ra, aa, shift), pb = shapeR(rb, ab, shift);
+              ctx.beginPath();
+              ctx.moveTo(center.x + pa * Math.cos(aa), center.y + pa * Math.sin(aa));
+              ctx.lineTo(center.x + pb * Math.cos(ab), center.y + pb * Math.sin(ab));
+              ctx.stroke();
+            }
+          }
+        } else if (rad.showRays) {
           const f0 = openR / maxR;
           for (let j = 0; j < rays; j++) {
             const baseAngle = (j / rays) * Math.PI * 2;
