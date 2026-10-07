@@ -3032,7 +3032,7 @@ export class StudioProApp {
       containerW: layer.containerW > 0 ? layer.containerW * f : 0, containerH: layer.containerH > 0 ? layer.containerH * f : 0,
       structure: { ...s, enabled: false, formalStructure: off(s.formalStructure), similarity: off(s.similarity), gradation: off(s.gradation), anomaly: off(s.anomaly), contrast: off(s.contrast), concentration: off(s.concentration), texture: off(s.texture), space: off(s.space) }
     };
-    return { ...this.state, layers: [view], layerOrder: [layer.id], showSafeBounds: false };
+    return { ...this.state, layers: [view], layerOrder: [layer.id], showSafeBounds: false, figureEdit: true };
   }
 
   currentFigure() {

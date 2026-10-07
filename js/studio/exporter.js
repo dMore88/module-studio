@@ -57,6 +57,7 @@ class SvgRecorder {
 
   // --- transforms ---
   setTransform(a, b, c, d, e, f) { this.m = [a, b, c, d, e, f]; }
+  getTransform() { const m = this.m; return { a: m[0], b: m[1], c: m[2], d: m[3], e: m[4], f: m[5] }; }
   transform(a, b, c, d, e, f) { this.m = SvgRecorder.mul(this.m, [a, b, c, d, e, f]); }
   translate(x, y) { this.transform(1, 0, 0, 1, x, y); }
   scale(x, y) { this.transform(x, 0, 0, y === undefined ? x : y, 0, 0); }

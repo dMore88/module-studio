@@ -259,6 +259,8 @@
       const L = app.state.layers[0]; Object.assign(L, { containerW: 300, containerH: 300, showContainer: true });
       app.state.showSafeBounds = false;
       const guide = () => { drawRaw(app); const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 200 && d[i + 1] < 120 && d[i + 2] < 90) n++; return n; };
+      assert(guide() === 0, "Outside the module editor the container frame is not drawn");
+      app.state.figureEdit = true; // the frame shows while the module is being edited
       assert(guide() > 500, "The container frame is missing with the grid off");
       L.showContainer = false;
       assert(guide() === 0, "Show container off should hide the frame");
@@ -1241,7 +1243,7 @@
         L.structure.enabled = true; L.structure.mode = mode;
         Object.assign(L.structure.repetition, { cols: 3, rows: 3, gridType: "basic", sizeMode: "actual", activeClipping: false }, rep);
         Object.assign(L.structure.radiation, { rays: 12, rings: 4, scheme: "centrifugal", sizeMode: "fit" }, rad);
-        app.state = st; drawRaw(app);
+        st.figureEdit = guides; app.state = st; drawRaw(app);
         return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
       };
       const dpr = cv.width / 600;
@@ -1669,6 +1671,7 @@
         st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = guides; st.guideColor = "#222222"; st.aspectRatio = "1:1";
         Object.assign(st.layers[0], { shape: "circle", width: 20, height: 20, containerW: 300, containerH: 300, showContainer: show });
         st.layers[0].structure.enabled = false;
+        st.figureEdit = true; // the container frame shows only while the module is being edited
         app.state = st; app.engine.state = st; drawRaw(app);
       };
       const dpr = cv.width / 600;
@@ -1677,6 +1680,7 @@
       assert(px(150, 300) < 200, "The container frame should show on the canvas");
       setup(false, true);
       assert(px(150, 300) > 200, "Show container off should hide the frame");
+      { const st = app.state; st.figureEdit = false; app.engine.state = st; st.layers[0].showContainer = true; drawRaw(app); assert(px(150, 300) > 200, "Outside the editor the container frame is not drawn"); }
       const svg = () => win.StudioExporter.buildSVG(app.engine, cv, app.getActivePalette());
       setup(true, true); const withGuides = svg().length;
       setup(true, false); const without = svg().length;
@@ -1702,7 +1706,7 @@
         st.layers[0].structure.anomaly.enabled = true; st.layers[0].structure.anomaly.showReticle = true;
         st.layers[0].structure.concentration.enabled = true; st.layers[0].structure.concentration.showAttractor = true;
         st.layers[0].structure.space.enabled = true; st.layers[0].structure.space.showIsoGuides = true;
-        app.state = st; app.engine.state = st; drawRaw(app); };
+        st.figureEdit = true; app.state = st; app.engine.state = st; drawRaw(app); };
       draw();
       assert(greens(cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data) > 200, "Container, reticle, attractor and isometric guides should use the guide colour");
       const svg = win.StudioExporter.buildSVG(app.engine, cv, app.getActivePalette());
@@ -2390,6 +2394,29 @@
       // the two circles are 30 px wide, centred at 270 and 330; between them (x 295 to 305) there is nothing, unless a line joins them
       assert(!dark(300, 300) && !dark(296, 300) && !dark(304, 300), "A line joins the two circles");
       assert(dark(255, 300) && dark(345, 300), "The circles themselves are drawn");
+    });
+
+    await test("Clip container with Space: the figure is cut at the container, and its depth is the depth of the cut figure (not cut itself)", async () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const dpr = cv.width / 600;
+      const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: false, width: 100, height: 100, containerW: 60, containerH: 60, showContainer: false, clipContainer: true }); app.state.showSafeBounds = false;
+      L.structure.space = { enabled: true, mode: "isometric", depthPct: 50, angle: 90, shading: 0 };
+      drawRaw(app);
+      const px = (x, y) => cv.getContext("2d").getImageData(Math.round(x * dpr), Math.round(y * dpr), 1, 1).data[0];
+      assert(px(290, 310) < 100, "The front face is drawn inside the container");
+      assert(px(300, 245) < 200, "The depth reaches beyond the container (up, 50 px) as the extrusion of the cut figure");
+      assert(px(300, 340) > 230 && px(260, 300) > 230 && px(340, 300) > 230, "The figure itself is cut at the container's edge");
+      const svg = win.StudioExporter.buildSVG(app.engine, cv, app.getActivePalette());
+      assert(/clip-path/.test(svg), "The SVG keeps the cut");
+      // without Space the cut is the usual one
+      L.structure.space.enabled = false; drawRaw(app);
+      assert(px(300, 245) > 230 && px(290, 310) < 100, "Without Space the container cuts as before");
+      // in a grid too
+      L.structure.space.enabled = true; L.structure.enabled = true; L.structure.mode = "repetition"; Object.assign(L.structure.repetition, { cols: 2, rows: 2, sizeMode: "fit", moduleScale: "cell" });
+      drawRaw(app);
+      const ink = () => { const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] < 200) n++; return n; };
+      assert(ink() > 500, "A grid of cut volumes should draw");
     });
 
     const failed = results.filter(r => !r.ok).length;

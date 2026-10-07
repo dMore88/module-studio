@@ -214,9 +214,37 @@ export class StudioEngine {
     this.state = JSON.parse(JSON.stringify(defaultStudioState));
   }
 
+  // Container clip (Clip container). With Space on, the cut is made on every slice of the volume instead (see
+  // drawSpatialShape), so the depth of the cut figure is not cut itself; `moduleClip` keeps the rectangle and the
+  // transform it was set under
+  applyContainerClip(ctx, x, y, w, h, mod) {
+    const space = mod && mod.structure && mod.structure.space;
+    const m = ctx.getTransform ? ctx.getTransform() : null;
+    const deferred = !!(m && space && space.enabled && (space.mode || "isometric") !== "foreshortening");
+    this.moduleClip = { x, y, w, h, m, deferred };
+    if (!deferred) {
+      ctx.beginPath();
+      ctx.rect(x, y, w, h);
+      ctx.clip();
+    }
+  }
+
+  // The corners of the clip rectangle in the frame the context is in now, or in `frame` (a transform) when given
+  clipCorners(clip, toFrame) {
+    const mul = (M, px, py) => ({ x: M.a * px + M.c * py + M.e, y: M.b * px + M.d * py + M.f });
+    const inv = (M) => {
+      const det = M.a * M.d - M.b * M.c || 1e-9;
+      return { a: M.d / det, b: -M.b / det, c: -M.c / det, d: M.a / det, e: (M.c * M.f - M.d * M.e) / det, f: (M.b * M.e - M.a * M.f) / det };
+    };
+    const I = inv(toFrame);
+    return [[clip.x, clip.y], [clip.x + clip.w, clip.y], [clip.x + clip.w, clip.y + clip.h], [clip.x, clip.y + clip.h]]
+      .map(([px, py]) => { const d = mul(clip.m, px, py); return mul(I, d.x, d.y); });
+  }
+
   // Draw a single shape: texture deformation, then flat or illusory 3D space.
   drawShape(ctx, shapeId, size, fgColor, strokeOnly = false, lineWidth = 2, bgColor = null, isAlternating = false, skipSpace = false, spaceConfig = null, textureConfig = null, seed = 0) {
     let shapeDef = Shapes[shapeId] || Shapes.circle;
+    const pendingClip = this.moduleClip && this.moduleClip.deferred ? this.moduleClip : null;
     const space = spaceConfig;
     let texture = textureConfig;
 
@@ -248,11 +276,20 @@ export class StudioEngine {
 
     // Open-path shapes (lines, digits...) are strokes: they stay flat.
     if (!space || !space.enabled || skipSpace || shapeDef.skeleton) {
+      if (pendingClip) {
+        // Space turned out not to apply (an open-path shape): the container cut is made the usual way
+        ctx.save();
+        const c = this.clipCorners(pendingClip, ctx.getTransform());
+        ctx.beginPath(); c.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); ctx.clip();
+        this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
+        ctx.restore();
+        return;
+      }
       this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
       return;
     }
 
-    this.drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space);
+    this.drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space, pendingClip);
   }
 
   // Draw flat shape. Open-path shapes are strokes: thin in stroke mode, thick in fill mode.
@@ -278,7 +315,30 @@ export class StudioEngine {
   }
 
   // Draw illusory 3D spatial form (Space)
-  drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space) {
+  drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space, clip = null) {
+    if (clip) {
+      // Every slice of the volume is cut by the container as it sits in the module's own frame, so the figure is cut at
+      // the container's edge and its depth is the depth of the cut figure. Each fill / stroke is redrawn under that cut
+      const real = ctx;
+      const corners = this.clipCorners(clip, real.getTransform());
+      const cut = (op) => () => {
+        real.save();
+        real.beginPath(); corners.forEach((p, i) => (i ? real.lineTo(p.x, p.y) : real.moveTo(p.x, p.y))); real.closePath(); real.clip();
+        shapeDef.draw(real, size);
+        real[op]();
+        real.restore();
+      };
+      const fill = cut("fill"), stroke = cut("stroke");
+      ctx = new Proxy(real, {
+        get(target, prop) {
+          if (prop === "fill") return fill;
+          if (prop === "stroke") return stroke;
+          const v = target[prop];
+          return typeof v === "function" ? v.bind(target) : v;
+        },
+        set(target, prop, v) { target[prop] = v; return true; }
+      });
+    }
     const mode = space.mode || "isometric";
     // The depth is a share of the module; projects saved in pixels (depth) are converted when they are opened
     const depth = (size * (space.depthPct ?? 20)) / 100;
@@ -544,13 +604,13 @@ export class StudioEngine {
     ctx.translate(width / 2, height / 2);
     this.cellSeed = 0;
     this.cellAlt = false;
+    this.moduleClip = null;
     if (mod.clipContainer) {
       const cs = this.containerSize(mod, width, height);
-      ctx.beginPath();
-      ctx.rect(-cs.w / 2, -cs.h / 2, cs.w, cs.h);
-      ctx.clip();
+      this.applyContainerClip(ctx, -cs.w / 2, -cs.h / 2, cs.w, cs.h, mod);
     }
     this.drawSingleLayerShape(ctx, mod, MODULE_UNIT, palette.fg, palette.bg);
+    this.moduleClip = null;
     ctx.restore();
   }
 
@@ -1400,6 +1460,7 @@ export class StudioEngine {
             flipped = true;
           }
 
+          this.moduleClip = null; // each module starts without a pending container cut
           // Clip cell: cut the module at the edge of its cell (the real shape of the cell in every grid variation)
           if (rep.activeClipping && !extra) {
             this.buildCellPath(ctx, r, c, rows, cols, cellCx, cellCy, cW, cH, repCell, cellStartX);
@@ -1412,9 +1473,7 @@ export class StudioEngine {
             const rk = rhythmOn ? Math.min(MAX_SCALE_MUL, Math.min(cW / refW, rowHeights[r] / refH)) : 1;
             const sBase = isFixed || uniform ? rk : (rhythmOn ? Math.min(refW / usableW, refH / usableH) * rk : Math.min(cW / usableW, cH / usableH));
             const bw = cont.w * sBase, bh = cont.h * sBase;
-            ctx.beginPath();
-            ctx.rect(cellCx - bw / 2, cellCy - bh / 2, bw, bh);
-            ctx.clip();
+            this.applyContainerClip(ctx, cellCx - bw / 2, cellCy - bh / 2, bw, bh, targetMod);
           }
 
           ctx.translate(cellCx, cellCy);
@@ -1476,6 +1535,7 @@ export class StudioEngine {
         if ((refl === "rows" || refl === "both") && r % 2 === 1) ctx.scale(1, -1);
         const lineWidthMul = !isFixed && !uniform && (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k : null;
         this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor || flipped ? cellFg : null, lineWidthMul, stretch);
+        this.moduleClip = null;
         ctx.restore();
       };
 
@@ -1647,6 +1707,7 @@ export class StudioEngine {
     this.cellTexScale = null;
     this.cellColorMix = null;
     this.cellImperf = null;
+    this.moduleClip = null;
     const rad = radConfig || targetMod.structure.radiation;
     const grad = targetMod.structure.gradation;
     const sim = targetMod.structure.similarity;
@@ -1913,15 +1974,14 @@ export class StudioEngine {
             ctx.rotate(this.cellDirection(i + centerIdx * 100, j));
           }
 
+          this.moduleClip = null;
           // Clip container: the container turns with the module's place in the ring and shrinks with its sector
           if (targetMod.clipContainer) {
             const cs = this.containerSize(targetMod, width, height);
             const rt = span / rings, aw = (ringRadius * 2 * Math.PI) / raysI;
             const sector = Math.min(rt, Math.max(rt * 0.5, aw));
             const base = isFixed ? 1 : uniform ? uniformK : (sector / usableW) * (0.75 + (i / rings) * 0.45) * (isMultiCenter ? 0.7 : 1);
-            ctx.beginPath();
-            ctx.rect((-cs.w * base) / 2, (-cs.h * base) / 2, cs.w * base, cs.h * base);
-            ctx.clip();
+            this.applyContainerClip(ctx, (-cs.w * base) / 2, (-cs.h * base) / 2, cs.w * base, cs.h * base, targetMod);
           }
 
           // Gradation on polar radiation (drift slides along the module's local x axis, up to ~one ring)
@@ -1965,6 +2025,7 @@ export class StudioEngine {
           this.cellSeed = i * raysI + j + 1;
           this.cellAlt = (i + j) % 2 === 1;
           this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== palette.fg ? cellFg : null);
+          this.moduleClip = null;
           ctx.restore();
         }
       }
@@ -2178,6 +2239,7 @@ export class StudioEngine {
       ctx.setLineDash([4, 4]);
       ctx.lineWidth = 1.2;
       for (const l of this.getLayers()) {
+        if (!this.state.figureEdit) break; // the container frame shows only while the module is being edited
         if (l.visible === false || l.showContainer === false || !(l.containerW > 0 || l.containerH > 0)) continue;
         const cs = this.containerSize(l, width, height);
         ctx.strokeRect(width / 2 - cs.w / 2, height / 2 - cs.h / 2, cs.w, cs.h);
