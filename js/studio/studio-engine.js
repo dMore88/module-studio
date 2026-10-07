@@ -173,6 +173,7 @@ export const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "ci
   wireframe: true,
   strokeWidth: 1,
   color: "#18181f",
+  figures: [], // smart module: the figures it is made of ({ shape, size, x, y, rotation }, as a % of the module); empty = a plain one-shape module
   structure: createDefaultLayerStructure()
 });
 

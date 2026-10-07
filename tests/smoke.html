@@ -2303,6 +2303,29 @@
       assert(ink() > single * 5, "A 3 x 3 grid should repeat the composite in every cell");
     });
 
+    await test("Smart module: the figures are saved with the project, bad ones are cleaned on open, and the SVG export draws the composite", async () => {
+      reset();
+      const L = app.state.layers[0];
+      L.figures = [{ shape: "circle", size: 60, x: -25, y: 0, rotation: 0 }, { shape: "square", size: 40, x: 25, y: 0, rotation: 45 }];
+      const saved = JSON.parse(JSON.stringify(app.state));
+      app.loadProjectText(JSON.stringify(saved));
+      const f = app.state.layers[0].figures;
+      assert(f.length === 2 && f[1].shape === "square" && f[1].rotation === 45 && f[0].x === -25, `Figures should survive saving and opening (${JSON.stringify(f)})`);
+      saved.layers[0].figures = [{ shape: "nope", size: 50 }, { shape: "triangle", size: "big", x: 900, y: NaN, rotation: 10 }, null, 5, { shape: "circle" }, { shape: "circle" }, { shape: "circle" }, { shape: "circle" }];
+      app.loadProjectText(JSON.stringify(saved));
+      const g = app.state.layers[0].figures;
+      assert(g.length === 4 && g[0].shape === "triangle" && g[0].size === 100 && g[0].x === 100 && g[0].y === 0, `Bad figures should be cleaned (${JSON.stringify(g)})`);
+      app.loadProjectText(JSON.stringify({ ...saved, layers: [{ ...saved.layers[0], figures: undefined }] }));
+      assert(Array.isArray(app.state.layers[0].figures) && app.state.layers[0].figures.length === 0, "A project without figures opens with none");
+      // SVG: the composite is drawn with both outlines (circle + square), also under texture
+      const L2 = app.state.layers[0]; Object.assign(L2, { wireframe: true, width: 100, height: 100, showContainer: false }); app.state.showSafeBounds = false;
+      L2.figures = [{ shape: "circle", size: 60, x: -25, y: 0, rotation: 0 }, { shape: "square", size: 40, x: 25, y: 0, rotation: 0 }];
+      drawRaw(app);
+      const cv = win.document.getElementById("studio-canvas");
+      const svg = win.StudioExporter ? win.StudioExporter.buildSVG(app.engine, cv, app.getActivePalette()) : null;
+      assert(svg && /<path/.test(svg) && (svg.match(/ M /g) || svg.match(/M/g)).length >= 2, "The SVG should contain the composite's outlines");
+    });
+
     const failed = results.filter(r => !r.ok).length;
     summary.textContent = failed === 0 ? `All ${results.length} tests passed` : `${failed} of ${results.length} tests FAILED`;
     summary.className = failed === 0 ? "pass" : "fail";

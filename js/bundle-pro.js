@@ -1202,6 +1202,7 @@ const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "circle", 
   wireframe: true,
   strokeWidth: 1,
   color: "#18181f",
+  figures: [], // smart module: the figures it is made of ({ shape, size, x, y, rotation }, as a % of the module); empty = a plain one-shape module
   structure: createDefaultLayerStructure()
 });
 
@@ -4070,6 +4071,11 @@ class StudioProApp {
       migrate(src);
       const layer = merge(createDefaultLayer(`layer-${i + 1}`, `Layer ${i + 1}`), src);
       if (!STUDIO_SHAPE_KEYS.includes(layer.shape)) layer.shape = "circle";
+      // Smart module: keep only well-formed figures (known shape, finite numbers in range), at most 4
+      const num = (v, lo, hi, d) => (typeof v === "number" && Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d);
+      layer.figures = (Array.isArray(layer.figures) ? layer.figures : [])
+        .filter(f => f && STUDIO_SHAPE_KEYS.includes(f.shape)).slice(0, 4)
+        .map(f => ({ shape: f.shape, size: num(f.size, 5, 200, 100), x: num(f.x, -100, 100, 0), y: num(f.y, -100, 100, 0), rotation: num(f.rotation, -360, 360, 0) }));
       if (!layer.id || used.has(layer.id)) layer.id = `layer-${i + 1}-${Date.now() % 100000}`;
       used.add(layer.id);
       return layer;
