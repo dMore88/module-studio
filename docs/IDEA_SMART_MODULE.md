@@ -20,6 +20,20 @@ Analogía de Diego: *una hoja de papel que se corta en pedazos; dentro de cada p
 7. **Fase 2:** unión, sustracción e intersección. Son booleanas y en el SVG exportado hay que resolverlas con máscaras o recortes, sin trazo limpio.
 8. **Color y trazo/relleno heredados** del módulo en la prueba de concepto. Problema conocido: un triángulo sobre un cuadrado, ambos rellenos del mismo color, no se distinguen. Posible solución barata para más adelante: un selector por figura *Fill / Outline* (sin color propio).
 
+## Cómo funciona: dos mundos
+
+9. **El módulo smart es una forma compuesta.** En el lienzo del diseño (la retícula) se comporta como **una sola forma**, como un círculo o una estrella; las retículas y los modificadores no saben que tiene figuras dentro. Gradation lo gira entero, Texture deforma el conjunto, Space le da profundidad a todo el bloque, el color cambia el del conjunto.
+10. **Se construye como una forma sintética**, no como una imagen ni un SVG incrustado: el motor ya compone formas al vuelo (el *Morph* mezcla dos formas en una nueva), y Texture y Space necesitan los **contornos**, que de una imagen no se pueden sacar. Dibujar la forma compuesta = recorrer sus figuras y dibujar cada una en su posición, tamaño y giro.
+11. **Dentro del editor** (su espacio) se ven y se editan las figuras por separado: mover, girar, tamaño, relación entre ellas, contenedor, color y trazo. **Desde el lienzo del diseño no se puede mover una figura de dentro**; hay que entrar al módulo (como un smart object de Photoshop).
+12. **Color y trazo son del módulo entero** y las figuras los heredan: se cambian una vez en el editor. Los modificadores de color (Gradation, Contrast, Anomaly) cambian el color del conjunto.
+
+## Cosas que comprobar primero en la rama
+
+- El grabado de contornos que usan Texture y Space (`flattenShape`) recoge los comandos de dibujo; hay que ver si admite giros y escalados, o si hay que transformar las coordenadas a mano al componer. Es lo primero.
+- Exportar SVG: la forma compuesta tiene que escribir su propio trazado uniendo los de sus figuras con sus transformaciones.
+- Dos figuras solapadas del mismo color no se distinguen (consecuencia de heredar el color); el selector *Fill / Outline* por figura sería la solución barata.
+- Criterio de éxito de la primera entrega: las dos retículas y Gradation funcionan con el módulo compuesto; después se repasan los demás modificadores uno por uno.
+
 ## Interfaz
 
 - **El botón *Module* del tool rail pasa a ser solo la entrada al editor del módulo** (no se reparten opciones entre dos paneles). Dentro del editor viven la lista de figuras, el contenedor, el trazo y el color.
@@ -30,6 +44,6 @@ Analogía de Diego: *una hoja de papel que se corta en pedazos; dentro de cada p
 
 - ¿Dónde quedan el **tamaño, giro y offset del módulo entero** dentro del diseño? (Propuesta: dentro del editor, con el resto.) Coste: cambiar el tamaño exige entrar y salir.
 - Máximo de figuras por módulo (¿4?).
-- Si Similarity/Gradation por celda necesitan ver las figuras por separado o solo el conjunto.
-- Rendimiento: dibujar el módulo una vez en un lienzo oculto y copiarlo por celda no sirve cuando un modificador cambia el módulo en cada celda.
+- ~~Si los modificadores ven las figuras por separado o el conjunto~~ → resuelto: ven el conjunto (forma compuesta, decisiones 9 y 10).
+- ~~Rendimiento con un lienzo oculto~~ → descartado: no se usa imagen, se compone la forma.
 - Exportar SVG: definir el módulo una vez como símbolo y usarlo en cada celda (archivo más ligero).
