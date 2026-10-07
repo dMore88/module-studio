@@ -1816,12 +1816,16 @@ export class StudioEngine {
             ctx.clip();
           }
 
-          // Contrast > Space: the minority is drawn with figure and ground reversed
+          // Checkerboard inversion (alternate sectors, like the cells of a grid) and Contrast > Space (the minority) draw
+          // the sector in the figure colour and the module in the ground colour; the two cancel out
           const spaceFlip = !!(contrast.enabled && contrast.dimension === "space" && this.isContrastMinority(contrast, centerIdx * 1000 + i * rays + j, { a: j, b: i, x: x / width, y: y / height }));
-          if (spaceFlip) {
+          const checkerFlip = !!(rad.checkerInvert && (i + j) % 2 === 1);
+          const flip = checkerFlip !== spaceFlip;
+          const flipFill = checkerFlip ? (targetMod.color || palette.fg) : palette.fg;
+          if (flip) {
             ctx.save();
             sectorPath();
-            ctx.fillStyle = palette.fg;
+            ctx.fillStyle = flipFill;
             ctx.fill();
             ctx.restore();
           }
@@ -1892,7 +1896,7 @@ export class StudioEngine {
           this.cellImperf = sim.enabled ? this.similarityImperfection(sim, pRand) : null;
 
           // Anomaly & Contrast on radiation module
-          const cell = { shape: simShape, wireframe: null, fg: spaceFlip ? palette.bg : palette.fg, scaleMul: 1, unit: span / rings, base: targetMod.color || palette.fg };
+          const cell = { shape: simShape, wireframe: null, fg: flip ? palette.bg : palette.fg, scaleMul: 1, unit: span / rings, base: targetMod.color || palette.fg };
           if (anom.enabled && !this.applyAnomaly(ctx, anom, x, y, width, height, palette, pRand, cell)) {
             ctx.restore();
             continue;
@@ -1902,7 +1906,7 @@ export class StudioEngine {
           const cellShapeA = cell.shape;
           const cellWireframe = cell.wireframe;
           const cellFg = cell.fg;
-          const cellBg = spaceFlip ? palette.fg : palette.bg;
+          const cellBg = flip ? flipFill : palette.bg;
           const cellScaleMul = cell.scaleMul;
 
           // Natural centrifugal growth scale: outer modules larger, inner smaller, proportional to sector size

@@ -282,6 +282,21 @@
       assert(bare === 0 && hairy > 15, `A filled circle should grow strands outside its edge (${bare} -> ${hairy})`);
     });
 
+    await test("Checkerboard inversion also works in a radial layout: alternate sectors swap figure and ground", () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: false, width: 10, height: 10, showContainer: false }); app.state.showSafeBounds = false;
+      const st = L.structure; st.enabled = true; st.mode = "radiation"; Object.assign(st.radiation, { scheme: "concentric", rays: 8, rings: 2, centerOpen: 0, sizeMode: "fit", showRays: false, showRings: false, ringRotation: 0 });
+      const dpr = cv.width / 600;
+      const tone = (j) => { const a = ((j + 0.5) / 8) * Math.PI * 2, i = Math.round((300 + 100 * Math.cos(a)) * dpr), k = Math.round((300 + 100 * Math.sin(a)) * dpr); return cv.getContext("2d").getImageData(i, k, 1, 1).data[0]; };
+      st.radiation.checkerInvert = false; drawRaw(app);
+      const plain = [tone(0), tone(1), tone(2)];
+      assert(plain.every(v => v > 200), `Without it every sector is plain ground (${plain})`);
+      st.radiation.checkerInvert = true; drawRaw(app);
+      const t = [tone(0), tone(1), tone(2), tone(3)];
+      assert(Math.abs(t[0] - t[1]) > 150 && Math.abs(t[0] - t[2]) < 40 && Math.abs(t[1] - t[3]) < 40, `Alternate sectors should swap figure and ground (${t})`);
+    });
+
     await test("Art log lists every Texture control in use, in the units of the sliders", () => {
       reset();
       const d = win.document, log = () => d.getElementById("art-log-lines").textContent;
