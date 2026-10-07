@@ -861,6 +861,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
   padding: 0 var(--spacing-5);
 }
 .ds-layers-count { display: flex; align-items: center; gap: 10px; }
+.ds-layers-actions { display: flex; align-items: center; gap: 8px; }
 .ds-layers-title {
   font-size: var(--font-size-xs);
   font-weight: var(--typography-weight-600);

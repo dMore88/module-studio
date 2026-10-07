@@ -444,6 +444,10 @@ export class StudioProApp {
       e.stopPropagation();
       this.addLayer();
     });
+    document.getElementById("btn-duplicate-layer")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.duplicateLayer();
+    });
 
     if (container) {
       // Event delegation for layer cards clicks
@@ -546,6 +550,36 @@ export class StudioProApp {
         }
       });
     }
+  }
+
+  // Duplicate: a copy of the active layer with exactly the same settings, right above it and active
+  duplicateLayer() {
+    const layers = this.getLayers();
+    if (layers.length >= 5) return;
+    const source = this.getActiveModule();
+    if (!source) return;
+
+    let maxNum = 0;
+    for (const l of layers) {
+      const match = (l.id || "").match(/layer-(\d+)/);
+      if (match) maxNum = Math.max(maxNum, parseInt(match[1], 10));
+    }
+    const newId = `layer-${maxNum + 1}`;
+    const newName = `Layer ${maxNum + 1}`;
+    const copy = JSON.parse(JSON.stringify(source));
+    copy.id = newId;
+    copy.name = newName;
+
+    layers.push(copy);
+    if (!this.state.layerOrder) this.state.layerOrder = layers.map(l => l.id);
+    const at = this.state.layerOrder.indexOf(source.id);
+    this.state.layerOrder.splice(at < 0 ? 0 : at, 0, newId); // above the original
+    this.activeLayerId = newId;
+
+    this.updateLayerCardsUI();
+    this.syncAllInspectorsWithActiveLayer();
+    this.render();
+    this.pushHistory(`Duplicated ${source.name || source.id} as ${newName}`);
   }
 
   addLayer() {
@@ -763,11 +797,12 @@ export class StudioProApp {
 
     if (layersCountBadge) layersCountBadge.textContent = `${count}`;
 
-    if (addBtn) {
+    for (const btn of [addBtn, document.getElementById("btn-duplicate-layer")]) {
+      if (!btn) continue;
       const isMax = count >= 5;
-      addBtn.disabled = isMax;
-      addBtn.classList.toggle("opacity-40", isMax);
-      addBtn.classList.toggle("cursor-not-allowed", isMax);
+      btn.disabled = isMax;
+      btn.classList.toggle("opacity-40", isMax);
+      btn.classList.toggle("cursor-not-allowed", isMax);
     }
 
     const activeMod = this.getActiveModule();

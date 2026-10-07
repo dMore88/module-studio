@@ -76,10 +76,16 @@
           <span class="ds-layers-title">LAYERS</span>
           <span id="layers-count-badge" class="ds-badge">2</span>
         </div>
-        <button type="button" id="btn-add-pattern" class="ds-btn" title="Add a layer (5 maximum)">
-          <span>Add module</span>
-          <i class="ph ph-plus-circle" aria-hidden="true"></i>
-        </button>
+        <div class="ds-layers-actions">
+          <button type="button" id="btn-duplicate-layer" class="ds-btn" title="Duplicate the active layer, with all its settings (5 layers maximum)">
+            <span>Duplicate</span>
+            <i class="ph ph-copy" aria-hidden="true"></i>
+          </button>
+          <button type="button" id="btn-add-pattern" class="ds-btn" title="Add a layer (5 maximum)">
+            <span>Add module</span>
+            <i class="ph ph-plus-circle" aria-hidden="true"></i>
+          </button>
+        </div>
       </div>
 
       <!-- Layers list (populated dynamically, up to 5 layers) -->
@@ -1497,7 +1503,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=69a6a03c"></script>
+  <script src="js/bundle-pro.js?v=31f3ac59"></script>
 
 </body>
 </html>

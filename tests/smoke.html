@@ -443,6 +443,31 @@
       app.activeRailTab = "module"; app.isFlyoutOpen = true;
     });
 
+    await test("Duplicate layer: an exact copy right above the active one, up to five layers", async () => {
+      reset();
+      const d = win.document;
+      const L = app.state.layers[0];
+      Object.assign(L, { shape: "hexagon", color: "#2244cc", wireframe: false, width: 140, rotation: 12 });
+      L.structure.enabled = true; L.structure.mode = "radiation"; L.structure.block = { x: 30, y: 60, w: 50, h: 40 }; L.structure.radiation.rays = 17;
+      L.structure.texture = { enabled: true, jitter: 3, skipChance: 0, crossing: 40, undulation: 6, waves: 3, waveAngle: 45, hairOpacity: 60 };
+      app.activeLayerId = L.id; app.history = []; app.historyLabels = []; app.historyIndex = -1;
+      d.getElementById("btn-duplicate-layer").click();
+      assert(app.getLayers().length === 2, "Duplicate should add a layer");
+      const copy = app.getActiveModule();
+      assert(copy.id !== L.id && /^Layer \d+$/.test(copy.name) && app.activeLayerId === copy.id, "The copy should be a new, active layer");
+      const strip = (l) => JSON.stringify({ ...l, id: 0, name: 0 });
+      assert(strip(copy) === strip(L), "The copy should have exactly the same settings");
+      copy.structure.radiation.rays = 5;
+      assert(L.structure.radiation.rays === 17, "The copy must not share its settings with the original");
+      assert(app.state.layerOrder.indexOf(copy.id) < app.state.layerOrder.indexOf(L.id), "The copy goes right above the original");
+      assert(d.querySelectorAll(".layer-card").length === 2, "The panel should list both layers");
+      for (let i = 0; i < 4; i++) d.getElementById("btn-duplicate-layer").click();
+      assert(app.getLayers().length === 5 && d.getElementById("btn-duplicate-layer").disabled && d.getElementById("btn-add-pattern").disabled, "With five layers both buttons are off");
+      app.undo();
+      assert(app.getLayers().length === 4, "Undo should remove only the last duplicate");
+      reset();
+    });
+
     await test("Undo and redo restore a per-layer setting", () => {
       reset();
       app.history = []; app.historyLabels = []; app.historyIndex = -1;
