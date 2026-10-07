@@ -56,7 +56,7 @@ export class StudioProApp {
 
     // Controls Rail & Inspector Flyout State
     this.activeRailTab = "module";
-    this.isFlyoutOpen = true;
+    this.isFlyoutOpen = false; // the Module panel is the smart module editor: opening it shows the module alone, so the app starts with the panels closed
 
 
     this.init();
@@ -179,6 +179,7 @@ export class StudioProApp {
   }
 
   syncAllInspectorsWithActiveLayer() {
+    if (this.figEdit && this.figEdit.layerId !== this.activeLayerId) { this.endFigureEdit(true); this.beginFigureEdit(); }
     this.syncShapeInspectorWithActiveLayer();
     this.syncStructureInspectorWithActiveLayer();
     this.syncFormalStructureInspectorWithActiveLayer();
@@ -427,6 +428,7 @@ export class StudioProApp {
       guideColor: /^#[0-9a-f]{6}$/i.test(raw.guideColor || "") ? raw.guideColor : "#f24822"
     };
     this.activeLayerId = layers[0].id;
+    this.figEdit = null; // an open editing session belonged to the old project
     this.applyAspectRatio(this.state.aspectRatio);
     document.getElementById("btn-toggle-grid")?.classList.toggle("active", this.state.showSafeBounds);
     this.syncGuideColor();
@@ -965,7 +967,6 @@ export class StudioProApp {
     railButtons.forEach(btn => {
       btn.addEventListener("click", () => {
         const tab = btn.dataset.railTab;
-        if (this.figEdit) this.leaveFigureEditor(true); // moving to another panel keeps what was edited
         if (this.activeRailTab === tab && this.isFlyoutOpen) {
           // Clicking active button toggles flyout closed
           this.isFlyoutOpen = false;
@@ -991,6 +992,11 @@ export class StudioProApp {
   }
 
   updateRailUI() {
+    // The Module panel is the smart module editor: opening it starts an editing session, leaving it (another panel, the
+    // close button) saves it
+    const editing = this.isFlyoutOpen && this.activeRailTab === "module";
+    if (editing && !this.figEdit) this.beginFigureEdit();
+    else if (!editing && this.figEdit) this.endFigureEdit(true);
     const flyout = document.getElementById("inspector-flyout");
     if (flyout) {
       flyout.classList.toggle("is-closed", !this.isFlyoutOpen);
@@ -3000,7 +3006,8 @@ export class StudioProApp {
 
   // A line has a length (Width) but no Height, so the Height control is hidden for it.
   updateHeightVisibility(mod) {
-    document.getElementById("input-active-height")?.closest(".ds-field")?.classList.toggle("hidden", !!mod && mod.shape === "line");
+    const shapes = mod && mod.figures && mod.figures.length ? mod.figures.map(f => f.shape) : [mod && mod.shape];
+    document.getElementById("input-active-height")?.closest(".ds-field")?.classList.toggle("hidden", !!mod && shapes.every(s => s === "line"));
   }
 
   /* =========================================================================
@@ -3020,7 +3027,7 @@ export class StudioProApp {
     const off = (b) => (b ? { ...b, enabled: false } : b);
     const s = layer.structure || {};
     const view = {
-      ...layer, visible: true, offsetX: 0, offsetY: 0, rotation: 0, width: (layer.width || 100) * f, height: (layer.height || 100) * f,
+      ...layer, visible: true, offsetX: (layer.offsetX || 0) * f, offsetY: (layer.offsetY || 0) * f, width: (layer.width || 100) * f, height: (layer.height || 100) * f,
       containerW: layer.containerW > 0 ? layer.containerW * f : 0, containerH: layer.containerH > 0 ? layer.containerH * f : 0, showContainer: true,
       structure: { ...s, enabled: false, formalStructure: off(s.formalStructure), similarity: off(s.similarity), gradation: off(s.gradation), anomaly: off(s.anomaly), contrast: off(s.contrast), concentration: off(s.concentration), texture: off(s.texture), space: off(s.space) }
     };
@@ -3033,40 +3040,45 @@ export class StudioProApp {
     return mod && mod.figures ? mod.figures[this.figEdit.index] || null : null;
   }
 
-  enterFigureEditor() {
+  // Starts an editing session on the active layer: a copy of the module (everything but its layout and modifiers) is kept
+  // so Cancel can go back to it
+  beginFigureEdit() {
     const mod = this.getActiveModule();
     if (!mod) return;
-    const before = JSON.parse(JSON.stringify(mod.figures || []));
+    const { structure, ...own } = mod;
+    const snapshot = JSON.parse(JSON.stringify(own));
     // A plain module becomes a smart one with its own shape as the first figure
     if (!mod.figures || mod.figures.length === 0) mod.figures = [{ shape: mod.shape, size: 100, x: 0, y: 0, rotation: 0 }];
-    this.figEdit = { layerId: mod.id, snapshot: before, index: 0 };
-    this.activeRailTab = "figures";
-    this.isFlyoutOpen = true;
+    this.figEdit = { layerId: mod.id, snapshot, index: 0 };
     this.syncFigureEditor();
-    this.updateRailUI();
   }
 
-  // keep = true: Save (also used when the user moves to another panel); false: Cancel
-  leaveFigureEditor(keep) {
+  // keep = true: Save; false: Cancel (goes back to how the module was when the editor opened)
+  endFigureEdit(keep) {
     if (!this.figEdit) return;
     const mod = this.state.layers.find(l => l.id === this.figEdit.layerId);
+    const id = this.figEdit.layerId;
     if (mod) {
       if (keep) {
-        // A single figure with nothing special is just a plain module again
+        // A single untouched figure is just a plain module again; otherwise the layer takes the shape of its first figure
         const only = mod.figures.length === 1 ? mod.figures[0] : null;
-        if (only && only.size === 100 && only.x === 0 && only.y === 0 && only.rotation === 0) { mod.shape = only.shape; mod.figures = []; }
-        else if (only) mod.shape = only.shape;
+        mod.shape = mod.figures[0] ? mod.figures[0].shape : mod.shape;
+        if (only && only.size === 100 && only.x === 0 && only.y === 0 && only.rotation === 0) mod.figures = [];
       } else {
-        mod.figures = this.figEdit.snapshot;
+        Object.assign(mod, JSON.parse(JSON.stringify(this.figEdit.snapshot)));
       }
     }
-    const id = this.figEdit.layerId;
     this.figEdit = null;
-    this.activeRailTab = "module";
     if (keep) this.pushHistory(`Layer ${id} Smart module saved`);
-    this.updateRailUI();
     this.syncAllInspectorsWithActiveLayer();
     this.updateLayerCardsUI();
+  }
+
+  // Save / Cancel: finish the session and close the panel
+  closeFigureEditor(keep) {
+    this.endFigureEdit(keep);
+    this.isFlyoutOpen = false;
+    this.updateRailUI();
   }
 
   syncFigureEditor() {
@@ -3094,33 +3106,23 @@ export class StudioProApp {
     document.getElementById("btn-fig-delete")?.toggleAttribute("disabled", mod.figures.length <= 1);
     document.getElementById("btn-fig-up")?.toggleAttribute("disabled", this.figEdit.index <= 0);
     document.getElementById("btn-fig-down")?.toggleAttribute("disabled", this.figEdit.index >= mod.figures.length - 1);
+    this.updateHeightVisibility(mod);
     this.render();
   }
 
   setupSmartModule() {
     this.figEdit = null;
-    // The shape grid of the editor is a copy of the one in the Module panel
-    const grid = document.getElementById("fig-shape-grid");
-    const source = document.querySelector("#active-layer-inspector .shape-grid");
-    if (grid && source) {
-      source.querySelectorAll("[data-shape]").forEach(btn => {
-        const c = btn.cloneNode(true);
-        c.classList.remove("active");
-        c.dataset.figShape = c.dataset.shape;
-        c.removeAttribute("data-shape");
-        c.addEventListener("click", () => {
-          const f = this.currentFigure();
-          if (!f) return;
-          f.shape = c.dataset.figShape;
-          this.syncFigureEditor();
-        });
-        grid.appendChild(c);
+    document.querySelectorAll("#fig-shape-grid [data-fig-shape]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const f = this.currentFigure();
+        if (!f) return;
+        f.shape = btn.dataset.figShape;
+        this.syncFigureEditor();
       });
-    }
+    });
 
-    document.getElementById("btn-edit-figures")?.addEventListener("click", () => this.enterFigureEditor());
-    document.getElementById("btn-fig-save")?.addEventListener("click", () => this.leaveFigureEditor(true));
-    document.getElementById("btn-fig-cancel")?.addEventListener("click", () => this.leaveFigureEditor(false));
+    document.getElementById("btn-fig-save")?.addEventListener("click", () => this.closeFigureEditor(true));
+    document.getElementById("btn-fig-cancel")?.addEventListener("click", () => this.closeFigureEditor(false));
 
     const mod = () => (this.figEdit ? this.state.layers.find(l => l.id === this.figEdit.layerId) : null);
     document.getElementById("btn-fig-add")?.addEventListener("click", () => {

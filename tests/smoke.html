@@ -111,7 +111,7 @@
     const app = win.studioProApp;
     const initial = JSON.stringify(app.state);
     // Older tests were written when Repetition modules shrank with their cell; the Base size default has its own test (reset(true))
-    const reset = (keepDefaults = false) => { app.state = JSON.parse(initial); if (!keepDefaults) app.state.layers.forEach(l => { l.structure.repetition.moduleScale = "cell"; }); app.activeLayerId = app.state.layers[0].id; app.engine.state = app.state; };
+    const reset = (keepDefaults = false) => { app.state = JSON.parse(initial); if (!keepDefaults) app.state.layers.forEach(l => { l.structure.repetition.moduleScale = "cell"; }); app.activeLayerId = app.state.layers[0].id; app.engine.state = app.state; app.figEdit = null; app.engine.viewState = null; };
     const results = [];
     const record = (name, ok, detail = "") => {
       results.push({ name, ok, detail });
@@ -628,11 +628,11 @@
       assert(q("#num-sim-intensity").value === "80%", "Similarity value box format wrong");
 
       await tab("module");
-      q('[data-shape="hexagon"]').click();
+      q('[data-fig-shape="hexagon"]').click();
       fire(q("#input-active-width"), 120);
       q("#btn-mode-fill").click();
       const L = app.getActiveModule();
-      assert(L.shape === "hexagon" && L.width === 120 && L.wireframe === false, "Module controls did not apply");
+      assert(L.figures[0].shape === "hexagon" && L.width === 120 && L.wireframe === false, "Module controls did not apply");
       assert(q("#btn-mode-fill").classList.contains("active") && !q("#btn-mode-stroke").classList.contains("active"), "Fill / Stroke group active state wrong");
     });
 
@@ -1171,7 +1171,7 @@
       const rail = { module: "shapes", layout: "circles-four", similarity: "copy-simple", gradation: "angle", anomaly: "circles-three-plus", contrast: "circle-half", concentration: "radio-button", texture: "drop-half-bottom", space: "cube-transparent" };
       for (const [tab, icon] of Object.entries(rail)) assert(iconOf(d.querySelector(`[data-rail-tab="${tab}"]`)) === "ph-" + icon, `Rail icon for ${tab} is ${iconOf(d.querySelector(`[data-rail-tab="${tab}"]`))}, expected ${icon}`);
       const expected = { circle: "circle", square: "square", triangle: "triangle", line: "minus", cross: "plus", ring: null, semicircle: "circle-half", quarter: "chart-pie-slice", crescent: "subset-proper-of", wave: "tilde", spiral: "spiral", arrow: "arrow-fat-up", pentagon: "pentagon", hexagon: "hexagon", octagon: "octagon", star: "star", letterA: null, letterS: null, letterR: null, digit1: "number-one", digit5: "number-five", digit9: "number-nine" };
-      for (const attr of ["data-shape", "data-anom-shape", "data-contrast-shape", "data-grad-target"]) {
+      for (const attr of ["data-fig-shape", "data-anom-shape", "data-contrast-shape", "data-grad-target"]) {
         for (const [shape, icon] of Object.entries(expected)) {
           const btn = d.querySelector(`[${attr}="${shape}"]`);
           if (icon) {
@@ -1324,17 +1324,17 @@
       const fire = (el, v) => { el.value = v; el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
       assert(q("#input-active-width").max === "2000" && q("#input-active-height").max === "2000", "Width and Height should go up to 2000");
       for (const shape of ["circle", "square", "triangle", "wave", "ring", "semicircle", "quarter", "crescent", "spiral", "arrow", "pentagon", "hexagon", "octagon", "star", "cross", "letterA", "letterS", "letterR", "digit1", "digit5", "digit9"]) {
-        q(`[data-shape="${shape}"]`).click();
+        q(`[data-fig-shape="${shape}"]`).click();
         assert(!q("#input-active-height").closest(".ds-field").classList.contains("hidden"), `${shape}: Height should be available`);
       }
-      q('[data-shape="circle"]').click();
+      q('[data-fig-shape="circle"]').click();
       fire(q("#input-active-width"), 1800); fire(q("#input-active-height"), 1800);
       const m = app.getActiveModule();
       assert(m.width === 1800 && m.height === 1800 && q("#num-active-width").value === "1800px", "A 1800 module did not apply");
       drawRaw(app); // a giant module must draw without errors
-      q('[data-shape="line"]').click();
+      q('[data-fig-shape="line"]').click();
       assert(q("#input-active-height").closest(".ds-field").classList.contains("hidden"), "The line should not show Height");
-      q('[data-shape="square"]').click();
+      q('[data-fig-shape="square"]').click();
       assert(!q("#input-active-height").closest(".ds-field").classList.contains("hidden"), "Height should come back for other shapes");
     });
 
@@ -2326,19 +2326,20 @@
       assert(svg && /<path/.test(svg) && (svg.match(/ M /g) || svg.match(/M/g)).length >= 2, "The SVG should contain the composite's outlines");
     });
 
-    await test("Smart module editor: Edit figures opens it, figures can be added, changed and reordered; Cancel goes back, Save keeps one undo step", async () => {
+    await test("Smart module editor (the Module panel): opening it shows the module alone; figures can be added, changed and reordered; Cancel goes back, Save keeps one undo step", async () => {
       reset();
       const d = win.document, q = (s) => d.querySelector(s), cv = d.getElementById("studio-canvas");
       const fire = (el, v) => { el.value = String(v); el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
       const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: true, width: 100, height: 100, showContainer: true, strokeWidth: 3 }); app.state.showSafeBounds = false;
       L.structure.enabled = true; L.structure.mode = "repetition"; Object.assign(L.structure.repetition, { cols: 3, rows: 3, sizeMode: "fit" });
+      app.isFlyoutOpen = false; app.updateRailUI(); // earlier tests leave a panel open
+      assert(!app.figEdit, "With the panels closed there is no editing session");
+      assert(!q("#btn-edit-figures") && !q("#card-figures") && !q("#chk-hide-modifiers") && !q("[data-shape]"), "The Module panel is the only editor: no entry button, no second card, no Hide modifiers, no old shape grid");
       q('[data-rail-tab="module"]').click(); await wait(60);
-      q("#btn-edit-figures").click(); await wait(60);
-      assert(app.figEdit && !q("#card-figures").classList.contains("hidden") && q("#active-layer-inspector").classList.contains("hidden"), "Edit figures should open the editor in place of the Module panel");
+      assert(app.figEdit && !q("#active-layer-inspector").classList.contains("hidden"), "Opening the Module panel starts the editor");
       assert(L.figures.length === 1 && L.figures[0].shape === "square", "Entering makes the module's own shape the first figure");
-      // the canvas shows only the module, big (no 3 x 3 grid)
-      drawRaw(app); const ink = () => { const dd = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < dd.length; i += 4) if (dd[i] < 128) n++; return n; };
-      const isolated = ink();
+      // the canvas shows only the module, big (no 3 x 3 grid), and the module controls are in the same panel
+      assert(q("#input-active-width") && q("#input-active-rotation") && q("#input-active-offset-x") && q("#input-active-container-w") && q("#btn-mode-fill") && q("#color-active-shape"), "Every module control lives in the editor");
       q("#btn-fig-add").click(); await wait(30);
       assert(L.figures.length === 2 && app.figEdit.index === 1, "Add figure adds the second one and selects it");
       fire(q("#input-fig-x"), 30); fire(q("#input-fig-size"), 40);
@@ -2349,26 +2350,26 @@
       assert(L.figures[0].shape === "triangle" && app.figEdit.index === 0, "Move back swaps the order");
       for (let i = 0; i < 5; i++) q("#btn-fig-add").click();
       assert(L.figures.length === 4 && q("#btn-fig-add").hasAttribute("disabled"), "Four figures at most");
+      // module controls edit the module and Cancel undoes them too
+      fire(q("#input-active-width"), 150); q("#btn-mode-fill").click();
+      assert(L.width === 150 && L.wireframe === false, "The module controls apply while editing");
       const histBefore = app.history.length;
-      // Cancel restores how it was
       q("#btn-fig-cancel").click(); await wait(60);
-      assert(!app.figEdit && L.figures.length === 0 && L.shape === "square" && !q("#active-layer-inspector").classList.contains("hidden"), "Cancel should go back to the plain module and the Module panel");
+      assert(!app.figEdit && !app.isFlyoutOpen && L.figures.length === 0 && L.shape === "square" && L.width === 100 && L.wireframe === true, "Cancel goes back to the module as it was (figures and module controls) and closes the panel");
       assert(app.history.length === histBefore, "Editing leaves no history entries until it is saved");
       // Save keeps it, with one undo step
-      q("#btn-edit-figures").click(); await wait(60);
+      q('[data-rail-tab="module"]').click(); await wait(60);
       q("#btn-fig-add").click(); await wait(30);
-      fire(q("#input-fig-x"), -25);
-      const labelsBefore = app.historyLabels.slice();
+      fire(q("#input-fig-x"), -25); fire(q("#input-active-width"), 130);
       q("#btn-fig-save").click(); await wait(60);
-      assert(L.figures.length === 2 && L.figures[1].x === -25 && !app.figEdit, "Save keeps the figures");
-      const newOnes = app.historyLabels.filter((l, i) => labelsBefore[i] !== l);
-      assert(app.historyLabels[app.historyLabels.length - 1].includes("Smart module saved") && !app.historyLabels.some(l => l.includes("Figure ")), `Save makes one undo step and the editing none (${JSON.stringify(app.historyLabels.slice(-3))})`);
+      assert(L.figures.length === 2 && L.figures[1].x === -25 && L.width === 130 && !app.figEdit && !app.isFlyoutOpen, "Save keeps the figures and the module controls");
+      assert(app.historyLabels[app.historyLabels.length - 1].includes("Smart module saved") && !app.historyLabels.some(l => l.includes("Figure ") || l.includes("Changed Width")), `Save makes one undo step and the editing none (${JSON.stringify(app.historyLabels.slice(-3))})`);
       assert(/Figures: Square 100% \(0, 0\) 0º \+ Circle 50% \(-25, 0\) 0º/.test(win.document.querySelector(".ds-art-log").innerText), "The Art log should list the figures");
-      // Back to one plain figure collapses to a plain module
-      q("#btn-edit-figures").click(); await wait(60);
+      // Moving to another panel saves too
+      q('[data-rail-tab="module"]').click(); await wait(60);
       q('#fig-list [data-fig-index="1"]').click(); q("#btn-fig-delete").click(); await wait(30);
-      q("#btn-fig-save").click(); await wait(60);
-      assert(L.figures.length === 0 && L.shape === "square", "One untouched figure saves as a plain module");
+      q('[data-rail-tab="layout"]').click(); await wait(60);
+      assert(!app.figEdit && L.figures.length === 0 && L.shape === "square", "Leaving for another panel saves; one untouched figure is a plain module again");
     });
 
     await test("Smart module: no stray line joins one figure to the next (arcs start their own outline)", async () => {

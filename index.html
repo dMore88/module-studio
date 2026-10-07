@@ -154,7 +154,7 @@
       <div id="active-layer-inspector" class="flyout-tab-content ds-card" data-flyout-tab="module">
         <div class="ds-card-header">
           <div class="ds-card-title">
-            <span class="ds-card-title-text">Module</span>
+            <span class="ds-card-title-text">Smart module</span>
           </div>
           <button type="button" class="close-flyout-btn" title="Close Panel">
             <i class="ph ph-x text-[14px]"></i>
@@ -162,39 +162,77 @@
         </div>
 
         <div class="ds-field">
-          <button type="button" id="btn-edit-figures" class="ds-btn" title="Smart module: build the module from several figures, in its own space">
-            <span>Edit figures</span>
-            <i class="ph ph-shapes" aria-hidden="true"></i>
-          </button>
+          <div class="ds-label ds-label--overline">Figures</div>
+          <div id="fig-list" class="fig-list"></div>
+          <div class="ds-layers-actions">
+            <button type="button" id="btn-fig-add" class="ds-btn" title="Add a figure (4 maximum)"><span>Add figure</span><i class="ph ph-plus-circle" aria-hidden="true"></i></button>
+            <button type="button" id="btn-fig-up" class="ds-btn" title="Move the figure back (drawn earlier)"><i class="ph ph-arrow-up" aria-hidden="true"></i></button>
+            <button type="button" id="btn-fig-down" class="ds-btn" title="Move the figure to the front (drawn later)"><i class="ph ph-arrow-down" aria-hidden="true"></i></button>
+            <button type="button" id="btn-fig-delete" class="ds-btn" title="Delete the figure"><i class="ph ph-trash" aria-hidden="true"></i></button>
+          </div>
         </div>
 
         <div class="ds-field">
           <div class="ds-label">Shape</div>
-          <div class="shape-grid">
-            <button type="button" class="shape-circle-btn active" data-shape="circle" title="Circle"><i class="ph ph-circle" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="square" title="Square"><i class="ph ph-square" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="triangle" title="Triangle"><i class="ph ph-triangle" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="line" title="Line"><i class="ph ph-minus" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="cross" title="Greek Cross"><i class="ph ph-plus" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="ring" title="Ring"><svg class="ph-svg" viewBox="0 0 256 256" aria-hidden="true"><circle cx="128" cy="128" r="104" fill="none" stroke="currentColor" stroke-width="16"/><circle cx="128" cy="128" r="52" fill="none" stroke="currentColor" stroke-width="16"/></svg></button>
-            <button type="button" class="shape-circle-btn row-start" data-shape="semicircle" title="Semicircle"><i class="ph ph-circle-half" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="quarter" title="Quarter Circle"><i class="ph ph-chart-pie-slice" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="crescent" title="Crescent"><i class="ph ph-subset-proper-of" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="wave" title="Sine Wave"><i class="ph ph-tilde" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="spiral" title="Spiral"><i class="ph ph-spiral" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="arrow" title="Arrow"><i class="ph ph-arrow-fat-up" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn row-start" data-shape="pentagon" title="Pentagon"><i class="ph ph-pentagon" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="hexagon" title="Hexagon"><i class="ph ph-hexagon" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="octagon" title="Octagon"><i class="ph ph-octagon" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="star" title="Star"><i class="ph ph-star" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn row-start" data-shape="letterA" title="Letter A"><span class="ph-glyph" aria-hidden="true">A</span></button>
-            <button type="button" class="shape-circle-btn" data-shape="letterS" title="Letter S"><span class="ph-glyph" aria-hidden="true">S</span></button>
-            <button type="button" class="shape-circle-btn" data-shape="letterR" title="Letter R"><span class="ph-glyph" aria-hidden="true">R</span></button>
-            <button type="button" class="shape-circle-btn" data-shape="digit1" title="Number 1"><i class="ph ph-number-one" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="digit5" title="Number 5"><i class="ph ph-number-five" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="digit9" title="Number 9"><i class="ph ph-number-nine" aria-hidden="true"></i></button>
+          <div id="fig-shape-grid" class="shape-grid">
+            <button type="button" class="shape-circle-btn active" data-fig-shape="circle" title="Circle"><i class="ph ph-circle" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="square" title="Square"><i class="ph ph-square" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="triangle" title="Triangle"><i class="ph ph-triangle" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="line" title="Line"><i class="ph ph-minus" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="cross" title="Greek Cross"><i class="ph ph-plus" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="ring" title="Ring"><svg class="ph-svg" viewBox="0 0 256 256" aria-hidden="true"><circle cx="128" cy="128" r="104" fill="none" stroke="currentColor" stroke-width="16"/><circle cx="128" cy="128" r="52" fill="none" stroke="currentColor" stroke-width="16"/></svg></button>
+            <button type="button" class="shape-circle-btn row-start" data-fig-shape="semicircle" title="Semicircle"><i class="ph ph-circle-half" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="quarter" title="Quarter Circle"><i class="ph ph-chart-pie-slice" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="crescent" title="Crescent"><i class="ph ph-subset-proper-of" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="wave" title="Sine Wave"><i class="ph ph-tilde" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="spiral" title="Spiral"><i class="ph ph-spiral" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="arrow" title="Arrow"><i class="ph ph-arrow-fat-up" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn row-start" data-fig-shape="pentagon" title="Pentagon"><i class="ph ph-pentagon" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="hexagon" title="Hexagon"><i class="ph ph-hexagon" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="octagon" title="Octagon"><i class="ph ph-octagon" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="star" title="Star"><i class="ph ph-star" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn row-start" data-fig-shape="letterA" title="Letter A"><span class="ph-glyph" aria-hidden="true">A</span></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="letterS" title="Letter S"><span class="ph-glyph" aria-hidden="true">S</span></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="letterR" title="Letter R"><span class="ph-glyph" aria-hidden="true">R</span></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="digit1" title="Number 1"><i class="ph ph-number-one" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="digit5" title="Number 5"><i class="ph ph-number-five" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="digit9" title="Number 9"><i class="ph ph-number-nine" aria-hidden="true"></i></button>
           </div>
         </div>
+
+
+        <div class="ds-stack">
+          <div class="ds-field">
+            <div class="ds-label">Figure size</div>
+            <div class="ds-slider">
+              <input type="range" id="input-fig-size" min="5" max="200" step="1" value="100">
+              <input type="text" id="num-fig-size" class="ds-value" value="100%" inputmode="decimal">
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Figure position X</div>
+            <div class="ds-slider">
+              <input type="range" id="input-fig-x" min="-100" max="100" step="1" value="0">
+              <input type="text" id="num-fig-x" class="ds-value" value="0%" inputmode="decimal">
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Figure position Y</div>
+            <div class="ds-slider">
+              <input type="range" id="input-fig-y" min="-100" max="100" step="1" value="0">
+              <input type="text" id="num-fig-y" class="ds-value" value="0%" inputmode="decimal">
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Figure rotation</div>
+            <div class="ds-slider">
+              <input type="range" id="input-fig-rot" min="-180" max="180" step="1" value="0">
+              <input type="text" id="num-fig-rot" class="ds-value" value="0º" inputmode="decimal">
+            </div>
+          </div>
+        </div>
+
+        <div class="ds-label ds-label--overline">Module</div>
 
         <div class="ds-field">
           <div class="ds-btn-group" role="group" aria-label="Fill or stroke">
@@ -284,14 +322,14 @@
               <span class="ds-toggle-label">Clip container</span>
               <input type="checkbox" id="chk-active-clip-container" class="ds-checkbox">
             </label>
-            <label class="ds-toggle-item">
-              <span class="ds-toggle-label">Hide modifiers</span>
-              <input type="checkbox" id="chk-hide-modifiers" class="ds-checkbox" autocomplete="off">
-            </label>
           </div>
-          <p class="ds-hint">Hide modifiers: while this panel is open, the module is shown alone, without Layout structure or modifiers. The export always includes them.</p>
             </div>
           </details>
+        </div>
+
+        <div class="ds-layers-actions">
+          <button type="button" id="btn-fig-cancel" class="ds-btn" title="Discard the changes made since the editor opened"><span>Cancel</span></button>
+          <button type="button" id="btn-fig-save" class="ds-btn" title="Keep the changes"><span>Save</span><i class="ph ph-check" aria-hidden="true"></i></button>
         </div>
       </div>
 
@@ -730,70 +768,6 @@
         </div>
           </div>
         </details>
-        </div>
-      </div>
-
-      <!-- ===================================================================
-           SMART MODULE EDITOR (proof of concept, branch smart-module): the module as several figures,
-           edited on its own (the canvas shows only the module). Save keeps the changes, Cancel goes back.
-           =================================================================== -->
-      <div id="card-figures" class="flyout-tab-content ds-card hidden" data-flyout-tab="figures">
-        <div class="ds-card-header">
-          <div class="ds-card-title">
-            <span class="ds-card-title-text">Smart module</span>
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Figures</div>
-          <div id="fig-list" class="fig-list"></div>
-          <div class="ds-layers-actions">
-            <button type="button" id="btn-fig-add" class="ds-btn" title="Add a figure (4 maximum)"><span>Add figure</span><i class="ph ph-plus-circle" aria-hidden="true"></i></button>
-            <button type="button" id="btn-fig-up" class="ds-btn" title="Move the figure back (drawn earlier)"><i class="ph ph-arrow-up" aria-hidden="true"></i></button>
-            <button type="button" id="btn-fig-down" class="ds-btn" title="Move the figure to the front (drawn later)"><i class="ph ph-arrow-down" aria-hidden="true"></i></button>
-            <button type="button" id="btn-fig-delete" class="ds-btn" title="Delete the figure"><i class="ph ph-trash" aria-hidden="true"></i></button>
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Shape</div>
-          <div id="fig-shape-grid" class="shape-grid"></div>
-        </div>
-
-        <div class="ds-stack">
-          <div class="ds-field">
-            <div class="ds-label">Size</div>
-            <div class="ds-slider">
-              <input type="range" id="input-fig-size" min="5" max="200" step="1" value="100">
-              <input type="text" id="num-fig-size" class="ds-value" value="100%" inputmode="decimal">
-            </div>
-          </div>
-          <div class="ds-field">
-            <div class="ds-label">Position X</div>
-            <div class="ds-slider">
-              <input type="range" id="input-fig-x" min="-100" max="100" step="1" value="0">
-              <input type="text" id="num-fig-x" class="ds-value" value="0%" inputmode="decimal">
-            </div>
-          </div>
-          <div class="ds-field">
-            <div class="ds-label">Position Y</div>
-            <div class="ds-slider">
-              <input type="range" id="input-fig-y" min="-100" max="100" step="1" value="0">
-              <input type="text" id="num-fig-y" class="ds-value" value="0%" inputmode="decimal">
-            </div>
-          </div>
-          <div class="ds-field">
-            <div class="ds-label">Rotation</div>
-            <div class="ds-slider">
-              <input type="range" id="input-fig-rot" min="-180" max="180" step="1" value="0">
-              <input type="text" id="num-fig-rot" class="ds-value" value="0º" inputmode="decimal">
-            </div>
-          </div>
-        </div>
-
-        <div class="ds-layers-actions">
-          <button type="button" id="btn-fig-cancel" class="ds-btn" title="Discard the changes made in this editor"><span>Cancel</span></button>
-          <button type="button" id="btn-fig-save" class="ds-btn" title="Keep the changes"><span>Save</span><i class="ph ph-check" aria-hidden="true"></i></button>
         </div>
       </div>
 
@@ -1600,7 +1574,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=837b66e6"></script>
+  <script src="js/bundle-pro.js?v=dbfbbb09"></script>
 
 </body>
 </html>
