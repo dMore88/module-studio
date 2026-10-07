@@ -2309,6 +2309,28 @@ export class StudioEngine {
       ctx.restore();
     }
 
+    // The figure being edited in the smart module editor: a thin frame around it (an on-screen guide, never exported)
+    if (this.state.figureBox && !this.exporting) {
+      const fb = this.state.figureBox;
+      const mod = this.getLayers().find(l => l.id === fb.layerId);
+      if (mod) {
+        const w = mod.width !== undefined ? mod.width : 100, h = mod.height !== undefined ? mod.height : 100;
+        const r = Math.max(w, h) || 1;
+        const s = (fb.size / 100) * r;
+        ctx.save();
+        ctx.translate(width / 2 + (mod.offsetX || 0), height / 2 + (mod.offsetY || 0));
+        ctx.rotate(((mod.rotation || 0) * Math.PI) / 180);
+        ctx.scale(w / r, h / r);
+        ctx.translate((fb.x / 100) * r, (fb.y / 100) * r);
+        ctx.rotate(((fb.rotation || 0) * Math.PI) / 180);
+        ctx.strokeStyle = this.guideColor();
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([4, 3]);
+        ctx.strokeRect(-s / 2, -s / 2, s, s);
+        ctx.restore();
+      }
+    }
+
     ctx.restore(); // end master artboard clip
 
     // 4. Subtle center reference dot (only in single module mode, when no layer uses a layout)

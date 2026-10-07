@@ -2419,6 +2419,37 @@
       assert(ink() > 500, "A grid of cut volumes should draw");
     });
 
+    await test("Smart module editor: the selected figure has a frame on the canvas (never exported) and undo / redo go step by step inside the editor", async () => {
+      reset();
+      const d = win.document, q = (s) => d.querySelector(s), cv = d.getElementById("studio-canvas");
+      const fire = (el, v) => { el.value = String(v); el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
+      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: true, width: 100, height: 100, showContainer: false }); app.state.showSafeBounds = false;
+      app.isFlyoutOpen = false; app.updateRailUI();
+      q('[data-rail-tab="module"]').click(); await wait(60);
+      q("#btn-fig-add").click(); await wait(30);
+      fire(q("#input-fig-x"), 30); fire(q("#input-fig-size"), 40);
+      const guide = () => { drawRaw(app); const dd = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < dd.length; i += 4) if (dd[i] > 200 && dd[i + 1] < 120 && dd[i + 2] < 90) n++; return n; };
+      assert(guide() > 30, "The selected figure should have a frame");
+      app.engine.exporting = true; assert(guide() === 0, "The frame is never exported"); app.engine.exporting = false;
+      // the frame follows the selected figure
+      const frameAt = () => { drawRaw(app); const dd = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let sx = 0, n = 0; for (let i = 0, p = 0; i < dd.length; i += 4, p++) if (dd[i] > 200 && dd[i + 1] < 120 && dd[i + 2] < 90) { sx += p % cv.width; n++; } return n ? sx / n : -1; };
+      const x2 = frameAt(); q('#fig-list [data-fig-index="0"]').click(); const x1 = frameAt();
+      assert(x2 > x1 + 20, `The frame should move to the selected figure (${x1} -> ${x2})`);
+      // step by step undo / redo
+      app.undo(); // back to figure 2 at size 50 (the x change before it is the step before)
+      assert(L.figures[1].size === 50 && L.figures[1].x === 30, `Undo goes back one step (size ${L.figures[1].size}, x ${L.figures[1].x})`);
+      app.undo();
+      assert(L.figures[1].x === 0 && L.figures.length === 2, "Another undo reverts the position");
+      app.undo();
+      assert(L.figures.length === 1, "Another undo removes the added figure");
+      app.redo(); app.redo(); app.redo();
+      assert(L.figures.length === 2 && L.figures[1].x === 30 && L.figures[1].size === 40, "Redo brings the steps back");
+      // Cancel still goes all the way back, and the project history was not touched
+      const hist = app.history.length;
+      q("#btn-fig-cancel").click(); await wait(60);
+      assert(L.figures.length === 0 && app.history.length === hist, "Cancel goes back to the start of the session");
+    });
+
     const failed = results.filter(r => !r.ok).length;
     summary.textContent = failed === 0 ? `All ${results.length} tests passed` : `${failed} of ${results.length} tests FAILED`;
     summary.className = failed === 0 ? "pass" : "fail";

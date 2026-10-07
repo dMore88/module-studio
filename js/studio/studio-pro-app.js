@@ -3032,7 +3032,8 @@ export class StudioProApp {
       containerW: layer.containerW > 0 ? layer.containerW * f : 0, containerH: layer.containerH > 0 ? layer.containerH * f : 0,
       structure: { ...s, enabled: false, formalStructure: off(s.formalStructure), similarity: off(s.similarity), gradation: off(s.gradation), anomaly: off(s.anomaly), contrast: off(s.contrast), concentration: off(s.concentration), texture: off(s.texture), space: off(s.space) }
     };
-    return { ...this.state, layers: [view], layerOrder: [layer.id], showSafeBounds: false, figureEdit: true };
+    const fig = this.currentFigure();
+    return { ...this.state, layers: [view], layerOrder: [layer.id], showSafeBounds: false, figureEdit: true, figureBox: fig ? { layerId: layer.id, size: fig.size, x: fig.x, y: fig.y, rotation: fig.rotation } : null };
   }
 
   currentFigure() {
@@ -3052,7 +3053,8 @@ export class StudioProApp {
     if (!mod.figures || mod.figures.length === 0) mod.figures = [{ shape: mod.shape, size: 100, x: 0, y: 0, rotation: 0 }];
     const cfg = ASPECT_RATIOS[this.state.aspectRatio] || ASPECT_RATIOS["1:1"];
     const extent = Math.max(1, mod.width || 100, mod.height || 100, mod.containerW || 0, mod.containerH || 0); // module and container both fit
-    this.figEdit = { layerId: mod.id, snapshot, index: 0, scale: (Math.min(cfg.w, cfg.h) * 0.6) / extent };
+    this.figEdit = { layerId: mod.id, snapshot, index: 0, scale: (Math.min(cfg.w, cfg.h) * 0.6) / extent, steps: [], at: -1 };
+    this.recordFigureStep();
     this.syncFigureEditor();
   }
 
@@ -3082,6 +3084,38 @@ export class StudioProApp {
     this.endFigureEdit(keep);
     this.isFlyoutOpen = false;
     this.updateRailUI();
+  }
+
+  // The editor's own undo: every change is a step (the module without its layout and modifiers); Cancel goes back to the start
+  figureStepState() {
+    const mod = this.state.layers.find(l => l.id === this.figEdit.layerId);
+    if (!mod) return null;
+    const { structure, ...own } = mod;
+    return JSON.stringify(own);
+  }
+
+  recordFigureStep() {
+    if (!this.figEdit || !this.figEdit.steps) return;
+    const s = this.figureStepState();
+    if (s === null || s === this.figEdit.steps[this.figEdit.at]) return;
+    this.figEdit.steps = this.figEdit.steps.slice(0, this.figEdit.at + 1);
+    this.figEdit.steps.push(s);
+    this.figEdit.at = this.figEdit.steps.length - 1;
+  }
+
+  stepFigureEdit(d) {
+    const fe = this.figEdit;
+    if (!fe) return;
+    this.recordFigureStep(); // whatever changed since the last step becomes one, so it can be undone
+    const to = fe.at + d;
+    if (to < 0 || to >= fe.steps.length) return;
+    const mod = this.state.layers.find(l => l.id === fe.layerId);
+    if (!mod) return;
+    fe.at = to;
+    Object.assign(mod, JSON.parse(fe.steps[to]));
+    fe.index = Math.min(fe.index, Math.max(0, mod.figures.length - 1));
+    this.syncAllInspectorsWithActiveLayer();
+    this.syncFigureEditor();
   }
 
   syncFigureEditor() {
@@ -3120,6 +3154,7 @@ export class StudioProApp {
         const f = this.currentFigure();
         if (!f) return;
         f.shape = btn.dataset.figShape;
+        this.recordFigureStep();
         this.syncFigureEditor();
       });
     });
@@ -3132,12 +3167,14 @@ export class StudioProApp {
       const m = mod(); if (!m || m.figures.length >= 4) return;
       m.figures.push({ shape: "circle", size: 50, x: 0, y: 0, rotation: 0 });
       this.figEdit.index = m.figures.length - 1;
+      this.recordFigureStep();
       this.syncFigureEditor();
     });
     document.getElementById("btn-fig-delete")?.addEventListener("click", () => {
       const m = mod(); if (!m || m.figures.length <= 1) return;
       m.figures.splice(this.figEdit.index, 1);
       this.figEdit.index = Math.min(this.figEdit.index, m.figures.length - 1);
+      this.recordFigureStep();
       this.syncFigureEditor();
     });
     const move = (d) => {
@@ -3146,6 +3183,7 @@ export class StudioProApp {
       if (j < 0 || j >= m.figures.length) return;
       [m.figures[i], m.figures[j]] = [m.figures[j], m.figures[i]];
       this.figEdit.index = j;
+      this.recordFigureStep();
       this.syncFigureEditor();
     };
     document.getElementById("btn-fig-up")?.addEventListener("click", () => move(-1));
@@ -3476,7 +3514,7 @@ export class StudioProApp {
      ========================================================================= */
 
   pushHistory(label = "Action") {
-    if (this.figEdit) return; // the smart module editor makes one undo step, when it is saved
+    if (this.figEdit) { this.recordFigureStep(); return; } // inside the smart module editor every change is a step of its own undo; Save makes one step of the project
     if (this.historyIndex < this.history.length - 1) {
       this.history = this.history.slice(0, this.historyIndex + 1);
       this.historyLabels = this.historyLabels.slice(0, this.historyIndex + 1);
@@ -3492,6 +3530,7 @@ export class StudioProApp {
   }
 
   undo() {
+    if (this.figEdit) { this.stepFigureEdit(-1); return; } // inside the smart module editor, undo goes back one editor step
     if (this.historyIndex > 0) {
       this.historyIndex--;
       this.state = JSON.parse(this.history[this.historyIndex]);
@@ -3507,6 +3546,7 @@ export class StudioProApp {
   }
 
   redo() {
+    if (this.figEdit) { this.stepFigureEdit(1); return; }
     if (this.historyIndex < this.history.length - 1) {
       this.historyIndex++;
       this.state = JSON.parse(this.history[this.historyIndex]);
