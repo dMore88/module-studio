@@ -166,10 +166,8 @@ export const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "ci
   rotation,
   offsetX,
   offsetY,
-  containerW: 100, // width of the module's container in px (0 = the whole canvas); starts as big as the module
-  containerH: 100, // height of the module's container in px (0 = the whole canvas)
-  showContainer: true, // draw the container as a dashed frame on the canvas (an on-screen guide, never exported)
-  clipContainer: false, // cut the module at the edge of its container (Clip cell, in Layout, cuts at the cell instead)
+  containerW: 100, // the module's width in px: its container, the piece of paper the shapes are placed on (it always cuts at its edge); 10 to 1000
+  containerH: 100, // the module's height in px; 10 to 1000
   wireframe: true,
   strokeWidth: 1,
   color: "#18181f",
@@ -214,38 +212,11 @@ export class StudioEngine {
     this.state = JSON.parse(JSON.stringify(defaultStudioState));
   }
 
-  // Container clip (Clip container). When texture or space will work on the module, the cut is made on its geometry
-  // instead (see drawShape), so those effects are not cut themselves; `moduleClip` keeps the rectangle and the
-  // transform it was set under
-  applyContainerClip(ctx, x, y, w, h, mod) {
-    const s = (mod && mod.structure) || {};
-    const m = ctx.getTransform ? ctx.getTransform() : null;
-    // Texture and Space work on the cut module (see drawShape); a Gradation can bring a texture too
-    const deferred = !!(m && ((s.space && s.space.enabled) || (s.texture && s.texture.enabled) || (s.gradation && s.gradation.enabled)));
-    this.moduleClip = { x, y, w, h, m, deferred };
-    if (!deferred) {
-      ctx.beginPath();
-      ctx.rect(x, y, w, h);
-      ctx.clip();
-    }
-  }
-
-  // The corners of the clip rectangle in the frame the context is in now, or in `frame` (a transform) when given
-  clipCorners(clip, toFrame) {
-    const mul = (M, px, py) => ({ x: M.a * px + M.c * py + M.e, y: M.b * px + M.d * py + M.f });
-    const inv = (M) => {
-      const det = M.a * M.d - M.b * M.c || 1e-9;
-      return { a: M.d / det, b: -M.b / det, c: -M.c / det, d: M.a / det, e: (M.c * M.f - M.d * M.e) / det, f: (M.b * M.e - M.a * M.f) / det };
-    };
-    const I = inv(toFrame);
-    return [[clip.x, clip.y], [clip.x + clip.w, clip.y], [clip.x + clip.w, clip.y + clip.h], [clip.x, clip.y + clip.h]]
-      .map(([px, py]) => { const d = mul(clip.m, px, py); return mul(I, d.x, d.y); });
-  }
-
   // Draw a single shape: texture deformation, then flat or illusory 3D space.
-  drawShape(ctx, shapeId, size, fgColor, strokeOnly = false, lineWidth = 2, bgColor = null, isAlternating = false, skipSpace = false, spaceConfig = null, textureConfig = null, seed = 0) {
+  drawShape(ctx, shapeId, size, fgColor, strokeOnly = false, lineWidth = 2, bgColor = null, isAlternating = false, skipSpace = false, spaceConfig = null, textureConfig = null, seed = 0, clipLocal = null) {
     let shapeDef = Shapes[shapeId] || Shapes.circle;
-    const pendingClip = this.moduleClip && this.moduleClip.deferred ? this.moduleClip : null;
+    // The module's own edge (its perimeter, as four corners in the frame the shape is drawn in): it always cuts what is drawn
+    const pendingClip = clipLocal || null;
     const space = spaceConfig;
     let texture = textureConfig;
 
@@ -268,12 +239,12 @@ export class StudioEngine {
       };
     }
 
-    // Clip container, when texture or space follow: cut the module's own geometry, so they treat the cut module as the shape
+    // The module cuts at its perimeter. When texture or space follow, the cut is made on the geometry itself, so they treat the cut module as the shape
     let hardClip = pendingClip;
     const willTexture = !!(texture && texture.enabled);
     const willSpace = !!(space && space.enabled && !skipSpace && !shapeDef.skeleton && (space.mode || "isometric") !== "foreshortening");
     if (pendingClip && (willTexture || willSpace)) {
-      shapeDef = clippedShape(shapeDef, this.clipCorners(pendingClip, ctx.getTransform()), size, strokeOnly);
+      shapeDef = clippedShape(shapeDef, pendingClip, size, strokeOnly);
       hardClip = null;
     }
 
@@ -285,11 +256,10 @@ export class StudioEngine {
     }
 
     // Open-path shapes (lines, digits...) are strokes: they stay flat.
-    // No texture and no space (or a tilt): the container cuts the drawing the usual way
+    // No texture and no space (or a tilt): the perimeter cuts the drawing the usual way
     if (hardClip) {
       ctx.save();
-      const c = this.clipCorners(hardClip, ctx.getTransform());
-      ctx.beginPath(); c.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); ctx.clip();
+      ctx.beginPath(); hardClip.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); ctx.clip();
     }
     if (!space || !space.enabled || skipSpace || shapeDef.skeleton) {
       this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
@@ -554,9 +524,19 @@ export class StudioEngine {
     const wire = wireframeOverride !== null ? wireframeOverride : (mod.wireframe !== false);
     const strokeW = mod.strokeWidth || 1.2;
 
+    // The module's perimeter (its container: the piece of paper) in the frame the shape is drawn in. It is as big as the module
+    // is scaled, and it turns with the module; half the stroke is let in so a shape that fills the module is not shaved
+    const theta = ((mod.rotation || 0) * Math.PI) / 180, cs = Math.cos(theta), sn = Math.sin(theta);
+    const hw = (cont.w * sizeMultiplier * kx) / 2 + (wire ? strokeW / 2 : 0), hh = (cont.h * sizeMultiplier * ky) / 2 + (wire ? strokeW / 2 : 0);
+    // (a module not yet opened in the editor, with one plain shape, is drawn as it always was: it does not cut)
+    const clipLocal = !smart ? null : [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]].map(([px, py]) => {
+      const qx = px - ox, qy = py - oy;
+      return { x: (qx * cs + qy * sn) / sx, y: (-qx * sn + qy * cs) / sy };
+    });
+
     targetCtx.save();
     targetCtx.translate(ox, oy);
-    targetCtx.rotate(((mod.rotation || 0) * Math.PI) / 180);
+    targetCtx.rotate(theta);
     targetCtx.scale(sx, sy);
     // A stretched shape keeps a uniform stroke: the outline is stretched, but the pen is not
     const stretched = Math.abs(sx - sy) > 1e-6;
@@ -574,7 +554,7 @@ export class StudioEngine {
     const seed = (this.cellSeed || 0) * 7.13 + layerNum * 53.7;
     const imp = this.cellImperf;
     this.cellImperf = null;
-    const drawIt = () => this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, !!this.cellAlt, isCutout, mod.structure?.space || null, mod.structure?.texture || null, seed);
+    const drawIt = () => this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, !!this.cellAlt, isCutout, mod.structure?.space || null, mod.structure?.texture || null, seed, clipLocal);
     try {
       if (imp) this.drawImperfect(targetCtx, r, imp, drawIt); else drawIt();
     } finally {
@@ -592,13 +572,7 @@ export class StudioEngine {
     ctx.translate(width / 2, height / 2);
     this.cellSeed = 0;
     this.cellAlt = false;
-    this.moduleClip = null;
-    if (mod.clipContainer) {
-      const cs = this.containerSize(mod, width, height);
-      this.applyContainerClip(ctx, -cs.w / 2, -cs.h / 2, cs.w, cs.h, mod);
-    }
     this.drawSingleLayerShape(ctx, mod, MODULE_UNIT, palette.fg, palette.bg);
-    this.moduleClip = null;
     ctx.restore();
   }
 
@@ -1448,22 +1422,11 @@ export class StudioEngine {
             flipped = true;
           }
 
-          this.moduleClip = null; // each module starts without a pending container cut
           // Clip cell: cut the module at the edge of its cell (the real shape of the cell in every grid variation)
           if (rep.activeClipping && !extra) {
             this.buildCellPath(ctx, r, c, rows, cols, cellCx, cellCy, cW, cH, repCell, cellStartX);
             ctx.clip();
           }
-          // Clip container: cut it at the edge of its container (in Fit to canvas the container shrinks with the cell;
-          // in Actual size it is the cell). Both clips can be on: the module is cut by the two
-          if (targetMod.clipContainer && !extra) {
-            // The container keeps its own proportions and shrinks with the same scale as the module (Figma frame inside a frame)
-            const rk = rhythmOn ? Math.min(MAX_SCALE_MUL, Math.min(cW / refW, rowHeights[r] / refH)) : 1;
-            const sBase = isFixed || uniform ? rk : (rhythmOn ? Math.min(refW / usableW, refH / usableH) * rk : Math.min(cW / usableW, cH / usableH));
-            const bw = cont.w * sBase, bh = cont.h * sBase;
-            this.applyContainerClip(ctx, cellCx - bw / 2, cellCy - bh / 2, bw, bh, targetMod);
-          }
-
           ctx.translate(cellCx, cellCy);
 
         // Concentration directional flow
@@ -1523,7 +1486,6 @@ export class StudioEngine {
         if ((refl === "rows" || refl === "both") && r % 2 === 1) ctx.scale(1, -1);
         const lineWidthMul = !isFixed && !uniform && (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k : null;
         this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor || flipped ? cellFg : null, lineWidthMul, stretch);
-        this.moduleClip = null;
         ctx.restore();
       };
 
@@ -1695,7 +1657,6 @@ export class StudioEngine {
     this.cellTexScale = null;
     this.cellColorMix = null;
     this.cellImperf = null;
-    this.moduleClip = null;
     const rad = radConfig || targetMod.structure.radiation;
     const grad = targetMod.structure.gradation;
     const sim = targetMod.structure.similarity;
@@ -1962,16 +1923,6 @@ export class StudioEngine {
             ctx.rotate(this.cellDirection(i + centerIdx * 100, j));
           }
 
-          this.moduleClip = null;
-          // Clip container: the container turns with the module's place in the ring and shrinks with its sector
-          if (targetMod.clipContainer) {
-            const cs = this.containerSize(targetMod, width, height);
-            const rt = span / rings, aw = (ringRadius * 2 * Math.PI) / raysI;
-            const sector = Math.min(rt, Math.max(rt * 0.5, aw));
-            const base = isFixed ? 1 : uniform ? uniformK : (sector / usableW) * (0.75 + (i / rings) * 0.45) * (isMultiCenter ? 0.7 : 1);
-            this.applyContainerClip(ctx, (-cs.w * base) / 2, (-cs.h * base) / 2, cs.w * base, cs.h * base, targetMod);
-          }
-
           // Gradation on polar radiation (drift slides along the module's local x axis, up to ~one ring)
           if (grad.enabled) {
             this.applyGradation(ctx, grad, this.gradationPathRadial(grad, i, j, rings, raysI), (span / rings) * 0.9);
@@ -2013,7 +1964,6 @@ export class StudioEngine {
           this.cellSeed = i * raysI + j + 1;
           this.cellAlt = (i + j) % 2 === 1;
           this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== palette.fg ? cellFg : null);
-          this.moduleClip = null;
           ctx.restore();
         }
       }
@@ -2170,8 +2120,9 @@ export class StudioEngine {
       "3:4": { w: 600, h: 800 },
       "16:9": { w: 800, h: 450 }
     };
-    const cfg = ratioMap[this.state.aspectRatio || "1:1"] || { w: 600, h: 600 };
-    const { ctx, width, height } = CanvasUtils.setupCanvas(this.canvas, cfg.w, cfg.h);
+    // The smart module editor draws on a canvas of its own: the module (its width and height), whatever the aspect ratio
+    const cfg = this.state.canvasOverride || ratioMap[this.state.aspectRatio || "1:1"] || { w: 600, h: 600 };
+    const { ctx, width, height } = CanvasUtils.setupCanvas(this.canvas, cfg.w, cfg.h, this.renderScale || 1);
     this.logicalW = width; this.logicalH = height; // the canvas, for the containers that are the whole canvas
 
     // 1. Clear background using current effective palette background
@@ -2217,22 +2168,6 @@ export class StudioEngine {
       ctx.lineWidth = 1.2;
       ctx.strokeRect(margin, margin, usableW, usableH);
 
-      ctx.restore();
-    }
-
-    // The container of each module that has one: a frame centred on the canvas. It has its own switch
-    // (Show container), so it does not depend on the coordinate grid button; it is never exported
-    if (!this.exporting) {
-      ctx.save();
-      ctx.strokeStyle = this.guideColor();
-      ctx.setLineDash([4, 4]);
-      ctx.lineWidth = 1.2;
-      for (const l of this.getLayers()) {
-        if (!this.state.figureEdit) break; // the container frame shows only while the module is being edited
-        if (l.visible === false || l.showContainer === false || !(l.containerW > 0 || l.containerH > 0)) continue;
-        const cs = this.containerSize(l, width, height);
-        ctx.strokeRect(width / 2 - cs.w / 2, height / 2 - cs.h / 2, cs.w, cs.h);
-      }
       ctx.restore();
     }
 
