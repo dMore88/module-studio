@@ -6609,21 +6609,21 @@ class StudioProApp {
       mod.scale = val;
       this.render();
       this.updateLayerCardsUI();
-    }, "Width");
+    }, "Width", "px");
 
     this.bindSliderWithNumber("input-active-height", "num-active-height", (val) => {
       const mod = this.getActiveModule();
       mod.height = val;
       this.render();
       this.updateLayerCardsUI();
-    }, "Height");
+    }, "Height", "px");
 
     // 3. Rotation (Rotación °)
     this.bindSliderWithNumber("input-active-rotation", "num-active-rotation", (val) => {
       const mod = this.getActiveModule();
       mod.rotation = val;
       this.render();
-    }, "Rotation");
+    }, "Rotation", "º");
 
     // 4. Stroke Width (Grosor Trazo)
     this.bindSliderWithNumber("input-active-stroke", "num-active-stroke", (val) => {
@@ -6637,13 +6637,13 @@ class StudioProApp {
       const mod = this.getActiveModule();
       mod.offsetX = val;
       this.render();
-    }, "Offset X");
+    }, "Offset X", "px");
 
     this.bindSliderWithNumber("input-active-offset-y", "num-active-offset-y", (val) => {
       const mod = this.getActiveModule();
       mod.offsetY = val;
       this.render();
-    }, "Offset Y");
+    }, "Offset Y", "px");
 
     // Container (the frame the module is composed in, centred on the canvas)
     this.bindSliderWithNumber("input-active-container-w", "num-active-container-w", (val) => {
@@ -6735,17 +6735,17 @@ class StudioProApp {
 
     // Sync Dimensions
     this.syncControlValue("input-active-width", mod.width || mod.scale || 50);
-    this.syncControlValue("num-active-width", mod.width || mod.scale || 50);
+    this.syncControlValue("num-active-width", `${mod.width || mod.scale || 50}px`);
     this.syncControlValue("input-active-height", mod.height || mod.scale || 50);
-    this.syncControlValue("num-active-height", mod.height || mod.scale || 50);
+    this.syncControlValue("num-active-height", `${mod.height || mod.scale || 50}px`);
     this.syncControlValue("input-active-rotation", mod.rotation || 0);
-    this.syncControlValue("num-active-rotation", mod.rotation || 0);
+    this.syncControlValue("num-active-rotation", `${mod.rotation || 0}º`);
     this.syncControlValue("input-active-stroke", mod.strokeWidth || 1);
     this.syncControlValue("num-active-stroke", `${mod.strokeWidth || 1}px`);
     this.syncControlValue("input-active-offset-x", mod.offsetX !== undefined ? mod.offsetX : 0);
-    this.syncControlValue("num-active-offset-x", mod.offsetX !== undefined ? mod.offsetX : 0);
+    this.syncControlValue("num-active-offset-x", `${mod.offsetX !== undefined ? mod.offsetX : 0}px`);
     this.syncControlValue("input-active-offset-y", mod.offsetY !== undefined ? mod.offsetY : 0);
-    this.syncControlValue("num-active-offset-y", mod.offsetY !== undefined ? mod.offsetY : 0);
+    this.syncControlValue("num-active-offset-y", `${mod.offsetY !== undefined ? mod.offsetY : 0}px`);
     const canvasCfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
     const contW = Math.round(mod.containerW > 0 ? mod.containerW : canvasCfg.w);
     const contH = Math.round(mod.containerH > 0 ? mod.containerH : canvasCfg.h);

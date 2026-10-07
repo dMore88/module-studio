@@ -1325,7 +1325,7 @@
       q('[data-shape="circle"]').click();
       fire(q("#input-active-width"), 1800); fire(q("#input-active-height"), 1800);
       const m = app.getActiveModule();
-      assert(m.width === 1800 && m.height === 1800 && q("#num-active-width").value === "1800", "A 1800 module did not apply");
+      assert(m.width === 1800 && m.height === 1800 && q("#num-active-width").value === "1800px", "A 1800 module did not apply");
       drawRaw(app); // a giant module must draw without errors
       q('[data-shape="line"]').click();
       assert(q("#input-active-height").closest(".ds-field").classList.contains("hidden"), "The line should not show Height");
@@ -1837,7 +1837,7 @@
       const box = q("#num-active-width");
       const before = app.getActiveModule().width;
       key(box, "ArrowUp");
-      assert(app.getActiveModule().width === before + 1 && box.value === String(before + 1), `ArrowUp should add 1 (${before} -> ${app.getActiveModule().width})`);
+      assert(app.getActiveModule().width === before + 1 && box.value === (before + 1) + "px", `ArrowUp should add 1 (${before} -> ${app.getActiveModule().width})`);
       key(box, "ArrowDown", { shiftKey: true });
       assert(app.getActiveModule().width === before + 1 - 10, "Shift + ArrowDown should take off 10");
       // with a suffix and a decimal step: stroke width 1.2px, step 0.1
