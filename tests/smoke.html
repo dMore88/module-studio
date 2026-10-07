@@ -2326,6 +2326,51 @@
       assert(svg && /<path/.test(svg) && (svg.match(/ M /g) || svg.match(/M/g)).length >= 2, "The SVG should contain the composite's outlines");
     });
 
+    await test("Smart module editor: Edit figures opens it, figures can be added, changed and reordered; Cancel goes back, Save keeps one undo step", async () => {
+      reset();
+      const d = win.document, q = (s) => d.querySelector(s), cv = d.getElementById("studio-canvas");
+      const fire = (el, v) => { el.value = String(v); el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
+      const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: true, width: 100, height: 100, showContainer: true, strokeWidth: 3 }); app.state.showSafeBounds = false;
+      L.structure.enabled = true; L.structure.mode = "repetition"; Object.assign(L.structure.repetition, { cols: 3, rows: 3, sizeMode: "fit" });
+      q('[data-rail-tab="module"]').click(); await wait(60);
+      q("#btn-edit-figures").click(); await wait(60);
+      assert(app.figEdit && !q("#card-figures").classList.contains("hidden") && q("#active-layer-inspector").classList.contains("hidden"), "Edit figures should open the editor in place of the Module panel");
+      assert(L.figures.length === 1 && L.figures[0].shape === "square", "Entering makes the module's own shape the first figure");
+      // the canvas shows only the module, big (no 3 x 3 grid)
+      drawRaw(app); const ink = () => { const dd = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < dd.length; i += 4) if (dd[i] < 128) n++; return n; };
+      const isolated = ink();
+      q("#btn-fig-add").click(); await wait(30);
+      assert(L.figures.length === 2 && app.figEdit.index === 1, "Add figure adds the second one and selects it");
+      fire(q("#input-fig-x"), 30); fire(q("#input-fig-size"), 40);
+      assert(L.figures[1].x === 30 && L.figures[1].size === 40 && q("#num-fig-size").value === "40%", "The figure sliders should edit the selected figure");
+      q('#fig-shape-grid [data-fig-shape="triangle"]').click(); await wait(30);
+      assert(L.figures[1].shape === "triangle", "The editor's shape grid changes the selected figure");
+      q("#btn-fig-up").click(); await wait(30);
+      assert(L.figures[0].shape === "triangle" && app.figEdit.index === 0, "Move back swaps the order");
+      for (let i = 0; i < 5; i++) q("#btn-fig-add").click();
+      assert(L.figures.length === 4 && q("#btn-fig-add").hasAttribute("disabled"), "Four figures at most");
+      const histBefore = app.history.length;
+      // Cancel restores how it was
+      q("#btn-fig-cancel").click(); await wait(60);
+      assert(!app.figEdit && L.figures.length === 0 && L.shape === "square" && !q("#active-layer-inspector").classList.contains("hidden"), "Cancel should go back to the plain module and the Module panel");
+      assert(app.history.length === histBefore, "Editing leaves no history entries until it is saved");
+      // Save keeps it, with one undo step
+      q("#btn-edit-figures").click(); await wait(60);
+      q("#btn-fig-add").click(); await wait(30);
+      fire(q("#input-fig-x"), -25);
+      const labelsBefore = app.historyLabels.slice();
+      q("#btn-fig-save").click(); await wait(60);
+      assert(L.figures.length === 2 && L.figures[1].x === -25 && !app.figEdit, "Save keeps the figures");
+      const newOnes = app.historyLabels.filter((l, i) => labelsBefore[i] !== l);
+      assert(app.historyLabels[app.historyLabels.length - 1].includes("Smart module saved") && !app.historyLabels.some(l => l.includes("Figure ")), `Save makes one undo step and the editing none (${JSON.stringify(app.historyLabels.slice(-3))})`);
+      assert(/Figures: Square 100% \(0, 0\) 0º \+ Circle 50% \(-25, 0\) 0º/.test(win.document.querySelector(".ds-art-log").innerText), "The Art log should list the figures");
+      // Back to one plain figure collapses to a plain module
+      q("#btn-edit-figures").click(); await wait(60);
+      q('#fig-list [data-fig-index="1"]').click(); q("#btn-fig-delete").click(); await wait(30);
+      q("#btn-fig-save").click(); await wait(60);
+      assert(L.figures.length === 0 && L.shape === "square", "One untouched figure saves as a plain module");
+    });
+
     const failed = results.filter(r => !r.ok).length;
     summary.textContent = failed === 0 ? `All ${results.length} tests passed` : `${failed} of ${results.length} tests FAILED`;
     summary.className = failed === 0 ? "pass" : "fail";

@@ -162,6 +162,13 @@
         </div>
 
         <div class="ds-field">
+          <button type="button" id="btn-edit-figures" class="ds-btn" title="Smart module: build the module from several figures, in its own space">
+            <span>Edit figures</span>
+            <i class="ph ph-shapes" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div class="ds-field">
           <div class="ds-label">Shape</div>
           <div class="shape-grid">
             <button type="button" class="shape-circle-btn active" data-shape="circle" title="Circle"><i class="ph ph-circle" aria-hidden="true"></i></button>
@@ -723,6 +730,70 @@
         </div>
           </div>
         </details>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           SMART MODULE EDITOR (proof of concept, branch smart-module): the module as several figures,
+           edited on its own (the canvas shows only the module). Save keeps the changes, Cancel goes back.
+           =================================================================== -->
+      <div id="card-figures" class="flyout-tab-content ds-card hidden" data-flyout-tab="figures">
+        <div class="ds-card-header">
+          <div class="ds-card-title">
+            <span class="ds-card-title-text">Smart module</span>
+          </div>
+        </div>
+
+        <div class="ds-field">
+          <div class="ds-label">Figures</div>
+          <div id="fig-list" class="fig-list"></div>
+          <div class="ds-layers-actions">
+            <button type="button" id="btn-fig-add" class="ds-btn" title="Add a figure (4 maximum)"><span>Add figure</span><i class="ph ph-plus-circle" aria-hidden="true"></i></button>
+            <button type="button" id="btn-fig-up" class="ds-btn" title="Move the figure back (drawn earlier)"><i class="ph ph-arrow-up" aria-hidden="true"></i></button>
+            <button type="button" id="btn-fig-down" class="ds-btn" title="Move the figure to the front (drawn later)"><i class="ph ph-arrow-down" aria-hidden="true"></i></button>
+            <button type="button" id="btn-fig-delete" class="ds-btn" title="Delete the figure"><i class="ph ph-trash" aria-hidden="true"></i></button>
+          </div>
+        </div>
+
+        <div class="ds-field">
+          <div class="ds-label">Shape</div>
+          <div id="fig-shape-grid" class="shape-grid"></div>
+        </div>
+
+        <div class="ds-stack">
+          <div class="ds-field">
+            <div class="ds-label">Size</div>
+            <div class="ds-slider">
+              <input type="range" id="input-fig-size" min="5" max="200" step="1" value="100">
+              <input type="text" id="num-fig-size" class="ds-value" value="100%" inputmode="decimal">
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Position X</div>
+            <div class="ds-slider">
+              <input type="range" id="input-fig-x" min="-100" max="100" step="1" value="0">
+              <input type="text" id="num-fig-x" class="ds-value" value="0%" inputmode="decimal">
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Position Y</div>
+            <div class="ds-slider">
+              <input type="range" id="input-fig-y" min="-100" max="100" step="1" value="0">
+              <input type="text" id="num-fig-y" class="ds-value" value="0%" inputmode="decimal">
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Rotation</div>
+            <div class="ds-slider">
+              <input type="range" id="input-fig-rot" min="-180" max="180" step="1" value="0">
+              <input type="text" id="num-fig-rot" class="ds-value" value="0º" inputmode="decimal">
+            </div>
+          </div>
+        </div>
+
+        <div class="ds-layers-actions">
+          <button type="button" id="btn-fig-cancel" class="ds-btn" title="Discard the changes made in this editor"><span>Cancel</span></button>
+          <button type="button" id="btn-fig-save" class="ds-btn" title="Keep the changes"><span>Save</span><i class="ph ph-check" aria-hidden="true"></i></button>
         </div>
       </div>
 
@@ -1529,7 +1600,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=67b7df07"></script>
+  <script src="js/bundle-pro.js?v=7ff5761a"></script>
 
 </body>
 </html>

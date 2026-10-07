@@ -86,6 +86,7 @@ export class StudioProApp {
     document.addEventListener("input", (e) => { if (e.target.matches && e.target.matches('.ds-slider input[type="range"]')) this.paintRange(e.target); });
     this.paintAllRanges();
     this.setupShapeInspector();
+    this.setupSmartModule();
 
     // Initial render
     this.updateActivePalette();
@@ -195,7 +196,7 @@ export class StudioProApp {
   render() {
     if (!this.engine || !this.canvas) return;
     this.engine.state = this.state;
-    this.engine.viewState = this.isHidingModifiers() ? this.stateWithoutModifiers() : null;
+    this.engine.viewState = this.figEdit ? this.stateForFigureEdit() : (this.isHidingModifiers() ? this.stateWithoutModifiers() : null);
     // The Block frame shows only for the layer being edited, while the Layout panel is open
     this.engine.blockGuideLayerId = this.isFlyoutOpen && this.activeRailTab === "layout" ? this.activeLayerId : null;
     const palette = this.getActivePalette();
@@ -699,6 +700,7 @@ export class StudioProApp {
 
       // The module
       const fill = mod.wireframe === false;
+      if (mod.figures && mod.figures.length) out.push({ k: "Figures", v: mod.figures.map(f => `${shapeName(f.shape)} ${num(f.size)}% (${num(f.x)}, ${num(f.y)}) ${num(f.rotation)}º`).join(" + ") });
       out.push({ k: "Module", v: [shapeName(mod.shape), fill ? "Fill" : "Stroke", hex(mod.color || "#18181F"), ...(fill ? [] : [`stroke ${num(mod.strokeWidth || 1)}px`])].join(" / ") });
       const w = mod.width ?? mod.scale ?? 100, h = mod.height ?? mod.scale ?? 100;
       out.push({ k: "Size", v: [mod.shape === "line" ? `${num(w)}px` : `${num(w)} x ${num(h)}px`, `rotation ${num(mod.rotation || 0)}º`, `offset ${num(mod.offsetX || 0)}, ${num(mod.offsetY || 0)}px`].join(" / ") });
@@ -963,6 +965,7 @@ export class StudioProApp {
     railButtons.forEach(btn => {
       btn.addEventListener("click", () => {
         const tab = btn.dataset.railTab;
+        if (this.figEdit) this.leaveFigureEditor(true); // moving to another panel keeps what was edited
         if (this.activeRailTab === tab && this.isFlyoutOpen) {
           // Clicking active button toggles flyout closed
           this.isFlyoutOpen = false;
@@ -3000,6 +3003,160 @@ export class StudioProApp {
     document.getElementById("input-active-height")?.closest(".ds-field")?.classList.toggle("hidden", !!mod && mod.shape === "line");
   }
 
+  /* =========================================================================
+     SMART MODULE EDITOR (proof of concept)
+     The module as several figures drawn as one shape. The editor shows only the module, big and centred,
+     with Save (keep) and Cancel (go back to how it was when the editor opened).
+     ========================================================================= */
+
+  // Alternative state used only to draw while the editor is open: the layer alone, no layout and no modifiers,
+  // scaled up so the figures can be seen (the figures are a % of the module, so the proportions do not change)
+  stateForFigureEdit() {
+    const cfg = ASPECT_RATIOS[this.state.aspectRatio] || ASPECT_RATIOS["1:1"];
+    const layer = this.state.layers.find(l => l.id === this.figEdit.layerId);
+    if (!layer) return null;
+    const big = Math.min(cfg.w, cfg.h) * 0.6;
+    const f = big / Math.max(1, Math.max(layer.width || 100, layer.height || 100));
+    const off = (b) => (b ? { ...b, enabled: false } : b);
+    const s = layer.structure || {};
+    const view = {
+      ...layer, visible: true, offsetX: 0, offsetY: 0, rotation: 0, width: (layer.width || 100) * f, height: (layer.height || 100) * f,
+      containerW: layer.containerW > 0 ? layer.containerW * f : 0, containerH: layer.containerH > 0 ? layer.containerH * f : 0, showContainer: true,
+      structure: { ...s, enabled: false, formalStructure: off(s.formalStructure), similarity: off(s.similarity), gradation: off(s.gradation), anomaly: off(s.anomaly), contrast: off(s.contrast), concentration: off(s.concentration), texture: off(s.texture), space: off(s.space) }
+    };
+    return { ...this.state, layers: [view], layerOrder: [layer.id], showSafeBounds: false };
+  }
+
+  currentFigure() {
+    if (!this.figEdit) return null;
+    const mod = this.state.layers.find(l => l.id === this.figEdit.layerId);
+    return mod && mod.figures ? mod.figures[this.figEdit.index] || null : null;
+  }
+
+  enterFigureEditor() {
+    const mod = this.getActiveModule();
+    if (!mod) return;
+    const before = JSON.parse(JSON.stringify(mod.figures || []));
+    // A plain module becomes a smart one with its own shape as the first figure
+    if (!mod.figures || mod.figures.length === 0) mod.figures = [{ shape: mod.shape, size: 100, x: 0, y: 0, rotation: 0 }];
+    this.figEdit = { layerId: mod.id, snapshot: before, index: 0 };
+    this.activeRailTab = "figures";
+    this.isFlyoutOpen = true;
+    this.syncFigureEditor();
+    this.updateRailUI();
+  }
+
+  // keep = true: Save (also used when the user moves to another panel); false: Cancel
+  leaveFigureEditor(keep) {
+    if (!this.figEdit) return;
+    const mod = this.state.layers.find(l => l.id === this.figEdit.layerId);
+    if (mod) {
+      if (keep) {
+        // A single figure with nothing special is just a plain module again
+        const only = mod.figures.length === 1 ? mod.figures[0] : null;
+        if (only && only.size === 100 && only.x === 0 && only.y === 0 && only.rotation === 0) { mod.shape = only.shape; mod.figures = []; }
+        else if (only) mod.shape = only.shape;
+      } else {
+        mod.figures = this.figEdit.snapshot;
+      }
+    }
+    const id = this.figEdit.layerId;
+    this.figEdit = null;
+    this.activeRailTab = "module";
+    if (keep) this.pushHistory(`Layer ${id} Smart module saved`);
+    this.updateRailUI();
+    this.syncAllInspectorsWithActiveLayer();
+    this.updateLayerCardsUI();
+  }
+
+  syncFigureEditor() {
+    if (!this.figEdit) return;
+    const mod = this.state.layers.find(l => l.id === this.figEdit.layerId);
+    if (!mod) return;
+    const list = document.getElementById("fig-list");
+    if (list) {
+      list.innerHTML = "";
+      mod.figures.forEach((f, i) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "ds-btn" + (i === this.figEdit.index ? " active" : "");
+        b.dataset.figIndex = String(i);
+        b.textContent = `${i + 1} · ${f.shape}`;
+        b.addEventListener("click", () => { this.figEdit.index = i; this.syncFigureEditor(); });
+        list.appendChild(b);
+      });
+    }
+    const f = this.currentFigure();
+    document.querySelectorAll("#fig-shape-grid [data-fig-shape]").forEach(b => b.classList.toggle("active", !!f && b.dataset.figShape === f.shape));
+    const set = (id, v, suffix) => { this.syncControlValue(`input-${id}`, v); const n = document.getElementById(`num-${id}`); if (n) n.value = `${v}${suffix}`; };
+    if (f) { set("fig-size", f.size, "%"); set("fig-x", f.x, "%"); set("fig-y", f.y, "%"); set("fig-rot", f.rotation, "º"); }
+    document.getElementById("btn-fig-add")?.toggleAttribute("disabled", mod.figures.length >= 4);
+    document.getElementById("btn-fig-delete")?.toggleAttribute("disabled", mod.figures.length <= 1);
+    document.getElementById("btn-fig-up")?.toggleAttribute("disabled", this.figEdit.index <= 0);
+    document.getElementById("btn-fig-down")?.toggleAttribute("disabled", this.figEdit.index >= mod.figures.length - 1);
+    this.render();
+  }
+
+  setupSmartModule() {
+    this.figEdit = null;
+    // The shape grid of the editor is a copy of the one in the Module panel
+    const grid = document.getElementById("fig-shape-grid");
+    const source = document.querySelector("#active-layer-inspector .shape-grid");
+    if (grid && source) {
+      source.querySelectorAll("[data-shape]").forEach(btn => {
+        const c = btn.cloneNode(true);
+        c.classList.remove("active");
+        c.dataset.figShape = c.dataset.shape;
+        c.removeAttribute("data-shape");
+        c.addEventListener("click", () => {
+          const f = this.currentFigure();
+          if (!f) return;
+          f.shape = c.dataset.figShape;
+          this.syncFigureEditor();
+        });
+        grid.appendChild(c);
+      });
+    }
+
+    document.getElementById("btn-edit-figures")?.addEventListener("click", () => this.enterFigureEditor());
+    document.getElementById("btn-fig-save")?.addEventListener("click", () => this.leaveFigureEditor(true));
+    document.getElementById("btn-fig-cancel")?.addEventListener("click", () => this.leaveFigureEditor(false));
+
+    const mod = () => (this.figEdit ? this.state.layers.find(l => l.id === this.figEdit.layerId) : null);
+    document.getElementById("btn-fig-add")?.addEventListener("click", () => {
+      const m = mod(); if (!m || m.figures.length >= 4) return;
+      m.figures.push({ shape: "circle", size: 50, x: 0, y: 0, rotation: 0 });
+      this.figEdit.index = m.figures.length - 1;
+      this.syncFigureEditor();
+    });
+    document.getElementById("btn-fig-delete")?.addEventListener("click", () => {
+      const m = mod(); if (!m || m.figures.length <= 1) return;
+      m.figures.splice(this.figEdit.index, 1);
+      this.figEdit.index = Math.min(this.figEdit.index, m.figures.length - 1);
+      this.syncFigureEditor();
+    });
+    const move = (d) => {
+      const m = mod(); if (!m) return;
+      const i = this.figEdit.index, j = i + d;
+      if (j < 0 || j >= m.figures.length) return;
+      [m.figures[i], m.figures[j]] = [m.figures[j], m.figures[i]];
+      this.figEdit.index = j;
+      this.syncFigureEditor();
+    };
+    document.getElementById("btn-fig-up")?.addEventListener("click", () => move(-1));
+    document.getElementById("btn-fig-down")?.addEventListener("click", () => move(1));
+
+    const pair = (id, key, lo, hi, suffix) => this.bindSliderWithNumber(`input-${id}`, `num-${id}`, (val) => {
+      const f = this.currentFigure(); if (!f) return;
+      f[key] = Math.max(lo, Math.min(hi, val));
+      this.render();
+    }, `Figure ${key}`, suffix);
+    pair("fig-size", "size", 5, 200, "%");
+    pair("fig-x", "x", -100, 100, "%");
+    pair("fig-y", "y", -100, 100, "%");
+    pair("fig-rot", "rotation", -180, 180, "º");
+  }
+
   setupShapeInspector() {
     // 1. Shape Glyph Selection Grid (15 Shapes)
     document.querySelectorAll("[data-shape]").forEach(btn => {
@@ -3314,6 +3471,7 @@ export class StudioProApp {
      ========================================================================= */
 
   pushHistory(label = "Action") {
+    if (this.figEdit) return; // the smart module editor makes one undo step, when it is saved
     if (this.historyIndex < this.history.length - 1) {
       this.history = this.history.slice(0, this.historyIndex + 1);
       this.historyLabels = this.historyLabels.slice(0, this.historyIndex + 1);

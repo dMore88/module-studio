@@ -1045,3 +1045,8 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .text-\[16px\] { font-size: 16px; }
 .bg-\[\#eceef2\] { background-color: #eceef2; }
 .text-\[\#121317\] { color: #121317; }
+
+/* Smart module editor (proof of concept): the list of figures */
+.fig-list { display: flex; flex-direction: column; gap: var(--spacing-2); margin-bottom: var(--spacing-3); }
+.fig-list .ds-btn { justify-content: flex-start; width: 100%; }
+.fig-list .ds-btn.active { background: var(--neutral-bg-strong); font-weight: var(--typography-weight-700); }
