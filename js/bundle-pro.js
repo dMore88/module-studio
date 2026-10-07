@@ -168,7 +168,8 @@ const CanvasUtils = {
 };
 
 
-  // The shapes available in the studio, in the order of the shape grid (6 per row).
+  
+// The shapes available in the studio, in the order of the shape grid (6 per row).
 // `phIcon` is the Phosphor icon name, rendered with the regular weight (`ph ph-<name>`); the ring has no Phosphor icon
 // and the letters show their own glyph (see `glyph`).
 const STUDIO_SHAPE_KEYS = [
@@ -585,8 +586,10 @@ const FLAT_SPACING = 1.5; // dense sampling step at the reference size
 const flatCache = {};
 
 // Records a shape's draw() commands into dense polylines at the reference size.
-function flattenShape(shapeDef) {
-  if (!shapeDef.noCache && flatCache[shapeDef.id]) return flatCache[shapeDef.id];
+// `refSize` and `spacing` are for outlines that need a different density (the boolean operations sample at the real size)
+function flattenShape(shapeDef, refSize = FLAT_REF_SIZE, spacing = FLAT_SPACING) {
+  const standard = refSize === FLAT_REF_SIZE && spacing === FLAT_SPACING;
+  if (standard && !shapeDef.noCache && flatCache[shapeDef.id]) return flatCache[shapeDef.id];
 
   const subpaths = [];
   let cur = null;
@@ -603,7 +606,7 @@ function flattenShape(shapeDef) {
     if (!cur) { startSub(x, y); return; }
     const dx = x - last.x, dy = y - last.y;
     const len = Math.hypot(dx, dy);
-    const n = Math.max(1, Math.ceil(len / FLAT_SPACING));
+    const n = Math.max(1, Math.ceil(len / spacing));
     for (let i = 1; i <= n; i++) {
       const t = i / n;
       cur.pts.push({ x: last.x + dx * t, y: last.y + dy * t, c: i === n });
@@ -613,7 +616,8 @@ function flattenShape(shapeDef) {
   const bezier = (c1x, c1y, c2x, c2y, x, y) => {
     if (!cur) startSub(c1x, c1y);
     const x0 = last.x, y0 = last.y;
-    const steps = 28;
+    // the usual density keeps 28 steps; a finer outline (for the boolean operations) follows the length of the curve
+    const steps = standard ? 28 : Math.max(12, Math.min(240, Math.ceil((Math.hypot(c1x - x0, c1y - y0) + Math.hypot(c2x - c1x, c2y - c1y) + Math.hypot(x - c2x, y - c2y)) / spacing)));
     for (let i = 1; i <= steps; i++) {
       const t = i / steps, m = 1 - t;
       cur.pts.push({
@@ -659,7 +663,7 @@ function flattenShape(shapeDef) {
       if (Math.abs(sweep) > Math.PI * 2) sweep = Math.sign(sweep) * Math.PI * 2;
       const s0 = T(cx + Math.cos(a0) * r, cy + Math.sin(a0) * r);
       if (cur) lineTo(s0.x, s0.y); else startSub(s0.x, s0.y);
-      const steps = Math.max(8, Math.ceil((Math.abs(sweep) * r) / FLAT_SPACING));
+      const steps = Math.max(8, Math.ceil((Math.abs(sweep) * r) / spacing));
       for (let i = 1; i <= steps; i++) {
         const a = a0 + (sweep * i) / steps;
         const q = T(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
@@ -677,7 +681,7 @@ function flattenShape(shapeDef) {
     }
   };
 
-  shapeDef.draw(rec, FLAT_REF_SIZE);
+  shapeDef.draw(rec, refSize);
 
   // Normalise: arc-length parameter u (0..1) per subpath, drop a duplicated closing point
   for (const sp of subpaths) {
@@ -700,7 +704,7 @@ function flattenShape(shapeDef) {
     for (const pt of pts) pt.u /= len;
   }
 
-  if (!shapeDef.noCache) flatCache[shapeDef.id] = subpaths;
+  if (standard && !shapeDef.noCache) flatCache[shapeDef.id] = subpaths;
   return subpaths;
 }
 
@@ -836,12 +840,28 @@ function resolveFigures(figures) {
   resolveCache[key] = out;
   return out;
 }
-function compositeShape(figures, ref = 100) {
+
+// A shape's outline as a region in module px: sampled at its real size, with its own width, height, turn and place
+function shapeRegion(f, def) {
+  const w = f.width, h = f.height ?? f.width;
+  const m = f.shape === "line" ? w : Math.max(w, h);
+  if (!(m > 0)) return [];
+  const sx = w / m, sy = h / m;
+  const a = ((f.rotation || 0) * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a);
+  const out = [];
+  for (const sp of flattenShape(def, m, Math.max(0.5, Math.min(3, m / 100)))) {
+    if (!sp.closed || sp.pts.length < 3) continue;
+    out.push(sp.pts.map(p => { const qx = p.x * sx, qy = p.y * sy; return { x: (f.x || 0) + qx * c - qy * s, y: (f.y || 0) + qx * s + qy * c }; }));
+  }
+  return out;
+}
+function compositeShape(figures, ref = 100, combine = "none") {
   const R = ref > 0 ? ref : 100;
   const list = resolveFigures((figures || []).filter(f => f && Shapes[f.shape]).map(f => (f.width !== undefined ? f : {
     shape: f.shape, width: ((f.size ?? 100) / 100) * R, height: ((f.size ?? 100) / 100) * R, x: ((f.x || 0) / 100) * R, y: ((f.y || 0) / 100) * R, rotation: f.rotation || 0
   })));
-  const key = "smart:" + Math.round(R * 1000) + ":" + JSON.stringify(list.map(f => [f.shape, f.width, f.height ?? f.width, f.x || 0, f.y || 0, f.rotation || 0]));
+  const op = ["union", "subtract", "intersect", "xor"].includes(combine) ? combine : "none";
+  const key = "smart:" + op + ":" + Math.round(R * 1000) + ":" + JSON.stringify(list.map(f => [f.shape, f.width, f.height ?? f.width, f.x || 0, f.y || 0, f.rotation || 0]));
   if (compositeCache[key]) return compositeCache[key];
   // Where a figure goes when the module is drawn at `size`; a figure keeps its own proportions (like a shape in a module)
   const place = (f, size) => {
@@ -851,6 +871,22 @@ function compositeShape(figures, ref = 100) {
     const m = f.shape === "line" ? w : Math.max(w, h);
     const flat = !!def.skeleton || m <= 0;
     return { x: (f.x || 0) * k, y: (f.y || 0) * k, a: ((f.rotation || 0) * Math.PI) / 180, m, sx: flat ? 1 : w / m, sy: flat ? 1 : h / m };
+  };
+  // With a combine operation the shapes that have an area become ONE outline (union, subtract, intersect or exclude, in the order
+  // of the list: subtract takes the rest away from the first); shapes that are only a line stay as they are. Computed once.
+  let combined = null;
+  const buildCombined = () => {
+    if (combined) return combined;
+    const regions = [], rest = [];
+    for (const f of list) {
+      const def0 = Shapes[f.shape];
+      const region = def0.skeleton ? [] : shapeRegion(f, def0);
+      if (region.length) regions.push(region); else rest.push(f);
+    }
+    let result = regions[0] || [];
+    for (let i = 1; i < regions.length; i++) result = regionBoolean(op, result, regions[i]);
+    combined = { contours: result, rest };
+    return combined;
   };
   const def = {
     id: key,
@@ -881,8 +917,20 @@ function compositeShape(figures, ref = 100) {
         },
         set(target, prop, v) { target[prop] = v; return true; }
       });
-      wrap.beginPath();
-      for (const f of list) {
+      let drawn = list;
+      if (op === "none") {
+        wrap.beginPath();
+      } else {
+        const cmb = buildCombined(), k = size / R;
+        ctx.beginPath();
+        first = false;
+        for (const c of cmb.contours) {
+          c.forEach((p, i) => (i ? ctx.lineTo(p.x * k, p.y * k) : ctx.moveTo(p.x * k, p.y * k)));
+          ctx.closePath();
+        }
+        drawn = cmb.rest;
+      }
+      for (const f of drawn) {
         const p = place(f, size);
         ctx.save();
         ctx.translate(p.x, p.y);
@@ -895,7 +943,13 @@ function compositeShape(figures, ref = 100) {
     },
     svgPath(size) {
       const r = (v) => Math.round(v * 1000) / 1000;
-      return list.map((f) => {
+      let drawn = list, outline = "";
+      if (op !== "none") {
+        const cmb = buildCombined(), k = size / R;
+        outline = cmb.contours.length ? `<path d="${cmb.contours.map(c => "M " + c.map(p => `${r(p.x * k)} ${r(p.y * k)}`).join(" L ") + " Z").join(" ")}" />` : "";
+        drawn = cmb.rest;
+      }
+      return outline + drawn.map((f) => {
         const p = place(f, size);
         return `<g transform="translate(${r(p.x)} ${r(p.y)}) rotate(${r(f.rotation || 0)}) scale(${r(p.sx)} ${r(p.sy)})">${Shapes[f.shape].svgPath(p.m)}</g>`;
       }).join("");
@@ -1559,6 +1613,7 @@ const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "circle", 
   wireframe: true,
   strokeWidth: 1,
   color: "#18181f",
+  combine: "none", // how the shapes of the module are put together: "none" (stacked), "union", "subtract", "intersect" or "xor" (exclude)
   figures: [], // smart module: the figures it is made of ({ shape, size, x, y, rotation }, as a % of the module); empty = a plain one-shape module
   structure: createDefaultLayerStructure()
 });
@@ -1892,7 +1947,7 @@ class StudioEngine {
     const smart = !!(mod.figures && mod.figures.length);
     const cont = this.containerSize(mod, this.logicalW || 600, this.logicalH || 600);
     const ref = Math.max(cont.w, cont.h);
-    const shape = shapeOverride || (smart ? compositeShape(mod.figures, ref).id : mod.shape) || "circle";
+    const shape = shapeOverride || (smart ? compositeShape(mod.figures, ref, mod.combine).id : mod.shape) || "circle";
     const baseW = smart ? ref : (mod.width !== undefined ? mod.width : (mod.scale || 50));
     const baseH = smart ? ref : (mod.height !== undefined ? mod.height : (mod.scale || 50));
     // A line spans its cell width (widthMultiplier) instead of shrinking to the cell's short side.
@@ -4439,6 +4494,7 @@ class StudioProApp {
         .map(f => (f.width !== undefined || f.height !== undefined)
           ? { shape: f.shape, width: num(f.width, 1, 2000, 100), height: num(f.height ?? f.width, 1, 2000, 100), x: num(f.x, -1000, 1000, 0), y: num(f.y, -1000, 1000, 0), rotation: num(f.rotation, -360, 360, 0), relation: ["coincident", "distance"].includes(f.relation) ? f.relation : "free", angle: num(f.angle, 0, 360, 0), gap: num(f.gap, -500, 500, 0) }
           : { shape: f.shape, width: Math.round(num(f.size, 5, 200, 100) / 100 * old), height: Math.round(num(f.size, 5, 200, 100) / 100 * old), x: Math.round(num(f.x, -100, 100, 0) / 100 * old), y: Math.round(num(f.y, -100, 100, 0) / 100 * old), rotation: num(f.rotation, -360, 360, 0) });
+      layer.combine = ["union", "subtract", "intersect", "xor"].includes(layer.combine) ? layer.combine : "none";
       // The module's size is its container: 10 to 1000 px. Older projects used 0 for "the whole canvas"
       const ar = ASPECT_RATIOS[raw.aspectRatio] || ASPECT_RATIOS["1:1"];
       layer.containerW = Math.max(10, Math.min(1000, layer.containerW > 0 ? layer.containerW : ar.w));
@@ -4739,7 +4795,8 @@ class StudioProApp {
       const cw = Math.round(mod.containerW > 0 ? mod.containerW : 100), ch = Math.round(mod.containerH > 0 ? mod.containerH : 100);
       out.push({ k: "Module", v: [`${cw} x ${ch}px`, `rotation ${num(mod.rotation || 0)}º`, ...((mod.offsetX || mod.offsetY) ? [`offset ${num(mod.offsetX || 0)}, ${num(mod.offsetY || 0)}px`] : [])].join(" / ") });
       if (smart) out.push({ k: "Shapes", v: resolveFigures(mod.figures).map(f => `${shapeName(f.shape)} ${num(f.width ?? f.size)} x ${num(f.height ?? f.width ?? f.size)}px (${num(f.x)}, ${num(f.y)}) ${num(f.rotation)}º${f.relation === "coincident" ? " coincident" : f.relation === "distance" ? ` ${num(f.gap || 0) === "0" ? "touching" : `gap ${num(f.gap)}px`} at ${num(f.angle || 0)}º` : ""}`).join(" + ") });
-      else out.push({ k: "Shape", v: `${shapeName(mod.shape)} ${num(mod.width ?? mod.scale ?? 100)} x ${num(mod.height ?? mod.scale ?? 100)}px` });
+      if (smart && mod.combine && mod.combine !== "none") out.push({ k: "Combine", v: ({ union: "Union", subtract: "Subtract", intersect: "Intersect", xor: "Exclude" })[mod.combine] || mod.combine });
+      if (!smart) out.push({ k: "Shape", v: `${shapeName(mod.shape)} ${num(mod.width ?? mod.scale ?? 100)} x ${num(mod.height ?? mod.scale ?? 100)}px` });
       out.push({ k: "Style", v: [fill ? "Fill" : "Stroke", hex(mod.color || "#18181F"), ...(fill ? [] : [`stroke ${num(mod.strokeWidth || 1)}px`])].join(" / ") });
 
       // Layout
@@ -7174,6 +7231,10 @@ class StudioProApp {
     document.getElementById("btn-fig-delete")?.toggleAttribute("disabled", mod.figures.length <= 1);
     document.getElementById("btn-fig-up")?.toggleAttribute("disabled", this.figEdit.index <= 0);
     document.getElementById("btn-fig-down")?.toggleAttribute("disabled", this.figEdit.index >= mod.figures.length - 1);
+    // Combine: only with two or more shapes
+    const combineNow = mod.combine || "none";
+    document.getElementById("fig-combine-block")?.classList.toggle("hidden", mod.figures.length < 2);
+    document.querySelectorAll("[data-fig-combine]").forEach(b => b.classList.toggle("active", b.dataset.figCombine === combineNow));
     // Relation to the previous shape (the first one has none): a related shape is placed by the relation, not by its position
     const rel = this.figEdit.index > 0 ? (f && f.relation) || "free" : "free";
     document.getElementById("fig-relation-block")?.classList.toggle("hidden", this.figEdit.index === 0);
@@ -7230,6 +7291,14 @@ class StudioProApp {
     };
     document.getElementById("btn-fig-up")?.addEventListener("click", () => move(-1));
     document.getElementById("btn-fig-down")?.addEventListener("click", () => move(1));
+
+    document.querySelectorAll("[data-fig-combine]").forEach(btn => btn.addEventListener("click", () => {
+      const m = mod();
+      if (!m) return;
+      m.combine = btn.dataset.figCombine;
+      this.recordFigureStep();
+      this.syncFigureEditor();
+    }));
 
     document.querySelectorAll("[data-fig-rel]").forEach(btn => btn.addEventListener("click", () => {
       const m = mod(), f = this.currentFigure();

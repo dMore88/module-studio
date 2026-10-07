@@ -1,3 +1,4 @@
+import { regionBoolean } from './booleans.js';
 // The shapes available in the studio, in the order of the shape grid (6 per row).
 // `phIcon` is the Phosphor icon name, rendered with the regular weight (`ph ph-<name>`); the ring has no Phosphor icon
 // and the letters show their own glyph (see `glyph`).
@@ -416,8 +417,10 @@ const FLAT_SPACING = 1.5; // dense sampling step at the reference size
 const flatCache = {};
 
 // Records a shape's draw() commands into dense polylines at the reference size.
-export function flattenShape(shapeDef) {
-  if (!shapeDef.noCache && flatCache[shapeDef.id]) return flatCache[shapeDef.id];
+// `refSize` and `spacing` are for outlines that need a different density (the boolean operations sample at the real size)
+export function flattenShape(shapeDef, refSize = FLAT_REF_SIZE, spacing = FLAT_SPACING) {
+  const standard = refSize === FLAT_REF_SIZE && spacing === FLAT_SPACING;
+  if (standard && !shapeDef.noCache && flatCache[shapeDef.id]) return flatCache[shapeDef.id];
 
   const subpaths = [];
   let cur = null;
@@ -434,7 +437,7 @@ export function flattenShape(shapeDef) {
     if (!cur) { startSub(x, y); return; }
     const dx = x - last.x, dy = y - last.y;
     const len = Math.hypot(dx, dy);
-    const n = Math.max(1, Math.ceil(len / FLAT_SPACING));
+    const n = Math.max(1, Math.ceil(len / spacing));
     for (let i = 1; i <= n; i++) {
       const t = i / n;
       cur.pts.push({ x: last.x + dx * t, y: last.y + dy * t, c: i === n });
@@ -444,7 +447,8 @@ export function flattenShape(shapeDef) {
   const bezier = (c1x, c1y, c2x, c2y, x, y) => {
     if (!cur) startSub(c1x, c1y);
     const x0 = last.x, y0 = last.y;
-    const steps = 28;
+    // the usual density keeps 28 steps; a finer outline (for the boolean operations) follows the length of the curve
+    const steps = standard ? 28 : Math.max(12, Math.min(240, Math.ceil((Math.hypot(c1x - x0, c1y - y0) + Math.hypot(c2x - c1x, c2y - c1y) + Math.hypot(x - c2x, y - c2y)) / spacing)));
     for (let i = 1; i <= steps; i++) {
       const t = i / steps, m = 1 - t;
       cur.pts.push({
@@ -490,7 +494,7 @@ export function flattenShape(shapeDef) {
       if (Math.abs(sweep) > Math.PI * 2) sweep = Math.sign(sweep) * Math.PI * 2;
       const s0 = T(cx + Math.cos(a0) * r, cy + Math.sin(a0) * r);
       if (cur) lineTo(s0.x, s0.y); else startSub(s0.x, s0.y);
-      const steps = Math.max(8, Math.ceil((Math.abs(sweep) * r) / FLAT_SPACING));
+      const steps = Math.max(8, Math.ceil((Math.abs(sweep) * r) / spacing));
       for (let i = 1; i <= steps; i++) {
         const a = a0 + (sweep * i) / steps;
         const q = T(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
@@ -508,7 +512,7 @@ export function flattenShape(shapeDef) {
     }
   };
 
-  shapeDef.draw(rec, FLAT_REF_SIZE);
+  shapeDef.draw(rec, refSize);
 
   // Normalise: arc-length parameter u (0..1) per subpath, drop a duplicated closing point
   for (const sp of subpaths) {
@@ -531,7 +535,7 @@ export function flattenShape(shapeDef) {
     for (const pt of pts) pt.u /= len;
   }
 
-  if (!shapeDef.noCache) flatCache[shapeDef.id] = subpaths;
+  if (standard && !shapeDef.noCache) flatCache[shapeDef.id] = subpaths;
   return subpaths;
 }
 
@@ -668,12 +672,28 @@ export function resolveFigures(figures) {
   return out;
 }
 
-export function compositeShape(figures, ref = 100) {
+// A shape's outline as a region in module px: sampled at its real size, with its own width, height, turn and place
+function shapeRegion(f, def) {
+  const w = f.width, h = f.height ?? f.width;
+  const m = f.shape === "line" ? w : Math.max(w, h);
+  if (!(m > 0)) return [];
+  const sx = w / m, sy = h / m;
+  const a = ((f.rotation || 0) * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a);
+  const out = [];
+  for (const sp of flattenShape(def, m, Math.max(0.5, Math.min(3, m / 100)))) {
+    if (!sp.closed || sp.pts.length < 3) continue;
+    out.push(sp.pts.map(p => { const qx = p.x * sx, qy = p.y * sy; return { x: (f.x || 0) + qx * c - qy * s, y: (f.y || 0) + qx * s + qy * c }; }));
+  }
+  return out;
+}
+
+export function compositeShape(figures, ref = 100, combine = "none") {
   const R = ref > 0 ? ref : 100;
   const list = resolveFigures((figures || []).filter(f => f && Shapes[f.shape]).map(f => (f.width !== undefined ? f : {
     shape: f.shape, width: ((f.size ?? 100) / 100) * R, height: ((f.size ?? 100) / 100) * R, x: ((f.x || 0) / 100) * R, y: ((f.y || 0) / 100) * R, rotation: f.rotation || 0
   })));
-  const key = "smart:" + Math.round(R * 1000) + ":" + JSON.stringify(list.map(f => [f.shape, f.width, f.height ?? f.width, f.x || 0, f.y || 0, f.rotation || 0]));
+  const op = ["union", "subtract", "intersect", "xor"].includes(combine) ? combine : "none";
+  const key = "smart:" + op + ":" + Math.round(R * 1000) + ":" + JSON.stringify(list.map(f => [f.shape, f.width, f.height ?? f.width, f.x || 0, f.y || 0, f.rotation || 0]));
   if (compositeCache[key]) return compositeCache[key];
   // Where a figure goes when the module is drawn at `size`; a figure keeps its own proportions (like a shape in a module)
   const place = (f, size) => {
@@ -683,6 +703,22 @@ export function compositeShape(figures, ref = 100) {
     const m = f.shape === "line" ? w : Math.max(w, h);
     const flat = !!def.skeleton || m <= 0;
     return { x: (f.x || 0) * k, y: (f.y || 0) * k, a: ((f.rotation || 0) * Math.PI) / 180, m, sx: flat ? 1 : w / m, sy: flat ? 1 : h / m };
+  };
+  // With a combine operation the shapes that have an area become ONE outline (union, subtract, intersect or exclude, in the order
+  // of the list: subtract takes the rest away from the first); shapes that are only a line stay as they are. Computed once.
+  let combined = null;
+  const buildCombined = () => {
+    if (combined) return combined;
+    const regions = [], rest = [];
+    for (const f of list) {
+      const def0 = Shapes[f.shape];
+      const region = def0.skeleton ? [] : shapeRegion(f, def0);
+      if (region.length) regions.push(region); else rest.push(f);
+    }
+    let result = regions[0] || [];
+    for (let i = 1; i < regions.length; i++) result = regionBoolean(op, result, regions[i]);
+    combined = { contours: result, rest };
+    return combined;
   };
   const def = {
     id: key,
@@ -713,8 +749,20 @@ export function compositeShape(figures, ref = 100) {
         },
         set(target, prop, v) { target[prop] = v; return true; }
       });
-      wrap.beginPath();
-      for (const f of list) {
+      let drawn = list;
+      if (op === "none") {
+        wrap.beginPath();
+      } else {
+        const cmb = buildCombined(), k = size / R;
+        ctx.beginPath();
+        first = false;
+        for (const c of cmb.contours) {
+          c.forEach((p, i) => (i ? ctx.lineTo(p.x * k, p.y * k) : ctx.moveTo(p.x * k, p.y * k)));
+          ctx.closePath();
+        }
+        drawn = cmb.rest;
+      }
+      for (const f of drawn) {
         const p = place(f, size);
         ctx.save();
         ctx.translate(p.x, p.y);
@@ -727,7 +775,13 @@ export function compositeShape(figures, ref = 100) {
     },
     svgPath(size) {
       const r = (v) => Math.round(v * 1000) / 1000;
-      return list.map((f) => {
+      let drawn = list, outline = "";
+      if (op !== "none") {
+        const cmb = buildCombined(), k = size / R;
+        outline = cmb.contours.length ? `<path d="${cmb.contours.map(c => "M " + c.map(p => `${r(p.x * k)} ${r(p.y * k)}`).join(" L ") + " Z").join(" ")}" />` : "";
+        drawn = cmb.rest;
+      }
+      return outline + drawn.map((f) => {
         const p = place(f, size);
         return `<g transform="translate(${r(p.x)} ${r(p.y)}) rotate(${r(f.rotation || 0)}) scale(${r(p.sx)} ${r(p.sy)})">${Shapes[f.shape].svgPath(p.m)}</g>`;
       }).join("");

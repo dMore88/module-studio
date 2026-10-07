@@ -172,6 +172,17 @@
           </div>
         </div>
 
+        <div id="fig-combine-block" class="ds-field">
+          <div class="ds-label">Combine the shapes</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-fig-combine="none" title="The shapes stay stacked, each one whole">None</button>
+            <button type="button" class="ds-tag" data-fig-combine="union" title="Merge all the shapes into one">Union</button>
+            <button type="button" class="ds-tag" data-fig-combine="subtract" title="The first shape minus all the others">Subtract</button>
+            <button type="button" class="ds-tag" data-fig-combine="intersect" title="Only what all the shapes share">Intersect</button>
+            <button type="button" class="ds-tag" data-fig-combine="xor" title="Everything except where shapes overlap">Exclude</button>
+          </div>
+        </div>
+
         <div class="ds-field">
           <div class="ds-label">Shape</div>
           <div id="fig-shape-grid" class="shape-grid">
@@ -1566,7 +1577,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=6d22b7cf"></script>
+  <script src="js/bundle-pro.js?v=f56ee282"></script>
 
 </body>
 </html>

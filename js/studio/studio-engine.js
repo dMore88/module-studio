@@ -171,6 +171,7 @@ export const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "ci
   wireframe: true,
   strokeWidth: 1,
   color: "#18181f",
+  combine: "none", // how the shapes of the module are put together: "none" (stacked), "union", "subtract", "intersect" or "xor" (exclude)
   figures: [], // smart module: the figures it is made of ({ shape, size, x, y, rotation }, as a % of the module); empty = a plain one-shape module
   structure: createDefaultLayerStructure()
 });
@@ -506,7 +507,7 @@ export class StudioEngine {
     const smart = !!(mod.figures && mod.figures.length);
     const cont = this.containerSize(mod, this.logicalW || 600, this.logicalH || 600);
     const ref = Math.max(cont.w, cont.h);
-    const shape = shapeOverride || (smart ? compositeShape(mod.figures, ref).id : mod.shape) || "circle";
+    const shape = shapeOverride || (smart ? compositeShape(mod.figures, ref, mod.combine).id : mod.shape) || "circle";
     const baseW = smart ? ref : (mod.width !== undefined ? mod.width : (mod.scale || 50));
     const baseH = smart ? ref : (mod.height !== undefined ? mod.height : (mod.scale || 50));
     // A line spans its cell width (widthMultiplier) instead of shrinking to the cell's short side.

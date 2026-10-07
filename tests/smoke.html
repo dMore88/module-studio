@@ -2454,6 +2454,78 @@
       assert(ms < 400, `Two circles of 1500 points should take under 400 ms (${Math.round(ms)} ms)`);
     });
 
+    await test("Combine (union, subtract, intersect, exclude) turns the shapes into one, in stroke and in fill, and works with Texture, Space and the SVG", async () => {
+      reset();
+      const d = win.document, q = (s) => d.querySelector(s), cv = d.getElementById("studio-canvas");
+      const dpr = cv.width / 600;
+      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: false, containerW: 200, containerH: 200, strokeWidth: 2 }); app.state.showSafeBounds = false;
+      L.figures = [{ shape: "circle", width: 100, height: 100, x: -25, y: 0, rotation: 0 }, { shape: "circle", width: 100, height: 100, x: 25, y: 0, rotation: 0 }];
+      const dark = (x, y) => { const p = cv.getContext("2d").getImageData(Math.round(x * dpr), Math.round(y * dpr), 1, 1).data; return p[0] < 120; };
+      const draw = (mode) => { L.combine = mode; drawRaw(app); };
+      const ink = () => { const dd = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < dd.length; i += 4) if (dd[i] < 128) n++; return n; };
+      // FILL: two circles of 100 px, centres at 275 and 325 (canvas), overlapping in the middle
+      draw("none");
+      assert(dark(240, 300) && dark(300, 312) && dark(360, 300), "Stacked: every part is filled");
+      draw("union");
+      assert(dark(240, 300) && dark(300, 312) && dark(360, 300) && !dark(300, 230), "Union: both circles and their overlap, as one");
+      draw("subtract");
+      assert(dark(240, 300) && !dark(300, 312) && !dark(360, 300), "Subtract: the first circle minus the second");
+      draw("intersect");
+      assert(!dark(240, 300) && dark(300, 312) && !dark(360, 300), "Intersect: only the overlap");
+      draw("xor");
+      assert(dark(240, 300) && !dark(300, 312) && dark(360, 300), "Exclude: everything but the overlap");
+      // STROKE: the arc of the first circle that lies inside the second (at 325, 300) is drawn when stacked, not in a union
+      L.wireframe = true;
+      draw("none");
+      assert(dark(325, 300) && dark(275, 250), "Stroke, stacked: both circles are drawn whole");
+      draw("union");
+      const unionInk = ink(); draw("none"); const stackedInk = ink();
+      assert(unionInk < stackedInk * 0.85, `Stroke, union: only the outer outline (${unionInk} vs ${stackedInk})`);
+      draw("union");
+      assert(!dark(325, 300) && !dark(275, 300) && dark(225, 300) && dark(375, 300), "Stroke, union: the inner arcs are gone, the outer ones stay");
+      draw("subtract");
+      assert(dark(225, 300) && dark(275, 300) && !dark(325, 300), "Stroke, subtract: the crescent's outline (the second circle's arc inside the first stays, the first's inside the second goes)");
+      draw("intersect");
+      assert(dark(275, 300) && dark(325, 300) && !dark(225, 300) && !dark(375, 300), "Stroke, intersect: the outline of the lens only");
+      // Texture and Space work on the combined shape (fill)
+      L.wireframe = false; L.combine = "union";
+      L.structure.texture = { enabled: true, jitter: 0, skipChance: 0, crossing: 0, undulation: 20, waves: 1, waveAngle: 0 }; drawRaw(app);
+      assert(ink() > 3000, "Texture bends the combined shape");
+      L.structure.texture = { enabled: false };
+      L.structure.space = { enabled: true, mode: "isometric", depthPct: 30, angle: 90, shading: 0 }; drawRaw(app);
+      assert(dark(300, 215) || dark(300, 225), "Space gives the combined shape depth");
+      L.structure.space = { enabled: false };
+      // The SVG draws one outline for the combined shape
+      draw("union");
+      const svg = win.StudioExporter.buildSVG(app.engine, cv, app.getActivePalette());
+      assert(/<path/.test(svg), "The SVG has the combined outline");
+      // A line stays a line, a combined shape is not made of it
+      L.figures = [{ shape: "circle", width: 80, height: 80, x: 0, y: 0, rotation: 0 }, { shape: "line", width: 150, height: 10, x: 0, y: 0, rotation: 0 }];
+      L.wireframe = true; L.strokeWidth = 6; draw("subtract");
+      assert(dark(300, 260) && dark(240, 300) && dark(360, 300), "A line (no area) is drawn as it is, the circle is kept whole (stroke)");
+      // THE EDITOR
+      L.combine = "none"; L.figures = [{ shape: "circle", width: 100, height: 100, x: 0, y: 0, rotation: 0 }];
+      app.isFlyoutOpen = false; app.updateRailUI();
+      q('[data-rail-tab="module"]').click(); await wait(60);
+      assert(q("#fig-combine-block").classList.contains("hidden"), "With one shape there is nothing to combine");
+      q("#btn-fig-add").click(); await wait(30);
+      assert(!q("#fig-combine-block").classList.contains("hidden") && q('[data-fig-combine="none"]').classList.contains("active"), "With two shapes Combine appears, on None");
+      q('[data-fig-combine="union"]').click(); await wait(30);
+      assert(L.combine === "union" && q('[data-fig-combine="union"]').classList.contains("active"), "The chip sets the operation");
+      assert(/Combine: Union/.test(d.getElementById("art-log-lines").textContent), "The Art log lists it");
+      app.undo();
+      assert(L.combine === "none", "Undo takes the combination back one step");
+      app.redo(); assert(L.combine === "union", "Redo brings it back");
+      q("#btn-fig-cancel").click(); await wait(60);
+      assert(L.combine === "none" && L.figures.length === 1, "Cancel goes back to how it was");
+      q('[data-rail-tab="module"]').click(); await wait(60);
+      q("#btn-fig-add").click(); q('[data-fig-combine="xor"]').click(); await wait(30);
+      q("#btn-fig-save").click(); await wait(60);
+      app.loadProjectText(JSON.stringify(JSON.parse(JSON.stringify(app.state))));
+      assert(app.state.layers[0].combine === "xor", "The combination is saved and opened with the project");
+      reset();
+    });
+
     const failed = results.filter(r => !r.ok).length;
     summary.textContent = failed === 0 ? `All ${results.length} tests passed` : `${failed} of ${results.length} tests FAILED`;
     summary.className = failed === 0 ? "pass" : "fail";

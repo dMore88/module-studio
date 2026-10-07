@@ -408,6 +408,7 @@ export class StudioProApp {
         .map(f => (f.width !== undefined || f.height !== undefined)
           ? { shape: f.shape, width: num(f.width, 1, 2000, 100), height: num(f.height ?? f.width, 1, 2000, 100), x: num(f.x, -1000, 1000, 0), y: num(f.y, -1000, 1000, 0), rotation: num(f.rotation, -360, 360, 0), relation: ["coincident", "distance"].includes(f.relation) ? f.relation : "free", angle: num(f.angle, 0, 360, 0), gap: num(f.gap, -500, 500, 0) }
           : { shape: f.shape, width: Math.round(num(f.size, 5, 200, 100) / 100 * old), height: Math.round(num(f.size, 5, 200, 100) / 100 * old), x: Math.round(num(f.x, -100, 100, 0) / 100 * old), y: Math.round(num(f.y, -100, 100, 0) / 100 * old), rotation: num(f.rotation, -360, 360, 0) });
+      layer.combine = ["union", "subtract", "intersect", "xor"].includes(layer.combine) ? layer.combine : "none";
       // The module's size is its container: 10 to 1000 px. Older projects used 0 for "the whole canvas"
       const ar = ASPECT_RATIOS[raw.aspectRatio] || ASPECT_RATIOS["1:1"];
       layer.containerW = Math.max(10, Math.min(1000, layer.containerW > 0 ? layer.containerW : ar.w));
@@ -708,7 +709,8 @@ export class StudioProApp {
       const cw = Math.round(mod.containerW > 0 ? mod.containerW : 100), ch = Math.round(mod.containerH > 0 ? mod.containerH : 100);
       out.push({ k: "Module", v: [`${cw} x ${ch}px`, `rotation ${num(mod.rotation || 0)}º`, ...((mod.offsetX || mod.offsetY) ? [`offset ${num(mod.offsetX || 0)}, ${num(mod.offsetY || 0)}px`] : [])].join(" / ") });
       if (smart) out.push({ k: "Shapes", v: resolveFigures(mod.figures).map(f => `${shapeName(f.shape)} ${num(f.width ?? f.size)} x ${num(f.height ?? f.width ?? f.size)}px (${num(f.x)}, ${num(f.y)}) ${num(f.rotation)}º${f.relation === "coincident" ? " coincident" : f.relation === "distance" ? ` ${num(f.gap || 0) === "0" ? "touching" : `gap ${num(f.gap)}px`} at ${num(f.angle || 0)}º` : ""}`).join(" + ") });
-      else out.push({ k: "Shape", v: `${shapeName(mod.shape)} ${num(mod.width ?? mod.scale ?? 100)} x ${num(mod.height ?? mod.scale ?? 100)}px` });
+      if (smart && mod.combine && mod.combine !== "none") out.push({ k: "Combine", v: ({ union: "Union", subtract: "Subtract", intersect: "Intersect", xor: "Exclude" })[mod.combine] || mod.combine });
+      if (!smart) out.push({ k: "Shape", v: `${shapeName(mod.shape)} ${num(mod.width ?? mod.scale ?? 100)} x ${num(mod.height ?? mod.scale ?? 100)}px` });
       out.push({ k: "Style", v: [fill ? "Fill" : "Stroke", hex(mod.color || "#18181F"), ...(fill ? [] : [`stroke ${num(mod.strokeWidth || 1)}px`])].join(" / ") });
 
       // Layout
@@ -3143,6 +3145,10 @@ export class StudioProApp {
     document.getElementById("btn-fig-delete")?.toggleAttribute("disabled", mod.figures.length <= 1);
     document.getElementById("btn-fig-up")?.toggleAttribute("disabled", this.figEdit.index <= 0);
     document.getElementById("btn-fig-down")?.toggleAttribute("disabled", this.figEdit.index >= mod.figures.length - 1);
+    // Combine: only with two or more shapes
+    const combineNow = mod.combine || "none";
+    document.getElementById("fig-combine-block")?.classList.toggle("hidden", mod.figures.length < 2);
+    document.querySelectorAll("[data-fig-combine]").forEach(b => b.classList.toggle("active", b.dataset.figCombine === combineNow));
     // Relation to the previous shape (the first one has none): a related shape is placed by the relation, not by its position
     const rel = this.figEdit.index > 0 ? (f && f.relation) || "free" : "free";
     document.getElementById("fig-relation-block")?.classList.toggle("hidden", this.figEdit.index === 0);
@@ -3199,6 +3205,14 @@ export class StudioProApp {
     };
     document.getElementById("btn-fig-up")?.addEventListener("click", () => move(-1));
     document.getElementById("btn-fig-down")?.addEventListener("click", () => move(1));
+
+    document.querySelectorAll("[data-fig-combine]").forEach(btn => btn.addEventListener("click", () => {
+      const m = mod();
+      if (!m) return;
+      m.combine = btn.dataset.figCombine;
+      this.recordFigureStep();
+      this.syncFigureEditor();
+    }));
 
     document.querySelectorAll("[data-fig-rel]").forEach(btn => btn.addEventListener("click", () => {
       const m = mod(), f = this.currentFigure();
