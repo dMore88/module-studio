@@ -1776,6 +1776,28 @@ export class StudioEngine {
           // The polar sector of this module (used to clip it and to reverse figure and ground)
           const sectorPath = () => {
             ctx.beginPath();
+            if (rad.scheme === "centripetal") {
+              // Centripetal draws nested chevrons, so the cell is the band between this ring's chevron and the one inside it:
+              // two Vs with the same arms (the directions of the rays), apexes on the middle ray at rInner and rOuter
+              const mid = (rayAngleStart + rayAngleEnd) * 0.5;
+              const far = (ar, ang) => {
+                const ax = ar * Math.cos(mid), ay = ar * Math.sin(mid), dx = Math.cos(ang), dy = Math.sin(ang);
+                const dot = ax * dx + ay * dy;
+                const disc = dot * dot - ar * ar + maxR * maxR;
+                const t = disc > 0 ? -dot + Math.sqrt(disc) : 0;
+                return [center.x + ax + dx * t, center.y + ay + dy * t];
+              };
+              const q0i = far(rInner, rayAngleStart), q0o = far(rOuter, rayAngleStart);
+              const q1o = far(rOuter, rayAngleEnd), q1i = far(rInner, rayAngleEnd);
+              ctx.moveTo(center.x + rInner * Math.cos(mid), center.y + rInner * Math.sin(mid));
+              ctx.lineTo(q0i[0], q0i[1]);
+              ctx.lineTo(q0o[0], q0o[1]);
+              ctx.lineTo(center.x + rOuter * Math.cos(mid), center.y + rOuter * Math.sin(mid));
+              ctx.lineTo(q1o[0], q1o[1]);
+              ctx.lineTo(q1i[0], q1i[1]);
+              ctx.closePath();
+              return;
+            }
             if (polyOn) {
               const N = 8;
               for (let s = 0; s <= N; s++) {

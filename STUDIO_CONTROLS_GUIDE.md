@@ -179,7 +179,7 @@ Genera el espacio desde uno o varios centros focales con coordenadas polares $(r
 * **`ringShape`** (*Ring shape*, dropdown, `circle`; fig. 49b y 49g): la forma de cada anillo: `circle`, `triangle` y `pentagon` (punta arriba), `square`, `hexagon` u `octagon` (lado plano arriba). Los módulos, las líneas visibles, los sectores del recorte y la inversión figura-fondo siguen al polígono; *Ring rotation* gira cada polígono. No aplica a `spiral` ni `centripetal`.
 * **`centerOpen`** (*Open center*, 0 a 90 %): radio del agujero central; anillos y rayos empiezan en su borde (fig. 48d).
 * **`ringRotation`** (*Ring rotation*, −90º a 90º): grados que cada anillo gira más que el interior (fig. 49g).
-* *Clip cell*, *Checkerboard inversion* (en los anillos son los **sectores alternos**, según la suma de su anillo y su rayo: con un número par de rayos sale un tablero perfecto; con un número impar queda una costura donde dos sectores vecinos tienen el mismo color) y **Visible lines** (`showRays` / `showRings`, con **`lineColor`** y **`lineWidth`**, 0,5 a 6 px): igual que en la cuadrícula; son diseño y se exportan.
+* *Clip cell* (corta el módulo a su celda: el sector de arcos y rayos o, en *Centripetal*, la **banda entre dos chevrones** consecutivos, que es la celda que se ve), *Checkerboard inversion* (en los anillos son los **sectores alternos**, según la suma de su anillo y su rayo: con un número par de rayos sale un tablero perfecto; con un número impar queda una costura donde dos sectores vecinos tienen el mismo color) y **Visible lines** (`showRays` / `showRings`, con **`lineColor`** y **`lineWidth`**, 0,5 a 6 px): igual que en la cuadrícula; son diseño y se exportan.
 * `centerX / centerY`: foco excéntrico (en el estado).
 
 ---

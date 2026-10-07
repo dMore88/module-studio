@@ -332,6 +332,18 @@
       assert(d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("hidden"), "Actual size hides Angular rays");
     });
 
+    await test("Clip cell in a Centripetal layout cuts the module to its chevron band, in every shape", () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const L = app.state.layers[0]; Object.assign(L, { wireframe: false, width: 160, height: 160, showContainer: false, containerW: 90, containerH: 90 }); app.state.showSafeBounds = false;
+      const st = L.structure; st.enabled = true; st.mode = "radiation"; Object.assign(st.radiation, { scheme: "centripetal", rays: 12, rings: 3, centerOpen: 0, sizeMode: "actual", showRays: false, showRings: false, ringRotation: 0 });
+      const ink = () => { drawRaw(app); const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] < 128) n++; return n; };
+      for (const shape of ["circle", "square", "triangle", "star"]) {
+        L.shape = shape; st.radiation.activeClipping = false; const free = ink(); st.radiation.activeClipping = true; const clipped = ink();
+        assert(clipped < free * 0.9, `Clip cell should cut a ${shape} in a Centripetal layout (${free} -> ${clipped})`);
+      }
+    });
+
     await test("Art log lists every Texture control in use, in the units of the sliders", () => {
       reset();
       const d = win.document, log = () => d.getElementById("art-log-lines").textContent;
