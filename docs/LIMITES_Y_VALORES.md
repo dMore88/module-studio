@@ -88,10 +88,13 @@ El **valor por defecto** es el que tiene el control al abrir la app o al encende
 | Control | Mín. | Máx. | Paso | Por defecto | Razón |
 | :-- | :-- | :-- | :-- | :-- | :-- |
 | Module width / height | 10 px | 1000 px | 1 px | 100 px | El tamaño de la pieza que se repite; 10 evita celdas degeneradas y 1000 supera cualquier canvas (máximo 800 px). |
-| Module rotation | 0º | 360º | 0,5º | 0º | Gira la pieza entera; el medio grado afina la alineación. |
 | Stroke width | 0,2 px | 10 px | 0,1 px | 1 px | Del hilo casi invisible al trazo grueso, sin que el trazo se coma la shape. |
 
-### Layout › Composition container
+### Layout › Module rotation y Composition container
+| Control | Mín. | Máx. | Paso | Por defecto | Razón |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| Module rotation | 0º | 360º | 0,5º | 0º | Gira la pieza entera dentro de su celda; el medio grado afina la alineación. Vive en Layout porque es cómo se coloca la pieza, no parte de su canvas. |
+
 Vale para Repetition y Radiation; es la hoja de papel del canvas donde vive el layout de la capa, justo debajo del diseño del modo activo, y **corta** lo que sobresale de su borde (también en Actual size). Se muestra en px del lienzo (600 × 600 en 1:1) y por dentro se guarda en %.
 
 | Control | Mín. | Máx. | Paso | Por defecto | Razón |

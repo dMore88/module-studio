@@ -1085,7 +1085,10 @@ export class StudioProApp {
     // The Block sits right under the design controls of the active mode, before its Advanced section
     const blockEl = document.getElementById("layout-block");
     const adv = document.getElementById(struct.mode === "radiation" ? "rad-advanced" : "rep-advanced");
+    // The module's rotation (how the piece sits in its cell) goes right before it, under the design controls
+    const rotEl = document.getElementById("layout-module-rotation");
     if (blockEl && adv && blockEl.nextElementSibling !== adv) adv.parentNode.insertBefore(blockEl, adv);
+    if (rotEl && blockEl && rotEl.nextElementSibling !== blockEl) blockEl.parentNode.insertBefore(rotEl, blockEl);
   }
 
   syncStructureInspectorWithActiveLayer() {

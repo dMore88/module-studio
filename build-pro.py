@@ -33,7 +33,7 @@ def strip_es6_modules(content):
 def read_sources():
     js_dir = os.path.join(BASE_DIR, 'js')
     parts = {}
-    for key, rel in (('utils', 'canvas-utils.js'), ('shapes', 'studio/shapes.js'), ('engine', 'studio/studio-engine.js'),
+    for key, rel in (('utils', 'canvas-utils.js'), ('shapes', 'studio/shapes.js'), ('booleans', 'studio/booleans.js'), ('engine', 'studio/studio-engine.js'),
                      ('exporter', 'studio/exporter.js'), ('app', 'studio/studio-pro-app.js')):
         with open(os.path.join(js_dir, rel)) as f:
             parts[key] = strip_es6_modules(f.read())
@@ -50,6 +50,8 @@ def make_bundle():
 
   {p['shapes']}
 
+  {p['booleans']}
+
   {p['engine']}
 
   {p['exporter']}
@@ -61,6 +63,9 @@ def make_bundle():
     window.StudioProApp = StudioProApp;
     window.CanvasUtils = CanvasUtils;
     window.Shapes = Shapes;
+    window.regionBoolean = regionBoolean;
+    window.regionArea = regionArea;
+    window.inRegion = inRegion;
     window.StudioExporter = StudioExporter;
   }}
 }})();

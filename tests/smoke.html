@@ -2408,6 +2408,52 @@
       reset();
     });
 
+    await test("Boolean operations (prototype): union, subtract, intersect and exclude give the right areas, merge shapes that share an edge, keep holes and fill right", async () => {
+      const B = win.regionBoolean, area = win.regionArea;
+      const circle = (cx, cy, r, n = 360) => Array.from({ length: n }, (_, i) => ({ x: cx + r * Math.cos((i / n) * Math.PI * 2), y: cy + r * Math.sin((i / n) * Math.PI * 2) }));
+      const rect = (x0, y0, x1, y1) => [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }];
+      const near = (a, b, tol = 0.01) => Math.abs(a - b) <= tol * b;
+      // two circles of radius 50, 50 apart: the lens between them is 3070.9
+      const A = [circle(0, 0, 50)], C = [circle(50, 0, 50)];
+      const lens = 3070.9, one = Math.PI * 2500;
+      assert(near(area(B("intersect", A, C)), lens), `Intersect: the lens (${area(B("intersect", A, C))})`);
+      assert(near(area(B("union", A, C)), 2 * one - lens), `Union (${area(B("union", A, C))})`);
+      assert(near(area(B("subtract", A, C)), one - lens), `Subtract (${area(B("subtract", A, C))})`);
+      assert(near(area(B("xor", A, C)), 2 * one - 2 * lens), `Exclude (${area(B("xor", A, C))})`);
+      assert(B("union", A, C).length === 1 && B("subtract", A, C).length === 1 && B("xor", A, C).length === 2, "Union and subtract are one piece; exclude is the two crescents");
+      // the same square twice (every edge shared)
+      const S = [rect(0, 0, 100, 100)];
+      assert(near(area(B("union", S, S)), 10000) && near(area(B("intersect", S, S)), 10000) && B("subtract", S, S).length === 0 && B("xor", S, S).length === 0, "The same square twice: union and intersection are the square, subtract and exclude leave nothing");
+      // two squares sharing an edge merge into one rectangle
+      const U = B("union", S, [rect(100, 0, 200, 100)]);
+      assert(U.length === 1 && near(area(U), 20000), `Squares that share an edge merge (${U.length} contour, ${area(U)})`);
+      // one square touching a corner only
+      { const K = B("union", S, [rect(100, 100, 200, 200)]); assert(K.length >= 1 && K.length <= 2 && near(area(K), 20000), `Squares that touch at a corner keep both (${K.length} contours, ${area(K)})`); }
+      // a region with a hole: a square of 100 with a hole of 40; its right half
+      const frame = [rect(-50, -50, 50, 50), rect(-20, -20, 20, 20)];
+      assert(near(area(B("union", frame, [])), 8400), "A region with a hole keeps it");
+      const half = B("intersect", frame, [rect(0, -100, 100, 100)]);
+      assert(near(area(half), 4200), `Half of a framed square (${area(half)})`);
+      // a hole made by subtracting a circle from a bigger one fills as a hole with the nonzero rule
+      const ring = B("subtract", [circle(0, 0, 50)], [circle(0, 0, 20)]);
+      assert(ring.length === 2 && near(area(ring), Math.PI * (2500 - 400)), `A circle minus a smaller one is a ring (${ring.length} contours, ${area(ring)})`);
+      const c2 = win.document.createElement("canvas"); c2.width = 120; c2.height = 120;
+      const g = c2.getContext("2d"); g.translate(60, 60); g.beginPath();
+      for (const c of ring) { c.forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y))); g.closePath(); }
+      g.fill();
+      const at = (x, y) => g.getImageData(60 + x, 60 + y, 1, 1).data[3];
+      assert(at(0, 0) === 0 && at(35, 0) > 200, "The ring is filled and its hole is empty (nonzero fill)");
+      // a circle against an overlapping square, all four operations
+      const SQ = [rect(-30, -30, 70, 70)];
+      const total = area(B("union", A, SQ)), inter = area(B("intersect", A, SQ));
+      assert(near(area(B("subtract", A, SQ)), one - inter, 0.02) && near(area(B("xor", A, SQ)), total - inter, 0.02) && near(total + inter, one + 10000, 0.02), "Circle and square: the four operations add up");
+      // many points: it has to be fast
+      const t0 = performance.now();
+      B("union", [circle(0, 0, 300, 1500)], [circle(200, 0, 300, 1500)]);
+      const ms = performance.now() - t0;
+      assert(ms < 400, `Two circles of 1500 points should take under 400 ms (${Math.round(ms)} ms)`);
+    });
+
     const failed = results.filter(r => !r.ok).length;
     summary.textContent = failed === 0 ? `All ${results.length} tests passed` : `${failed} of ${results.length} tests FAILED`;
     summary.className = failed === 0 ? "pass" : "fail";

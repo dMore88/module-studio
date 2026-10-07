@@ -118,7 +118,7 @@ El botón *Module* del riel abre **el editor del módulo**. Mientras está abier
 
 **Módulo** (la pieza de papel):
 * **`containerW` / `containerH`** (*Module width* y *Module height*, **10 a 1000 px**, por defecto **100 × 100**): el tamaño del módulo, de cualquier proporción. En las retículas es la pieza que se repite. Los proyectos antiguos con 0 («todo el canvas») se abren con el tamaño del canvas.
-* **`rotation`** (*Module rotation*, 0 a 360º): gira la pieza entera (con su borde y sus shapes), y así aparece en la composición.
+
 * **`drawMode`** (*Stroke* o *Fill*), **`color`** (hex) y **`strokeWidth`** (*Stroke width*): comunes a todas las shapes del módulo. Todas las shapes heredan el color y el trazo; un color por shape queda para más adelante. Dos shapes del mismo color en *Fill* se funden en una sola mancha.
 * **`visible`**: visibilidad de la capa (icono del ojo en la tarjeta).
 
@@ -136,6 +136,8 @@ El botón *Module* del riel abre **el editor del módulo**. Mientras está abier
 
 ### 4.1 Layout › Repetition (Retícula Cartesiana)
 Multiplica el módulo en una retícula ortogonal sobre el plano cartesiano $X, Y$. El panel *Layout* tiene un interruptor general y un selector *Structure mode* (Repetition / Radiation, excluyentes).
+
+**Module rotation** (`rotation`, 0 a 360º, en *Layout*, justo encima del composition container): gira la pieza entera (con su borde y sus shapes) en la composición. No está en el editor del módulo porque el editor es el canvas del propio módulo, sin girar: la rotación es *cómo se coloca la pieza* en su celda, y en Layout se ve su efecto al instante.
 
 **Composition container** (cuatro sliders visibles en *Layout*, justo debajo del diseño del modo activo y antes de su *Advanced*; el mismo bloque sirve a los dos modos): la **hoja de papel donde vive el layout de la capa**, para componer varias capas (por ejemplo una retícula a la izquierda y otra polar a la derecha). Se guarda en `layer.structure.block` (en % del lienzo, para que siga al lienzo si cambia la proporción) y el layout se dibuja como si el container fuera un lienzo pequeño, con todo lo suyo dentro (módulos, líneas visibles, y las posiciones de Anomaly y Concentration, que son relativas a él). **Corta** todo lo que el layout dibuje fuera de su borde, también en *Actual size*. Los sliders muestran **píxeles del lienzo**:
 * **`w` / `h`** (*Composition container width* y *height*, 10 a 2000 px, por defecto el tamaño del lienzo: 600 px en 1:1): en *Fit to canvas* la retícula se reparte dentro; en *Radiation* el radio máximo sale de su lado menor; en *Actual size* los módulos conservan su tamaño real, la cuadrícula va centrada en la hoja y la hoja corta lo que sobresale.

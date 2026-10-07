@@ -307,13 +307,6 @@
               <input type="text" id="num-active-stroke" class="ds-value" value="1px" inputmode="decimal">
             </div>
           </div>
-          <div class="ds-field">
-            <div class="ds-label">Module rotation</div>
-            <div class="ds-slider">
-              <input type="range" id="input-active-rotation" min="0" max="360" step="0.5" value="0">
-              <input type="text" id="num-active-rotation" class="ds-value" value="0º" inputmode="decimal">
-            </div>
-          </div>
         </div>
 
         <div class="ds-layers-actions">
@@ -430,6 +423,16 @@
         </div>
 
         <!-- Block: where the layout lives on the canvas (shared by both modes; the script moves it before the active mode's Advanced) -->
+        <div id="layout-module-rotation" class="ds-stack">
+          <div class="ds-field">
+            <div class="ds-label">Module rotation</div>
+            <div class="ds-slider">
+              <input type="range" id="input-active-rotation" min="0" max="360" step="0.5" value="0">
+              <input type="text" id="num-active-rotation" class="ds-value" value="0º" inputmode="decimal">
+            </div>
+          </div>
+        </div>
+
         <div id="layout-block" class="ds-stack">
           <div id="block-size-fields" class="ds-stack">
             <div class="ds-field">
@@ -1563,7 +1566,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=c91be4ae"></script>
+  <script src="js/bundle-pro.js?v=6d22b7cf"></script>
 
 </body>
 </html>

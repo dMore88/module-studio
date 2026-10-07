@@ -37,12 +37,12 @@ Con Wong: su **módulo** es la unidad que se repite (aquí, la pieza entera con 
 
 ## Pendiente (fases futuras)
 
-- **Fase 2: unión, sustracción e intersección.** Son booleanas y en el SVG exportado hay que resolverlas con máscaras o recortes, sin trazo limpio.
+- **Fase 2: unión, sustracción, intersección y exclusión** (*Combine*, un selector para todo el módulo, modelo A). El cálculo ya existe como prototipo (`js/studio/booleans.js`, con pruebas); falta conectarlo al módulo y a la interfaz. Las formas abiertas (línea, onda, espiral) no entran; con shapes combinadas el color es el del módulo.
 - **Selector Fill / Outline por shape**, para ver una shape sobre otra sin darle color propio.
 - **Color propio por shape** (hoy heredan todas).
 - **Tamaño de shape** (hoy cada shape tiene ancho y alto, pero el módulo no tiene control de escala conjunta de las shapes).
 - **Editar el módulo viendo a sus vecinos** (lo hacía *Hide modifiers*): un modo «editar sobre el diseño».
-- **Rotación y desplazamiento del módulo desde Layout**, si se echa de menos el offset.
+- **Desplazamiento fijo del módulo en su celda desde Layout**, si se echa de menos el offset (la rotación ya vive en Layout).
 - **Integración con `main`:** la rama cambia el panel Module, el recorte del módulo y el container de Layout. Antes de integrarla, comprobar que los proyectos antiguos se abren igual.
 
 ## Cosas a vigilar
