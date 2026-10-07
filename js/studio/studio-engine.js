@@ -1,5 +1,5 @@
 // Studio Composition Engine: Unified Grammar Pipeline for Wucius Wong 2D Design
-import { Shapes, texturedShape, morphedShape } from './shapes.js';
+import { Shapes, texturedShape, morphedShape, compositeShape } from './shapes.js';
 import { CanvasUtils } from '../canvas-utils.js';
 
 export const createDefaultLayerStructure = () => ({
@@ -486,7 +486,8 @@ export class StudioEngine {
   // Draw a single shape module for an individual layer
   drawSingleLayerShape(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false, colorOverride = null, widthMultiplier = null, stretch = null) {
     if (!mod) return;
-    const shape = shapeOverride || mod.shape || "circle";
+    // A smart module (several figures) is one composite shape for everything that follows
+    const shape = shapeOverride || (mod.figures && mod.figures.length ? compositeShape(mod.figures).id : mod.shape) || "circle";
     const baseW = mod.width !== undefined ? mod.width : (mod.scale || 50);
     const baseH = mod.height !== undefined ? mod.height : (mod.scale || 50);
     // A line spans its cell width (widthMultiplier) instead of shrinking to the cell's short side.

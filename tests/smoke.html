@@ -2275,6 +2275,34 @@
 
 
 
+    await test("Smart module (proof of concept): several figures draw as ONE shape, also under Texture, in a grid and with a rotated figure", async () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const dpr = cv.width / 600;
+      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: true, width: 100, height: 100, showContainer: false, strokeWidth: 3 }); app.state.showSafeBounds = false;
+      L.figures = [{ shape: "circle", size: 60, x: -25, y: 0, rotation: 0 }, { shape: "square", size: 40, x: 25, y: 0, rotation: 0 }];
+      const dark = (x, y) => { const d = cv.getContext("2d").getImageData(Math.round(x * dpr), Math.round(y * dpr), 1, 1).data; return d[0] < 120; };
+      const ink = () => { const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] < 128) n++; return n; };
+      drawRaw(app);
+      // circle of 60 px centred 25 px left of the middle: its left edge is at 300 - 25 - 30 = 245; the square (40 px) is centred 25 px right: its right edge at 345
+      assert(dark(245, 300) && dark(345, 300), "Both figures should be drawn");
+      assert(!dark(300 - 25, 300), "A wireframe figure is hollow in the middle");
+      const one = ink();
+      L.figures = [{ shape: "circle", size: 60, x: -25, y: 0, rotation: 0 }];
+      drawRaw(app); const single = ink();
+      assert(one > single * 1.2, `Two figures should leave more ink than one (${single} -> ${one})`);
+      // Texture sees one shape with several outlines
+      L.figures = [{ shape: "circle", size: 60, x: -25, y: 0, rotation: 0 }, { shape: "square", size: 40, x: 25, y: 0, rotation: 45 }];
+      L.structure.texture = { enabled: true, jitter: 5, skipChance: 0, crossing: 0, undulation: 12, waves: 2, waveAngle: 0 };
+      drawRaw(app);
+      assert(ink() > 200, "The textured composite should still draw");
+      // In a grid every cell gets the whole composite
+      L.structure.texture = { enabled: false };
+      L.structure.enabled = true; L.structure.mode = "repetition"; Object.assign(L.structure.repetition, { cols: 3, rows: 3, sizeMode: "fit", moduleScale: "cell" });
+      drawRaw(app);
+      assert(ink() > single * 5, "A 3 x 3 grid should repeat the composite in every cell");
+    });
+
     const failed = results.filter(r => !r.ok).length;
     summary.textContent = failed === 0 ? `All ${results.length} tests passed` : `${failed} of ${results.length} tests FAILED`;
     summary.className = failed === 0 ? "pass" : "fail";

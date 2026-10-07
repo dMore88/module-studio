@@ -624,33 +624,53 @@ function flattenShape(shapeDef) {
     last = { x, y };
   };
 
+  // The recorder keeps its own transform (translate / rotate / scale / save / restore), so a composite shape can place its
+  // figures; every point is mapped through it before it is stored
+  let M = [1, 0, 0, 1, 0, 0];
+  const stack = [];
+  const T = (x, y) => ({ x: M[0] * x + M[2] * y + M[4], y: M[1] * x + M[3] * y + M[5] });
   const rec = {
     beginPath() { cur = null; },
-    moveTo(x, y) { startSub(x, y); },
-    lineTo,
+    save() { stack.push(M.slice()); },
+    restore() { if (stack.length) M = stack.pop(); },
+    translate(tx, ty) { M = [M[0], M[1], M[2], M[3], M[0] * tx + M[2] * ty + M[4], M[1] * tx + M[3] * ty + M[5]]; },
+    rotate(a) {
+      const c = Math.cos(a), s = Math.sin(a);
+      M = [M[0] * c + M[2] * s, M[1] * c + M[3] * s, -M[0] * s + M[2] * c, -M[1] * s + M[3] * c, M[4], M[5]];
+    },
+    scale(sx, sy) { M = [M[0] * sx, M[1] * sx, M[2] * sy, M[3] * sy, M[4], M[5]]; },
+    moveTo(x, y) { const p = T(x, y); startSub(p.x, p.y); },
+    lineTo(x, y) { const p = T(x, y); lineTo(p.x, p.y); },
     closePath() { if (cur) { cur.closed = true; last = { x: first.x, y: first.y }; cur = null; } },
-    bezierCurveTo: bezier,
+    bezierCurveTo(c1x, c1y, c2x, c2y, x, y) {
+      const a = T(c1x, c1y), b = T(c2x, c2y), p = T(x, y);
+      bezier(a.x, a.y, b.x, b.y, p.x, p.y);
+    },
     quadraticCurveTo(cx, cy, x, y) {
-      const x0 = last ? last.x : cx, y0 = last ? last.y : cy;
-      bezier(x0 + (2 / 3) * (cx - x0), y0 + (2 / 3) * (cy - y0), x + (2 / 3) * (cx - x), y + (2 / 3) * (cy - y), x, y);
+      const c = T(cx, cy), p = T(x, y);
+      const x0 = last ? last.x : c.x, y0 = last ? last.y : c.y;
+      bezier(x0 + (2 / 3) * (c.x - x0), y0 + (2 / 3) * (c.y - y0), p.x + (2 / 3) * (c.x - p.x), p.y + (2 / 3) * (c.y - p.y), p.x, p.y);
     },
     arc(cx, cy, r, a0, a1, ccw = false) {
       let sweep = a1 - a0;
       if (!ccw && sweep < 0) sweep += Math.PI * 2 * Math.ceil(-sweep / (Math.PI * 2));
       if (ccw && sweep > 0) sweep -= Math.PI * 2 * Math.ceil(sweep / (Math.PI * 2));
       if (Math.abs(sweep) > Math.PI * 2) sweep = Math.sign(sweep) * Math.PI * 2;
-      const sx = cx + Math.cos(a0) * r, sy = cy + Math.sin(a0) * r;
-      if (cur) lineTo(sx, sy); else startSub(sx, sy);
+      const s0 = T(cx + Math.cos(a0) * r, cy + Math.sin(a0) * r);
+      if (cur) lineTo(s0.x, s0.y); else startSub(s0.x, s0.y);
       const steps = Math.max(8, Math.ceil((Math.abs(sweep) * r) / FLAT_SPACING));
       for (let i = 1; i <= steps; i++) {
         const a = a0 + (sweep * i) / steps;
-        cur.pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r, c: i === steps });
+        const q = T(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+        cur.pts.push({ x: q.x, y: q.y, c: i === steps });
       }
-      last = { x: cx + Math.cos(a0 + sweep) * r, y: cy + Math.sin(a0 + sweep) * r };
+      const e = T(cx + Math.cos(a0 + sweep) * r, cy + Math.sin(a0 + sweep) * r);
+      last = { x: e.x, y: e.y };
     },
     rect(x, y, w, h) {
-      startSub(x, y);
-      lineTo(x + w, y); lineTo(x + w, y + h); lineTo(x, y + h);
+      const a = T(x, y), b = T(x + w, y), c = T(x + w, y + h), d = T(x, y + h);
+      startSub(a.x, a.y);
+      lineTo(b.x, b.y); lineTo(c.x, c.y); lineTo(d.x, d.y);
       cur.closed = true;
       cur = null;
     }
@@ -681,6 +701,54 @@ function flattenShape(shapeDef) {
 
   if (!shapeDef.noCache) flatCache[shapeDef.id] = subpaths;
   return subpaths;
+}
+
+// ---- Smart module (composite shape) ----
+// A module made of several figures, drawn as ONE shape: every modifier (texture, space, morph...) sees a single shape with
+// several outlines. A figure is { shape, size, x, y, rotation } with size, x and y as a % of the module's size.
+const compositeCache = {};
+function compositeShape(figures) {
+  const list = (figures || []).filter(f => f && Shapes[f.shape]);
+  const key = "smart:" + JSON.stringify(list.map(f => [f.shape, f.size ?? 100, f.x || 0, f.y || 0, f.rotation || 0]));
+  if (compositeCache[key]) return compositeCache[key];
+  const place = (f, size) => ({ s: ((f.size ?? 100) / 100) * size, x: ((f.x || 0) / 100) * size, y: ((f.y || 0) / 100) * size, a: ((f.rotation || 0) * Math.PI) / 180 });
+  const def = {
+    id: key,
+    name: "Smart module",
+    category: "smart",
+    skeleton: list.length > 0 && list.every(f => !!Shapes[f.shape].skeleton),
+    draw(ctx, size) {
+      // One path for all the figures: a figure's own beginPath must not wipe the ones already added
+      let first = true;
+      const wrap = new Proxy(ctx, {
+        get(target, prop) {
+          if (prop === "beginPath") return () => { if (first) { target.beginPath(); first = false; } };
+          const v = target[prop];
+          return typeof v === "function" ? v.bind(target) : v;
+        },
+        set(target, prop, v) { target[prop] = v; return true; }
+      });
+      wrap.beginPath();
+      for (const f of list) {
+        const p = place(f, size);
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.a);
+        Shapes[f.shape].draw(wrap, p.s);
+        ctx.restore();
+      }
+    },
+    svgPath(size) {
+      const r = (v) => Math.round(v * 1000) / 1000;
+      return list.map((f) => {
+        const p = place(f, size);
+        return `<g transform="translate(${r(p.x)} ${r(p.y)}) rotate(${r((f.rotation || 0))})">${Shapes[f.shape].svgPath(p.s)}</g>`;
+      }).join("");
+    }
+  };
+  compositeCache[key] = def;
+  Shapes[key] = def; // registered by id, so everything that looks a shape up by name finds it
+  return def;
 }
 
 // ---- Shape morphing (Gradation > Shape) ----
@@ -1445,7 +1513,8 @@ class StudioEngine {
   // Draw a single shape module for an individual layer
   drawSingleLayerShape(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false, colorOverride = null, widthMultiplier = null, stretch = null) {
     if (!mod) return;
-    const shape = shapeOverride || mod.shape || "circle";
+    // A smart module (several figures) is one composite shape for everything that follows
+    const shape = shapeOverride || (mod.figures && mod.figures.length ? compositeShape(mod.figures).id : mod.shape) || "circle";
     const baseW = mod.width !== undefined ? mod.width : (mod.scale || 50);
     const baseH = mod.height !== undefined ? mod.height : (mod.scale || 50);
     // A line spans its cell width (widthMultiplier) instead of shrinking to the cell's short side.
