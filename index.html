@@ -203,17 +203,31 @@
 
         <div id="fig-transform-stack" class="ds-stack">
           <div class="ds-field">
+            <div class="ds-label">Figure width</div>
+            <div class="ds-slider">
+              <input type="range" id="input-fig-w" min="1" max="2000" step="1" value="100">
+              <input type="text" id="num-fig-w" class="ds-value" value="100px" inputmode="decimal">
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Figure height</div>
+            <div class="ds-slider">
+              <input type="range" id="input-fig-h" min="1" max="2000" step="1" value="100">
+              <input type="text" id="num-fig-h" class="ds-value" value="100px" inputmode="decimal">
+            </div>
+          </div>
+          <div class="ds-field">
             <div class="ds-label">Figure position X</div>
             <div class="ds-slider">
-              <input type="range" id="input-fig-x" min="-100" max="100" step="1" value="0">
-              <input type="text" id="num-fig-x" class="ds-value" value="0%" inputmode="decimal">
+              <input type="range" id="input-fig-x" min="-1000" max="1000" step="1" value="0">
+              <input type="text" id="num-fig-x" class="ds-value" value="0px" inputmode="decimal">
             </div>
           </div>
           <div class="ds-field">
             <div class="ds-label">Figure position Y</div>
             <div class="ds-slider">
-              <input type="range" id="input-fig-y" min="-100" max="100" step="1" value="0">
-              <input type="text" id="num-fig-y" class="ds-value" value="0%" inputmode="decimal">
+              <input type="range" id="input-fig-y" min="-1000" max="1000" step="1" value="0">
+              <input type="text" id="num-fig-y" class="ds-value" value="0px" inputmode="decimal">
             </div>
           </div>
           <div class="ds-field">
@@ -254,35 +268,21 @@
             </div>
           </div>
           <div class="ds-field">
-            <div class="ds-label">Width</div>
-            <div class="ds-slider">
-              <input type="range" id="input-active-width" min="1" max="2000" step="1" value="100">
-              <input type="text" id="num-active-width" class="ds-value" value="100px" inputmode="decimal">
-            </div>
-          </div>
-          <div class="ds-field">
-            <div class="ds-label">Height</div>
-            <div class="ds-slider">
-              <input type="range" id="input-active-height" min="1" max="2000" step="1" value="100">
-              <input type="text" id="num-active-height" class="ds-value" value="100px" inputmode="decimal">
-            </div>
-          </div>
-          <div class="ds-field">
-            <div class="ds-label">Rotation (°)</div>
+            <div class="ds-label">Module rotation</div>
             <div class="ds-slider">
               <input type="range" id="input-active-rotation" min="0" max="360" step="0.5" value="0">
               <input type="text" id="num-active-rotation" class="ds-value" value="0º" inputmode="decimal">
             </div>
           </div>
           <div class="ds-field">
-            <div class="ds-label">Offset X</div>
+            <div class="ds-label">Module offset X</div>
             <div class="ds-slider">
               <input type="range" id="input-active-offset-x" min="-1000" max="1000" step="1" value="0">
               <input type="text" id="num-active-offset-x" class="ds-value" value="0px" inputmode="decimal">
             </div>
           </div>
           <div class="ds-field">
-            <div class="ds-label">Offset Y</div>
+            <div class="ds-label">Module offset Y</div>
             <div class="ds-slider">
               <input type="range" id="input-active-offset-y" min="-1000" max="1000" step="1" value="0">
               <input type="text" id="num-active-offset-y" class="ds-value" value="0px" inputmode="decimal">
@@ -1567,7 +1567,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=d8dd1e86"></script>
+  <script src="js/bundle-pro.js?v=a0ebe38d"></script>
 
 </body>
 </html>

@@ -631,10 +631,10 @@
 
       await tab("module");
       q('[data-fig-shape="hexagon"]').click();
-      fire(q("#input-active-width"), 120);
+      fire(q("#input-fig-w"), 120);
       q("#btn-mode-fill").click();
       const L = app.getActiveModule();
-      assert(L.figures[0].shape === "hexagon" && L.width === 120 && L.wireframe === false, "Module controls did not apply");
+      assert(L.figures[0].shape === "hexagon" && L.figures[0].width === 120 && L.wireframe === false, "Module controls did not apply");
       assert(q("#btn-mode-fill").classList.contains("active") && !q("#btn-mode-stroke").classList.contains("active"), "Fill / Stroke group active state wrong");
     });
 
@@ -1319,25 +1319,25 @@
       }
     });
 
-    await test("Width and Height reach 2000 px for every shape; the line has no Height", async () => {
+    await test("A figure's Width and Height reach 2000 px for every shape; the line has no Height", async () => {
       reset();
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="module"]').click(); await wait(60);
       const fire = (el, v) => { el.value = v; el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
-      assert(q("#input-active-width").max === "2000" && q("#input-active-height").max === "2000", "Width and Height should go up to 2000");
+      assert(q("#input-fig-w").max === "2000" && q("#input-fig-h").max === "2000", "Width and Height should go up to 2000");
       for (const shape of ["circle", "square", "triangle", "wave", "ring", "semicircle", "quarter", "crescent", "spiral", "arrow", "pentagon", "hexagon", "octagon", "star", "cross", "letterA", "letterS", "letterR", "digit1", "digit5", "digit9"]) {
         q(`[data-fig-shape="${shape}"]`).click();
-        assert(!q("#input-active-height").closest(".ds-field").classList.contains("hidden"), `${shape}: Height should be available`);
+        assert(!q("#input-fig-h").closest(".ds-field").classList.contains("hidden"), `${shape}: Height should be available`);
       }
       q('[data-fig-shape="circle"]').click();
-      fire(q("#input-active-width"), 1800); fire(q("#input-active-height"), 1800);
+      fire(q("#input-fig-w"), 1800); fire(q("#input-fig-h"), 1800);
       const m = app.getActiveModule();
-      assert(m.width === 1800 && m.height === 1800 && q("#num-active-width").value === "1800px", "A 1800 module did not apply");
-      drawRaw(app); // a giant module must draw without errors
+      assert(m.figures[0].width === 1800 && m.figures[0].height === 1800 && q("#num-fig-w").value === "1800px", "A 1800 figure did not apply");
+      drawRaw(app); // a giant figure must draw without errors
       q('[data-fig-shape="line"]').click();
-      assert(q("#input-active-height").closest(".ds-field").classList.contains("hidden"), "The line should not show Height");
+      assert(q("#input-fig-h").closest(".ds-field").classList.contains("hidden"), "The line should not show Height");
       q('[data-fig-shape="square"]').click();
-      assert(!q("#input-active-height").closest(".ds-field").classList.contains("hidden"), "Height should come back for other shapes");
+      assert(!q("#input-fig-h").closest(".ds-field").classList.contains("hidden"), "Height should come back for other shapes");
     });
 
     await test("Similarity: association of shapes and imperfection (cut, broken)", async () => {
@@ -1843,19 +1843,20 @@
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="module"]').click(); await wait(60); app.syncAllInspectorsWithActiveLayer();
       const key = (el, k, extra = {}) => el.dispatchEvent(new win.KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...extra }));
-      const box = q("#num-active-width");
-      const before = app.getActiveModule().width;
+      const box = q("#num-fig-w");
+      const fw = () => app.getActiveModule().figures[0].width;
+      const before = fw();
       key(box, "ArrowUp");
-      assert(app.getActiveModule().width === before + 1 && box.value === (before + 1) + "px", `ArrowUp should add 1 (${before} -> ${app.getActiveModule().width})`);
+      assert(fw() === before + 1 && box.value === (before + 1) + "px", `ArrowUp should add 1 (${before} -> ${fw()})`);
       key(box, "ArrowDown", { shiftKey: true });
-      assert(app.getActiveModule().width === before + 1 - 10, "Shift + ArrowDown should take off 10");
+      assert(fw() === before + 1 - 10, "Shift + ArrowDown should take off 10");
       // with a suffix and a decimal step: stroke width 1.2px, step 0.1
       const sb = q("#num-active-stroke"); sb.value = "1.2px";
       key(sb, "ArrowUp");
       assert(app.getActiveModule().strokeWidth === 1.3 && sb.value === "1.3px", `Stroke width: ${app.getActiveModule().strokeWidth} / ${sb.value}`);
       // limits: width cannot go under the slider's minimum
-      const wb = q("#num-active-width"); wb.value = "5"; key(wb, "ArrowDown", { shiftKey: true });
-      assert(app.getActiveModule().width === 1, "The value should stop at the slider's minimum");
+      const wb = q("#num-fig-w"); wb.value = "5"; key(wb, "ArrowDown", { shiftKey: true });
+      assert(fw() === 1, "The value should stop at the slider's minimum");
       reset();
     });
 
@@ -2318,7 +2319,7 @@
       saved.layers[0].figures = [{ shape: "nope", size: 50 }, { shape: "triangle", size: "big", x: 900, y: NaN, rotation: 10 }, null, 5, { shape: "circle" }, { shape: "circle" }, { shape: "circle" }, { shape: "circle" }];
       app.loadProjectText(JSON.stringify(saved));
       const g = app.state.layers[0].figures;
-      assert(g.length === 4 && g[0].shape === "triangle" && g[0].size === 100 && g[0].x === 100 && g[0].y === 0, `Bad figures should be cleaned (${JSON.stringify(g)})`);
+      assert(g.length === 4 && g[0].shape === "triangle" && g[0].width === 100 && g[0].height === 100 && g[0].x === 100 && g[0].y === 0, `Bad figures should be cleaned and given in px (${JSON.stringify(g)})`);
       app.loadProjectText(JSON.stringify({ ...saved, layers: [{ ...saved.layers[0], figures: undefined }] }));
       assert(Array.isArray(app.state.layers[0].figures) && app.state.layers[0].figures.length === 0, "A project without figures opens with none");
       // SVG: the composite is drawn with both outlines (circle + square), also under texture
@@ -2343,24 +2344,19 @@
       assert(app.figEdit && !q("#active-layer-inspector").classList.contains("hidden"), "Opening the Module panel starts the editor");
       assert(L.figures.length === 1 && L.figures[0].shape === "square", "Entering makes the module's own shape the first figure");
       // the canvas shows only the module, big (no 3 x 3 grid), and the module controls are in the same panel
-      assert(q("#input-active-width") && q("#input-active-rotation") && q("#input-active-offset-x") && q("#input-active-container-w") && q("#btn-mode-fill") && q("#color-active-shape"), "Every module control lives in the editor");
-      // the editor is a canvas of its own at the design's scale (1:1): the module is drawn at its real size, whatever it is
+      assert(q("#input-fig-w") && q("#input-active-rotation") && q("#input-active-offset-x") && q("#input-active-container-w") && q("#btn-mode-fill") && q("#color-active-shape") && !q("#input-active-width"), "Every module control lives in the editor; the module has no width of its own (it is its container)");
+      // the editor is a canvas of its own at the design's scale (1:1): the module is drawn at its real size
       const view = () => app.stateForFigureEdit().layers[0];
-      fire(q("#input-active-width"), 50);
-      assert(view().width === 50 && view().containerW === L.containerW && view().offsetX === L.offsetX, `The editor shows the module at its real size (${view().width}) and the container as it is`);
-      fire(q("#input-active-width"), 1000); fire(q("#input-active-height"), 600);
-      assert(view().width === 1000 && view().height === 600, "A big module is not rescaled");
-      fire(q("#input-active-width"), 100); fire(q("#input-active-height"), 100);
+      assert(view().containerW === L.containerW && view().offsetX === L.offsetX && view().width === L.width, "The editor shows the module as it is, with no scaling");
       L.showContainer = false; assert(view().showContainer === false, "Show container off hides the container in the editor");
       L.showContainer = true;
-      // one untouched figure hides the figure's own position and rotation (they are the module's)
-      assert(q("#fig-transform-stack").classList.contains("hidden"), "A single untouched figure shows no figure position / rotation");
+      // the first figure is the module's own shape, at the size it had
+      assert(L.figures[0].width === 100 && L.figures[0].height === 100 && !q("#fig-transform-stack").classList.contains("hidden"), "The first figure has its own width, height, position and rotation");
       q("#btn-fig-add").click(); await wait(30);
       assert(L.figures.length === 2 && app.figEdit.index === 1, "Add figure adds the second one and selects it");
-      assert(!q("#fig-transform-stack").classList.contains("hidden"), "With two figures each one has its own position and rotation");
-      assert(!q("#input-fig-size") && !q("#num-fig-size"), "There is no figure size control for now");
-      fire(q("#input-fig-x"), 30); fire(q("#input-fig-rot"), 40);
-      assert(L.figures[1].x === 30 && L.figures[1].rotation === 40 && q("#num-fig-rot").value === "40º", "The figure sliders should edit the selected figure");
+      assert(L.figures[1].width === 50 && L.figures[1].height === 50, "A new figure is half the container");
+      fire(q("#input-fig-x"), 30); fire(q("#input-fig-w"), 70); fire(q("#input-fig-rot"), 40);
+      assert(L.figures[1].x === 30 && L.figures[1].width === 70 && L.figures[1].rotation === 40 && q("#num-fig-rot").value === "40º" && q("#num-fig-x").value === "30px", "The figure sliders should edit the selected figure, in px");
       q('#fig-shape-grid [data-fig-shape="triangle"]').click(); await wait(30);
       assert(L.figures[1].shape === "triangle", "The editor's shape grid changes the selected figure");
       q("#btn-fig-up").click(); await wait(30);
@@ -2368,25 +2364,25 @@
       for (let i = 0; i < 5; i++) q("#btn-fig-add").click();
       assert(L.figures.length === 4 && q("#btn-fig-add").hasAttribute("disabled"), "Four figures at most");
       // module controls edit the module and Cancel undoes them too
-      fire(q("#input-active-width"), 150); q("#btn-mode-fill").click();
-      assert(L.width === 150 && L.wireframe === false, "The module controls apply while editing");
+      fire(q("#input-active-container-w"), 150); q("#btn-mode-fill").click();
+      assert(L.containerW === 150 && L.wireframe === false, "The module controls apply while editing");
       const histBefore = app.history.length;
       q("#btn-fig-cancel").click(); await wait(60);
-      assert(!app.figEdit && !app.isFlyoutOpen && L.figures.length === 0 && L.shape === "square" && L.width === 100 && L.wireframe === true, "Cancel goes back to the module as it was (figures and module controls) and closes the panel");
+      assert(!app.figEdit && !app.isFlyoutOpen && L.figures.length === 0 && L.shape === "square" && L.containerW === 100 && L.wireframe === true, "Cancel goes back to the module as it was (figures and module controls) and closes the panel");
       assert(app.history.length === histBefore, "Editing leaves no history entries until it is saved");
       // Save keeps it, with one undo step
       q('[data-rail-tab="module"]').click(); await wait(60);
       q("#btn-fig-add").click(); await wait(30);
-      fire(q("#input-fig-x"), -25); fire(q("#input-active-width"), 130);
+      fire(q("#input-fig-x"), -25); fire(q("#input-active-container-w"), 130);
       q("#btn-fig-save").click(); await wait(60);
-      assert(L.figures.length === 2 && L.figures[1].x === -25 && L.width === 130 && !app.figEdit && !app.isFlyoutOpen, "Save keeps the figures and the module controls");
-      assert(app.historyLabels[app.historyLabels.length - 1].includes("Smart module saved") && !app.historyLabels.some(l => l.includes("Figure ") || l.includes("Changed Width")), `Save makes one undo step and the editing none (${JSON.stringify(app.historyLabels.slice(-3))})`);
-      assert(/Figures: Square 100% \(0, 0\) 0º \+ Circle 50% \(-25, 0\) 0º/.test(win.document.querySelector(".ds-art-log").innerText), "The Art log should list the figures");
+      assert(L.figures.length === 2 && L.figures[1].x === -25 && L.containerW === 130 && !app.figEdit && !app.isFlyoutOpen, "Save keeps the figures and the module controls");
+      assert(app.historyLabels[app.historyLabels.length - 1].includes("Smart module saved") && !app.historyLabels.some(l => l.includes("Figure ") || l.includes("Container Width")), `Save makes one undo step and the editing none (${JSON.stringify(app.historyLabels.slice(-3))})`);
+      assert(/Figures: Square 100 x 100px \(0, 0\) 0º \+ Circle 50 x 50px \(-25, 0\) 0º/.test(win.document.querySelector(".ds-art-log").innerText), "The Art log should list the figures");
       // Moving to another panel saves too
       q('[data-rail-tab="module"]').click(); await wait(60);
       q('#fig-list [data-fig-index="1"]').click(); q("#btn-fig-delete").click(); await wait(30);
       q('[data-rail-tab="layout"]').click(); await wait(60);
-      assert(!app.figEdit && L.figures.length === 0 && L.shape === "square", "Leaving for another panel saves; one untouched figure is a plain module again");
+      assert(!app.figEdit && L.figures.length === 1 && L.figures[0].shape === "square" && L.shape === "square", "Leaving for another panel saves; a module with one figure keeps it");
     });
 
     await test("Smart module: no stray line joins one figure to the next (arcs start their own outline)", async () => {

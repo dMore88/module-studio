@@ -617,14 +617,27 @@ export function clippedShape(shapeDef, corners, size0, strokeOnly) {
 
 // ---- Smart module (composite shape) ----
 // A module made of several figures, drawn as ONE shape: every modifier (texture, space, morph...) sees a single shape with
-// several outlines. A figure is { shape, size, x, y, rotation } with size, x and y as a % of the module's size.
+// several outlines. A figure is { shape, width, height, x, y, rotation } in px, from the centre of the module's container
+// (the piece of paper); `ref` is the container's larger side, so the figures keep their proportions when the module is
+// scaled (by its cell, for example). Older figures were { shape, size, x, y, rotation } as a % of the module.
 const compositeCache = {};
 
-export function compositeShape(figures) {
-  const list = (figures || []).filter(f => f && Shapes[f.shape]);
-  const key = "smart:" + JSON.stringify(list.map(f => [f.shape, f.size ?? 100, f.x || 0, f.y || 0, f.rotation || 0]));
+export function compositeShape(figures, ref = 100) {
+  const R = ref > 0 ? ref : 100;
+  const list = (figures || []).filter(f => f && Shapes[f.shape]).map(f => (f.width !== undefined ? f : {
+    shape: f.shape, width: ((f.size ?? 100) / 100) * R, height: ((f.size ?? 100) / 100) * R, x: ((f.x || 0) / 100) * R, y: ((f.y || 0) / 100) * R, rotation: f.rotation || 0
+  }));
+  const key = "smart:" + Math.round(R * 1000) + ":" + JSON.stringify(list.map(f => [f.shape, f.width, f.height ?? f.width, f.x || 0, f.y || 0, f.rotation || 0]));
   if (compositeCache[key]) return compositeCache[key];
-  const place = (f, size) => ({ s: ((f.size ?? 100) / 100) * size, x: ((f.x || 0) / 100) * size, y: ((f.y || 0) / 100) * size, a: ((f.rotation || 0) * Math.PI) / 180 });
+  // Where a figure goes when the module is drawn at `size`; a figure keeps its own proportions (like a shape in a module)
+  const place = (f, size) => {
+    const k = size / R;
+    const w = f.width * k, h = (f.height ?? f.width) * k;
+    const def = Shapes[f.shape];
+    const m = f.shape === "line" ? w : Math.max(w, h);
+    const flat = !!def.skeleton || m <= 0;
+    return { x: (f.x || 0) * k, y: (f.y || 0) * k, a: ((f.rotation || 0) * Math.PI) / 180, m, sx: flat ? 1 : w / m, sy: flat ? 1 : h / m };
+  };
   const def = {
     id: key,
     name: "Smart module",
@@ -660,8 +673,9 @@ export function compositeShape(figures) {
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.a);
+        ctx.scale(p.sx, p.sy);
         open = false;
-        Shapes[f.shape].draw(wrap, p.s);
+        Shapes[f.shape].draw(wrap, p.m);
         ctx.restore();
       }
     },
@@ -669,7 +683,7 @@ export function compositeShape(figures) {
       const r = (v) => Math.round(v * 1000) / 1000;
       return list.map((f) => {
         const p = place(f, size);
-        return `<g transform="translate(${r(p.x)} ${r(p.y)}) rotate(${r((f.rotation || 0))})">${Shapes[f.shape].svgPath(p.s)}</g>`;
+        return `<g transform="translate(${r(p.x)} ${r(p.y)}) rotate(${r(f.rotation || 0)}) scale(${r(p.sx)} ${r(p.sy)})">${Shapes[f.shape].svgPath(p.m)}</g>`;
       }).join("");
     }
   };

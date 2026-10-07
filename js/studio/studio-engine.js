@@ -532,9 +532,13 @@ export class StudioEngine {
   drawSingleLayerShape(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false, colorOverride = null, widthMultiplier = null, stretch = null) {
     if (!mod) return;
     // A smart module (several figures) is one composite shape for everything that follows
-    const shape = shapeOverride || (mod.figures && mod.figures.length ? compositeShape(mod.figures).id : mod.shape) || "circle";
-    const baseW = mod.width !== undefined ? mod.width : (mod.scale || 50);
-    const baseH = mod.height !== undefined ? mod.height : (mod.scale || 50);
+    // Its size is its container's (the piece of paper the figures are placed on): the larger side
+    const smart = !!(mod.figures && mod.figures.length);
+    const cont = this.containerSize(mod, this.logicalW || 600, this.logicalH || 600);
+    const ref = Math.max(cont.w, cont.h);
+    const shape = shapeOverride || (smart ? compositeShape(mod.figures, ref).id : mod.shape) || "circle";
+    const baseW = smart ? ref : (mod.width !== undefined ? mod.width : (mod.scale || 50));
+    const baseH = smart ? ref : (mod.height !== undefined ? mod.height : (mod.scale || 50));
     // A line spans its cell width (widthMultiplier) instead of shrinking to the cell's short side.
     const kx = stretch ? stretch.x : 1, ky = stretch ? stretch.y : 1;
     const w = baseW * (widthMultiplier ?? sizeMultiplier * kx);
@@ -2168,6 +2172,7 @@ export class StudioEngine {
     };
     const cfg = ratioMap[this.state.aspectRatio || "1:1"] || { w: 600, h: 600 };
     const { ctx, width, height } = CanvasUtils.setupCanvas(this.canvas, cfg.w, cfg.h);
+    this.logicalW = width; this.logicalH = height; // the canvas, for the containers that are the whole canvas
 
     // 1. Clear background using current effective palette background
     ctx.save();
@@ -2298,19 +2303,15 @@ export class StudioEngine {
       const fb = this.state.figureBox;
       const mod = this.getLayers().find(l => l.id === fb.layerId);
       if (mod) {
-        const w = mod.width !== undefined ? mod.width : 100, h = mod.height !== undefined ? mod.height : 100;
-        const r = Math.max(w, h) || 1;
-        const s = (fb.size / 100) * r;
         ctx.save();
         ctx.translate(width / 2 + (mod.offsetX || 0), height / 2 + (mod.offsetY || 0));
         ctx.rotate(((mod.rotation || 0) * Math.PI) / 180);
-        ctx.scale(w / r, h / r);
-        ctx.translate((fb.x / 100) * r, (fb.y / 100) * r);
+        ctx.translate(fb.x || 0, fb.y || 0);
         ctx.rotate(((fb.rotation || 0) * Math.PI) / 180);
         ctx.strokeStyle = this.guideColor();
         ctx.lineWidth = 1.2;
         ctx.setLineDash([4, 3]);
-        ctx.strokeRect(-s / 2, -s / 2, s, s);
+        ctx.strokeRect(-fb.width / 2, -(fb.height ?? fb.width) / 2, fb.width, fb.height ?? fb.width);
         ctx.restore();
       }
     }

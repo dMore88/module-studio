@@ -405,11 +405,15 @@ export class StudioProApp {
       migrate(src);
       const layer = merge(createDefaultLayer(`layer-${i + 1}`, `Layer ${i + 1}`), src);
       if (!STUDIO_SHAPE_KEYS.includes(layer.shape)) layer.shape = "circle";
-      // Smart module: keep only well-formed figures (known shape, finite numbers in range), at most 4
+      // Smart module: keep only well-formed figures (known shape, finite numbers in range), at most 4. Figures saved as a
+      // % of the module ({ size, x, y }) become px, from the module's own size
       const num = (v, lo, hi, d) => (typeof v === "number" && Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d);
+      const old = Math.max(layer.width || 100, layer.height || 100);
       layer.figures = (Array.isArray(layer.figures) ? layer.figures : [])
         .filter(f => f && STUDIO_SHAPE_KEYS.includes(f.shape)).slice(0, 4)
-        .map(f => ({ shape: f.shape, size: num(f.size, 5, 200, 100), x: num(f.x, -100, 100, 0), y: num(f.y, -100, 100, 0), rotation: num(f.rotation, -360, 360, 0) }));
+        .map(f => (f.width !== undefined || f.height !== undefined)
+          ? { shape: f.shape, width: num(f.width, 1, 2000, 100), height: num(f.height ?? f.width, 1, 2000, 100), x: num(f.x, -1000, 1000, 0), y: num(f.y, -1000, 1000, 0), rotation: num(f.rotation, -360, 360, 0) }
+          : { shape: f.shape, width: Math.round(num(f.size, 5, 200, 100) / 100 * old), height: Math.round(num(f.size, 5, 200, 100) / 100 * old), x: Math.round(num(f.x, -100, 100, 0) / 100 * old), y: Math.round(num(f.y, -100, 100, 0) / 100 * old), rotation: num(f.rotation, -360, 360, 0) });
       if (!layer.id || used.has(layer.id)) layer.id = `layer-${i + 1}-${Date.now() % 100000}`;
       used.add(layer.id);
       return layer;
@@ -702,10 +706,12 @@ export class StudioProApp {
 
       // The module
       const fill = mod.wireframe === false;
-      if (mod.figures && mod.figures.length) out.push({ k: "Figures", v: mod.figures.map(f => `${shapeName(f.shape)} ${num(f.size)}% (${num(f.x)}, ${num(f.y)}) ${num(f.rotation)}º`).join(" + ") });
+      const smart = !!(mod.figures && mod.figures.length);
+      if (smart) out.push({ k: "Figures", v: mod.figures.map(f => `${shapeName(f.shape)} ${num(f.width ?? f.size)} x ${num(f.height ?? f.width ?? f.size)}px (${num(f.x)}, ${num(f.y)}) ${num(f.rotation)}º`).join(" + ") });
       out.push({ k: "Module", v: [shapeName(mod.shape), fill ? "Fill" : "Stroke", hex(mod.color || "#18181F"), ...(fill ? [] : [`stroke ${num(mod.strokeWidth || 1)}px`])].join(" / ") });
       const w = mod.width ?? mod.scale ?? 100, h = mod.height ?? mod.scale ?? 100;
-      out.push({ k: "Size", v: [mod.shape === "line" ? `${num(w)}px` : `${num(w)} x ${num(h)}px`, `rotation ${num(mod.rotation || 0)}º`, `offset ${num(mod.offsetX || 0)}, ${num(mod.offsetY || 0)}px`].join(" / ") });
+      // A smart module is as big as its container (the paper), so only its placement is listed
+      out.push({ k: smart ? "Placement" : "Size", v: [...(smart ? [] : [mod.shape === "line" ? `${num(w)}px` : `${num(w)} x ${num(h)}px`]), `rotation ${num(mod.rotation || 0)}º`, `offset ${num(mod.offsetX || 0)}, ${num(mod.offsetY || 0)}px`].join(" / ") });
       const cw = mod.containerW > 0 ? `${num(mod.containerW)} x ${num(mod.containerH > 0 ? mod.containerH : mod.containerW)}px` : "canvas";
       out.push({ k: "Container", v: [cw, ...(mod.showContainer !== false ? ["shown"] : []), ...(mod.clipContainer ? ["clip"] : [])].join(" / ") });
       if (mod.id === this.activeLayerId && this.isHidingModifiers()) out.push({ k: "Modifiers", v: "hidden" });
@@ -3005,9 +3011,9 @@ export class StudioProApp {
      ========================================================================= */
 
   // A line has a length (Width) but no Height, so the Height control is hidden for it.
-  updateHeightVisibility(mod) {
-    const shapes = mod && mod.figures && mod.figures.length ? mod.figures.map(f => f.shape) : [mod && mod.shape];
-    document.getElementById("input-active-height")?.closest(".ds-field")?.classList.toggle("hidden", !!mod && shapes.every(s => s === "line"));
+  updateHeightVisibility() {
+    const f = this.currentFigure();
+    document.getElementById("input-fig-h")?.closest(".ds-field")?.classList.toggle("hidden", !!f && f.shape === "line");
   }
 
   /* =========================================================================
@@ -3029,7 +3035,7 @@ export class StudioProApp {
       structure: { ...s, enabled: false, formalStructure: off(s.formalStructure), similarity: off(s.similarity), gradation: off(s.gradation), anomaly: off(s.anomaly), contrast: off(s.contrast), concentration: off(s.concentration), texture: off(s.texture), space: off(s.space) }
     };
     const fig = this.currentFigure();
-    return { ...this.state, layers: [view], layerOrder: [layer.id], showSafeBounds: false, figureEdit: true, figureBox: fig ? { layerId: layer.id, size: fig.size, x: fig.x, y: fig.y, rotation: fig.rotation } : null };
+    return { ...this.state, layers: [view], layerOrder: [layer.id], showSafeBounds: false, figureEdit: true, figureBox: fig ? { layerId: layer.id, width: fig.width, height: fig.height, x: fig.x, y: fig.y, rotation: fig.rotation } : null };
   }
 
   currentFigure() {
@@ -3045,8 +3051,13 @@ export class StudioProApp {
     if (!mod) return;
     const { structure, ...own } = mod;
     const snapshot = JSON.parse(JSON.stringify(own));
-    // A plain module becomes a smart one with its own shape as the first figure
-    if (!mod.figures || mod.figures.length === 0) mod.figures = [{ shape: mod.shape, size: 100, x: 0, y: 0, rotation: 0 }];
+    // A plain module becomes a smart one with its own shape as the first figure, at the size it had; a module saved with figures
+    // as a % of itself gets them in px
+    if (!mod.figures || mod.figures.length === 0) mod.figures = [{ shape: mod.shape, width: mod.width || 100, height: mod.height || mod.width || 100, x: 0, y: 0, rotation: 0 }];
+    else {
+      const old = Math.max(mod.width || 100, mod.height || 100);
+      mod.figures = mod.figures.map(f => (f.width !== undefined ? f : { shape: f.shape, width: Math.round((f.size ?? 100) / 100 * old), height: Math.round((f.size ?? 100) / 100 * old), x: Math.round((f.x || 0) / 100 * old), y: Math.round((f.y || 0) / 100 * old), rotation: f.rotation || 0 }));
+    }
     this.figEdit = { layerId: mod.id, snapshot, index: 0, steps: [], at: -1 };
     this.recordFigureStep();
     this.syncFigureEditor();
@@ -3059,10 +3070,8 @@ export class StudioProApp {
     const id = this.figEdit.layerId;
     if (mod) {
       if (keep) {
-        // A single untouched figure is just a plain module again; otherwise the layer takes the shape of its first figure
-        const only = mod.figures.length === 1 ? mod.figures[0] : null;
+        // the layer takes the shape of its first figure (for its card and for the modifiers that swap the shape)
         mod.shape = mod.figures[0] ? mod.figures[0].shape : mod.shape;
-        if (only && only.size === 100 && only.x === 0 && only.y === 0 && only.rotation === 0) mod.figures = [];
       } else {
         Object.assign(mod, JSON.parse(JSON.stringify(this.figEdit.snapshot)));
       }
@@ -3132,16 +3141,12 @@ export class StudioProApp {
     const f = this.currentFigure();
     document.querySelectorAll("#fig-shape-grid [data-fig-shape]").forEach(b => b.classList.toggle("active", !!f && b.dataset.figShape === f.shape));
     const set = (id, v, suffix) => { this.syncControlValue(`input-${id}`, v); const n = document.getElementById(`num-${id}`); if (n) n.value = `${v}${suffix}`; };
-    if (f) { set("fig-x", f.x, "%"); set("fig-y", f.y, "%"); set("fig-rot", f.rotation, "º"); }
+    if (f) { set("fig-w", f.width, "px"); set("fig-h", f.height, "px"); set("fig-x", f.x, "px"); set("fig-y", f.y, "px"); set("fig-rot", f.rotation, "º"); }
     document.getElementById("btn-fig-add")?.toggleAttribute("disabled", mod.figures.length >= 4);
     document.getElementById("btn-fig-delete")?.toggleAttribute("disabled", mod.figures.length <= 1);
     document.getElementById("btn-fig-up")?.toggleAttribute("disabled", this.figEdit.index <= 0);
     document.getElementById("btn-fig-down")?.toggleAttribute("disabled", this.figEdit.index >= mod.figures.length - 1);
-    // One untouched figure is just the module: its position and rotation are the module's own (Offset, Rotation below), so
-    // the figure's are only offered when there is more than one figure or this one has been changed
-    const plain = mod.figures.length === 1 && f && f.size === 100 && f.x === 0 && f.y === 0 && f.rotation === 0;
-    document.getElementById("fig-transform-stack")?.classList.toggle("hidden", !!plain);
-    this.updateHeightVisibility(mod);
+    this.updateHeightVisibility();
     this.render();
   }
 
@@ -3163,7 +3168,10 @@ export class StudioProApp {
     const mod = () => (this.figEdit ? this.state.layers.find(l => l.id === this.figEdit.layerId) : null);
     document.getElementById("btn-fig-add")?.addEventListener("click", () => {
       const m = mod(); if (!m || m.figures.length >= 4) return;
-      m.figures.push({ shape: "circle", size: 50, x: 0, y: 0, rotation: 0 });
+      // a new figure is half the container (the paper), so it is easy to see and to place
+      const cfg = ASPECT_RATIOS[this.state.aspectRatio] || ASPECT_RATIOS["1:1"];
+      const half = Math.max(1, Math.round(Math.max(m.containerW > 0 ? m.containerW : cfg.w, m.containerH > 0 ? m.containerH : cfg.h) / 2));
+      m.figures.push({ shape: "circle", width: half, height: half, x: 0, y: 0, rotation: 0 });
       this.figEdit.index = m.figures.length - 1;
       this.recordFigureStep();
       this.syncFigureEditor();
@@ -3192,8 +3200,10 @@ export class StudioProApp {
       f[key] = Math.max(lo, Math.min(hi, val));
       this.render();
     }, `Figure ${key}`, suffix);
-    pair("fig-x", "x", -100, 100, "%");
-    pair("fig-y", "y", -100, 100, "%");
+    pair("fig-w", "width", 1, 2000, "px");
+    pair("fig-h", "height", 1, 2000, "px");
+    pair("fig-x", "x", -1000, 1000, "px");
+    pair("fig-y", "y", -1000, 1000, "px");
     pair("fig-rot", "rotation", -180, 180, "º");
   }
 
@@ -3214,22 +3224,6 @@ export class StudioProApp {
         this.pushHistory(`Changed Shape: ${shape}`);
       });
     });
-
-    // 2. Width (Ancho) & Height (Alto)
-    this.bindSliderWithNumber("input-active-width", "num-active-width", (val) => {
-      const mod = this.getActiveModule();
-      mod.width = val;
-      mod.scale = val;
-      this.render();
-      this.updateLayerCardsUI();
-    }, "Width", "px");
-
-    this.bindSliderWithNumber("input-active-height", "num-active-height", (val) => {
-      const mod = this.getActiveModule();
-      mod.height = val;
-      this.render();
-      this.updateLayerCardsUI();
-    }, "Height", "px");
 
     // 3. Rotation (Rotación °)
     this.bindSliderWithNumber("input-active-rotation", "num-active-rotation", (val) => {
@@ -3347,10 +3341,6 @@ export class StudioProApp {
     this.updateHeightVisibility(mod);
 
     // Sync Dimensions
-    this.syncControlValue("input-active-width", mod.width || mod.scale || 50);
-    this.syncControlValue("num-active-width", `${mod.width || mod.scale || 50}px`);
-    this.syncControlValue("input-active-height", mod.height || mod.scale || 50);
-    this.syncControlValue("num-active-height", `${mod.height || mod.scale || 50}px`);
     this.syncControlValue("input-active-rotation", mod.rotation || 0);
     this.syncControlValue("num-active-rotation", `${mod.rotation || 0}º`);
     this.syncControlValue("input-active-stroke", mod.strokeWidth || 1);
