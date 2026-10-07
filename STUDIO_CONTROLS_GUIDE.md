@@ -58,7 +58,7 @@ El panel estructura la generación gráfica en tres niveles. Cada **capa** (hast
 ### Jerarquía espacial: celda → contenedor → módulo
 
 * La **celda** es el espacio de la retícula (columna × fila). Sobre ella actúa el ritmo A:B y la gradación de estructura.
-* El **contenedor** es un marco (*Container width / height*, panel Module › Advanced) dentro de la celda. Por defecto coincide con ella. En *Fit to canvas* se escala con la celda; en *Actual size* **manda**: la celda toma el tamaño del contenedor.
+* El **contenedor** es un marco (*Container width / height*, panel Module › Advanced) dentro de la celda. Por defecto mide 100 × 100, igual que el módulo. En *Fit to canvas* se escala con la celda; en *Actual size* **manda**: la celda toma el tamaño del contenedor, que **conserva su tamaño** al cambiar de modo (en retícula y en anillos), para que los módulos del mismo tamaño no se solapen.
 * El **módulo** vive dentro del contenedor y se escala con él, **en proporción** (sin deformarse): según Wong, una figura repetida no se deforma; deformar es cosa de Similarity.
 
 > **Nota:** el antiguo par *Form A / Form B* y sus 8 interrelaciones (detachment, touching, overlapping, penetration, union, subtraction, intersection, coincidence) fueron reemplazados por el sistema de capas. Las interrelaciones entre capas están **pendientes de rediseño** (backlog INT2, INT5 a INT9, al final de todo).

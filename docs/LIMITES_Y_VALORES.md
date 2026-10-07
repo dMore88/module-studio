@@ -51,7 +51,7 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | Qué | Valor | Nota |
 | :-- | :-- | :-- |
 | Módulo | 1 a 2000 px | 1:1, sin escalar |
-| Contenedor (= celda) | 10 a 2000 px | Por defecto 100 × 100; en un proyecto antiguo, 0 significa "todo el lienzo". Al pasar a Actual size, si no se ha tocado, empieza del tamaño de una celda de Fit |
+| Contenedor (= celda) | 10 a 2000 px | Por defecto 100 × 100: al pasar a Actual size **conserva su tamaño** (así los módulos del mismo tamaño no se solapan). Solo un proyecto antiguo con el contenedor en 0 ("todo el lienzo") empieza del tamaño de una celda de Fit |
 | Celda mínima al dibujar | 10 px | coincide con el mínimo del contenedor |
 | Bloque máximo | 100 × 2000 = **200 000 px** de ancho y de alto | solo se ve lo que cae en el lienzo |
 | Lo que se ve | el centro del bloque, recortado al borde del lienzo | con 9 columnas de 200 px solo caben unas 3 |

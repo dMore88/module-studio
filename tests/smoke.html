@@ -300,7 +300,7 @@
     await test("Radial Actual size: each ring has as many rays as fit the container's width; Fit keeps the Angular rays", async () => {
       reset();
       const d = win.document, cv = d.getElementById("studio-canvas");
-      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: false, width: 10, height: 10, showContainer: false, containerW: 100, containerH: 100, containerAuto: false }); app.state.showSafeBounds = false;
+      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: false, width: 10, height: 10, showContainer: false, containerW: 100, containerH: 100 }); app.state.showSafeBounds = false;
       const st = L.structure; st.enabled = true; st.mode = "radiation"; Object.assign(st.radiation, { scheme: "concentric", rays: 60, rings: 3, centerOpen: 0, sizeMode: "actual", ringRotation: 0, checkerInvert: true, showRays: false, showRings: false });
       const dpr = cv.width / 600;
       const changes = (r) => {
@@ -320,6 +320,14 @@
       assert(changes(120) === 8, "Fit to canvas keeps the Angular rays");
       d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
       assert(!d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("hidden"), "Fit shows Angular rays");
+      // Switching to Actual size keeps the container as it is (100 x 100, the module's size), in both layouts
+      L.containerW = 100; L.containerH = 100; st.radiation.sizeMode = "fit"; st.repetition.sizeMode = "fit"; st.mode = "radiation"; app.syncAllInspectorsWithActiveLayer();
+      d.querySelector('[data-rad-size="actual"]').click(); await wait(40);
+      assert(L.containerW === 100 && L.containerH === 100, `Radial Actual size should keep the container (${L.containerW} x ${L.containerH})`);
+      st.radiation.sizeMode = "fit"; st.mode = "repetition"; app.syncAllInspectorsWithActiveLayer();
+      d.querySelector('[data-rep-size="actual"]').click(); await wait(40);
+      assert(L.containerW === 100 && L.containerH === 100, `Grid Actual size should keep the container (${L.containerW} x ${L.containerH})`);
+      st.mode = "radiation"; st.radiation.sizeMode = "actual"; st.repetition.sizeMode = "fit";
       st.radiation.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer();
       assert(d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("hidden"), "Actual size hides Angular rays");
     });
@@ -410,7 +418,7 @@
       const fit = bounds();
       assert(fit.x1 <= 301 && fit.y1 <= 301 && fit.x0 < 60 && fit.y0 < 60 && fit.x1 > 240 && fit.y1 > 240, `Fit: the grid should fill the top-left quarter (${JSON.stringify(fit)}), plain was ${JSON.stringify(plain)}`);
       // Actual size: the block size does not count, only its centre: the grid block moves, the canvas is not cropped
-      Object.assign(st.repetition, { sizeMode: "actual", cols: 2, rows: 2 }); L.containerW = 100; L.containerH = 100; L.containerAuto = false;
+      Object.assign(st.repetition, { sizeMode: "actual", cols: 2, rows: 2 }); L.containerW = 100; L.containerH = 100;
       st.block = { x: 50, y: 50, w: 100, h: 100 };
       const mid = bounds();
       st.block = { x: 80, y: 20, w: 30, h: 30 };
@@ -460,7 +468,7 @@
       assert(guide() === 0, "The frame must never reach an export");
       app.engine.exporting = false;
       // Actual size: the frame wraps the cells (3 x 3 of 100 px), moved by the offset
-      Object.assign(st.repetition, { sizeMode: "actual" }); L.containerW = 100; L.containerH = 100; L.containerAuto = false;
+      Object.assign(st.repetition, { sizeMode: "actual" }); L.containerW = 100; L.containerH = 100;
       st.block = { x: 70, y: 50, w: 100, h: 100 };
       app.render();
       const px = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; const dpr = cv.width / 600;
@@ -1211,7 +1219,7 @@
       assert(q("#num-active-container-w").value === "100px" && q("#num-active-container-h").value === "100px", "The container should start as big as the module (100 x 100)");
       const cw = q("#input-active-container-w"); cw.value = 240; cw.dispatchEvent(new win.Event("input", { bubbles: true }));
       assert(app.getActiveModule().containerW === 240 && q("#num-active-container-w").value === "240px", "Container width slider out of sync");
-      app.getActiveModule().containerW = 0; app.getActiveModule().containerH = 0; app.getActiveModule().containerAuto = true;
+      app.getActiveModule().containerW = 0; app.getActiveModule().containerH = 0;
       q('[data-rail-tab="layout"]').click(); await wait(80);
       q("#toggle-layout-structure").click();
       const rep = () => app.getActiveLayerStructure().repetition;

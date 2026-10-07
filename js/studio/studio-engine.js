@@ -165,7 +165,6 @@ export const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "ci
   offsetY,
   containerW: 100, // width of the module's container in px (0 = the whole canvas); starts as big as the module
   containerH: 100, // height of the module's container in px (0 = the whole canvas)
-  containerAuto: true, // the container has not been set by hand: Actual size may start it from the Fit cell
   showContainer: true, // draw the container as a dashed frame on the canvas (an on-screen guide, never exported)
   clipContainer: false, // cut the module at the edge of its container (Clip cell, in Layout, cuts at the cell instead)
   wireframe: true,
