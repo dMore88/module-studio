@@ -2401,10 +2401,10 @@
       const fire = (el, v) => { el.value = String(v); el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
       app.isFlyoutOpen = false; app.updateRailUI();
       q('[data-rail-tab="module"]').click(); await wait(60);
-      assert(q("#fig-relation-block").classList.contains("hidden"), "The first shape has no relation");
+      assert(q("#fig-relation-block").classList.contains("is-disabled"), "The first shape has no relation");
       fire(q("#input-fig-w"), 50); fire(q("#input-fig-h"), 50);
       q("#btn-fig-add").click(); await wait(30);
-      assert(!q("#fig-relation-block").classList.contains("hidden") && q('[data-fig-rel="free"]').classList.contains("active"), "The second shape offers the relation, free by default");
+      assert(!q("#fig-relation-block").classList.contains("is-disabled") && q('[data-fig-rel="free"]').classList.contains("active"), "The second shape offers the relation, free by default");
       const box = () => app.stateForFigureEdit().figureBox;
       q('[data-fig-rel="coincident"]').click(); await wait(30);
       assert(box().x === 0 && box().y === 0 && q("#fig-pos-x-field").classList.contains("hidden"), "Coincident puts the shape on the previous one and hides its position");
@@ -2539,9 +2539,9 @@
       L.combine = "none"; L.figures = [{ shape: "circle", width: 100, height: 100, x: 0, y: 0, rotation: 0 }];
       app.isFlyoutOpen = false; app.updateRailUI();
       q('[data-rail-tab="module"]').click(); await wait(60);
-      assert(q("#fig-combine-block").classList.contains("hidden"), "With one shape there is nothing to combine");
+      assert(q("#fig-combine-block").classList.contains("is-disabled"), "With one shape there is nothing to combine");
       q("#btn-fig-add").click(); await wait(30);
-      assert(!q("#fig-combine-block").classList.contains("hidden") && !q("#fig-list").ownerDocument.querySelector("[data-fig-combine].active"), "With two shapes Combine appears, on None (no operation on)");
+      assert(!q("#fig-combine-block").classList.contains("is-disabled") && !q("#fig-list").ownerDocument.querySelector("[data-fig-combine].active"), "With two shapes Combine appears, on None (no operation on)");
       q('[data-fig-combine="union"]').click(); await wait(30);
       assert(L.combine === "union" && q('[data-fig-combine="union"]').classList.contains("active"), "The chip sets the operation");
       assert(/Combine: Union/.test(d.getElementById("art-log-lines").textContent), "The Art log lists it");

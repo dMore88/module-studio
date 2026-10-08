@@ -191,11 +191,11 @@ class ModuleEditor {
     document.getElementById("btn-fig-duplicate")?.toggleAttribute("disabled", mod.figures.length >= 4);
     // Combine: only with two or more shapes
     const combineNow = mod.combine || "none";
-    document.getElementById("fig-combine-block")?.classList.toggle("hidden", mod.figures.length < 2);
+    setControlEnabled(document.getElementById("fig-combine-block"), mod.figures.length >= 2, "Add a second shape to combine them");
     document.querySelectorAll("[data-fig-combine]").forEach(b => b.classList.toggle("active", b.dataset.figCombine === combineNow));
     // Relation to the previous shape (the first one has none): a related shape is placed by the relation, not by its position
     const rel = this.figEdit.index > 0 ? (f && f.relation) || "free" : "free";
-    document.getElementById("fig-relation-block")?.classList.toggle("hidden", this.figEdit.index === 0);
+    setControlEnabled(document.getElementById("fig-relation-block"), this.figEdit.index > 0, mod.figures.length < 2 ? "Add a second shape to relate them" : "The first shape has nothing before it to relate to");
     document.querySelectorAll("[data-fig-rel]").forEach(b => b.classList.toggle("active", b.dataset.figRel === rel));
     document.getElementById("fig-relation-stack")?.classList.toggle("hidden", rel !== "distance");
     document.getElementById("fig-pos-x-field")?.classList.toggle("hidden", rel !== "free");
