@@ -4153,6 +4153,133 @@ const StudioExporter = {
 
 
   /**
+ * Panels described as data. A panel spec lists its groups and controls (tags, sliders, switches); this class draws the
+ * panel, shows the state of the active layer in it and listens to its controls, the same way for every panel.
+ * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
+ *
+ * A spec looks like:
+ *   { id, cardId, name,                      // name starts the history labels ("Space Mode: ...")
+ *     state: (app) => the settings object of the active layer,
+ *     enabled: { id, key }, badgeId,         // the switch of the header and the layer badge
+ *     groups: [{ title, controls: [
+ *       { type: "tags",   label, key, attr, history, options: [[value, text], ...] },
+ *       { type: "slider", id, label, key, min, max, step, value, suffix, history },
+ *       { type: "toggle", id, label, key, history } ] }] }
+ * With two or more groups, every group gets its title and a divider; with one, only the panel has a title.
+ */
+class PanelBuilder {
+  // Draws the controls of every panel described as data (once, before the controllers listen to them)
+  buildDataPanels() {
+    for (const spec of dataPanels()) {
+      const card = document.getElementById(spec.cardId);
+      if (!card) continue;
+      const titled = spec.groups.length > 1;
+      const html = spec.groups.map((g, i) => {
+        const head = titled ? `${i > 0 ? '<div class="ds-divider" role="separator"></div>\n' : ""}<div class="ds-label ds-label--overline">${g.title}</div>\n` : "";
+        let out = "", toggles = [];
+        const flush = () => { if (toggles.length) { out += `<div class="ds-toggles">\n${toggles.join("\n")}\n</div>\n`; toggles = []; } };
+        for (const c of g.controls) {
+          if (c.type === "toggle") { toggles.push(`<label class="ds-toggle-item">\n<span class="ds-toggle-label">${c.label}</span>\n<input type="checkbox" id="${c.id}" class="ds-checkbox">\n</label>`); continue; }
+          flush();
+          if (c.type === "tags") {
+            out += `<div class="ds-field">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags">\n${c.options.map(([v, t], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}">${t}</button>`).join("\n")}\n</div>\n</div>\n`;
+          } else if (c.type === "slider") {
+            out += `<div class="ds-field">\n<div class="ds-label ds-label-clip">${c.label}</div>\n<div class="ds-slider">\n<input type="range" id="input-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}">\n<input type="text" id="num-${c.id}" class="ds-value" value="${c.value}${c.suffix}" inputmode="numeric">\n</div>\n</div>\n`;
+          }
+        }
+        flush();
+        return head + out;
+      }).join("\n");
+      card.insertAdjacentHTML("beforeend", html);
+    }
+  }
+
+  // Shows the state of the active layer in a panel described as data
+  syncDataPanel(spec) {
+    const mod = this.getActiveModule();
+    const st = spec.state(this);
+    if (!mod || !st) return;
+    const badge = document.getElementById(spec.badgeId);
+    if (badge) badge.textContent = this.compositionName(mod);
+    const sw = document.getElementById(spec.enabled.id);
+    if (sw) sw.checked = !!st[spec.enabled.key];
+    for (const g of spec.groups) {
+      for (const c of g.controls) {
+        if (c.type === "tags") {
+          document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(b => b.classList.toggle("active", b.getAttribute(c.attr) === st[c.key]));
+        } else if (c.type === "slider") {
+          const v = st[c.key] ?? c.value;
+          this.syncControlValue(`input-${c.id}`, v);
+          const num = document.getElementById(`num-${c.id}`);
+          if (num) num.value = `${v}${c.suffix}`;
+        } else if (c.type === "toggle") {
+          this.syncCheckbox(c.id, !!st[c.key]);
+        }
+      }
+    }
+    this.updateRailIndicatorDots();
+  }
+
+  // Listens to the controls of a panel described as data: any edit turns the modifier on, redraws and records a history step
+  bindDataPanel(spec) {
+    const sw = document.getElementById(spec.enabled.id);
+    const resync = () => this.syncDataPanel(spec);
+    const commit = (mutate, historyLabel, { sync = true } = {}) => {
+      const st = spec.state(this);
+      if (!st) return;
+      mutate(st);
+      st[spec.enabled.key] = true;
+      if (sw) sw.checked = true;
+      if (sync) resync();
+      this.render();
+      this.updateLayerCardsUI();
+      if (historyLabel) this.pushHistory(`Layer ${this.activeLayerId} ${historyLabel}`);
+    };
+    sw?.addEventListener("change", (e) => {
+      const st = spec.state(this);
+      if (!st) return;
+      st[spec.enabled.key] = e.target.checked;
+      resync();
+      this.render();
+      this.updateLayerCardsUI();
+      this.pushHistory(`Layer ${this.activeLayerId} ${spec.name}: ${st[spec.enabled.key] ? "ON" : "OFF"}`);
+    });
+    for (const g of spec.groups) {
+      for (const c of g.controls) {
+        if (c.type === "tags") {
+          document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(btn => {
+            btn.addEventListener("click", () => {
+              const v = btn.getAttribute(c.attr);
+              commit(st => { st[c.key] = v; }, `${spec.name} ${c.history}: ${v}`);
+            });
+          });
+        } else if (c.type === "slider") {
+          const slider = document.getElementById(`input-${c.id}`), num = document.getElementById(`num-${c.id}`);
+          const parse = (s) => (Number(c.step) % 1 ? parseFloat(s) : parseInt(s, 10));
+          slider?.addEventListener("input", (e) => {
+            const val = parse(e.target.value);
+            commit(st => { st[c.key] = val; }, null, { sync: false });
+            if (num) num.value = `${val}${c.suffix}`;
+          });
+          slider?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} ${c.history}: ${e.target.value}${c.suffix}`));
+          num?.addEventListener("change", (e) => {
+            const raw = parse(e.target.value.replace(/[^0-9.-]/g, ""));
+            const val = isNaN(raw) ? Number(c.min) : Math.max(Number(c.min), Math.min(Number(c.max), raw));
+            commit(st => { st[c.key] = val; }, `${spec.name} ${c.history}: ${val}${c.suffix}`);
+          });
+        } else if (c.type === "toggle") {
+          document.getElementById(c.id)?.addEventListener("change", (e) => {
+            const checked = e.target.checked;
+            commit(st => { st[c.key] = checked; }, `${spec.name} ${c.history}: ${checked ? "ON" : "OFF"}`);
+          });
+        }
+      }
+    }
+  }
+}
+
+
+  /**
  * The layers panel: every layer is a composition (add, duplicate, delete, show, hide, order, the cards).
  * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
  */
@@ -6597,109 +6724,38 @@ class PanelConcentration {
 
 
   /**
- * The Space panel.
+ * The Space panel, described as data (see panel-builder.js): Mode (Isometric, 3D tilt, Fluctuating, Paradox), Extrusion depth,
+ * Projection angle, Facet shading contrast and the 30º isometric grid lines. Autonomous modifier: no Repetition / Radiation required.
  * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
  */
-class PanelSpace {
-  /* =========================================================================
-     SPACE INSPECTOR & CONTROLLER (Per Active Layer)
-     Mode (Isometric, 3D tilt, Fluctuating, Paradox), Extrusion depth,
-     Projection angle, Facet shading contrast, 30º isometric grid lines.
-     Autonomous modifier: no Repetition / Radiation required.
-     ========================================================================= */
+const SPACE_PANEL = {
+  id: "space", cardId: "card-space", name: "Space",
+  state: (app) => app.getActiveSpace(),
+  enabled: { id: "toggle-space-active", key: "enabled" },
+  badgeId: "badge-space-layer",
+  groups: [
+    { title: "Space", controls: [
+      { type: "tags", label: "Mode", key: "mode", attr: "data-space-mode", history: "Mode",
+        options: [["isometric", "Isometric"], ["foreshortening", "3D tilt"], ["fluctuating", "Fluctuating"], ["conflicting", "Paradox"]] },
+    ] },
+    { title: "Depth", controls: [
+      { type: "slider", id: "space-depth", label: "Extrusion depth", key: "depthPct", min: 5, max: 100, step: 1, value: 20, suffix: "%", history: "Depth" },
+      { type: "slider", id: "space-angle", label: "Projection angle", key: "angle", min: -180, max: 180, step: 1, value: 30, suffix: "º", history: "Angle" },
+      { type: "slider", id: "space-shading", label: "Facet shading contrast", key: "shading", min: 5, max: 100, step: 1, value: 50, suffix: "%", history: "Shading" },
+      { type: "toggle", id: "toggle-space-guides", label: "Display 30º Isometric Grid Lines", key: "showIsoGuides", history: "Iso Guides" },
+    ] },
+  ],
+};
 
+class PanelSpace {
   getActiveSpace() {
     const struct = this.getActiveLayerStructure();
     return struct ? struct.space : null;
   }
 
-  syncSpaceInspectorWithActiveLayer() {
-    const mod = this.getActiveModule();
-    const space = this.getActiveSpace();
-    if (!mod || !space) return;
+  syncSpaceInspectorWithActiveLayer() { this.syncDataPanel(SPACE_PANEL); }
 
-    const badge = document.getElementById("badge-space-layer");
-    if (badge) badge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
-
-    const toggle = document.getElementById("toggle-space-active");
-    if (toggle) toggle.checked = !!space.enabled;
-
-    document.querySelectorAll("#card-space [data-space-mode]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.spaceMode === space.mode);
-    });
-
-    const setPair = (sliderId, numId, value, suffix) => {
-      this.syncControlValue(sliderId, value);
-      const num = document.getElementById(numId);
-      if (num) num.value = `${value}${suffix}`;
-    };
-    setPair("input-space-depth", "num-space-depth", space.depthPct ?? 20, "%");
-    setPair("input-space-angle", "num-space-angle", space.angle ?? 30, "º");
-    setPair("input-space-shading", "num-space-shading", space.shading ?? 50, "%");
-
-    this.syncCheckbox("toggle-space-guides", !!space.showIsoGuides);
-
-    this.updateRailIndicatorDots();
-  }
-
-  setupSpace() {
-    const toggle = document.getElementById("toggle-space-active");
-
-    // Any edit enables Space on the active layer, then refreshes everything.
-    const commit = (mutate, historyLabel, { resync = true } = {}) => {
-      const space = this.getActiveSpace();
-      if (!space) return;
-      mutate(space);
-      space.enabled = true;
-      if (toggle) toggle.checked = true;
-      if (resync) this.syncSpaceInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      if (historyLabel) this.pushHistory(`Layer ${this.activeLayerId} ${historyLabel}`);
-    };
-
-    toggle?.addEventListener("change", (e) => {
-      const space = this.getActiveSpace();
-      if (!space) return;
-      space.enabled = e.target.checked;
-      this.syncSpaceInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      this.pushHistory(`Layer ${this.activeLayerId} Space: ${space.enabled ? "ON" : "OFF"}`);
-    });
-
-    document.querySelectorAll("#card-space [data-space-mode]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(sp => { sp.mode = btn.dataset.spaceMode; }, `Space Mode: ${btn.dataset.spaceMode}`);
-      });
-    });
-
-    const bindPair = (sliderId, numId, { min, max, suffix, label, key }) => {
-      const slider = document.getElementById(sliderId);
-      const num = document.getElementById(numId);
-      slider?.addEventListener("input", (e) => {
-        const val = parseInt(e.target.value, 10);
-        commit(sp => { sp[key] = val; }, null, { resync: false });
-        if (num) num.value = `${val}${suffix}`;
-      });
-      slider?.addEventListener("change", (e) => {
-        this.pushHistory(`Layer ${this.activeLayerId} Space ${label}: ${e.target.value}${suffix}`);
-      });
-      num?.addEventListener("change", (e) => {
-        const raw = parseInt(e.target.value.replace(/[^0-9-]/g, ""), 10);
-        const val = isNaN(raw) ? min : Math.max(min, Math.min(max, raw));
-        commit(sp => { sp[key] = val; }, `Space ${label}: ${val}${suffix}`);
-      });
-    };
-    bindPair("input-space-depth", "num-space-depth", { min: 5, max: 100, suffix: "%", label: "Depth", key: "depthPct" });
-    bindPair("input-space-angle", "num-space-angle", { min: -180, max: 180, suffix: "º", label: "Angle", key: "angle" });
-    bindPair("input-space-shading", "num-space-shading", { min: 5, max: 100, suffix: "%", label: "Shading", key: "shading" });
-
-    document.getElementById("toggle-space-guides")?.addEventListener("change", (e) => {
-      const checked = e.target.checked;
-      commit(sp => { sp.showIsoGuides = checked; }, `Space Iso Guides: ${checked ? "ON" : "OFF"}`);
-    });
-  }
+  setupSpace() { this.bindDataPanel(SPACE_PANEL); }
 }
 
 
@@ -7309,6 +7365,9 @@ const ASPECT_RATIOS = {
   "16:9": { label: "16:9 Cinema", w: 800, h: 450, css: "16 / 9" }
 };
 
+// The panels described as data (each spec lives in its panel's file in js/studio/app/)
+function dataPanels() { return [SPACE_PANEL]; }
+
 // Copies the methods (and the static getters) of the area classes (js/studio/app/*.js) onto StudioProApp
 function applyMixins(target, sources) {
   for (const source of sources) {
@@ -7366,6 +7425,7 @@ class StudioProApp {
     this.setupHeaderActions();
     this.setupFloatingLayersPanel();
     this.setupControlsRail();
+    this.buildDataPanels(); // the panels described as data (js/studio/app/panel-builder.js) draw their controls first
     this.setupLayoutStructure();
     this.setupSelects();
     this.setupValueSteppers();
@@ -7929,7 +7989,7 @@ class StudioProApp {
 }
 
 // The rest of the app's methods live in js/studio/app/*.js, one file per panel or area
-applyMixins(StudioProApp, [LayersPanel, ArtLog, ControlsRail, PanelLayout, PanelSimilarity, Accessibility, PanelGradation, PanelAnomaly, PanelContrast, PanelConcentration, PanelSpace, PanelTexture, ModuleEditor]);
+applyMixins(StudioProApp, [PanelBuilder, LayersPanel, ArtLog, ControlsRail, PanelLayout, PanelSimilarity, Accessibility, PanelGradation, PanelAnomaly, PanelContrast, PanelConcentration, PanelSpace, PanelTexture, ModuleEditor]);
 
 // Auto-boot upon DOM readiness
 document.addEventListener("DOMContentLoaded", () => {

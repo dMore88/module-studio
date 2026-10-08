@@ -24,6 +24,9 @@ export const ASPECT_RATIOS = {
   "16:9": { label: "16:9 Cinema", w: 800, h: 450, css: "16 / 9" }
 };
 
+// The panels described as data (each spec lives in its panel's file in js/studio/app/)
+function dataPanels() { return [SPACE_PANEL]; }
+
 // Copies the methods (and the static getters) of the area classes (js/studio/app/*.js) onto StudioProApp
 function applyMixins(target, sources) {
   for (const source of sources) {
@@ -82,6 +85,7 @@ export class StudioProApp {
     this.setupHeaderActions();
     this.setupFloatingLayersPanel();
     this.setupControlsRail();
+    this.buildDataPanels(); // the panels described as data (js/studio/app/panel-builder.js) draw their controls first
     this.setupLayoutStructure();
     this.setupSelects();
     this.setupValueSteppers();
@@ -645,7 +649,7 @@ export class StudioProApp {
 }
 
 // The rest of the app's methods live in js/studio/app/*.js, one file per panel or area
-applyMixins(StudioProApp, [LayersPanel, ArtLog, ControlsRail, PanelLayout, PanelSimilarity, Accessibility, PanelGradation, PanelAnomaly, PanelContrast, PanelConcentration, PanelSpace, PanelTexture, ModuleEditor]);
+applyMixins(StudioProApp, [PanelBuilder, LayersPanel, ArtLog, ControlsRail, PanelLayout, PanelSimilarity, Accessibility, PanelGradation, PanelAnomaly, PanelContrast, PanelConcentration, PanelSpace, PanelTexture, ModuleEditor]);
 
 // Auto-boot upon DOM readiness
 document.addEventListener("DOMContentLoaded", () => {

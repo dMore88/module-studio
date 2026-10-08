@@ -1,105 +1,34 @@
 /**
- * The Space panel.
+ * The Space panel, described as data (see panel-builder.js): Mode (Isometric, 3D tilt, Fluctuating, Paradox), Extrusion depth,
+ * Projection angle, Facet shading contrast and the 30º isometric grid lines. Autonomous modifier: no Repetition / Radiation required.
  * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
  */
-class PanelSpace {
-  /* =========================================================================
-     SPACE INSPECTOR & CONTROLLER (Per Active Layer)
-     Mode (Isometric, 3D tilt, Fluctuating, Paradox), Extrusion depth,
-     Projection angle, Facet shading contrast, 30º isometric grid lines.
-     Autonomous modifier: no Repetition / Radiation required.
-     ========================================================================= */
+const SPACE_PANEL = {
+  id: "space", cardId: "card-space", name: "Space",
+  state: (app) => app.getActiveSpace(),
+  enabled: { id: "toggle-space-active", key: "enabled" },
+  badgeId: "badge-space-layer",
+  groups: [
+    { title: "Space", controls: [
+      { type: "tags", label: "Mode", key: "mode", attr: "data-space-mode", history: "Mode",
+        options: [["isometric", "Isometric"], ["foreshortening", "3D tilt"], ["fluctuating", "Fluctuating"], ["conflicting", "Paradox"]] },
+    ] },
+    { title: "Depth", controls: [
+      { type: "slider", id: "space-depth", label: "Extrusion depth", key: "depthPct", min: 5, max: 100, step: 1, value: 20, suffix: "%", history: "Depth" },
+      { type: "slider", id: "space-angle", label: "Projection angle", key: "angle", min: -180, max: 180, step: 1, value: 30, suffix: "º", history: "Angle" },
+      { type: "slider", id: "space-shading", label: "Facet shading contrast", key: "shading", min: 5, max: 100, step: 1, value: 50, suffix: "%", history: "Shading" },
+      { type: "toggle", id: "toggle-space-guides", label: "Display 30º Isometric Grid Lines", key: "showIsoGuides", history: "Iso Guides" },
+    ] },
+  ],
+};
 
+class PanelSpace {
   getActiveSpace() {
     const struct = this.getActiveLayerStructure();
     return struct ? struct.space : null;
   }
 
-  syncSpaceInspectorWithActiveLayer() {
-    const mod = this.getActiveModule();
-    const space = this.getActiveSpace();
-    if (!mod || !space) return;
+  syncSpaceInspectorWithActiveLayer() { this.syncDataPanel(SPACE_PANEL); }
 
-    const badge = document.getElementById("badge-space-layer");
-    if (badge) badge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
-
-    const toggle = document.getElementById("toggle-space-active");
-    if (toggle) toggle.checked = !!space.enabled;
-
-    document.querySelectorAll("#card-space [data-space-mode]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.spaceMode === space.mode);
-    });
-
-    const setPair = (sliderId, numId, value, suffix) => {
-      this.syncControlValue(sliderId, value);
-      const num = document.getElementById(numId);
-      if (num) num.value = `${value}${suffix}`;
-    };
-    setPair("input-space-depth", "num-space-depth", space.depthPct ?? 20, "%");
-    setPair("input-space-angle", "num-space-angle", space.angle ?? 30, "º");
-    setPair("input-space-shading", "num-space-shading", space.shading ?? 50, "%");
-
-    this.syncCheckbox("toggle-space-guides", !!space.showIsoGuides);
-
-    this.updateRailIndicatorDots();
-  }
-
-  setupSpace() {
-    const toggle = document.getElementById("toggle-space-active");
-
-    // Any edit enables Space on the active layer, then refreshes everything.
-    const commit = (mutate, historyLabel, { resync = true } = {}) => {
-      const space = this.getActiveSpace();
-      if (!space) return;
-      mutate(space);
-      space.enabled = true;
-      if (toggle) toggle.checked = true;
-      if (resync) this.syncSpaceInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      if (historyLabel) this.pushHistory(`Layer ${this.activeLayerId} ${historyLabel}`);
-    };
-
-    toggle?.addEventListener("change", (e) => {
-      const space = this.getActiveSpace();
-      if (!space) return;
-      space.enabled = e.target.checked;
-      this.syncSpaceInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      this.pushHistory(`Layer ${this.activeLayerId} Space: ${space.enabled ? "ON" : "OFF"}`);
-    });
-
-    document.querySelectorAll("#card-space [data-space-mode]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(sp => { sp.mode = btn.dataset.spaceMode; }, `Space Mode: ${btn.dataset.spaceMode}`);
-      });
-    });
-
-    const bindPair = (sliderId, numId, { min, max, suffix, label, key }) => {
-      const slider = document.getElementById(sliderId);
-      const num = document.getElementById(numId);
-      slider?.addEventListener("input", (e) => {
-        const val = parseInt(e.target.value, 10);
-        commit(sp => { sp[key] = val; }, null, { resync: false });
-        if (num) num.value = `${val}${suffix}`;
-      });
-      slider?.addEventListener("change", (e) => {
-        this.pushHistory(`Layer ${this.activeLayerId} Space ${label}: ${e.target.value}${suffix}`);
-      });
-      num?.addEventListener("change", (e) => {
-        const raw = parseInt(e.target.value.replace(/[^0-9-]/g, ""), 10);
-        const val = isNaN(raw) ? min : Math.max(min, Math.min(max, raw));
-        commit(sp => { sp[key] = val; }, `Space ${label}: ${val}${suffix}`);
-      });
-    };
-    bindPair("input-space-depth", "num-space-depth", { min: 5, max: 100, suffix: "%", label: "Depth", key: "depthPct" });
-    bindPair("input-space-angle", "num-space-angle", { min: -180, max: 180, suffix: "º", label: "Angle", key: "angle" });
-    bindPair("input-space-shading", "num-space-shading", { min: 5, max: 100, suffix: "%", label: "Shading", key: "shading" });
-
-    document.getElementById("toggle-space-guides")?.addEventListener("change", (e) => {
-      const checked = e.target.checked;
-      commit(sp => { sp.showIsoGuides = checked; }, `Space Iso Guides: ${checked ? "ON" : "OFF"}`);
-    });
-  }
+  setupSpace() { this.bindDataPanel(SPACE_PANEL); }
 }

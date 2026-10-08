@@ -32,7 +32,7 @@ def strip_es6_modules(content):
 
 # The areas of the app (js/studio/app/*.js): classes whose methods studio-pro-app.js adds to StudioProApp. They go in the bundle before it.
 APP_PARTS = tuple((name, 'studio/app/' + name + '.js') for name in (
-    'layers-panel', 'art-log', 'controls-rail', 'panel-layout', 'panel-similarity', 'accessibility', 'panel-gradation', 'panel-anomaly',
+    'panel-builder', 'layers-panel', 'art-log', 'controls-rail', 'panel-layout', 'panel-similarity', 'accessibility', 'panel-gradation', 'panel-anomaly',
     'panel-contrast', 'panel-concentration', 'panel-space', 'panel-texture', 'module-editor'))
 
 def read_sources():
