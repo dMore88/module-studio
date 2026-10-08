@@ -406,7 +406,7 @@ export class StudioProApp {
       layer.figures = (Array.isArray(layer.figures) ? layer.figures : [])
         .filter(f => f && STUDIO_SHAPE_KEYS.includes(f.shape)).slice(0, 4)
         .map(f => (f.width !== undefined || f.height !== undefined)
-          ? { shape: f.shape, width: num(f.width, 1, 2000, 100), height: num(f.height ?? f.width, 1, 2000, 100), x: num(f.x, -1000, 1000, 0), y: num(f.y, -1000, 1000, 0), rotation: num(f.rotation, -360, 360, 0), relation: ["coincident", "distance"].includes(f.relation) ? f.relation : "free", angle: num(f.angle, 0, 360, 0), gap: num(f.gap, -500, 500, 0) }
+          ? { shape: f.shape, width: num(f.width, 1, 2000, 100), height: num(f.height ?? f.width, 1, 2000, 100), x: num(f.x, -1000, 1000, 0), y: num(f.y, -1000, 1000, 0), rotation: num(f.rotation, -360, 360, 0), relation: ["coincident", "distance"].includes(f.relation) ? f.relation : "free", angle: num(f.angle, 0, 360, 0), gap: num(f.gap, -500, 500, 0), ...(typeof f.wireframe === "boolean" ? { wireframe: f.wireframe } : {}), ...(/^#[0-9a-f]{6}$/i.test(f.color || "") ? { color: f.color } : {}), ...(typeof f.strokeWidth === "number" && Number.isFinite(f.strokeWidth) ? { strokeWidth: Math.max(0.2, Math.min(10, f.strokeWidth)) } : {}) }
           : { shape: f.shape, width: Math.round(num(f.size, 5, 200, 100) / 100 * old), height: Math.round(num(f.size, 5, 200, 100) / 100 * old), x: Math.round(num(f.x, -100, 100, 0) / 100 * old), y: Math.round(num(f.y, -100, 100, 0) / 100 * old), rotation: num(f.rotation, -360, 360, 0) });
       layer.combine = ["union", "subtract", "intersect", "xor"].includes(layer.combine) ? layer.combine : "none";
       // The module's size is its container: 10 to 1000 px. Older projects used 0 for "the whole canvas"
@@ -708,10 +708,10 @@ export class StudioProApp {
       const smart = !!(mod.figures && mod.figures.length);
       const cw = Math.round(mod.containerW > 0 ? mod.containerW : 100), ch = Math.round(mod.containerH > 0 ? mod.containerH : 100);
       out.push({ k: "Module", v: [`${cw} x ${ch}px`, `rotation ${num(mod.rotation || 0)}º`, ...((mod.offsetX || mod.offsetY) ? [`offset ${num(mod.offsetX || 0)}, ${num(mod.offsetY || 0)}px`] : [])].join(" / ") });
-      if (smart) out.push({ k: "Shapes", v: resolveFigures(mod.figures).map(f => `${shapeName(f.shape)} ${num(f.width ?? f.size)} x ${num(f.height ?? f.width ?? f.size)}px (${num(f.x)}, ${num(f.y)}) ${num(f.rotation)}º${f.relation === "coincident" ? " coincident" : f.relation === "distance" ? ` ${num(f.gap || 0) === "0" ? "touching" : `gap ${num(f.gap)}px`} at ${num(f.angle || 0)}º` : ""}`).join(" + ") });
+      if (smart) out.push({ k: "Shapes", v: resolveFigures(mod.figures).map(f => { const look = this.engine.figureStyle(f, mod); return `${shapeName(f.shape)} ${num(f.width ?? f.size)} x ${num(f.height ?? f.width ?? f.size)}px (${num(f.x)}, ${num(f.y)}) ${num(f.rotation)}º ${look.wire ? "Stroke" : "Fill"} ${hex(look.color || "#18181F")}${look.wire ? ` ${num(look.sw || 1)}px` : ""}${f.relation === "coincident" ? " coincident" : f.relation === "distance" ? ` ${num(f.gap || 0) === "0" ? "touching" : `gap ${num(f.gap)}px`} at ${num(f.angle || 0)}º` : ""}`; }).join(" + ") });
       if (smart && mod.combine && mod.combine !== "none") out.push({ k: "Combine", v: ({ union: "Union", subtract: "Subtract", intersect: "Intersect", xor: "Exclude" })[mod.combine] || mod.combine });
       if (!smart) out.push({ k: "Shape", v: `${shapeName(mod.shape)} ${num(mod.width ?? mod.scale ?? 100)} x ${num(mod.height ?? mod.scale ?? 100)}px` });
-      out.push({ k: "Style", v: [fill ? "Fill" : "Stroke", hex(mod.color || "#18181F"), ...(fill ? [] : [`stroke ${num(mod.strokeWidth || 1)}px`])].join(" / ") });
+      if (!smart) out.push({ k: "Style", v: [fill ? "Fill" : "Stroke", hex(mod.color || "#18181F"), ...(fill ? [] : [`stroke ${num(mod.strokeWidth || 1)}px`])].join(" / ") });
 
       // Layout
       if (s.enabled) {
@@ -3036,6 +3036,11 @@ export class StudioProApp {
     return { ...this.state, layers: [view], layerOrder: [layer.id], showSafeBounds: false, figureEdit: true, canvasOverride: { w: layer.containerW, h: layer.containerH }, figureBox: fig ? { layerId: layer.id, width: fig.width, height: fig.height, x: fig.x, y: fig.y, rotation: fig.rotation } : null };
   }
 
+  // What the style controls edit: the shape being edited in the module editor, otherwise the module itself
+  styleTarget() {
+    return this.figEdit ? this.currentFigure() : this.getActiveModule();
+  }
+
   currentFigure() {
     if (!this.figEdit) return null;
     const mod = this.state.layers.find(l => l.id === this.figEdit.layerId);
@@ -3070,6 +3075,8 @@ export class StudioProApp {
       if (keep) {
         // the layer takes the shape of its first figure (for its card and for the modifiers that swap the shape)
         mod.shape = mod.figures[0] ? mod.figures[0].shape : mod.shape;
+        // and the look of its base shape (for the layer card, and as what a new shape or a modifier starts from)
+        if (mod.figures[0]) { const look = this.engine.figureStyle(mod.figures[0], mod); mod.wireframe = look.wire; mod.color = look.color; mod.strokeWidth = look.sw; }
       } else {
         Object.assign(mod, JSON.parse(JSON.stringify(this.figEdit.snapshot)));
       }
@@ -3127,12 +3134,13 @@ export class StudioProApp {
     const list = document.getElementById("fig-list");
     if (list) {
       list.innerHTML = "";
-      mod.figures.forEach((f, i) => {
+      // Like the layers: the shape in front is on top, the one behind everything (the base) at the bottom
+      mod.figures.map((f, i) => ({ f, i })).reverse().forEach(({ f, i }) => {
         const b = document.createElement("button");
         b.type = "button";
         b.className = "ds-btn" + (i === this.figEdit.index ? " active" : "");
         b.dataset.figIndex = String(i);
-        b.textContent = `${i + 1} · ${f.shape}`;
+        b.textContent = (Shapes[f.shape] && Shapes[f.shape].name) || f.shape;
         b.addEventListener("click", () => { this.figEdit.index = i; this.syncFigureEditor(); });
         list.appendChild(b);
       });
@@ -3140,11 +3148,24 @@ export class StudioProApp {
     const f = this.currentFigure();
     document.querySelectorAll("#fig-shape-grid [data-fig-shape]").forEach(b => b.classList.toggle("active", !!f && b.dataset.figShape === f.shape));
     const set = (id, v, suffix) => { this.syncControlValue(`input-${id}`, v); const n = document.getElementById(`num-${id}`); if (n) n.value = `${v}${suffix}`; };
+    // The look of the shape being edited
+    {
+      const look = f ? this.engine.figureStyle(f, mod) : { wire: true, color: "#18181F", sw: 1 };
+      document.getElementById("btn-mode-stroke")?.classList.toggle("active", look.wire);
+      document.getElementById("btn-mode-fill")?.classList.toggle("active", !look.wire);
+      const color = (look.color || "#18181F");
+      const cp = document.getElementById("color-active-shape");
+      if (cp && /^#[0-9a-f]{6}$/i.test(color)) cp.value = color;
+      const sw = document.getElementById("swatch-active-color"); if (sw) sw.style.backgroundColor = color;
+      const hx = document.getElementById("text-color-hex"); if (hx) hx.textContent = color.toUpperCase();
+      this.syncControlValue("input-active-stroke", look.sw || 1);
+      const ns = document.getElementById("num-active-stroke"); if (ns) ns.value = `${look.sw || 1}px`;
+    }
     if (f) { set("fig-w", f.width, "px"); set("fig-h", f.height, "px"); set("fig-x", f.x, "px"); set("fig-y", f.y, "px"); set("fig-rot", f.rotation, "º"); }
     document.getElementById("btn-fig-add")?.toggleAttribute("disabled", mod.figures.length >= 4);
     document.getElementById("btn-fig-delete")?.toggleAttribute("disabled", mod.figures.length <= 1);
-    document.getElementById("btn-fig-up")?.toggleAttribute("disabled", this.figEdit.index <= 0);
-    document.getElementById("btn-fig-down")?.toggleAttribute("disabled", this.figEdit.index >= mod.figures.length - 1);
+    document.getElementById("btn-fig-up")?.toggleAttribute("disabled", this.figEdit.index >= mod.figures.length - 1);
+    document.getElementById("btn-fig-down")?.toggleAttribute("disabled", this.figEdit.index <= 0);
     // Combine: only with two or more shapes
     const combineNow = mod.combine || "none";
     document.getElementById("fig-combine-block")?.classList.toggle("hidden", mod.figures.length < 2);
@@ -3182,7 +3203,9 @@ export class StudioProApp {
       // a new figure is half the container (the paper), so it is easy to see and to place
       const cfg = ASPECT_RATIOS[this.state.aspectRatio] || ASPECT_RATIOS["1:1"];
       const half = Math.max(1, Math.round(Math.max(m.containerW > 0 ? m.containerW : cfg.w, m.containerH > 0 ? m.containerH : cfg.h) / 2));
-      m.figures.push({ shape: "circle", width: half, height: half, x: 0, y: 0, rotation: 0 });
+      const cur = this.currentFigure();
+      const look = this.engine.figureStyle(cur || {}, m);
+      m.figures.push({ shape: "circle", width: half, height: half, x: 0, y: 0, rotation: 0, wireframe: look.wire, color: look.color, strokeWidth: look.sw });
       this.figEdit.index = m.figures.length - 1;
       this.recordFigureStep();
       this.syncFigureEditor();
@@ -3203,8 +3226,8 @@ export class StudioProApp {
       this.recordFigureStep();
       this.syncFigureEditor();
     };
-    document.getElementById("btn-fig-up")?.addEventListener("click", () => move(-1));
-    document.getElementById("btn-fig-down")?.addEventListener("click", () => move(1));
+    document.getElementById("btn-fig-up")?.addEventListener("click", () => move(1));   // up the list = towards the front
+    document.getElementById("btn-fig-down")?.addEventListener("click", () => move(-1));
 
     document.querySelectorAll("[data-fig-combine]").forEach(btn => btn.addEventListener("click", () => {
       const m = mod();
@@ -3268,8 +3291,8 @@ export class StudioProApp {
 
     // 4. Stroke Width (Grosor Trazo)
     this.bindSliderWithNumber("input-active-stroke", "num-active-stroke", (val) => {
-      const mod = this.getActiveModule();
-      mod.strokeWidth = val;
+      const target = this.styleTarget();
+      if (target) target.strokeWidth = val;
       this.render();
     }, "Stroke Width", "px");
 
@@ -3289,9 +3312,11 @@ export class StudioProApp {
     const btnStroke = document.getElementById("btn-mode-stroke");
     const btnFill = document.getElementById("btn-mode-fill");
     
+    // The look (Stroke or Fill, colour, stroke width) belongs to the shape being edited; with no editor open, to the module
     btnStroke?.addEventListener("click", () => {
-      const mod = this.getActiveModule();
-      mod.wireframe = true;
+      const target = this.styleTarget();
+      if (!target) return;
+      target.wireframe = true;
       btnStroke.classList.add("active");
       btnFill?.classList.remove("active");
       this.render();
@@ -3300,8 +3325,9 @@ export class StudioProApp {
     });
 
     btnFill?.addEventListener("click", () => {
-      const mod = this.getActiveModule();
-      mod.wireframe = false;
+      const target = this.styleTarget();
+      if (!target) return;
+      target.wireframe = false;
       btnFill.classList.add("active");
       btnStroke?.classList.remove("active");
       this.render();
@@ -3316,9 +3342,9 @@ export class StudioProApp {
       colorPicker.addEventListener("input", (e) => {
         const hex = e.target.value.toUpperCase();
         if (colorText) colorText.textContent = hex;
-        const mod = this.getActiveModule();
-        if (mod) mod.color = hex;
-        this.customColors.fg = hex;
+        const target = this.styleTarget();
+        if (target) target.color = hex;
+        if (target && !this.figEdit) this.customColors.fg = hex;
         const swatch = document.getElementById("swatch-active-color");
         if (swatch) swatch.style.backgroundColor = hex;
         this.render();
@@ -3342,8 +3368,10 @@ export class StudioProApp {
     // Sync Dimensions
     this.syncControlValue("input-active-rotation", mod.rotation || 0);
     this.syncControlValue("num-active-rotation", `${mod.rotation || 0}º`);
-    this.syncControlValue("input-active-stroke", mod.strokeWidth || 1);
-    this.syncControlValue("num-active-stroke", `${mod.strokeWidth || 1}px`);
+    const fig = this.figEdit ? this.currentFigure() : null;
+    const look = fig ? this.engine.figureStyle(fig, mod) : { wire: mod.wireframe !== false, color: mod.color, sw: mod.strokeWidth || 1 };
+    this.syncControlValue("input-active-stroke", look.sw || 1);
+    this.syncControlValue("num-active-stroke", `${look.sw || 1}px`);
     const canvasCfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
     const contW = Math.round(mod.containerW > 0 ? mod.containerW : canvasCfg.w);
     const contH = Math.round(mod.containerH > 0 ? mod.containerH : canvasCfg.h);
@@ -3355,7 +3383,7 @@ export class StudioProApp {
     // Sync Mode (per active layer)
     const btnStroke = document.getElementById("btn-mode-stroke");
     const btnFill = document.getElementById("btn-mode-fill");
-    const isWireframe = mod.wireframe !== false;
+    const isWireframe = look.wire;
     if (isWireframe) {
       btnStroke?.classList.add("active");
       btnFill?.classList.remove("active");
@@ -3367,7 +3395,7 @@ export class StudioProApp {
     // Sync Swatch & Color Picker
     const swatch = document.getElementById("swatch-active-color");
     const hexText = document.getElementById("text-color-hex");
-    const layerColor = mod.color || this.customColors.fg || "#18181F";
+    const layerColor = look.color || this.customColors.fg || "#18181F";
     const cp = document.getElementById("color-active-shape");
     if (cp && layerColor.startsWith("#") && layerColor.length === 7) {
       cp.value = layerColor;

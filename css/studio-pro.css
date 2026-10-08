@@ -1050,3 +1050,6 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .fig-list { display: flex; flex-direction: column; gap: var(--spacing-2); margin-bottom: var(--spacing-3); }
 .fig-list .ds-btn { justify-content: flex-start; width: 100%; }
 .fig-list .ds-btn.active { background: var(--neutral-bg-strong); font-weight: var(--typography-weight-700); }
+
+/* A neutral line between groups of controls (Figma catalog: divider) */
+.ds-divider { height: 1px; margin: var(--spacing-3) 0; background: var(--neutral-border-main); border: 0; }

@@ -77,6 +77,7 @@ El **valor por defecto** es el que tiene el control al abrir la app o al encende
 **Shapes** (de 1 a 4; ancho, alto y posición en px, desde el centro del módulo):
 | Control | Mín. | Máx. | Paso | Por defecto | Razón |
 | :-- | :-- | :-- | :-- | :-- | :-- |
+| Stroke width (de la shape) | 0,2 px | 10 px | 0,1 px | 1 px (el del módulo) | Del hilo casi invisible al trazo grueso, sin que el trazo se coma la shape. Cada shape tiene el suyo; *Stroke / Fill* y el color también son de cada shape. |
 | Shape width | 1 px | 2000 px | 1 px | 100 px (la primera); la mitad del módulo (las nuevas) | 1 permite el punto (concepto de punto de Wong); 2000 permite una shape mucho mayor que el módulo, que el borde corta. |
 | Shape height | 1 px | 2000 px | 1 px | 100 px (la primera); la mitad del módulo (las nuevas) | Igual que Width; la línea no usa Height. |
 | Shape position X / Y | −1000 px | 1000 px | 1 px | 0 px | Desde el centro del módulo; permite sacar la shape del módulo para que el borde la corte (módulo excéntrico y recortado). |
@@ -88,7 +89,6 @@ El **valor por defecto** es el que tiene el control al abrir la app o al encende
 | Control | Mín. | Máx. | Paso | Por defecto | Razón |
 | :-- | :-- | :-- | :-- | :-- | :-- |
 | Module width / height | 10 px | 1000 px | 1 px | 100 px | El tamaño de la pieza que se repite; 10 evita celdas degeneradas y 1000 supera cualquier canvas (máximo 800 px). |
-| Stroke width | 0,2 px | 10 px | 0,1 px | 1 px | Del hilo casi invisible al trazo grueso, sin que el trazo se coma la shape. |
 
 ### Layout › Module rotation y Composition container
 | Control | Mín. | Máx. | Paso | Por defecto | Razón |

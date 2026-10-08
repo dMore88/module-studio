@@ -621,7 +621,7 @@
       fire(q("#input-fig-w"), 120);
       q("#btn-mode-fill").click();
       const L = app.getActiveModule();
-      assert(L.figures[0].shape === "hexagon" && L.figures[0].width === 120 && L.wireframe === false, "Module controls did not apply");
+      assert(L.figures[0].shape === "hexagon" && L.figures[0].width === 120 && L.figures[0].wireframe === false, "Shape controls did not apply (Fill goes to the shape being edited)");
       assert(q("#btn-mode-fill").classList.contains("active") && !q("#btn-mode-stroke").classList.contains("active"), "Fill / Stroke group active state wrong");
     });
 
@@ -1805,7 +1805,7 @@
       // with a suffix and a decimal step: stroke width 1.2px, step 0.1
       const sb = q("#num-active-stroke"); sb.value = "1.2px";
       key(sb, "ArrowUp");
-      assert(app.getActiveModule().strokeWidth === 1.3 && sb.value === "1.3px", `Stroke width: ${app.getActiveModule().strokeWidth} / ${sb.value}`);
+      assert(app.getActiveModule().figures[0].strokeWidth === 1.3 && sb.value === "1.3px", `Stroke width (of the shape): ${app.getActiveModule().figures[0].strokeWidth} / ${sb.value}`);
       // limits: width cannot go under the slider's minimum
       const wb = q("#num-fig-w"); wb.value = "5"; key(wb, "ArrowDown", { shiftKey: true });
       assert(fw() === 1, "The value should stop at the slider's minimum");
@@ -2263,13 +2263,17 @@
       assert(L.figures[1].x === 30 && L.figures[1].width === 70 && L.figures[1].rotation === 40 && q("#num-fig-rot").value === "40º" && q("#num-fig-x").value === "30px", "The figure sliders should edit the selected figure, in px");
       q('#fig-shape-grid [data-fig-shape="triangle"]').click(); await wait(30);
       assert(L.figures[1].shape === "triangle", "The editor's shape grid changes the selected figure");
+      q("#btn-fig-down").click(); await wait(30);
+      assert(L.figures[0].shape === "triangle" && app.figEdit.index === 0, "Move down the list (towards the back) swaps the order");
       q("#btn-fig-up").click(); await wait(30);
-      assert(L.figures[0].shape === "triangle" && app.figEdit.index === 0, "Move back swaps the order");
+      assert(L.figures[1].shape === "triangle" && app.figEdit.index === 1, "Move up the list (towards the front) swaps it back");
+      assert(q("#fig-list").firstElementChild.dataset.figIndex === String(L.figures.length - 1), "The list shows the shape in front on top, like the layers");
+      q("#btn-fig-down").click(); await wait(30);
       for (let i = 0; i < 5; i++) q("#btn-fig-add").click();
       assert(L.figures.length === 4 && q("#btn-fig-add").hasAttribute("disabled"), "Four figures at most");
       // module controls edit the module and Cancel undoes them too
       fire(q("#input-active-container-w"), 150); q("#btn-mode-fill").click();
-      assert(L.containerW === 150 && L.wireframe === false, "The module controls apply while editing");
+      assert(L.containerW === 150 && L.figures[app.figEdit.index].wireframe === false && L.wireframe === true, "The module width applies and Fill goes to the shape being edited");
       const histBefore = app.history.length;
       q("#btn-fig-cancel").click(); await wait(60);
       assert(!app.figEdit && !app.isFlyoutOpen && L.figures.length === 0 && L.shape === "square" && L.containerW === 100 && L.wireframe === true, "Cancel goes back to the module as it was (figures and module controls) and closes the panel");
@@ -2281,7 +2285,7 @@
       q("#btn-fig-save").click(); await wait(60);
       assert(L.figures.length === 2 && L.figures[1].x === -25 && L.containerW === 130 && !app.figEdit && !app.isFlyoutOpen, "Save keeps the figures and the module controls");
       assert(app.historyLabels[app.historyLabels.length - 1].includes("Module saved") && !app.historyLabels.some(l => l.includes("Figure ") || l.includes("Module Width")), `Save makes one undo step and the editing none (${JSON.stringify(app.historyLabels.slice(-3))})`);
-      assert(/Shapes: Square 100 x 100px \(0, 0\) 0º \+ Circle 50 x 50px \(-25, 0\) 0º/.test(win.document.querySelector(".ds-art-log").innerText), "The Art log should list the figures");
+      assert(/Shapes: Square 100 x 100px \(0, 0\) 0º Stroke #18181F 3px \+ Circle 50 x 50px \(-25, 0\) 0º Stroke #18181F 3px/.test(win.document.querySelector(".ds-art-log").innerText), "The Art log should list the figures");
       // Moving to another panel saves too
       q('[data-rail-tab="module"]').click(); await wait(60);
       q('#fig-list [data-fig-index="1"]').click(); q("#btn-fig-delete").click(); await wait(30);
@@ -2523,6 +2527,59 @@
       q("#btn-fig-save").click(); await wait(60);
       app.loadProjectText(JSON.stringify(JSON.parse(JSON.stringify(app.state))));
       assert(app.state.layers[0].combine === "xor", "The combination is saved and opened with the project");
+      reset();
+    });
+
+    await test("Style per shape: Stroke or Fill, colour and stroke width belong to each shape; a new shape copies the selected one; Combine uses the base shape; modifiers change every shape's colour", async () => {
+      reset();
+      const d = win.document, q = (s) => d.querySelector(s), cv = d.getElementById("studio-canvas");
+      const fire = (el, v) => { el.value = String(v); el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
+      // the editor draws on a canvas the size of the module (200 px): x and y are measured from the middle of the module
+      const rgb = (x, y) => { const k = cv.width / 200; return Array.from(cv.getContext("2d").getImageData(Math.round((100 + x) * k), Math.round((100 + y) * k), 1, 1).data.slice(0, 3)); };
+      const is = (c, r, g, b) => Math.abs(c[0] - r) < 40 && Math.abs(c[1] - g) < 40 && Math.abs(c[2] - b) < 40;
+      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: true, color: "#0000ff", strokeWidth: 4, containerW: 200, containerH: 200 }); app.state.showSafeBounds = false;
+      app.isFlyoutOpen = false; app.updateRailUI();
+      q('[data-rail-tab="module"]').click(); await wait(60);
+      fire(q("#input-fig-w"), 100); fire(q("#input-fig-h"), 100);
+      // the first shape shows the module's look
+      assert(q("#btn-mode-stroke").classList.contains("active") && q("#text-color-hex").textContent === "#0000FF" && q("#num-active-stroke").value === "4px", "The shape shows its look (the module's, until it has its own)");
+      q("#btn-fig-add").click(); await wait(30);
+      const second = () => L.figures[1];
+      assert(second().wireframe === true && second().color === "#0000ff" && second().strokeWidth === 4, "A new shape copies the look of the selected one");
+      // the second shape: Fill, red, in front of the first
+      fire(q("#input-fig-w"), 60); fire(q("#input-fig-h"), 60); fire(q("#input-fig-x"), 50);
+      q("#btn-mode-fill").click(); fire(q("#color-active-shape"), "#ff0000");
+      assert(second().wireframe === false && second().color.toLowerCase() === "#ff0000" && L.figures[0].wireframe !== false && (L.figures[0].color || "").toLowerCase() !== "#ff0000", "The style went to the second shape only");
+      drawRaw(app);
+      // canvas: the module is 200 px, centred at 300; the first circle (100 px, stroke blue, centre 300), the second (60 px, fill red, centre 350)
+      assert(is(rgb(50, 0), 255, 0, 0), `The second shape is filled red (${rgb(50, 0)})`);
+      assert(is(rgb(0, -50), 0, 0, 255) || is(rgb(0, -49), 0, 0, 255) || is(rgb(0, -48), 0, 0, 255), `The first shape is a blue outline (${rgb(0, -50)})`);
+      assert(rgb(-20, 10)[0] > 200 && rgb(-20, 10)[2] > 200, "The first shape is hollow in the middle");
+      // selecting the first shape shows its own look
+      q('#fig-list [data-fig-index="0"]').click(); await wait(30);
+      assert(q("#btn-mode-stroke").classList.contains("active") && q("#text-color-hex").textContent === "#0000FF", "Selecting a shape shows its look");
+      // Combine: one figure with the look of the base shape (the first): an outline, not a fill
+      q('#fig-list [data-fig-index="1"]').click(); q('[data-fig-combine="union"]').click(); await wait(30);
+      drawRaw(app);
+      assert(!is(rgb(50, 0), 255, 0, 0) && rgb(30, 0)[0] > 200, `A combined module takes the look of its base shape (${rgb(50, 0)} at the second shape)`);
+      q('[data-fig-combine="none"]').click(); await wait(30);
+      // a modifier's colour change reaches every shape: a mix towards green at 100 %
+      L.figures[1].color = "#ff0000"; L.figures[1].wireframe = false;
+      const ctx = cv.getContext("2d");
+      drawRaw(app);
+      app.engine.cellColorOps = [{ to: "#00ff00", t: 1 }];
+      ctx.save(); ctx.setTransform(cv.width / 200, 0, 0, cv.height / 200, 0, 0); ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 200, 200);
+      ctx.translate(100, 100);
+      const mod = JSON.parse(JSON.stringify(L)); mod.figures = L.figures; app.engine.state = app.state;
+      app.engine.drawSingleLayerShape(ctx, mod, 1, "#18181f", "#ffffff", null, null, false, null);
+      ctx.restore();
+      assert(is(rgb(50, 0), 0, 255, 0), `The modifier's colour change reached the red shape (${rgb(50, 0)})`);
+      // saved: the module takes the base look, and it is kept with the project
+      q("#btn-fig-save").click(); await wait(60);
+      assert(L.color === "#0000ff" && L.wireframe === true && L.strokeWidth === 4, "The module takes the look of its base shape");
+      app.loadProjectText(JSON.stringify(JSON.parse(JSON.stringify(app.state))));
+      const f2 = app.state.layers[0].figures[1];
+      assert(f2.wireframe === false && f2.color.toLowerCase() === "#ff0000", "The look of each shape is saved and opened with the project");
       reset();
     });
 

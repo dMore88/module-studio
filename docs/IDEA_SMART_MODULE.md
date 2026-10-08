@@ -30,7 +30,7 @@ Con Wong: su **módulo** es la unidad que se repite (aquí, la pieza entera con 
 5. **El borde del módulo corta la geometría, no los efectos.** Lo que sobresale se corta *antes* de aplicar Texture y Space, así que sus efectos pueden salirse del borde. Con *Stroke* quedan solo los arcos de dentro; con *Fill*, un polígono pegado al borde.
 6. **Editor 1:1.** Abrir el panel Module cambia el canvas por uno del tamaño del módulo (cualquier proporción), escalado a la pantalla y dibujado nítido. Un px del editor es un px del diseño. Sin reglas de escala.
 7. **Save y Cancel.** Se edita en vivo; *Cancel* vuelve al inicio de la sesión (shapes y controles del módulo); *Save* deja un solo paso en el historial. Dentro del editor, Cmd+Z va paso a paso.
-8. **Color y trazo/relleno heredados** del módulo: todas las shapes comparten color, grosor de trazo y Stroke / Fill. Dos shapes del mismo color en *Fill* se funden.
+8. **Estilo por shape** (hecho): *Stroke / Fill*, color y grosor de trazo son de cada shape; las que no los fijan usan los del módulo. Se dibujan en el orden de la lista por tandas del mismo estilo. Con *Combine*, la figura toma el estilo de la **base** (la de abajo de la lista, que se muestra como las capas: arriba lo de delante). Los modificadores de color mezclan el color de cada shape.
 9. **Relaciones entre shapes, fase 1** (hecha): cada shape, desde la segunda, puede ser *Free*, *Coincident* o *Distance* (dirección + gap: 0 = se tocan, positivo separa, negativo solapa). Se coloca sola y sigue a la anterior.
 10. **Combine, fase 2 de las relaciones** (hecha): un selector para todo el módulo (*None*, *Union*, *Subtract*, *Intersect*, *Exclude*) que junta las shapes con área en una sola figura, no destructivo. El cálculo está en `js/studio/booleans.js` (sin librerías), con pruebas de áreas, huecos, bordes compartidos y velocidad.
 11. **Marco de la shape seleccionada** en el canvas del editor (guía de pantalla, no se exporta).
@@ -38,8 +38,6 @@ Con Wong: su **módulo** es la unidad que se repite (aquí, la pieza entera con 
 
 ## Pendiente (fases futuras)
 
-- **Selector Fill / Outline por shape**, para ver una shape sobre otra sin darle color propio.
-- **Color propio por shape** (hoy heredan todas).
 - **Tamaño de shape** (hoy cada shape tiene ancho y alto, pero el módulo no tiene control de escala conjunta de las shapes).
 - **Editar el módulo viendo a sus vecinos** (lo hacía *Hide modifiers*): un modo «editar sobre el diseño».
 - **Desplazamiento fijo del módulo en su celda desde Layout**, si se echa de menos el offset (la rotación ya vive en Layout).
@@ -48,7 +46,7 @@ Con Wong: su **módulo** es la unidad que se repite (aquí, la pieza entera con 
 ## Cosas a vigilar
 
 - Una **línea, onda o carácter** dentro de un módulo con shapes rellenas no se ve en *Fill* (no tiene área para rellenar); en *Stroke* sí. Hoy no entran en *Combine*.
-- Con *Combine* las shapes comparten color: el color propio por shape solo valdría con *None*.
+- Con *Combine* las shapes comparten el estilo de la base: el estilo propio de las demás no se ve mientras estén combinadas.
 
 - Las curvas de una shape cortada se aproximan con segmentos finos cuando hay Texture o Space (en shapes muy grandes podría notarse un facetado).
 - En Actual size, el módulo mayor que su celda se solapa con los vecinos; *Clip cell* lo corta en la celda.

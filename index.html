@@ -166,20 +166,9 @@
           <div id="fig-list" class="fig-list"></div>
           <div class="ds-layers-actions">
             <button type="button" id="btn-fig-add" class="ds-btn" title="Add a shape (4 maximum)"><span>Add shape</span><i class="ph ph-plus-circle" aria-hidden="true"></i></button>
-            <button type="button" id="btn-fig-up" class="ds-btn" title="Move the shape back (drawn earlier)"><i class="ph ph-arrow-up" aria-hidden="true"></i></button>
-            <button type="button" id="btn-fig-down" class="ds-btn" title="Move the shape to the front (drawn later)"><i class="ph ph-arrow-down" aria-hidden="true"></i></button>
+            <button type="button" id="btn-fig-up" class="ds-btn" title="Move the shape up the list (towards the front)"><i class="ph ph-arrow-up" aria-hidden="true"></i></button>
+            <button type="button" id="btn-fig-down" class="ds-btn" title="Move the shape down the list (towards the back)"><i class="ph ph-arrow-down" aria-hidden="true"></i></button>
             <button type="button" id="btn-fig-delete" class="ds-btn" title="Delete the shape"><i class="ph ph-trash" aria-hidden="true"></i></button>
-          </div>
-        </div>
-
-        <div id="fig-combine-block" class="ds-field">
-          <div class="ds-label">Combine the shapes</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-fig-combine="none" title="The shapes stay stacked, each one whole">None</button>
-            <button type="button" class="ds-tag" data-fig-combine="union" title="Merge all the shapes into one">Union</button>
-            <button type="button" class="ds-tag" data-fig-combine="subtract" title="The first shape minus all the others">Subtract</button>
-            <button type="button" class="ds-tag" data-fig-combine="intersect" title="Only what all the shapes share">Intersect</button>
-            <button type="button" class="ds-tag" data-fig-combine="xor" title="Everything except where shapes overlap">Exclude</button>
           </div>
         </div>
 
@@ -212,6 +201,21 @@
         </div>
 
 
+        <div class="ds-divider" role="separator"></div>
+
+        <div class="ds-label ds-label--overline">Shape interelation</div>
+
+        <div id="fig-combine-block" class="ds-field">
+          <div class="ds-label">Combine the shapes</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-fig-combine="none" title="The shapes stay stacked, each one whole">None</button>
+            <button type="button" class="ds-tag" data-fig-combine="union" title="Merge all the shapes into one">Union</button>
+            <button type="button" class="ds-tag" data-fig-combine="subtract" title="The first shape minus all the others">Subtract</button>
+            <button type="button" class="ds-tag" data-fig-combine="intersect" title="Only what all the shapes share">Intersect</button>
+            <button type="button" class="ds-tag" data-fig-combine="xor" title="Everything except where shapes overlap">Exclude</button>
+          </div>
+        </div>
+
         <div id="fig-relation-block" class="ds-field">
           <div class="ds-label">Relation to the previous shape</div>
           <div class="ds-tags">
@@ -238,7 +242,36 @@
           </div>
         </div>
 
+        <div class="ds-divider" role="separator"></div>
+
+        <div class="ds-label ds-label--overline">Shape style</div>
+
+        <div class="ds-field">
+          <div class="ds-btn-group" role="group" aria-label="Fill or stroke">
+            <button type="button" id="btn-mode-stroke" class="ds-btn-group__button active">Stroke</button>
+            <button type="button" id="btn-mode-fill" class="ds-btn-group__button">Fill</button>
+          </div>
+        </div>
+
+        <div class="ds-field">
+          <div class="ds-label ds-label--overline">Shape color</div>
+          <div class="ds-color-picker">
+            <span class="ds-swatch">
+              <input type="color" id="color-active-shape" value="#18181f">
+              <span id="swatch-active-color" class="ds-swatch-fill"></span>
+            </span>
+            <span id="text-color-hex" class="ds-color-hex">#18181F</span>
+          </div>
+        </div>
+
         <div id="fig-transform-stack" class="ds-stack">
+          <div class="ds-field">
+            <div class="ds-label">Stroke width</div>
+            <div class="ds-slider">
+              <input type="range" id="input-active-stroke" min="0.2" max="10" step="0.1" value="1">
+              <input type="text" id="num-active-stroke" class="ds-value" value="1px" inputmode="decimal">
+            </div>
+          </div>
           <div class="ds-field">
             <div class="ds-label">Shape width</div>
             <div class="ds-slider">
@@ -276,25 +309,9 @@
           </div>
         </div>
 
+        <div class="ds-divider" role="separator"></div>
+
         <div class="ds-label ds-label--overline">Module</div>
-
-        <div class="ds-field">
-          <div class="ds-btn-group" role="group" aria-label="Fill or stroke">
-            <button type="button" id="btn-mode-stroke" class="ds-btn-group__button active">Stroke</button>
-            <button type="button" id="btn-mode-fill" class="ds-btn-group__button">Fill</button>
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label ds-label--overline">Shape color</div>
-          <div class="ds-color-picker">
-            <span class="ds-swatch">
-              <input type="color" id="color-active-shape" value="#18181f">
-              <span id="swatch-active-color" class="ds-swatch-fill"></span>
-            </span>
-            <span id="text-color-hex" class="ds-color-hex">#18181F</span>
-          </div>
-        </div>
 
         <div class="ds-stack">
           <div class="ds-field">
@@ -309,13 +326,6 @@
             <div class="ds-slider">
               <input type="range" id="input-active-container-h" min="10" max="1000" step="1" value="100">
               <input type="text" id="num-active-container-h" class="ds-value" value="100px" inputmode="decimal">
-            </div>
-          </div>
-          <div class="ds-field">
-            <div class="ds-label">Stroke width</div>
-            <div class="ds-slider">
-              <input type="range" id="input-active-stroke" min="0.2" max="10" step="0.1" value="1">
-              <input type="text" id="num-active-stroke" class="ds-value" value="1px" inputmode="decimal">
             </div>
           </div>
         </div>
@@ -1577,7 +1587,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=f56ee282"></script>
+  <script src="js/bundle-pro.js?v=5c904e9b"></script>
 
 </body>
 </html>

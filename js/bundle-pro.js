@@ -1939,8 +1939,52 @@ class StudioEngine {
     }
   }
 
-  // Draw a single shape module for an individual layer
+  // A shape's own look (Stroke or Fill, colour, stroke width); what it does not set it takes from the module
+  figureStyle(f, mod) {
+    return { wire: f.wireframe !== undefined ? f.wireframe !== false : mod.wireframe !== false, color: f.color || mod.color, sw: f.strokeWidth || mod.strokeWidth, explicit: !!f.color };
+  }
+
+  // Records a colour change a modifier makes to a module (a mix towards a colour; 1 replaces it), so a module whose shapes have
+  // their own colours can change each of them the same way
+  colorOp(cell, to, t) {
+    (cell.colorOps || (cell.colorOps = [])).push({ to, t });
+  }
+
+  // Draw a single shape module for an individual layer. A smart module whose shapes look different is drawn in runs of shapes that
+  // look the same, in the order of the list (a combined module is one run, with the look of its base shape)
   drawSingleLayerShape(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false, colorOverride = null, widthMultiplier = null, stretch = null) {
+    const ops = this.cellColorOps;
+    this.cellColorOps = null;
+    if (!mod || shapeOverride || !(mod.figures && mod.figures.length)) {
+      return this.drawSingleLayerShapeRun(targetCtx, mod, sizeMultiplier, fgColor, bgColor, wireframeOverride, shapeOverride, isCutout, colorOverride, widthMultiplier, stretch);
+    }
+    const figs = resolveFigures(mod.figures).map(f => ({ ...f, relation: "free" })); // placed already: a run is not related to what is in another
+    const combined = mod.combine && mod.combine !== "none" && figs.length > 1;
+    const runs = [];
+    for (const f of figs) {
+      const st = this.figureStyle(f, mod);
+      const last = runs[runs.length - 1];
+      if (combined && last) last.figs.push(f);
+      else if (last && last.st.wire === st.wire && last.st.color === st.color && last.st.sw === st.sw) last.figs.push(f);
+      else runs.push({ figs: [f], st });
+    }
+    const plain = runs.length === 1 && !runs[0].st.explicit && runs[0].st.wire === (mod.wireframe !== false) && runs[0].st.sw === mod.strokeWidth;
+    if (plain) return this.drawSingleLayerShapeRun(targetCtx, mod, sizeMultiplier, fgColor, bgColor, wireframeOverride, shapeOverride, isCutout, colorOverride, widthMultiplier, stretch);
+    const imp = this.cellImperf, morph = this.cellMorph, tex = this.cellTexScale;
+    for (const run of runs) {
+      this.cellImperf = imp; this.cellMorph = morph; this.cellTexScale = tex;
+      const mod2 = { ...mod, figures: run.figs, wireframe: run.st.wire, color: run.st.color, strokeWidth: run.st.sw };
+      let ov = colorOverride;
+      if (run.st.explicit) {
+        if (ops && ops.length) { let c = run.st.color; for (const op of ops) c = this.mixHex(c, op.to, op.t); ov = c; }
+        else ov = colorOverride || null;
+      }
+      this.drawSingleLayerShapeRun(targetCtx, mod2, sizeMultiplier, fgColor, bgColor, wireframeOverride, null, isCutout, ov, widthMultiplier, stretch);
+    }
+  }
+
+  // One run of the above: a plain shape or one composite
+  drawSingleLayerShapeRun(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false, colorOverride = null, widthMultiplier = null, stretch = null) {
     if (!mod) return;
     // A smart module (several figures) is one composite shape for everything that follows
     // Its size is its container's (the piece of paper the figures are placed on): the larger side
@@ -2269,6 +2313,7 @@ class StudioEngine {
     if (mix === null || mix === undefined || !grad.enabled || cell.fgLocked) return;
     const start = cell.fg === palette.fg ? (cell.base || cell.fg) : cell.fg;
     cell.fg = this.mixHex(start, grad.endColor || "#f43f5e", mix);
+    this.colorOp(cell, grad.endColor || "#f43f5e", mix);
   }
 
   // Gradation: applies the attribute for position t along the pathway.
@@ -2480,11 +2525,11 @@ class StudioEngine {
         }
         if (on("rotation")) ctx.rotate((Math.PI / 4) * severity * factor);
         if (on("scale")) cell.scaleMul *= (1 + 0.35 * severity);
-        if (anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
+        if (anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; this.colorOp(cell, accent, 1); }
       }
     } else if (anom.type === "regrid") {
       // The change of grid is made by the layout itself; the zone can still be tinted
-      if (inZone && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
+      if (inZone && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; this.colorOp(cell, accent, 1); }
     } else if (anom.type === "fracture") {
       const corridor = anom.radius * 0.45;
       if (inZone && Math.abs(ex - epiX) < corridor) {
@@ -2493,7 +2538,7 @@ class StudioEngine {
         const shearX = (ex > epiX ? 1 : -1) * (10 * severity);
         if (on("position")) ctx.translate(shearX, shearY);
         if (on("rotation")) ctx.rotate((factor * severity * Math.PI) / 3.2);
-        if (factor > 0.4 && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
+        if (factor > 0.4 && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; this.colorOp(cell, accent, 1); }
       }
     } else if (anom.type === "swell") {
       if (inZone) {
@@ -2502,7 +2547,7 @@ class StudioEngine {
         if (on("position")) ctx.translate(Math.cos(angle) * push, Math.sin(angle) * push);
         const sFactor = 1 + factor * 0.55 * severity;
         if (on("scale")) ctx.scale(sFactor, sFactor);
-        if (factor > 0.65 && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
+        if (factor > 0.65 && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; this.colorOp(cell, accent, 1); }
       }
     } else if (anom.type === "tear") {
       if (factor > 0.6) {
@@ -2513,7 +2558,7 @@ class StudioEngine {
         if (on("rotation")) ctx.rotate(pRand(53) * Math.PI * severity);
         const shrink = Math.max(0.15, 1 - factor * 0.85);
         if (on("scale")) ctx.scale(shrink, shrink);
-        if (anom.highlightColor && factor > 0.3) { cell.fg = accent; cell.fgLocked = true; }
+        if (anom.highlightColor && factor > 0.3) { cell.fg = accent; cell.fgLocked = true; this.colorOp(cell, accent, 1); }
       }
     }
     return true;
@@ -2564,12 +2609,13 @@ class StudioEngine {
       ctx.translate(Math.cos(a) * d, Math.sin(a) * d);
     } else if (contrast.dimension === "tone") {
       // A different tone of the module's own colour (lighter, toward the ground): works for fill and for stroke
-      if (!cell.fgLocked && cell.fg === palette.fg) cell.fg = this.mixHex(cell.base || cell.fg, palette.bg, (contrast.toneAmount ?? 50) / 100);
+      if (!cell.fgLocked && cell.fg === palette.fg) { cell.fg = this.mixHex(cell.base || cell.fg, palette.bg, (contrast.toneAmount ?? 50) / 100); this.colorOp(cell, palette.bg, (contrast.toneAmount ?? 50) / 100); }
     } else if (contrast.dimension === "texture") {
       cell.texScale = 1; // only the minority is textured
     }
     if (contrast.highlightContrast && !cell.fgLocked) {
       cell.fg = contrast.accentColor || palette.accent;
+      this.colorOp(cell, cell.fg, 1);
     }
   }
 
@@ -2928,6 +2974,7 @@ class StudioEngine {
         if ((refl === "columns" || refl === "both") && c % 2 === 1) ctx.scale(-1, 1);
         if ((refl === "rows" || refl === "both") && r % 2 === 1) ctx.scale(1, -1);
         const lineWidthMul = !isFixed && !uniform && (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k : null;
+        this.cellColorOps = cell.colorOps || null;
         this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor || flipped ? cellFg : null, lineWidthMul, stretch);
         ctx.restore();
       };
@@ -3406,6 +3453,7 @@ class StudioEngine {
           if (cell.texScale) this.cellTexScale = Math.max(this.cellTexScale || 0, cell.texScale);
           this.cellSeed = i * raysI + j + 1;
           this.cellAlt = (i + j) % 2 === 1;
+          this.cellColorOps = cell.colorOps || null;
           this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== palette.fg ? cellFg : null);
           ctx.restore();
         }
@@ -4492,7 +4540,7 @@ class StudioProApp {
       layer.figures = (Array.isArray(layer.figures) ? layer.figures : [])
         .filter(f => f && STUDIO_SHAPE_KEYS.includes(f.shape)).slice(0, 4)
         .map(f => (f.width !== undefined || f.height !== undefined)
-          ? { shape: f.shape, width: num(f.width, 1, 2000, 100), height: num(f.height ?? f.width, 1, 2000, 100), x: num(f.x, -1000, 1000, 0), y: num(f.y, -1000, 1000, 0), rotation: num(f.rotation, -360, 360, 0), relation: ["coincident", "distance"].includes(f.relation) ? f.relation : "free", angle: num(f.angle, 0, 360, 0), gap: num(f.gap, -500, 500, 0) }
+          ? { shape: f.shape, width: num(f.width, 1, 2000, 100), height: num(f.height ?? f.width, 1, 2000, 100), x: num(f.x, -1000, 1000, 0), y: num(f.y, -1000, 1000, 0), rotation: num(f.rotation, -360, 360, 0), relation: ["coincident", "distance"].includes(f.relation) ? f.relation : "free", angle: num(f.angle, 0, 360, 0), gap: num(f.gap, -500, 500, 0), ...(typeof f.wireframe === "boolean" ? { wireframe: f.wireframe } : {}), ...(/^#[0-9a-f]{6}$/i.test(f.color || "") ? { color: f.color } : {}), ...(typeof f.strokeWidth === "number" && Number.isFinite(f.strokeWidth) ? { strokeWidth: Math.max(0.2, Math.min(10, f.strokeWidth)) } : {}) }
           : { shape: f.shape, width: Math.round(num(f.size, 5, 200, 100) / 100 * old), height: Math.round(num(f.size, 5, 200, 100) / 100 * old), x: Math.round(num(f.x, -100, 100, 0) / 100 * old), y: Math.round(num(f.y, -100, 100, 0) / 100 * old), rotation: num(f.rotation, -360, 360, 0) });
       layer.combine = ["union", "subtract", "intersect", "xor"].includes(layer.combine) ? layer.combine : "none";
       // The module's size is its container: 10 to 1000 px. Older projects used 0 for "the whole canvas"
@@ -4794,10 +4842,10 @@ class StudioProApp {
       const smart = !!(mod.figures && mod.figures.length);
       const cw = Math.round(mod.containerW > 0 ? mod.containerW : 100), ch = Math.round(mod.containerH > 0 ? mod.containerH : 100);
       out.push({ k: "Module", v: [`${cw} x ${ch}px`, `rotation ${num(mod.rotation || 0)}º`, ...((mod.offsetX || mod.offsetY) ? [`offset ${num(mod.offsetX || 0)}, ${num(mod.offsetY || 0)}px`] : [])].join(" / ") });
-      if (smart) out.push({ k: "Shapes", v: resolveFigures(mod.figures).map(f => `${shapeName(f.shape)} ${num(f.width ?? f.size)} x ${num(f.height ?? f.width ?? f.size)}px (${num(f.x)}, ${num(f.y)}) ${num(f.rotation)}º${f.relation === "coincident" ? " coincident" : f.relation === "distance" ? ` ${num(f.gap || 0) === "0" ? "touching" : `gap ${num(f.gap)}px`} at ${num(f.angle || 0)}º` : ""}`).join(" + ") });
+      if (smart) out.push({ k: "Shapes", v: resolveFigures(mod.figures).map(f => { const look = this.engine.figureStyle(f, mod); return `${shapeName(f.shape)} ${num(f.width ?? f.size)} x ${num(f.height ?? f.width ?? f.size)}px (${num(f.x)}, ${num(f.y)}) ${num(f.rotation)}º ${look.wire ? "Stroke" : "Fill"} ${hex(look.color || "#18181F")}${look.wire ? ` ${num(look.sw || 1)}px` : ""}${f.relation === "coincident" ? " coincident" : f.relation === "distance" ? ` ${num(f.gap || 0) === "0" ? "touching" : `gap ${num(f.gap)}px`} at ${num(f.angle || 0)}º` : ""}`; }).join(" + ") });
       if (smart && mod.combine && mod.combine !== "none") out.push({ k: "Combine", v: ({ union: "Union", subtract: "Subtract", intersect: "Intersect", xor: "Exclude" })[mod.combine] || mod.combine });
       if (!smart) out.push({ k: "Shape", v: `${shapeName(mod.shape)} ${num(mod.width ?? mod.scale ?? 100)} x ${num(mod.height ?? mod.scale ?? 100)}px` });
-      out.push({ k: "Style", v: [fill ? "Fill" : "Stroke", hex(mod.color || "#18181F"), ...(fill ? [] : [`stroke ${num(mod.strokeWidth || 1)}px`])].join(" / ") });
+      if (!smart) out.push({ k: "Style", v: [fill ? "Fill" : "Stroke", hex(mod.color || "#18181F"), ...(fill ? [] : [`stroke ${num(mod.strokeWidth || 1)}px`])].join(" / ") });
 
       // Layout
       if (s.enabled) {
@@ -7122,6 +7170,11 @@ class StudioProApp {
     return { ...this.state, layers: [view], layerOrder: [layer.id], showSafeBounds: false, figureEdit: true, canvasOverride: { w: layer.containerW, h: layer.containerH }, figureBox: fig ? { layerId: layer.id, width: fig.width, height: fig.height, x: fig.x, y: fig.y, rotation: fig.rotation } : null };
   }
 
+  // What the style controls edit: the shape being edited in the module editor, otherwise the module itself
+  styleTarget() {
+    return this.figEdit ? this.currentFigure() : this.getActiveModule();
+  }
+
   currentFigure() {
     if (!this.figEdit) return null;
     const mod = this.state.layers.find(l => l.id === this.figEdit.layerId);
@@ -7156,6 +7209,8 @@ class StudioProApp {
       if (keep) {
         // the layer takes the shape of its first figure (for its card and for the modifiers that swap the shape)
         mod.shape = mod.figures[0] ? mod.figures[0].shape : mod.shape;
+        // and the look of its base shape (for the layer card, and as what a new shape or a modifier starts from)
+        if (mod.figures[0]) { const look = this.engine.figureStyle(mod.figures[0], mod); mod.wireframe = look.wire; mod.color = look.color; mod.strokeWidth = look.sw; }
       } else {
         Object.assign(mod, JSON.parse(JSON.stringify(this.figEdit.snapshot)));
       }
@@ -7213,12 +7268,13 @@ class StudioProApp {
     const list = document.getElementById("fig-list");
     if (list) {
       list.innerHTML = "";
-      mod.figures.forEach((f, i) => {
+      // Like the layers: the shape in front is on top, the one behind everything (the base) at the bottom
+      mod.figures.map((f, i) => ({ f, i })).reverse().forEach(({ f, i }) => {
         const b = document.createElement("button");
         b.type = "button";
         b.className = "ds-btn" + (i === this.figEdit.index ? " active" : "");
         b.dataset.figIndex = String(i);
-        b.textContent = `${i + 1} · ${f.shape}`;
+        b.textContent = (Shapes[f.shape] && Shapes[f.shape].name) || f.shape;
         b.addEventListener("click", () => { this.figEdit.index = i; this.syncFigureEditor(); });
         list.appendChild(b);
       });
@@ -7226,11 +7282,24 @@ class StudioProApp {
     const f = this.currentFigure();
     document.querySelectorAll("#fig-shape-grid [data-fig-shape]").forEach(b => b.classList.toggle("active", !!f && b.dataset.figShape === f.shape));
     const set = (id, v, suffix) => { this.syncControlValue(`input-${id}`, v); const n = document.getElementById(`num-${id}`); if (n) n.value = `${v}${suffix}`; };
+    // The look of the shape being edited
+    {
+      const look = f ? this.engine.figureStyle(f, mod) : { wire: true, color: "#18181F", sw: 1 };
+      document.getElementById("btn-mode-stroke")?.classList.toggle("active", look.wire);
+      document.getElementById("btn-mode-fill")?.classList.toggle("active", !look.wire);
+      const color = (look.color || "#18181F");
+      const cp = document.getElementById("color-active-shape");
+      if (cp && /^#[0-9a-f]{6}$/i.test(color)) cp.value = color;
+      const sw = document.getElementById("swatch-active-color"); if (sw) sw.style.backgroundColor = color;
+      const hx = document.getElementById("text-color-hex"); if (hx) hx.textContent = color.toUpperCase();
+      this.syncControlValue("input-active-stroke", look.sw || 1);
+      const ns = document.getElementById("num-active-stroke"); if (ns) ns.value = `${look.sw || 1}px`;
+    }
     if (f) { set("fig-w", f.width, "px"); set("fig-h", f.height, "px"); set("fig-x", f.x, "px"); set("fig-y", f.y, "px"); set("fig-rot", f.rotation, "º"); }
     document.getElementById("btn-fig-add")?.toggleAttribute("disabled", mod.figures.length >= 4);
     document.getElementById("btn-fig-delete")?.toggleAttribute("disabled", mod.figures.length <= 1);
-    document.getElementById("btn-fig-up")?.toggleAttribute("disabled", this.figEdit.index <= 0);
-    document.getElementById("btn-fig-down")?.toggleAttribute("disabled", this.figEdit.index >= mod.figures.length - 1);
+    document.getElementById("btn-fig-up")?.toggleAttribute("disabled", this.figEdit.index >= mod.figures.length - 1);
+    document.getElementById("btn-fig-down")?.toggleAttribute("disabled", this.figEdit.index <= 0);
     // Combine: only with two or more shapes
     const combineNow = mod.combine || "none";
     document.getElementById("fig-combine-block")?.classList.toggle("hidden", mod.figures.length < 2);
@@ -7268,7 +7337,9 @@ class StudioProApp {
       // a new figure is half the container (the paper), so it is easy to see and to place
       const cfg = ASPECT_RATIOS[this.state.aspectRatio] || ASPECT_RATIOS["1:1"];
       const half = Math.max(1, Math.round(Math.max(m.containerW > 0 ? m.containerW : cfg.w, m.containerH > 0 ? m.containerH : cfg.h) / 2));
-      m.figures.push({ shape: "circle", width: half, height: half, x: 0, y: 0, rotation: 0 });
+      const cur = this.currentFigure();
+      const look = this.engine.figureStyle(cur || {}, m);
+      m.figures.push({ shape: "circle", width: half, height: half, x: 0, y: 0, rotation: 0, wireframe: look.wire, color: look.color, strokeWidth: look.sw });
       this.figEdit.index = m.figures.length - 1;
       this.recordFigureStep();
       this.syncFigureEditor();
@@ -7289,8 +7360,8 @@ class StudioProApp {
       this.recordFigureStep();
       this.syncFigureEditor();
     };
-    document.getElementById("btn-fig-up")?.addEventListener("click", () => move(-1));
-    document.getElementById("btn-fig-down")?.addEventListener("click", () => move(1));
+    document.getElementById("btn-fig-up")?.addEventListener("click", () => move(1));   // up the list = towards the front
+    document.getElementById("btn-fig-down")?.addEventListener("click", () => move(-1));
 
     document.querySelectorAll("[data-fig-combine]").forEach(btn => btn.addEventListener("click", () => {
       const m = mod();
@@ -7354,8 +7425,8 @@ class StudioProApp {
 
     // 4. Stroke Width (Grosor Trazo)
     this.bindSliderWithNumber("input-active-stroke", "num-active-stroke", (val) => {
-      const mod = this.getActiveModule();
-      mod.strokeWidth = val;
+      const target = this.styleTarget();
+      if (target) target.strokeWidth = val;
       this.render();
     }, "Stroke Width", "px");
 
@@ -7375,9 +7446,11 @@ class StudioProApp {
     const btnStroke = document.getElementById("btn-mode-stroke");
     const btnFill = document.getElementById("btn-mode-fill");
     
+    // The look (Stroke or Fill, colour, stroke width) belongs to the shape being edited; with no editor open, to the module
     btnStroke?.addEventListener("click", () => {
-      const mod = this.getActiveModule();
-      mod.wireframe = true;
+      const target = this.styleTarget();
+      if (!target) return;
+      target.wireframe = true;
       btnStroke.classList.add("active");
       btnFill?.classList.remove("active");
       this.render();
@@ -7386,8 +7459,9 @@ class StudioProApp {
     });
 
     btnFill?.addEventListener("click", () => {
-      const mod = this.getActiveModule();
-      mod.wireframe = false;
+      const target = this.styleTarget();
+      if (!target) return;
+      target.wireframe = false;
       btnFill.classList.add("active");
       btnStroke?.classList.remove("active");
       this.render();
@@ -7402,9 +7476,9 @@ class StudioProApp {
       colorPicker.addEventListener("input", (e) => {
         const hex = e.target.value.toUpperCase();
         if (colorText) colorText.textContent = hex;
-        const mod = this.getActiveModule();
-        if (mod) mod.color = hex;
-        this.customColors.fg = hex;
+        const target = this.styleTarget();
+        if (target) target.color = hex;
+        if (target && !this.figEdit) this.customColors.fg = hex;
         const swatch = document.getElementById("swatch-active-color");
         if (swatch) swatch.style.backgroundColor = hex;
         this.render();
@@ -7428,8 +7502,10 @@ class StudioProApp {
     // Sync Dimensions
     this.syncControlValue("input-active-rotation", mod.rotation || 0);
     this.syncControlValue("num-active-rotation", `${mod.rotation || 0}º`);
-    this.syncControlValue("input-active-stroke", mod.strokeWidth || 1);
-    this.syncControlValue("num-active-stroke", `${mod.strokeWidth || 1}px`);
+    const fig = this.figEdit ? this.currentFigure() : null;
+    const look = fig ? this.engine.figureStyle(fig, mod) : { wire: mod.wireframe !== false, color: mod.color, sw: mod.strokeWidth || 1 };
+    this.syncControlValue("input-active-stroke", look.sw || 1);
+    this.syncControlValue("num-active-stroke", `${look.sw || 1}px`);
     const canvasCfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
     const contW = Math.round(mod.containerW > 0 ? mod.containerW : canvasCfg.w);
     const contH = Math.round(mod.containerH > 0 ? mod.containerH : canvasCfg.h);
@@ -7441,7 +7517,7 @@ class StudioProApp {
     // Sync Mode (per active layer)
     const btnStroke = document.getElementById("btn-mode-stroke");
     const btnFill = document.getElementById("btn-mode-fill");
-    const isWireframe = mod.wireframe !== false;
+    const isWireframe = look.wire;
     if (isWireframe) {
       btnStroke?.classList.add("active");
       btnFill?.classList.remove("active");
@@ -7453,7 +7529,7 @@ class StudioProApp {
     // Sync Swatch & Color Picker
     const swatch = document.getElementById("swatch-active-color");
     const hexText = document.getElementById("text-color-hex");
-    const layerColor = mod.color || this.customColors.fg || "#18181F";
+    const layerColor = look.color || this.customColors.fg || "#18181F";
     const cp = document.getElementById("color-active-shape");
     if (cp && layerColor.startsWith("#") && layerColor.length === 7) {
       cp.value = layerColor;

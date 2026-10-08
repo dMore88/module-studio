@@ -1,5 +1,5 @@
 // Studio Composition Engine: Unified Grammar Pipeline for Wucius Wong 2D Design
-import { Shapes, texturedShape, morphedShape, compositeShape, clippedShape } from './shapes.js';
+import { Shapes, texturedShape, morphedShape, compositeShape, clippedShape, resolveFigures } from './shapes.js';
 import { CanvasUtils } from '../canvas-utils.js';
 
 export const createDefaultLayerStructure = () => ({
@@ -499,8 +499,52 @@ export class StudioEngine {
     }
   }
 
-  // Draw a single shape module for an individual layer
+  // A shape's own look (Stroke or Fill, colour, stroke width); what it does not set it takes from the module
+  figureStyle(f, mod) {
+    return { wire: f.wireframe !== undefined ? f.wireframe !== false : mod.wireframe !== false, color: f.color || mod.color, sw: f.strokeWidth || mod.strokeWidth, explicit: !!f.color };
+  }
+
+  // Records a colour change a modifier makes to a module (a mix towards a colour; 1 replaces it), so a module whose shapes have
+  // their own colours can change each of them the same way
+  colorOp(cell, to, t) {
+    (cell.colorOps || (cell.colorOps = [])).push({ to, t });
+  }
+
+  // Draw a single shape module for an individual layer. A smart module whose shapes look different is drawn in runs of shapes that
+  // look the same, in the order of the list (a combined module is one run, with the look of its base shape)
   drawSingleLayerShape(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false, colorOverride = null, widthMultiplier = null, stretch = null) {
+    const ops = this.cellColorOps;
+    this.cellColorOps = null;
+    if (!mod || shapeOverride || !(mod.figures && mod.figures.length)) {
+      return this.drawSingleLayerShapeRun(targetCtx, mod, sizeMultiplier, fgColor, bgColor, wireframeOverride, shapeOverride, isCutout, colorOverride, widthMultiplier, stretch);
+    }
+    const figs = resolveFigures(mod.figures).map(f => ({ ...f, relation: "free" })); // placed already: a run is not related to what is in another
+    const combined = mod.combine && mod.combine !== "none" && figs.length > 1;
+    const runs = [];
+    for (const f of figs) {
+      const st = this.figureStyle(f, mod);
+      const last = runs[runs.length - 1];
+      if (combined && last) last.figs.push(f);
+      else if (last && last.st.wire === st.wire && last.st.color === st.color && last.st.sw === st.sw) last.figs.push(f);
+      else runs.push({ figs: [f], st });
+    }
+    const plain = runs.length === 1 && !runs[0].st.explicit && runs[0].st.wire === (mod.wireframe !== false) && runs[0].st.sw === mod.strokeWidth;
+    if (plain) return this.drawSingleLayerShapeRun(targetCtx, mod, sizeMultiplier, fgColor, bgColor, wireframeOverride, shapeOverride, isCutout, colorOverride, widthMultiplier, stretch);
+    const imp = this.cellImperf, morph = this.cellMorph, tex = this.cellTexScale;
+    for (const run of runs) {
+      this.cellImperf = imp; this.cellMorph = morph; this.cellTexScale = tex;
+      const mod2 = { ...mod, figures: run.figs, wireframe: run.st.wire, color: run.st.color, strokeWidth: run.st.sw };
+      let ov = colorOverride;
+      if (run.st.explicit) {
+        if (ops && ops.length) { let c = run.st.color; for (const op of ops) c = this.mixHex(c, op.to, op.t); ov = c; }
+        else ov = colorOverride || null;
+      }
+      this.drawSingleLayerShapeRun(targetCtx, mod2, sizeMultiplier, fgColor, bgColor, wireframeOverride, null, isCutout, ov, widthMultiplier, stretch);
+    }
+  }
+
+  // One run of the above: a plain shape or one composite
+  drawSingleLayerShapeRun(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false, colorOverride = null, widthMultiplier = null, stretch = null) {
     if (!mod) return;
     // A smart module (several figures) is one composite shape for everything that follows
     // Its size is its container's (the piece of paper the figures are placed on): the larger side
@@ -829,6 +873,7 @@ export class StudioEngine {
     if (mix === null || mix === undefined || !grad.enabled || cell.fgLocked) return;
     const start = cell.fg === palette.fg ? (cell.base || cell.fg) : cell.fg;
     cell.fg = this.mixHex(start, grad.endColor || "#f43f5e", mix);
+    this.colorOp(cell, grad.endColor || "#f43f5e", mix);
   }
 
   // Gradation: applies the attribute for position t along the pathway.
@@ -1040,11 +1085,11 @@ export class StudioEngine {
         }
         if (on("rotation")) ctx.rotate((Math.PI / 4) * severity * factor);
         if (on("scale")) cell.scaleMul *= (1 + 0.35 * severity);
-        if (anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
+        if (anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; this.colorOp(cell, accent, 1); }
       }
     } else if (anom.type === "regrid") {
       // The change of grid is made by the layout itself; the zone can still be tinted
-      if (inZone && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
+      if (inZone && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; this.colorOp(cell, accent, 1); }
     } else if (anom.type === "fracture") {
       const corridor = anom.radius * 0.45;
       if (inZone && Math.abs(ex - epiX) < corridor) {
@@ -1053,7 +1098,7 @@ export class StudioEngine {
         const shearX = (ex > epiX ? 1 : -1) * (10 * severity);
         if (on("position")) ctx.translate(shearX, shearY);
         if (on("rotation")) ctx.rotate((factor * severity * Math.PI) / 3.2);
-        if (factor > 0.4 && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
+        if (factor > 0.4 && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; this.colorOp(cell, accent, 1); }
       }
     } else if (anom.type === "swell") {
       if (inZone) {
@@ -1062,7 +1107,7 @@ export class StudioEngine {
         if (on("position")) ctx.translate(Math.cos(angle) * push, Math.sin(angle) * push);
         const sFactor = 1 + factor * 0.55 * severity;
         if (on("scale")) ctx.scale(sFactor, sFactor);
-        if (factor > 0.65 && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
+        if (factor > 0.65 && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; this.colorOp(cell, accent, 1); }
       }
     } else if (anom.type === "tear") {
       if (factor > 0.6) {
@@ -1073,7 +1118,7 @@ export class StudioEngine {
         if (on("rotation")) ctx.rotate(pRand(53) * Math.PI * severity);
         const shrink = Math.max(0.15, 1 - factor * 0.85);
         if (on("scale")) ctx.scale(shrink, shrink);
-        if (anom.highlightColor && factor > 0.3) { cell.fg = accent; cell.fgLocked = true; }
+        if (anom.highlightColor && factor > 0.3) { cell.fg = accent; cell.fgLocked = true; this.colorOp(cell, accent, 1); }
       }
     }
     return true;
@@ -1124,12 +1169,13 @@ export class StudioEngine {
       ctx.translate(Math.cos(a) * d, Math.sin(a) * d);
     } else if (contrast.dimension === "tone") {
       // A different tone of the module's own colour (lighter, toward the ground): works for fill and for stroke
-      if (!cell.fgLocked && cell.fg === palette.fg) cell.fg = this.mixHex(cell.base || cell.fg, palette.bg, (contrast.toneAmount ?? 50) / 100);
+      if (!cell.fgLocked && cell.fg === palette.fg) { cell.fg = this.mixHex(cell.base || cell.fg, palette.bg, (contrast.toneAmount ?? 50) / 100); this.colorOp(cell, palette.bg, (contrast.toneAmount ?? 50) / 100); }
     } else if (contrast.dimension === "texture") {
       cell.texScale = 1; // only the minority is textured
     }
     if (contrast.highlightContrast && !cell.fgLocked) {
       cell.fg = contrast.accentColor || palette.accent;
+      this.colorOp(cell, cell.fg, 1);
     }
   }
 
@@ -1488,6 +1534,7 @@ export class StudioEngine {
         if ((refl === "columns" || refl === "both") && c % 2 === 1) ctx.scale(-1, 1);
         if ((refl === "rows" || refl === "both") && r % 2 === 1) ctx.scale(1, -1);
         const lineWidthMul = !isFixed && !uniform && (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k : null;
+        this.cellColorOps = cell.colorOps || null;
         this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor || flipped ? cellFg : null, lineWidthMul, stretch);
         ctx.restore();
       };
@@ -1966,6 +2013,7 @@ export class StudioEngine {
           if (cell.texScale) this.cellTexScale = Math.max(this.cellTexScale || 0, cell.texScale);
           this.cellSeed = i * raysI + j + 1;
           this.cellAlt = (i + j) % 2 === 1;
+          this.cellColorOps = cell.colorOps || null;
           this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== palette.fg ? cellFg : null);
           ctx.restore();
         }
