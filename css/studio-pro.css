@@ -687,7 +687,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
   height: 68px;
   padding: 0 var(--spacing-5);
   flex-shrink: 0;
-  z-index: 30;
+  z-index: 40; /* above the controls rail (35), so the Download menu opens over it */
   user-select: none;
 }
 .ds-brand { display: flex; align-items: center; gap: 14px; }

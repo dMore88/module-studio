@@ -408,7 +408,7 @@ const Shapes = {
       const r = size * 0.45;
       return `<path d="M 0 ${r} A ${r} ${r} 0 0 1 0 ${-r} C ${r*0.4} ${-r*0.8} ${r*0.4} ${r*0.8} 0 ${r} Z" />`;
     },
-    phIcon: "subset-proper-of"
+    phIcon: "moon"
   },
 
 
