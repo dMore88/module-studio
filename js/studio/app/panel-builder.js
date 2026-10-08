@@ -1,5 +1,5 @@
 /**
- * Panels described as data. A panel spec lists its groups and controls (tags, sliders, switches); this class draws the
+ * Panels described as data. A panel spec lists its groups and controls (tags, chips, sliders, switches); this class draws the
  * panel, shows the state of the active layer in it and listens to its controls, the same way for every panel.
  * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
  *
@@ -7,13 +7,19 @@
  *   { id, cardId, name,                      // name starts the history labels ("Space Mode: ...")
  *     state: (app) => the settings object of the active layer,
  *     enabled: { id, key }, badgeId,         // the switch of the header and the layer badge
- *     groups: [{ title, controls: [
- *       { type: "tags",   label, key, attr, history, options: [[value, text], ...] },
- *       { type: "slider", id, label, key, min, max, step, value, suffix, history,
- *         unit,      // what the setting stores per 1 shown (Texture shows %, stores px: unit 0.1)
- *         fallback,  // shown when the setting has no value yet (default: value)
- *         advanced } // true: the control goes in the group's "Advanced controls" accordion (the group needs advId)
- *       { type: "toggle", id, label, key, history } ] }] }
+ *     banner: { id, text, hidden: (mod) => bool },   // optional notice under the header
+ *     groups: [{ title, advId?, controls: [ ... ] }] }
+ *
+ * Controls (every one may carry `show: (state, mod) => bool`, to appear only in some cases, and `blockId`, the id of its box):
+ *   { type: "tags",   label, key, attr, history, fallback, options: [[value, text], ...] }   one choice among several
+ *   { type: "chips",  label, ariaLabel, attr, options: [{ key, text, id?, show? }] }          chips that switch on and off by themselves
+ *   { type: "slider", id, label, key, min, max, step, value, suffix, history,
+ *       unit,      // what the setting stores per 1 shown (Texture shows %, stores px: unit 0.1)
+ *       divisor,   // the setting stores the shown value divided by this (0 to 100 % shown, 0 to 1 stored: divisor 100)
+ *       fallback,  // what the setting holds when it has no value yet (default: value)
+ *       advanced } // true: the control goes in the group's "Advanced controls" accordion (the group needs advId)
+ *   { type: "toggle", id, label, key, history }
+ *   { type: "hint",   text }
  * With two or more groups, every group gets its title and a divider; with one, only the panel has a title.
  */
 class PanelBuilder {
@@ -23,7 +29,10 @@ class PanelBuilder {
       const card = document.getElementById(spec.cardId);
       if (!card) continue;
       const titled = spec.groups.length > 1;
-      const html = spec.groups.map((g, i) => {
+      const hid = (c) => (c.show ? " hidden" : "");
+      const idAttr = (c) => (c.blockId ? ` id="${c.blockId}"` : "");
+      let html = spec.banner ? `<div id="${spec.banner.id}" class="ds-snackbar hidden" role="status">\n<i class="ph-fill ph-warning"></i>\n<p>${spec.banner.text}</p>\n</div>\n` : "";
+      html += spec.groups.map((g, i) => {
         const head = titled ? `${i > 0 ? '<div class="ds-divider" role="separator"></div>\n' : ""}<div class="ds-label ds-label--overline">${g.title}</div>\n` : "";
         let out = "", adv = "", toggles = [];
         let target = "out";
@@ -34,9 +43,13 @@ class PanelBuilder {
           if (c.type === "toggle") { toggles.push(`<label class="ds-toggle-item">\n<span class="ds-toggle-label">${c.label}</span>\n<input type="checkbox" id="${c.id}" class="ds-checkbox">\n</label>`); continue; }
           flush();
           if (c.type === "tags") {
-            add(`<div class="ds-field">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags">\n${c.options.map(([v, t], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}">${t}</button>`).join("\n")}\n</div>\n</div>\n`);
+            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags">\n${c.options.map(([v, t], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}">${t}</button>`).join("\n")}\n</div>\n</div>\n`);
+          } else if (c.type === "chips") {
+            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags" role="group" aria-label="${c.ariaLabel || c.label}">\n${c.options.map(o => `<button type="button"${o.id ? ` id="${o.id}"` : ""} class="ds-tag${o.show ? " hidden" : ""}" ${c.attr}="${o.key}" aria-pressed="false">${o.text}</button>`).join("\n")}\n</div>\n</div>\n`);
           } else if (c.type === "slider") {
-            add(`<div class="ds-field">\n<div class="ds-label ds-label-clip">${c.label}</div>\n<div class="ds-slider">\n<input type="range" id="input-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}">\n<input type="text" id="num-${c.id}" class="ds-value" value="${c.value}${c.suffix}" inputmode="numeric">\n</div>\n</div>\n`);
+            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label ds-label-clip">${c.label}</div>\n<div class="ds-slider">\n<input type="range" id="input-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}">\n<input type="text" id="num-${c.id}" class="ds-value" value="${c.value}${c.suffix}" inputmode="numeric">\n</div>\n</div>\n`);
+          } else if (c.type === "hint") {
+            add(`<p class="ds-hint">${c.text}</p>\n`);
           }
         }
         flush();
@@ -56,12 +69,24 @@ class PanelBuilder {
     if (badge) badge.textContent = this.compositionName(mod);
     const sw = document.getElementById(spec.enabled.id);
     if (sw) sw.checked = !!st[spec.enabled.key];
+    if (spec.banner) document.getElementById(spec.banner.id)?.classList.toggle("hidden", !!spec.banner.hidden(mod));
     for (const g of spec.groups) {
       for (const c of g.controls) {
+        if (c.show && c.blockId) document.getElementById(c.blockId)?.classList.toggle("hidden", !c.show(st, mod));
         if (c.type === "tags") {
-          document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(b => b.classList.toggle("active", b.getAttribute(c.attr) === st[c.key]));
+          document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(b => b.classList.toggle("active", b.getAttribute(c.attr) === (st[c.key] || c.fallback)));
+        } else if (c.type === "chips") {
+          for (const o of c.options) {
+            const chip = o.id ? document.getElementById(o.id) : document.querySelector(`#${spec.cardId} [${c.attr}="${o.key}"]`);
+            if (!chip) continue;
+            const on = !!st[o.key];
+            chip.classList.toggle("active", on);
+            chip.setAttribute("aria-pressed", String(on));
+            if (o.show) chip.classList.toggle("hidden", !o.show(st, mod));
+          }
         } else if (c.type === "slider") {
-          const v = Math.round((st[c.key] ?? c.fallback ?? c.value) / (c.unit || 1));
+          const raw = st[c.key] ?? c.fallback ?? c.value;
+          const v = Math.round(c.divisor ? raw * c.divisor : raw / (c.unit || 1));
           this.syncControlValue(`input-${c.id}`, v);
           const num = document.getElementById(`num-${c.id}`);
           if (num) num.value = `${v}${c.suffix}`;
@@ -73,7 +98,8 @@ class PanelBuilder {
     this.updateRailIndicatorDots();
   }
 
-  // Listens to the controls of a panel described as data: any edit turns the modifier on, redraws and records a history step
+  // Listens to the controls of a panel described as data: any edit turns the modifier on, redraws and records a history step.
+  // Returns `commit(mutate, historyLabel)`, for the panels that also react to something else (a click on the canvas).
   bindDataPanel(spec) {
     const sw = document.getElementById(spec.enabled.id);
     const resync = () => this.syncDataPanel(spec);
@@ -106,19 +132,28 @@ class PanelBuilder {
               commit(st => { st[c.key] = v; }, `${spec.name} ${c.history}: ${v}`);
             });
           });
+        } else if (c.type === "chips") {
+          for (const o of c.options) {
+            const chip = o.id ? document.getElementById(o.id) : document.querySelector(`#${spec.cardId} [${c.attr}="${o.key}"]`);
+            chip?.addEventListener("click", () => {
+              const next = chip.getAttribute("aria-pressed") !== "true";
+              commit(st => { st[o.key] = next; }, `${spec.name} ${chip.textContent}: ${next ? "ON" : "OFF"}`);
+            });
+          }
         } else if (c.type === "slider") {
           const slider = document.getElementById(`input-${c.id}`), num = document.getElementById(`num-${c.id}`);
           const parse = (s) => (Number(c.step) % 1 ? parseFloat(s) : parseInt(s, 10));
+          const stored = (val) => (c.divisor ? val / c.divisor : val * (c.unit || 1));
           slider?.addEventListener("input", (e) => {
             const val = parse(e.target.value);
-            commit(st => { st[c.key] = val * (c.unit || 1); }, null, { sync: false });
+            commit(st => { st[c.key] = stored(val); }, null, { sync: false });
             if (num) num.value = `${val}${c.suffix}`;
           });
           slider?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} ${c.history}: ${e.target.value}${c.suffix}`));
           num?.addEventListener("change", (e) => {
             const raw = parse(e.target.value.replace(/[^0-9.-]/g, ""));
             const val = isNaN(raw) ? Number(c.min) : Math.max(Number(c.min), Math.min(Number(c.max), raw));
-            commit(st => { st[c.key] = val * (c.unit || 1); }, `${spec.name} ${c.history}: ${val}${c.suffix}`);
+            commit(st => { st[c.key] = stored(val); }, `${spec.name} ${c.history}: ${val}${c.suffix}`);
           });
         } else if (c.type === "toggle") {
           document.getElementById(c.id)?.addEventListener("change", (e) => {
@@ -128,5 +163,6 @@ class PanelBuilder {
         }
       }
     }
+    return commit;
   }
 }

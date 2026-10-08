@@ -1395,99 +1395,6 @@
           </button>
         </div>
 
-        <!-- Dependency banner: Concentration ON but no Repetition / Radiation in this layer -->
-        <div id="warning-concentration-grid" class="ds-snackbar hidden" role="status">
-          <i class="ph-fill ph-warning"></i>
-          <p>Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.</p>
-        </div>
-
-        <div class="ds-label ds-label--overline">Concentration</div>
-        <div class="ds-field">
-          <div class="ds-label">Structure</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-conc-mode="point">Point</button>
-            <button type="button" class="ds-tag" data-conc-mode="void">Void</button>
-            <button type="button" class="ds-tag" data-conc-mode="line">Line</button>
-            <button type="button" class="ds-tag" data-conc-mode="line_void">Away from line</button>
-            <button type="button" class="ds-tag" data-conc-mode="free">Hotspots</button>
-            <button type="button" class="ds-tag" data-conc-mode="dense">Dense</button>
-            <button type="button" class="ds-tag" data-conc-mode="sparse">Sparse</button>
-          </div>
-        </div>
-
-        <div id="conc-method-block" class="ds-field">
-          <div class="ds-label">Method</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-conc-method="move">Move</button>
-            <button type="button" class="ds-tag" data-conc-method="absence">Absence</button>
-          </div>
-        </div>
-
-        <div id="conc-axis-block" class="ds-field hidden">
-          <div class="ds-label">Line axis</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-conc-axis="horizontal">Horizontal</button>
-            <button type="button" class="ds-tag" data-conc-axis="vertical">Vertical</button>
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Field style</div>
-          <div class="ds-tags" role="group" aria-label="Field style">
-            <button type="button" id="conc-fade-block" class="ds-tag hidden" data-conc-flag="edgeFade" aria-pressed="false">Soft edge</button>
-            <button type="button" class="ds-tag" data-conc-flag="alignToField" aria-pressed="false">Flowing</button>
-            <button type="button" class="ds-tag" data-conc-flag="densityScale" aria-pressed="false">Dynamic density</button>
-          </div>
-        </div>
-
-        <div class="ds-stack">
-        <div id="conc-foci-block" class="ds-field hidden">
-          <div class="ds-label">Foci</div>
-          <div class="ds-slider">
-            <input type="range" id="input-conc-foci" min="2" max="8" step="1" value="2">
-            <input type="text" id="num-conc-foci" class="ds-value" value="2" inputmode="decimal">
-          </div>
-        </div>
-          <div class="ds-field">
-            <div class="ds-label ds-label-clip">X position</div>
-            <div class="ds-slider">
-              <input type="range" id="input-conc-x" min="0" max="100" step="1" value="50">
-              <input type="text" id="num-conc-x" class="ds-value" value="50%" inputmode="numeric">
-            </div>
-          </div>
-          <div class="ds-field">
-            <div class="ds-label ds-label-clip">Y position</div>
-            <div class="ds-slider">
-              <input type="range" id="input-conc-y" min="0" max="100" step="1" value="50">
-              <input type="text" id="num-conc-y" class="ds-value" value="50%" inputmode="numeric">
-            </div>
-          </div>
-          <p class="ds-hint">Click anywhere on the canvas to reposition the attractor</p>
-        </div>
-
-          <div class="ds-divider" role="separator"></div>
-          <div class="ds-label ds-label--overline">Strength</div>
-          <div class="ds-field">
-            <div class="ds-label ds-label-clip">Gathering pull</div>
-            <div class="ds-slider">
-              <input type="range" id="input-conc-power" min="10" max="100" step="1" value="50">
-              <input type="text" id="num-conc-power" class="ds-value" value="50%" inputmode="numeric">
-            </div>
-          </div>
-          <div id="conc-radius-field" class="ds-field">
-            <div class="ds-label ds-label-clip">Field radius</div>
-            <div class="ds-slider">
-              <input type="range" id="input-conc-radius" min="10" max="500" step="5" value="250">
-              <input type="text" id="num-conc-radius" class="ds-value" value="250px" inputmode="numeric">
-            </div>
-          </div>
-
-        <div class="ds-toggles">
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Display Attractor Guide</span>
-            <input type="checkbox" id="toggle-conc-guide" class="ds-checkbox">
-          </label>
-        </div>
       </div>
 
       <!-- ===================================================================
@@ -1540,7 +1447,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=76562bea"></script>
+  <script src="js/bundle-pro.js?v=f11d2b2b"></script>
 
 </body>
 </html>

@@ -25,7 +25,7 @@ export const ASPECT_RATIOS = {
 };
 
 // The panels described as data (each spec lives in its panel's file in js/studio/app/)
-function dataPanels() { return [SPACE_PANEL, TEXTURE_PANEL]; }
+function dataPanels() { return [CONCENTRATION_PANEL, SPACE_PANEL, TEXTURE_PANEL]; }
 
 // Copies the methods (and the static getters) of the area classes (js/studio/app/*.js) onto StudioProApp
 function applyMixins(target, sources) {

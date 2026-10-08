@@ -4153,7 +4153,7 @@ const StudioExporter = {
 
 
   /**
- * Panels described as data. A panel spec lists its groups and controls (tags, sliders, switches); this class draws the
+ * Panels described as data. A panel spec lists its groups and controls (tags, chips, sliders, switches); this class draws the
  * panel, shows the state of the active layer in it and listens to its controls, the same way for every panel.
  * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
  *
@@ -4161,13 +4161,19 @@ const StudioExporter = {
  *   { id, cardId, name,                      // name starts the history labels ("Space Mode: ...")
  *     state: (app) => the settings object of the active layer,
  *     enabled: { id, key }, badgeId,         // the switch of the header and the layer badge
- *     groups: [{ title, controls: [
- *       { type: "tags",   label, key, attr, history, options: [[value, text], ...] },
- *       { type: "slider", id, label, key, min, max, step, value, suffix, history,
- *         unit,      // what the setting stores per 1 shown (Texture shows %, stores px: unit 0.1)
- *         fallback,  // shown when the setting has no value yet (default: value)
- *         advanced } // true: the control goes in the group's "Advanced controls" accordion (the group needs advId)
- *       { type: "toggle", id, label, key, history } ] }] }
+ *     banner: { id, text, hidden: (mod) => bool },   // optional notice under the header
+ *     groups: [{ title, advId?, controls: [ ... ] }] }
+ *
+ * Controls (every one may carry `show: (state, mod) => bool`, to appear only in some cases, and `blockId`, the id of its box):
+ *   { type: "tags",   label, key, attr, history, fallback, options: [[value, text], ...] }   one choice among several
+ *   { type: "chips",  label, ariaLabel, attr, options: [{ key, text, id?, show? }] }          chips that switch on and off by themselves
+ *   { type: "slider", id, label, key, min, max, step, value, suffix, history,
+ *       unit,      // what the setting stores per 1 shown (Texture shows %, stores px: unit 0.1)
+ *       divisor,   // the setting stores the shown value divided by this (0 to 100 % shown, 0 to 1 stored: divisor 100)
+ *       fallback,  // what the setting holds when it has no value yet (default: value)
+ *       advanced } // true: the control goes in the group's "Advanced controls" accordion (the group needs advId)
+ *   { type: "toggle", id, label, key, history }
+ *   { type: "hint",   text }
  * With two or more groups, every group gets its title and a divider; with one, only the panel has a title.
  */
 class PanelBuilder {
@@ -4177,7 +4183,10 @@ class PanelBuilder {
       const card = document.getElementById(spec.cardId);
       if (!card) continue;
       const titled = spec.groups.length > 1;
-      const html = spec.groups.map((g, i) => {
+      const hid = (c) => (c.show ? " hidden" : "");
+      const idAttr = (c) => (c.blockId ? ` id="${c.blockId}"` : "");
+      let html = spec.banner ? `<div id="${spec.banner.id}" class="ds-snackbar hidden" role="status">\n<i class="ph-fill ph-warning"></i>\n<p>${spec.banner.text}</p>\n</div>\n` : "";
+      html += spec.groups.map((g, i) => {
         const head = titled ? `${i > 0 ? '<div class="ds-divider" role="separator"></div>\n' : ""}<div class="ds-label ds-label--overline">${g.title}</div>\n` : "";
         let out = "", adv = "", toggles = [];
         let target = "out";
@@ -4188,9 +4197,13 @@ class PanelBuilder {
           if (c.type === "toggle") { toggles.push(`<label class="ds-toggle-item">\n<span class="ds-toggle-label">${c.label}</span>\n<input type="checkbox" id="${c.id}" class="ds-checkbox">\n</label>`); continue; }
           flush();
           if (c.type === "tags") {
-            add(`<div class="ds-field">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags">\n${c.options.map(([v, t], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}">${t}</button>`).join("\n")}\n</div>\n</div>\n`);
+            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags">\n${c.options.map(([v, t], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}">${t}</button>`).join("\n")}\n</div>\n</div>\n`);
+          } else if (c.type === "chips") {
+            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags" role="group" aria-label="${c.ariaLabel || c.label}">\n${c.options.map(o => `<button type="button"${o.id ? ` id="${o.id}"` : ""} class="ds-tag${o.show ? " hidden" : ""}" ${c.attr}="${o.key}" aria-pressed="false">${o.text}</button>`).join("\n")}\n</div>\n</div>\n`);
           } else if (c.type === "slider") {
-            add(`<div class="ds-field">\n<div class="ds-label ds-label-clip">${c.label}</div>\n<div class="ds-slider">\n<input type="range" id="input-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}">\n<input type="text" id="num-${c.id}" class="ds-value" value="${c.value}${c.suffix}" inputmode="numeric">\n</div>\n</div>\n`);
+            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label ds-label-clip">${c.label}</div>\n<div class="ds-slider">\n<input type="range" id="input-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}">\n<input type="text" id="num-${c.id}" class="ds-value" value="${c.value}${c.suffix}" inputmode="numeric">\n</div>\n</div>\n`);
+          } else if (c.type === "hint") {
+            add(`<p class="ds-hint">${c.text}</p>\n`);
           }
         }
         flush();
@@ -4210,12 +4223,24 @@ class PanelBuilder {
     if (badge) badge.textContent = this.compositionName(mod);
     const sw = document.getElementById(spec.enabled.id);
     if (sw) sw.checked = !!st[spec.enabled.key];
+    if (spec.banner) document.getElementById(spec.banner.id)?.classList.toggle("hidden", !!spec.banner.hidden(mod));
     for (const g of spec.groups) {
       for (const c of g.controls) {
+        if (c.show && c.blockId) document.getElementById(c.blockId)?.classList.toggle("hidden", !c.show(st, mod));
         if (c.type === "tags") {
-          document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(b => b.classList.toggle("active", b.getAttribute(c.attr) === st[c.key]));
+          document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(b => b.classList.toggle("active", b.getAttribute(c.attr) === (st[c.key] || c.fallback)));
+        } else if (c.type === "chips") {
+          for (const o of c.options) {
+            const chip = o.id ? document.getElementById(o.id) : document.querySelector(`#${spec.cardId} [${c.attr}="${o.key}"]`);
+            if (!chip) continue;
+            const on = !!st[o.key];
+            chip.classList.toggle("active", on);
+            chip.setAttribute("aria-pressed", String(on));
+            if (o.show) chip.classList.toggle("hidden", !o.show(st, mod));
+          }
         } else if (c.type === "slider") {
-          const v = Math.round((st[c.key] ?? c.fallback ?? c.value) / (c.unit || 1));
+          const raw = st[c.key] ?? c.fallback ?? c.value;
+          const v = Math.round(c.divisor ? raw * c.divisor : raw / (c.unit || 1));
           this.syncControlValue(`input-${c.id}`, v);
           const num = document.getElementById(`num-${c.id}`);
           if (num) num.value = `${v}${c.suffix}`;
@@ -4227,7 +4252,8 @@ class PanelBuilder {
     this.updateRailIndicatorDots();
   }
 
-  // Listens to the controls of a panel described as data: any edit turns the modifier on, redraws and records a history step
+  // Listens to the controls of a panel described as data: any edit turns the modifier on, redraws and records a history step.
+  // Returns `commit(mutate, historyLabel)`, for the panels that also react to something else (a click on the canvas).
   bindDataPanel(spec) {
     const sw = document.getElementById(spec.enabled.id);
     const resync = () => this.syncDataPanel(spec);
@@ -4260,19 +4286,28 @@ class PanelBuilder {
               commit(st => { st[c.key] = v; }, `${spec.name} ${c.history}: ${v}`);
             });
           });
+        } else if (c.type === "chips") {
+          for (const o of c.options) {
+            const chip = o.id ? document.getElementById(o.id) : document.querySelector(`#${spec.cardId} [${c.attr}="${o.key}"]`);
+            chip?.addEventListener("click", () => {
+              const next = chip.getAttribute("aria-pressed") !== "true";
+              commit(st => { st[o.key] = next; }, `${spec.name} ${chip.textContent}: ${next ? "ON" : "OFF"}`);
+            });
+          }
         } else if (c.type === "slider") {
           const slider = document.getElementById(`input-${c.id}`), num = document.getElementById(`num-${c.id}`);
           const parse = (s) => (Number(c.step) % 1 ? parseFloat(s) : parseInt(s, 10));
+          const stored = (val) => (c.divisor ? val / c.divisor : val * (c.unit || 1));
           slider?.addEventListener("input", (e) => {
             const val = parse(e.target.value);
-            commit(st => { st[c.key] = val * (c.unit || 1); }, null, { sync: false });
+            commit(st => { st[c.key] = stored(val); }, null, { sync: false });
             if (num) num.value = `${val}${c.suffix}`;
           });
           slider?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} ${c.history}: ${e.target.value}${c.suffix}`));
           num?.addEventListener("change", (e) => {
             const raw = parse(e.target.value.replace(/[^0-9.-]/g, ""));
             const val = isNaN(raw) ? Number(c.min) : Math.max(Number(c.min), Math.min(Number(c.max), raw));
-            commit(st => { st[c.key] = val * (c.unit || 1); }, `${spec.name} ${c.history}: ${val}${c.suffix}`);
+            commit(st => { st[c.key] = stored(val); }, `${spec.name} ${c.history}: ${val}${c.suffix}`);
           });
         } else if (c.type === "toggle") {
           document.getElementById(c.id)?.addEventListener("change", (e) => {
@@ -4282,6 +4317,7 @@ class PanelBuilder {
         }
       }
     }
+    return commit;
   }
 }
 
@@ -6567,157 +6603,53 @@ class PanelContrast {
 
 
   /**
- * The Concentration panel.
+ * The Concentration panel, described as data (see panel-builder.js): Structure (Point, Void, Line, Hotspots, Dense, Sparse),
+ * X/Y position, Gathering pull, Field radius, field style chips, Attractor guide.
+ * Clicking the canvas while the Concentration tab is open moves the attractor.
  * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
  */
-class PanelConcentration {
-  /* =========================================================================
-     CONCENTRATION INSPECTOR & CONTROLLER (Per Active Layer)
-     Structure (Point, Void, Line, Hotspots), X/Y position, Gathering pull,
-     Field radius, Orient to field flow, Dynamic density scale, Attractor guide.
-     Clicking the canvas while the Concentration tab is open moves the attractor.
-     ========================================================================= */
+const CONC_WHOLE = (st) => st.mode === "dense" || st.mode === "sparse"; // the whole-design modes have no field radius and no absence method
+const CONCENTRATION_PANEL = {
+  id: "concentration", cardId: "card-concentration", name: "Concentration",
+  state: (app) => app.getActiveConcentration(),
+  enabled: { id: "toggle-concentration-active", key: "enabled" },
+  badgeId: "badge-concentration-layer",
+  banner: { id: "warning-concentration-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+  groups: [
+    { title: "Concentration", controls: [
+      { type: "tags", label: "Structure", key: "mode", attr: "data-conc-mode", history: "Structure",
+        options: [["point", "Point"], ["void", "Void"], ["line", "Line"], ["line_void", "Away from line"], ["free", "Hotspots"], ["dense", "Dense"], ["sparse", "Sparse"]] },
+      { type: "tags", label: "Method", key: "method", attr: "data-conc-method", history: "Method", fallback: "move", blockId: "conc-method-block", show: (st) => !CONC_WHOLE(st),
+        options: [["move", "Move"], ["absence", "Absence"]] },
+      { type: "tags", label: "Line axis", key: "lineAxis", attr: "data-conc-axis", history: "Axis", blockId: "conc-axis-block", show: (st) => st.mode === "line" || st.mode === "line_void",
+        options: [["horizontal", "Horizontal"], ["vertical", "Vertical"]] },
+      { type: "chips", label: "Field style", attr: "data-conc-flag", options: [
+        { key: "edgeFade", text: "Soft edge", id: "conc-fade-block", show: (st) => CONC_WHOLE(st) },
+        { key: "alignToField", text: "Flowing" },
+        { key: "densityScale", text: "Dynamic density" } ] },
+      { type: "slider", id: "conc-foci", label: "Foci", key: "focusCount", min: 2, max: 8, step: 1, value: 2, suffix: "", history: "Foci", blockId: "conc-foci-block", show: (st) => st.mode === "free" },
+      { type: "slider", id: "conc-x", label: "X position", key: "attractorX", min: 0, max: 100, step: 1, value: 50, suffix: "%", divisor: 100, fallback: 0.5, history: "X" },
+      { type: "slider", id: "conc-y", label: "Y position", key: "attractorY", min: 0, max: 100, step: 1, value: 50, suffix: "%", divisor: 100, fallback: 0.5, history: "Y" },
+      { type: "hint", text: "Click anywhere on the canvas to reposition the attractor" },
+    ] },
+    { title: "Strength", controls: [
+      { type: "slider", id: "conc-power", label: "Gathering pull", key: "power", min: 10, max: 100, step: 1, value: 50, suffix: "%", history: "Pull" },
+      { type: "slider", id: "conc-radius", label: "Field radius", key: "radius", min: 10, max: 500, step: 5, value: 250, suffix: "px", history: "Radius", blockId: "conc-radius-field", show: (st) => !CONC_WHOLE(st) },
+      { type: "toggle", id: "toggle-conc-guide", label: "Display Attractor Guide", key: "showAttractor", history: "Attractor Guide" },
+    ] },
+  ],
+};
 
+class PanelConcentration {
   getActiveConcentration() {
     const struct = this.getActiveLayerStructure();
     return struct ? struct.concentration : null;
   }
 
-  syncConcentrationInspectorWithActiveLayer() {
-    const mod = this.getActiveModule();
-    const conc = this.getActiveConcentration();
-    if (!mod || !conc) return;
-
-    const badge = document.getElementById("badge-concentration-layer");
-    if (badge) badge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
-
-    const hasGrid = !!mod.structure.enabled;
-    const warnBox = document.getElementById("warning-concentration-grid");
-    if (warnBox) warnBox.classList.toggle("hidden", hasGrid);
-
-    const toggle = document.getElementById("toggle-concentration-active");
-    if (toggle) toggle.checked = !!conc.enabled;
-
-    document.querySelectorAll("#card-concentration [data-conc-mode]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.concMode === conc.mode);
-    });
-    document.querySelectorAll("#card-concentration [data-conc-axis]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.concAxis === conc.lineAxis);
-    });
-    // The axis only matters for the line structure.
-    document.getElementById("conc-axis-block")?.classList.toggle("hidden", conc.mode !== "line" && conc.mode !== "line_void");
-    document.getElementById("conc-foci-block")?.classList.toggle("hidden", conc.mode !== "free");
-    // The whole-design modes (Dense, Sparse) have no field radius and no absence method; they can fade at the edges
-    const wholeDesign = conc.mode === "dense" || conc.mode === "sparse";
-    document.getElementById("conc-method-block")?.classList.toggle("hidden", wholeDesign);
-    document.getElementById("conc-radius-field")?.classList.toggle("hidden", wholeDesign);
-    document.getElementById("conc-fade-block")?.classList.toggle("hidden", !wholeDesign);
-    document.querySelectorAll("#card-concentration [data-conc-method]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.concMethod === (conc.method || "move"));
-    });
-    document.querySelectorAll("#card-concentration [data-conc-flag]").forEach(chip => {
-      const on = !!conc[chip.dataset.concFlag];
-      chip.classList.toggle("active", on);
-      chip.setAttribute("aria-pressed", String(on));
-    });
-
-    const setPair = (sliderId, numId, value, suffix) => {
-      this.syncControlValue(sliderId, value);
-      const num = document.getElementById(numId);
-      if (num) num.value = `${value}${suffix}`;
-    };
-    setPair("input-conc-x", "num-conc-x", Math.round((conc.attractorX ?? 0.5) * 100), "%");
-    setPair("input-conc-y", "num-conc-y", Math.round((conc.attractorY ?? 0.5) * 100), "%");
-    setPair("input-conc-foci", "num-conc-foci", conc.focusCount ?? 2, "");
-    setPair("input-conc-power", "num-conc-power", conc.power ?? 50, "%");
-    setPair("input-conc-radius", "num-conc-radius", conc.radius ?? 250, "px");
-
-    this.syncCheckbox("toggle-conc-guide", !!conc.showAttractor);
-
-    this.updateRailIndicatorDots();
-  }
+  syncConcentrationInspectorWithActiveLayer() { this.syncDataPanel(CONCENTRATION_PANEL); }
 
   setupConcentration() {
-    const toggle = document.getElementById("toggle-concentration-active");
-
-    // Any edit enables Concentration on the active layer, then refreshes everything.
-    const commit = (mutate, historyLabel, { resync = true } = {}) => {
-      const conc = this.getActiveConcentration();
-      if (!conc) return;
-      mutate(conc);
-      conc.enabled = true;
-      if (toggle) toggle.checked = true;
-      if (resync) this.syncConcentrationInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      if (historyLabel) this.pushHistory(`Layer ${this.activeLayerId} ${historyLabel}`);
-    };
-
-    toggle?.addEventListener("change", (e) => {
-      const conc = this.getActiveConcentration();
-      if (!conc) return;
-      conc.enabled = e.target.checked;
-      this.syncConcentrationInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      this.pushHistory(`Layer ${this.activeLayerId} Concentration: ${conc.enabled ? "ON" : "OFF"}`);
-    });
-
-    document.querySelectorAll("#card-concentration [data-conc-method]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(c => { c.method = btn.dataset.concMethod; }, `Concentration Method: ${btn.dataset.concMethod}`);
-      });
-    });
-    // Field style: chips that can be mixed (each one switches on and off by itself)
-    document.querySelectorAll("#card-concentration [data-conc-flag]").forEach(chip => {
-      chip.addEventListener("click", () => {
-        const key = chip.dataset.concFlag;
-        const next = chip.getAttribute("aria-pressed") !== "true";
-        commit(c => { c[key] = next; }, `Concentration ${chip.textContent}: ${next ? "ON" : "OFF"}`);
-      });
-    });
-    document.querySelectorAll("#card-concentration [data-conc-mode]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(c => { c.mode = btn.dataset.concMode; }, `Concentration Structure: ${btn.dataset.concMode}`);
-      });
-    });
-    document.querySelectorAll("#card-concentration [data-conc-axis]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(c => { c.lineAxis = btn.dataset.concAxis; }, `Concentration Axis: ${btn.dataset.concAxis}`);
-      });
-    });
-
-    const bindPair = (sliderId, numId, { min, max, suffix, toStored, label, key }) => {
-      const slider = document.getElementById(sliderId);
-      const num = document.getElementById(numId);
-      slider?.addEventListener("input", (e) => {
-        const val = parseInt(e.target.value, 10);
-        commit(c => { c[key] = toStored(val); }, null, { resync: false });
-        if (num) num.value = `${val}${suffix}`;
-      });
-      slider?.addEventListener("change", (e) => {
-        this.pushHistory(`Layer ${this.activeLayerId} Concentration ${label}: ${e.target.value}${suffix}`);
-      });
-      num?.addEventListener("change", (e) => {
-        const raw = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10);
-        const val = isNaN(raw) ? min : Math.max(min, Math.min(max, raw));
-        commit(c => { c[key] = toStored(val); }, `Concentration ${label}: ${val}${suffix}`);
-      });
-    };
-    bindPair("input-conc-x", "num-conc-x", { min: 0, max: 100, suffix: "%", toStored: v => v / 100, label: "X", key: "attractorX" });
-    bindPair("input-conc-y", "num-conc-y", { min: 0, max: 100, suffix: "%", toStored: v => v / 100, label: "Y", key: "attractorY" });
-    bindPair("input-conc-foci", "num-conc-foci", { min: 2, max: 8, suffix: "", toStored: v => v, label: "Foci", key: "focusCount" });
-    bindPair("input-conc-power", "num-conc-power", { min: 10, max: 100, suffix: "%", toStored: v => v, label: "Pull", key: "power" });
-    bindPair("input-conc-radius", "num-conc-radius", { min: 10, max: 500, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
-
-    const bindCheck = (id, key, label) => {
-      document.getElementById(id)?.addEventListener("change", (e) => {
-        const checked = e.target.checked;
-        commit(c => { c[key] = checked; }, `Concentration ${label}: ${checked ? "ON" : "OFF"}`);
-      });
-    };
-    bindCheck("toggle-conc-guide", "showAttractor", "Attractor Guide");
-
+    const commit = this.bindDataPanel(CONCENTRATION_PANEL);
     // Click on the canvas moves the attractor while the Concentration tab is open.
     this.canvas?.addEventListener("click", (e) => {
       if (!this.isFlyoutOpen || this.activeRailTab !== "concentration") return;
@@ -7312,7 +7244,7 @@ const ASPECT_RATIOS = {
 };
 
 // The panels described as data (each spec lives in its panel's file in js/studio/app/)
-function dataPanels() { return [SPACE_PANEL, TEXTURE_PANEL]; }
+function dataPanels() { return [CONCENTRATION_PANEL, SPACE_PANEL, TEXTURE_PANEL]; }
 
 // Copies the methods (and the static getters) of the area classes (js/studio/app/*.js) onto StudioProApp
 function applyMixins(target, sources) {

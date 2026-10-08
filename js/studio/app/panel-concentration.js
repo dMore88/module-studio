@@ -1,155 +1,51 @@
 /**
- * The Concentration panel.
+ * The Concentration panel, described as data (see panel-builder.js): Structure (Point, Void, Line, Hotspots, Dense, Sparse),
+ * X/Y position, Gathering pull, Field radius, field style chips, Attractor guide.
+ * Clicking the canvas while the Concentration tab is open moves the attractor.
  * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
  */
-class PanelConcentration {
-  /* =========================================================================
-     CONCENTRATION INSPECTOR & CONTROLLER (Per Active Layer)
-     Structure (Point, Void, Line, Hotspots), X/Y position, Gathering pull,
-     Field radius, Orient to field flow, Dynamic density scale, Attractor guide.
-     Clicking the canvas while the Concentration tab is open moves the attractor.
-     ========================================================================= */
+const CONC_WHOLE = (st) => st.mode === "dense" || st.mode === "sparse"; // the whole-design modes have no field radius and no absence method
+const CONCENTRATION_PANEL = {
+  id: "concentration", cardId: "card-concentration", name: "Concentration",
+  state: (app) => app.getActiveConcentration(),
+  enabled: { id: "toggle-concentration-active", key: "enabled" },
+  badgeId: "badge-concentration-layer",
+  banner: { id: "warning-concentration-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+  groups: [
+    { title: "Concentration", controls: [
+      { type: "tags", label: "Structure", key: "mode", attr: "data-conc-mode", history: "Structure",
+        options: [["point", "Point"], ["void", "Void"], ["line", "Line"], ["line_void", "Away from line"], ["free", "Hotspots"], ["dense", "Dense"], ["sparse", "Sparse"]] },
+      { type: "tags", label: "Method", key: "method", attr: "data-conc-method", history: "Method", fallback: "move", blockId: "conc-method-block", show: (st) => !CONC_WHOLE(st),
+        options: [["move", "Move"], ["absence", "Absence"]] },
+      { type: "tags", label: "Line axis", key: "lineAxis", attr: "data-conc-axis", history: "Axis", blockId: "conc-axis-block", show: (st) => st.mode === "line" || st.mode === "line_void",
+        options: [["horizontal", "Horizontal"], ["vertical", "Vertical"]] },
+      { type: "chips", label: "Field style", attr: "data-conc-flag", options: [
+        { key: "edgeFade", text: "Soft edge", id: "conc-fade-block", show: (st) => CONC_WHOLE(st) },
+        { key: "alignToField", text: "Flowing" },
+        { key: "densityScale", text: "Dynamic density" } ] },
+      { type: "slider", id: "conc-foci", label: "Foci", key: "focusCount", min: 2, max: 8, step: 1, value: 2, suffix: "", history: "Foci", blockId: "conc-foci-block", show: (st) => st.mode === "free" },
+      { type: "slider", id: "conc-x", label: "X position", key: "attractorX", min: 0, max: 100, step: 1, value: 50, suffix: "%", divisor: 100, fallback: 0.5, history: "X" },
+      { type: "slider", id: "conc-y", label: "Y position", key: "attractorY", min: 0, max: 100, step: 1, value: 50, suffix: "%", divisor: 100, fallback: 0.5, history: "Y" },
+      { type: "hint", text: "Click anywhere on the canvas to reposition the attractor" },
+    ] },
+    { title: "Strength", controls: [
+      { type: "slider", id: "conc-power", label: "Gathering pull", key: "power", min: 10, max: 100, step: 1, value: 50, suffix: "%", history: "Pull" },
+      { type: "slider", id: "conc-radius", label: "Field radius", key: "radius", min: 10, max: 500, step: 5, value: 250, suffix: "px", history: "Radius", blockId: "conc-radius-field", show: (st) => !CONC_WHOLE(st) },
+      { type: "toggle", id: "toggle-conc-guide", label: "Display Attractor Guide", key: "showAttractor", history: "Attractor Guide" },
+    ] },
+  ],
+};
 
+class PanelConcentration {
   getActiveConcentration() {
     const struct = this.getActiveLayerStructure();
     return struct ? struct.concentration : null;
   }
 
-  syncConcentrationInspectorWithActiveLayer() {
-    const mod = this.getActiveModule();
-    const conc = this.getActiveConcentration();
-    if (!mod || !conc) return;
-
-    const badge = document.getElementById("badge-concentration-layer");
-    if (badge) badge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
-
-    const hasGrid = !!mod.structure.enabled;
-    const warnBox = document.getElementById("warning-concentration-grid");
-    if (warnBox) warnBox.classList.toggle("hidden", hasGrid);
-
-    const toggle = document.getElementById("toggle-concentration-active");
-    if (toggle) toggle.checked = !!conc.enabled;
-
-    document.querySelectorAll("#card-concentration [data-conc-mode]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.concMode === conc.mode);
-    });
-    document.querySelectorAll("#card-concentration [data-conc-axis]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.concAxis === conc.lineAxis);
-    });
-    // The axis only matters for the line structure.
-    document.getElementById("conc-axis-block")?.classList.toggle("hidden", conc.mode !== "line" && conc.mode !== "line_void");
-    document.getElementById("conc-foci-block")?.classList.toggle("hidden", conc.mode !== "free");
-    // The whole-design modes (Dense, Sparse) have no field radius and no absence method; they can fade at the edges
-    const wholeDesign = conc.mode === "dense" || conc.mode === "sparse";
-    document.getElementById("conc-method-block")?.classList.toggle("hidden", wholeDesign);
-    document.getElementById("conc-radius-field")?.classList.toggle("hidden", wholeDesign);
-    document.getElementById("conc-fade-block")?.classList.toggle("hidden", !wholeDesign);
-    document.querySelectorAll("#card-concentration [data-conc-method]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.concMethod === (conc.method || "move"));
-    });
-    document.querySelectorAll("#card-concentration [data-conc-flag]").forEach(chip => {
-      const on = !!conc[chip.dataset.concFlag];
-      chip.classList.toggle("active", on);
-      chip.setAttribute("aria-pressed", String(on));
-    });
-
-    const setPair = (sliderId, numId, value, suffix) => {
-      this.syncControlValue(sliderId, value);
-      const num = document.getElementById(numId);
-      if (num) num.value = `${value}${suffix}`;
-    };
-    setPair("input-conc-x", "num-conc-x", Math.round((conc.attractorX ?? 0.5) * 100), "%");
-    setPair("input-conc-y", "num-conc-y", Math.round((conc.attractorY ?? 0.5) * 100), "%");
-    setPair("input-conc-foci", "num-conc-foci", conc.focusCount ?? 2, "");
-    setPair("input-conc-power", "num-conc-power", conc.power ?? 50, "%");
-    setPair("input-conc-radius", "num-conc-radius", conc.radius ?? 250, "px");
-
-    this.syncCheckbox("toggle-conc-guide", !!conc.showAttractor);
-
-    this.updateRailIndicatorDots();
-  }
+  syncConcentrationInspectorWithActiveLayer() { this.syncDataPanel(CONCENTRATION_PANEL); }
 
   setupConcentration() {
-    const toggle = document.getElementById("toggle-concentration-active");
-
-    // Any edit enables Concentration on the active layer, then refreshes everything.
-    const commit = (mutate, historyLabel, { resync = true } = {}) => {
-      const conc = this.getActiveConcentration();
-      if (!conc) return;
-      mutate(conc);
-      conc.enabled = true;
-      if (toggle) toggle.checked = true;
-      if (resync) this.syncConcentrationInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      if (historyLabel) this.pushHistory(`Layer ${this.activeLayerId} ${historyLabel}`);
-    };
-
-    toggle?.addEventListener("change", (e) => {
-      const conc = this.getActiveConcentration();
-      if (!conc) return;
-      conc.enabled = e.target.checked;
-      this.syncConcentrationInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      this.pushHistory(`Layer ${this.activeLayerId} Concentration: ${conc.enabled ? "ON" : "OFF"}`);
-    });
-
-    document.querySelectorAll("#card-concentration [data-conc-method]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(c => { c.method = btn.dataset.concMethod; }, `Concentration Method: ${btn.dataset.concMethod}`);
-      });
-    });
-    // Field style: chips that can be mixed (each one switches on and off by itself)
-    document.querySelectorAll("#card-concentration [data-conc-flag]").forEach(chip => {
-      chip.addEventListener("click", () => {
-        const key = chip.dataset.concFlag;
-        const next = chip.getAttribute("aria-pressed") !== "true";
-        commit(c => { c[key] = next; }, `Concentration ${chip.textContent}: ${next ? "ON" : "OFF"}`);
-      });
-    });
-    document.querySelectorAll("#card-concentration [data-conc-mode]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(c => { c.mode = btn.dataset.concMode; }, `Concentration Structure: ${btn.dataset.concMode}`);
-      });
-    });
-    document.querySelectorAll("#card-concentration [data-conc-axis]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(c => { c.lineAxis = btn.dataset.concAxis; }, `Concentration Axis: ${btn.dataset.concAxis}`);
-      });
-    });
-
-    const bindPair = (sliderId, numId, { min, max, suffix, toStored, label, key }) => {
-      const slider = document.getElementById(sliderId);
-      const num = document.getElementById(numId);
-      slider?.addEventListener("input", (e) => {
-        const val = parseInt(e.target.value, 10);
-        commit(c => { c[key] = toStored(val); }, null, { resync: false });
-        if (num) num.value = `${val}${suffix}`;
-      });
-      slider?.addEventListener("change", (e) => {
-        this.pushHistory(`Layer ${this.activeLayerId} Concentration ${label}: ${e.target.value}${suffix}`);
-      });
-      num?.addEventListener("change", (e) => {
-        const raw = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10);
-        const val = isNaN(raw) ? min : Math.max(min, Math.min(max, raw));
-        commit(c => { c[key] = toStored(val); }, `Concentration ${label}: ${val}${suffix}`);
-      });
-    };
-    bindPair("input-conc-x", "num-conc-x", { min: 0, max: 100, suffix: "%", toStored: v => v / 100, label: "X", key: "attractorX" });
-    bindPair("input-conc-y", "num-conc-y", { min: 0, max: 100, suffix: "%", toStored: v => v / 100, label: "Y", key: "attractorY" });
-    bindPair("input-conc-foci", "num-conc-foci", { min: 2, max: 8, suffix: "", toStored: v => v, label: "Foci", key: "focusCount" });
-    bindPair("input-conc-power", "num-conc-power", { min: 10, max: 100, suffix: "%", toStored: v => v, label: "Pull", key: "power" });
-    bindPair("input-conc-radius", "num-conc-radius", { min: 10, max: 500, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
-
-    const bindCheck = (id, key, label) => {
-      document.getElementById(id)?.addEventListener("change", (e) => {
-        const checked = e.target.checked;
-        commit(c => { c[key] = checked; }, `Concentration ${label}: ${checked ? "ON" : "OFF"}`);
-      });
-    };
-    bindCheck("toggle-conc-guide", "showAttractor", "Attractor Guide");
-
+    const commit = this.bindDataPanel(CONCENTRATION_PANEL);
     // Click on the canvas moves the attractor while the Concentration tab is open.
     this.canvas?.addEventListener("click", (e) => {
       if (!this.isFlyoutOpen || this.activeRailTab !== "concentration") return;
