@@ -1057,3 +1057,23 @@ input[type="range"]:hover::-webkit-slider-thumb {
 /* The rows of the shape list reuse the layer rows, a bit shorter */
 .fig-list .layer-card.fig-row { height: 48px; }
 .fig-list { gap: 0; }
+
+/* Which mode the app is in: the composition (the design) or the smart module editor (the module on its own) */
+.ds-mode-chip {
+  display: inline-flex; align-items: center; gap: var(--spacing-2); box-sizing: border-box; height: var(--sizing-6);
+  padding: 0 var(--spacing-3); border-radius: var(--border-radius-2); background: var(--neutral-bg-strong);
+  color: var(--neutral-text-main); font-size: var(--font-size-xs); font-weight: var(--typography-weight-500); white-space: nowrap;
+}
+.ds-mode-chip--smart { background: #cdeeed; color: #0b5e5c; }
+.ds-btn--dark { background: var(--neutral-interactive-default); color: var(--neutral-text-main-inverted); }
+.ds-btn--dark:hover { background: var(--neutral-interactive-hover); }
+.ds-btn--dark:active { background: var(--neutral-interactive-active); }
+.is-edit-only { display: none; }
+body.is-editing-module .is-edit-only { display: inline-flex; }
+/* in the editor the only ways out are Save and Cancel: the document buttons give way to them, and the rest of the app waits */
+body.is-editing-module .ds-export-actions > .ds-btn:not(.is-edit-only) { display: none; }
+body.is-editing-module #controls-rail .rail-btn:not([data-rail-tab="module"]) { opacity: 0.4; pointer-events: none; }
+body.is-editing-module #inspector-flyout .close-flyout-btn { display: none; }
+body.is-editing-module .ds-layers-panel { opacity: 0.5; pointer-events: none; }
+body.is-editing-module .ds-select { opacity: 0.5; pointer-events: none; }
+.ds-btn--dark i { color: var(--neutral-icon-inverted); }

@@ -111,7 +111,7 @@
     const app = win.studioProApp;
     const initial = JSON.stringify(app.state);
     // Older tests were written when Repetition modules shrank with their cell; the Base size default has its own test (reset(true))
-    const reset = (keepDefaults = false) => { app.state = JSON.parse(initial); if (!keepDefaults) app.state.layers.forEach(l => { l.structure.repetition.moduleScale = "cell"; }); app.activeLayerId = app.state.layers[0].id; app.engine.state = app.state; app.figEdit = null; app.engine.viewState = null; if (app._editorCanvasKey) { app._editorCanvasKey = ""; app.engine.renderScale = 1; app.fitArtboard(); app.render(); } };
+    const reset = (keepDefaults = false) => { app.state = JSON.parse(initial); if (!keepDefaults) app.state.layers.forEach(l => { l.structure.repetition.moduleScale = "cell"; }); app.activeLayerId = app.state.layers[0].id; app.engine.state = app.state; app.figEdit = null; app.engine.viewState = null; if (app._editorCanvasKey) { app._editorCanvasKey = ""; app.engine.renderScale = 1; app.fitArtboard(); app.render(); } app.syncEditShell(); if (app.isFlyoutOpen) { app.isFlyoutOpen = false; app.updateRailUI(); } };
     const results = [];
     const record = (name, ok, detail = "") => {
       results.push({ name, ok, detail });
@@ -588,7 +588,7 @@
       reset();
       const d = win.document, q = (sel) => d.querySelector(sel);
       const fire = (el, v) => { el.value = v; el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
-      const tab = async (t) => { q(`[data-rail-tab="${t}"]`).click(); await wait(80); };
+      const tab = async (t) => { if (app.figEdit) app.closeFigureEditor(true); q(`[data-rail-tab="${t}"]`).click(); await wait(80); };
       const st = () => app.getActiveLayerStructure();
 
       await tab("layout");
@@ -2236,6 +2236,7 @@
       reset();
       const d = win.document, q = (s) => d.querySelector(s), cv = d.getElementById("studio-canvas");
       const fire = (el, v) => { el.value = String(v); el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
+      const labels0 = app.historyLabels.length; // what other tests left in the history does not count
       const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: true, width: 100, height: 100, showContainer: true, strokeWidth: 3 }); app.state.showSafeBounds = false;
       L.structure.enabled = true; L.structure.mode = "repetition"; Object.assign(L.structure.repetition, { cols: 3, rows: 3, sizeMode: "fit" });
       app.isFlyoutOpen = false; app.updateRailUI(); // earlier tests leave a panel open
@@ -2299,13 +2300,21 @@
       fire(q("#input-fig-x"), -25); fire(q("#input-active-container-w"), 130);
       q("#btn-fig-save").click(); await wait(60);
       assert(L.figures.length === 2 && L.figures[1].x === -25 && L.containerW === 130 && !app.figEdit && !app.isFlyoutOpen, "Save keeps the figures and the module controls");
-      assert(app.historyLabels[app.historyLabels.length - 1].includes("Module saved") && !app.historyLabels.some(l => l.includes("Figure ") || l.includes("Module Width")), `Save makes one undo step and the editing none (${JSON.stringify(app.historyLabels.slice(-3))})`);
+      assert(app.historyLabels[app.historyLabels.length - 1].includes("Module saved") && !app.historyLabels.slice(labels0).some(l => l.includes("Figure ") || l.includes("Module Width")), `Save makes one undo step and the editing none (${JSON.stringify(app.historyLabels.slice(-3))})`);
       assert(/Shapes: Square 100 x 100px \(0, 0\) 0º Stroke #18181F 3px \+ Circle 50 x 50px \(-25, 0\) 0º Stroke #18181F 3px/.test(win.document.querySelector(".ds-art-log").innerText), "The Art log should list the figures");
-      // Moving to another panel saves too
+      // The editor changes the look of the app, and its only ways out are Save and Cancel
       q('[data-rail-tab="module"]').click(); await wait(60);
-      q('#fig-list [data-fig-index="1"] .btn-fig-trash').click(); await wait(30);
+      assert(d.body.classList.contains("is-editing-module") && d.getElementById("mode-chip-text").textContent === "Smart module mode" && d.getElementById("mode-chip").classList.contains("ds-mode-chip--smart"), "The chip says Smart module mode");
+      assert(d.getElementById("canvas-aspect-ratio").disabled && [...d.querySelectorAll("#controls-rail .rail-btn")].every(b => (b.dataset.railTab === "module") === !b.disabled), "The aspect ratio and every panel but Module are disabled");
+      assert(d.querySelector(".ds-export-actions").contains(q("#btn-fig-save")) && d.querySelector(".ds-export-actions").contains(q("#btn-fig-cancel")) && getComputedStyle(q("#btn-fig-save")).display !== "none" && getComputedStyle(q("#btn-download-svg")).display === "none" && getComputedStyle(q("#btn-open-project")).display === "none", "Save module and Cancel edition replace the document buttons in the header");
+      assert(getComputedStyle(q("#active-layer-inspector .close-flyout-btn")).display === "none", "The panel has no close button");
       q('[data-rail-tab="layout"]').click(); await wait(60);
-      assert(!app.figEdit && L.figures.length === 1 && L.figures[0].shape === "square" && L.shape === "square", "Leaving for another panel saves; a module with one figure keeps it");
+      q("#active-layer-inspector .close-flyout-btn").click(); await wait(30);
+      assert(app.figEdit && app.activeRailTab === "module" && app.isFlyoutOpen, "Another panel and the close button do nothing while editing");
+      q('#fig-list [data-fig-index="1"] .btn-fig-trash').click(); await wait(30);
+      q("#btn-fig-save").click(); await wait(60);
+      assert(!app.figEdit && !d.body.classList.contains("is-editing-module") && d.getElementById("mode-chip-text").textContent === "Composition mode" && !d.getElementById("canvas-aspect-ratio").disabled && [...d.querySelectorAll("#controls-rail .rail-btn")].every(b => !b.disabled) && getComputedStyle(q("#btn-download-svg")).display !== "none", "Saving gives the composition its look back");
+      assert(L.figures.length === 1 && L.figures[0].shape === "square" && L.shape === "square", "A module with one figure keeps it");
     });
 
     await test("Smart module: no stray line joins one figure to the next (arcs start their own outline)", async () => {

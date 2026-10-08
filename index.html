@@ -23,6 +23,7 @@
 
     <!-- Canvas controls (moved from the canvas toolbar so they do not compete with the canvas size) -->
     <div class="ds-canvas-controls">
+      <span id="mode-chip" class="ds-mode-chip" role="status"><i class="ph ph-grid-four" aria-hidden="true"></i><span id="mode-chip-text">Composition mode</span></span>
       <div class="ds-select">
         <select id="canvas-aspect-ratio" aria-label="Canvas aspect ratio">
           <option value="1:1" selected>1 : 1</option>
@@ -46,6 +47,14 @@
     </div>
 
     <div class="ds-export-actions">
+      <button type="button" id="btn-fig-cancel" class="ds-btn is-edit-only" title="Discard the changes made since the editor opened and go back to the composition">
+        <span>Cancel edition</span>
+        <i class="ph ph-x-circle" aria-hidden="true"></i>
+      </button>
+      <button type="button" id="btn-fig-save" class="ds-btn ds-btn--dark is-edit-only" title="Keep the changes and go back to the composition">
+        <span>Save module</span>
+        <i class="ph ph-check-circle" aria-hidden="true"></i>
+      </button>
       <button type="button" id="btn-open-project" class="ds-btn" title="Open a saved project (.json)">
         <span>Open</span>
         <i class="ph ph-folder-open" aria-hidden="true"></i>
@@ -328,10 +337,6 @@
           </div>
         </div>
 
-        <div class="ds-layers-actions">
-          <button type="button" id="btn-fig-cancel" class="ds-btn" title="Discard the changes made since the editor opened"><span>Cancel</span></button>
-          <button type="button" id="btn-fig-save" class="ds-btn" title="Keep the changes"><span>Save</span><i class="ph ph-check" aria-hidden="true"></i></button>
-        </div>
       </div>
 
       <!-- ===================================================================
@@ -1585,7 +1590,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=3638e52e"></script>
+  <script src="js/bundle-pro.js?v=ea2ed137"></script>
 
 </body>
 </html>

@@ -432,6 +432,7 @@ export class StudioProApp {
     };
     this.activeLayerId = layers[0].id;
     this.figEdit = null; // an open editing session belonged to the old project
+    this.syncEditShell();
     this.applyAspectRatio(this.state.aspectRatio);
     document.getElementById("btn-toggle-grid")?.classList.toggle("active", this.state.showSafeBounds);
     this.syncGuideColor();
@@ -968,6 +969,7 @@ export class StudioProApp {
     const railButtons = document.querySelectorAll("#controls-rail .rail-btn");
     railButtons.forEach(btn => {
       btn.addEventListener("click", () => {
+        if (this.figEdit) return; // the module editor is left with Save or Cancel
         const tab = btn.dataset.railTab;
         if (this.activeRailTab === tab && this.isFlyoutOpen) {
           // Clicking active button toggles flyout closed
@@ -984,6 +986,7 @@ export class StudioProApp {
     document.querySelectorAll(".close-flyout-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
+        if (this.figEdit) return;
         this.isFlyoutOpen = false;
         this.updateRailUI();
       });
@@ -3062,6 +3065,7 @@ export class StudioProApp {
       mod.figures = mod.figures.map(f => (f.width !== undefined ? f : { shape: f.shape, width: Math.round((f.size ?? 100) / 100 * old), height: Math.round((f.size ?? 100) / 100 * old), x: Math.round((f.x || 0) / 100 * old), y: Math.round((f.y || 0) / 100 * old), rotation: f.rotation || 0 }));
     }
     this.figEdit = { layerId: mod.id, snapshot, index: 0, steps: [], at: -1 };
+    this.syncEditShell();
     this.recordFigureStep();
     this.syncFigureEditor();
   }
@@ -3082,10 +3086,28 @@ export class StudioProApp {
       }
     }
     this.figEdit = null;
+    this.syncEditShell();
     this.fitArtboard(); // back to the design's canvas (the next draw sets its size)
     if (keep) this.pushHistory(`Layer ${id} Module saved`);
     this.syncAllInspectorsWithActiveLayer();
     this.updateLayerCardsUI();
+  }
+
+  // The look of the app while the module is edited: the mode chip, Save and Cancel in the header, the rest of the controls waiting
+  syncEditShell() {
+    const on = !!this.figEdit;
+    document.body.classList.toggle("is-editing-module", on);
+    const chip = document.getElementById("mode-chip");
+    if (chip) {
+      chip.classList.toggle("ds-mode-chip--smart", on);
+      const icon = chip.querySelector("i");
+      if (icon) icon.className = on ? "ph ph-shapes" : "ph ph-grid-four";
+      const text = document.getElementById("mode-chip-text");
+      if (text) text.textContent = on ? "Smart module mode" : "Composition mode";
+    }
+    const select = document.getElementById("canvas-aspect-ratio");
+    if (select) select.disabled = on;
+    document.querySelectorAll("#controls-rail .rail-btn").forEach(b => { if (b.dataset.railTab !== "module") b.disabled = on; });
   }
 
   // Save / Cancel: finish the session and close the panel
