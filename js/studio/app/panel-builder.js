@@ -21,6 +21,7 @@
  *       fallback,  // what the setting holds when it has no value yet (default: value)
  *       invert,    // the setting stores the opposite sign of what is shown (Gradation's speed)
  *       signed,    // shown with a + in front when positive
+ *       get, set,  // when the setting needs more than a number (get(state, app) gives the shown value; set(state, shown) stores it)
  *       decimal,   // the value box asks for a decimal keyboard
  *       advanced } // true: the control goes in the group's "Advanced controls" accordion (the group needs advId)
  *   { type: "toggle", id, label, key, history }
@@ -110,7 +111,7 @@ class PanelBuilder {
           }
         } else if (c.type === "slider") {
           const raw = st[c.key] ?? c.fallback ?? c.value;
-          let v = Math.round(c.divisor ? raw * c.divisor : raw / (c.unit || 1));
+          let v = c.get ? c.get(st, this) : Math.round(c.divisor ? raw * c.divisor : raw / (c.unit || 1));
           if (c.invert) v = v ? -v : 0;
           this.syncControlValue(`input-${c.id}`, v);
           const num = document.getElementById(`num-${c.id}`);
@@ -193,11 +194,11 @@ class PanelBuilder {
         } else if (c.type === "slider") {
           const slider = document.getElementById(`input-${c.id}`), num = document.getElementById(`num-${c.id}`);
           const parse = (s) => (Number(c.step) % 1 ? parseFloat(s) : parseInt(s, 10));
-          const stored = (val) => (c.invert ? (val ? -val : 0) : c.divisor ? val / c.divisor : val * (c.unit || 1));
+          const stored = (val) => (c.set ? val : c.invert ? (val ? -val : 0) : c.divisor ? val / c.divisor : val * (c.unit || 1));
           const shown = (val) => `${c.signed && val > 0 ? "+" : ""}${val}${c.suffix}`;
           slider?.addEventListener("input", (e) => {
             const val = parse(e.target.value);
-            commit(st => { st[c.key] = stored(val); }, null, { sync: false });
+            commit(st => { if (c.set) c.set(st, val); else st[c.key] = stored(val); }, null, { sync: false });
             if (num) num.value = shown(val);
           });
           slider?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} ${c.history}: ${e.target.value}${c.suffix}`));
@@ -205,7 +206,7 @@ class PanelBuilder {
             const raw = parse(e.target.value.replace(/[^0-9.-]/g, ""));
             let val = isNaN(raw) ? Number(c.min) : Math.max(Number(c.min), Math.min(Number(c.max), raw));
             if (Number(c.step) % 1) val = Math.round(val * 10) / 10;
-            commit(st => { st[c.key] = stored(val); }, `${spec.name} ${c.history}: ${val}${c.suffix}`);
+            commit(st => { if (c.set) c.set(st, val); else st[c.key] = stored(val); }, `${spec.name} ${c.history}: ${val}${c.suffix}`);
           });
         } else if (c.type === "toggle") {
           document.getElementById(c.id)?.addEventListener("change", (e) => {

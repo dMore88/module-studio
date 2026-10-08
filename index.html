@@ -834,90 +834,6 @@
           </button>
         </div>
 
-        <div id="warning-similarity-grid" class="ds-snackbar hidden" role="status">
-          <i class="ph-fill ph-warning"></i>
-          <p>Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.</p>
-        </div>
-
-        <div id="similarity-controls-group" class="ds-stack">
-        <div class="ds-label ds-label--overline">Kinship</div>
-        <div class="ds-field">
-          <div class="ds-label">Visual kinship type</div>
-          <div class="ds-dropdown" data-select>
-          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Elastic</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-          <div class="ds-dropdown-menu hidden" role="listbox">
-            <button type="button" class="ds-dropdown-item active" role="option" data-kinship-type="distortion"><span>Elastic</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-kinship-type="foreshortening"><span>3D tilt</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-kinship-type="rotation_wobble"><span>Wobble</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-kinship-type="scale_kinship"><span>Scale</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-kinship-type="hybrid"><span>Hybrid</span></button>
-          </div>
-        </div>
-        </div>
-
-          <div class="ds-field">
-            <div class="ds-label ds-label-clip">Fluctuation intensity</div>
-            <div class="ds-slider">
-              <input type="range" id="input-sim-intensity" min="0" max="100" step="1" value="50">
-              <input type="text" id="num-sim-intensity" class="ds-value" value="50%" inputmode="decimal">
-            </div>
-          </div>
-        <div class="ds-divider" role="separator"></div>
-<div class="ds-label ds-label--overline">Association</div>
-<div class="ds-field">
-          <div class="ds-label">Association (family of shapes)</div>
-          <div class="ds-dropdown" data-select>
-          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>None</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-          <div class="ds-dropdown-menu hidden" role="listbox">
-            <button type="button" class="ds-dropdown-item active" role="option" data-sim-assoc="none"><span>None</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-sim-assoc="round"><span>Round</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-sim-assoc="angular"><span>Angular</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-sim-assoc="lines"><span>Lines</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-sim-assoc="characters"><span>Characters</span></button>
-          </div>
-        </div>
-        </div>
-<div id="sim-assoc-block" class="ds-field hidden">
-            <div class="ds-label ds-label-clip">Association mix</div>
-            <div class="ds-slider">
-              <input type="range" id="input-sim-assoc-mix" min="0" max="100" step="1" value="50">
-              <input type="text" id="num-sim-assoc-mix" class="ds-value" value="50%" inputmode="decimal">
-            </div>
-          </div>
-
-<div class="ds-divider" role="separator"></div>
-<div class="ds-label ds-label--overline">Imperfection</div>
-<div class="ds-field">
-          <div class="ds-label">Imperfection</div>
-          <div class="ds-dropdown" data-select>
-          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>None</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-          <div class="ds-dropdown-menu hidden" role="listbox">
-            <button type="button" class="ds-dropdown-item active" role="option" data-sim-imperf="none"><span>None</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-sim-imperf="cut"><span>Cut</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-sim-imperf="broken"><span>Broken</span></button>
-          </div>
-        </div>
-        </div>
-<div id="sim-imperf-block" class="ds-field hidden">
-            <div class="ds-label ds-label-clip">Imperfect modules</div>
-            <div class="ds-slider">
-              <input type="range" id="input-sim-imperf-amount" min="0" max="100" step="1" value="30">
-              <input type="text" id="num-sim-imperf-amount" class="ds-value" value="30%" inputmode="decimal">
-            </div>
-          </div>
-<details id="sim-adv-imperf" class="ds-advanced">
-<summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced controls</span></summary>
-<div class="ds-stack">
-<div class="ds-field">
-            <div class="ds-label ds-label-clip">Spatial cell jitter</div>
-            <div class="ds-slider">
-              <input type="range" id="input-sim-jitter" min="0" max="90" step="1" value="0">
-              <input type="text" id="num-sim-jitter" class="ds-value" value="0%" inputmode="decimal">
-            </div>
-          </div>
-</div>
-</details>
-        </div>
       </div>
 
       <!-- ===================================================================
@@ -1054,7 +970,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=52a01395"></script>
+  <script src="js/bundle-pro.js?v=631aa2e1"></script>
 
 </body>
 </html>
