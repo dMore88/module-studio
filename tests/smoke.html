@@ -22,7 +22,7 @@
   <p>Open this page through a web server (<code>python3 -m http.server</code>, then <code>/tests/smoke.html</code>). Run it after every change, together with <code>python3 build-pro.py</code>.</p>
   <button id="run" type="button">Run again</button>
   <div id="summary">Running…</div>
-  <table><thead><tr><th>Test</th><th>Result</th><th>Detail</th></tr></thead><tbody id="results"></tbody></table>
+  <table><thead><tr><th>Test</th><th>Result</th><th>Detail</th><th>Time</th></tr></thead><tbody id="results"></tbody></table>
   <iframe id="app" title="Module Studio" src="../index.html"></iframe>
 
 <script>
@@ -113,15 +113,16 @@
     // Older tests were written when Repetition modules shrank with their cell; the Base size default has its own test (reset(true))
     const reset = (keepDefaults = false) => { app.state = JSON.parse(initial); if (!keepDefaults) app.state.layers.forEach(l => { l.structure.repetition.moduleScale = "cell"; }); app.activeLayerId = app.state.layers[0].id; app.engine.state = app.state; app.figEdit = null; app.engine.viewState = null; if (app._editorCanvasKey) { app._editorCanvasKey = ""; app.engine.renderScale = 1; app.fitArtboard(); app.render(); } app.syncEditShell(); if (app.isFlyoutOpen) { app.isFlyoutOpen = false; app.updateRailUI(); } };
     const results = [];
-    const record = (name, ok, detail = "") => {
+    const record = (name, ok, detail = "", ms) => {
       results.push({ name, ok, detail });
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${name}</td><td class="${ok ? "pass" : "fail"}">${ok ? "PASS" : "FAIL"}</td><td>${detail}</td>`;
+      tr.innerHTML = `<td>${name}</td><td class="${ok ? "pass" : "fail"}">${ok ? "PASS" : "FAIL"}</td><td>${detail}</td><td class="ms">${ms === undefined ? "" : Math.round(ms) + " ms"}</td>`;
       tbody.appendChild(tr);
     };
     const test = async (name, fn) => {
-      try { const detail = await fn(); record(name, true, detail || ""); }
-      catch (e) { record(name, false, e && e.message ? e.message : String(e)); }
+      const t0 = performance.now();
+      try { const detail = await fn(); record(name, true, detail || "", performance.now() - t0); }
+      catch (e) { record(name, false, e && e.message ? e.message : String(e), performance.now() - t0); }
       finally { reset(); }
     };
     const assert = (cond, msg) => { if (!cond) throw new Error(msg); };
@@ -160,11 +161,13 @@
       return "44 combinations";
     });
 
-    await test("400 random combinations: no exception, balanced canvas state", () => {
+    // The random combinations are a third of the whole run: 150 by default, 400 when the page is opened with ?full
+    const RANDOM_RUNS = new URLSearchParams(location.search).has("full") ? 400 : 150;
+    await test(`${RANDOM_RUNS} random combinations: no exception, balanced canvas state`, () => {
       reset();
       const r = makeRng(12345);
       let failures = [], unbalanced = 0, maxMs = 0, total = 0;
-      for (let n = 0; n < 400; n++) {
+      for (let n = 0; n < RANDOM_RUNS; n++) {
         randomizeState(app, r);
         saves = restores = 0;
         const t0 = performance.now();
@@ -174,7 +177,7 @@
       }
       assert(failures.length === 0, `${failures.length} exceptions, first: ${failures[0]}`);
       assert(unbalanced === 0, `${unbalanced} renders left an unbalanced save/restore`);
-      return `avg ${Math.round(total / 400)} ms, worst ${Math.round(maxMs)} ms`;
+      return `avg ${Math.round(total / RANDOM_RUNS)} ms, worst ${Math.round(maxMs)} ms`;
     });
 
     await test("Texture is deterministic (same settings, same picture)", () => {

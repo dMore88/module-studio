@@ -122,7 +122,7 @@ Para comprobar sin regenerar: `python3 build-pro.py --check`. El hook de git `.g
    Cada modificador debe implementarse y probarse tanto en la retícula cartesiana (`renderRepetitionGrid`) como en el esquema polar (`renderRadiation`).
 
 7. **Pruebas de humo:**  
-   Antes de entregar, abrir `tests/smoke.html` a través de un servidor (`python3 -m http.server`, luego `/tests/smoke.html`). Debe terminar en **"All tests passed"** (hoy 47 pruebas). Prueba el dibujo de las 15 formas, 400 combinaciones al azar de todos los controles, la textura determinista, deshacer y rehacer, el alta y baja de capas y el aviso de error en pantalla. Si se añade un control o modificador nuevo, ampliar `randomizeState` en esa página para que lo incluya.
+   Antes de entregar, abrir `tests/smoke.html` a través de un servidor (`python3 -m http.server`, luego `/tests/smoke.html`). Debe terminar en **"All tests passed"** (hoy 84 pruebas). Prueba el dibujo de las 22 formas, 150 combinaciones al azar de todos los controles (400 si se abre `smoke.html?full`, antes de entregar una versión), la textura determinista, deshacer y rehacer, el alta y baja de capas y el aviso de error en pantalla. Si se añade un control o modificador nuevo, ampliar `randomizeState` en esa página para que lo incluya.
 
 ---
 

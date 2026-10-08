@@ -42,7 +42,7 @@ Con Wong: su **módulo** es la unidad que se repite (aquí, la pieza entera con 
 - **Tamaño de shape** (hoy cada shape tiene ancho y alto, pero el módulo no tiene control de escala conjunta de las shapes).
 - **Editar el módulo viendo a sus vecinos** (lo hacía *Hide modifiers*): un modo «editar sobre el diseño».
 - **Desplazamiento fijo del módulo en su celda desde Layout**, si se echa de menos el offset (la rotación ya vive en Layout).
-- **Integración con `main`:** la rama cambia el panel Module, el recorte del módulo y el container de Layout. Antes de integrarla, comprobar que los proyectos antiguos se abren igual.
+- **Integración con `main`:** la rama cambia el panel Module, el recorte del módulo y el container de Layout. **Comprobado el 8 oct 2026** que los proyectos antiguos se abren con el mismo dibujo (ver el backlog). Punto de retorno: la etiqueta `checkpoint-main-before-smart-module`.
 
 ## Cosas a vigilar
 
