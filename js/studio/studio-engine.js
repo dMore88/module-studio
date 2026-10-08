@@ -518,7 +518,11 @@ export class StudioEngine {
     if (!mod || shapeOverride || !(mod.figures && mod.figures.length)) {
       return this.drawSingleLayerShapeRun(targetCtx, mod, sizeMultiplier, fgColor, bgColor, wireframeOverride, shapeOverride, isCutout, colorOverride, widthMultiplier, stretch);
     }
-    const figs = resolveFigures(mod.figures).map(f => ({ ...f, relation: "free" })); // placed already: a run is not related to what is in another
+    let figs = resolveFigures(mod.figures).map(f => ({ ...f, relation: "free" })); // placed already: a run is not related to what is in another
+    // A hidden shape is not drawn (and is not part of a combination); the others keep the places they were given
+    const shown = figs.filter(f => f.visible !== false);
+    if (!shown.length) return;
+    if (shown.length !== figs.length) { figs = shown; mod = { ...mod, figures: shown }; }
     const combined = mod.combine && mod.combine !== "none" && figs.length > 1;
     const runs = [];
     for (const f of figs) {

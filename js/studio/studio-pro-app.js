@@ -708,7 +708,7 @@ export class StudioProApp {
       const smart = !!(mod.figures && mod.figures.length);
       const cw = Math.round(mod.containerW > 0 ? mod.containerW : 100), ch = Math.round(mod.containerH > 0 ? mod.containerH : 100);
       out.push({ k: "Module", v: [`${cw} x ${ch}px`, `rotation ${num(mod.rotation || 0)}º`, ...((mod.offsetX || mod.offsetY) ? [`offset ${num(mod.offsetX || 0)}, ${num(mod.offsetY || 0)}px`] : [])].join(" / ") });
-      if (smart) out.push({ k: "Shapes", v: resolveFigures(mod.figures).map(f => { const look = this.engine.figureStyle(f, mod); return `${shapeName(f.shape)} ${num(f.width ?? f.size)} x ${num(f.height ?? f.width ?? f.size)}px (${num(f.x)}, ${num(f.y)}) ${num(f.rotation)}º ${look.wire ? "Stroke" : "Fill"} ${hex(look.color || "#18181F")}${look.wire ? ` ${num(look.sw || 1)}px` : ""}${f.relation === "coincident" ? " coincident" : f.relation === "distance" ? ` ${num(f.gap || 0) === "0" ? "touching" : `gap ${num(f.gap)}px`} at ${num(f.angle || 0)}º` : ""}`; }).join(" + ") });
+      if (smart) out.push({ k: "Shapes", v: resolveFigures(mod.figures).map(f => { const look = this.engine.figureStyle(f, mod); return `${shapeName(f.shape)}${f.visible === false ? " (hidden)" : ""} ${num(f.width ?? f.size)} x ${num(f.height ?? f.width ?? f.size)}px (${num(f.x)}, ${num(f.y)}) ${num(f.rotation)}º ${look.wire ? "Stroke" : "Fill"} ${hex(look.color || "#18181F")}${look.wire ? ` ${num(look.sw || 1)}px` : ""}${f.relation === "coincident" ? " coincident" : f.relation === "distance" ? ` ${num(f.gap || 0) === "0" ? "touching" : `gap ${num(f.gap)}px`} at ${num(f.angle || 0)}º` : ""}`; }).join(" + ") });
       if (smart && mod.combine && mod.combine !== "none") out.push({ k: "Combine", v: ({ union: "Union", subtract: "Subtract", intersect: "Intersect", xor: "Exclude" })[mod.combine] || mod.combine });
       if (!smart) out.push({ k: "Shape", v: `${shapeName(mod.shape)} ${num(mod.width ?? mod.scale ?? 100)} x ${num(mod.height ?? mod.scale ?? 100)}px` });
       if (!smart) out.push({ k: "Style", v: [fill ? "Fill" : "Stroke", hex(mod.color || "#18181F"), ...(fill ? [] : [`stroke ${num(mod.strokeWidth || 1)}px`])].join(" / ") });
@@ -3133,17 +3133,23 @@ export class StudioProApp {
     if (!mod) return;
     const list = document.getElementById("fig-list");
     if (list) {
-      list.innerHTML = "";
-      // Like the layers: the shape in front is on top, the one behind everything (the base) at the bottom
-      mod.figures.map((f, i) => ({ f, i })).reverse().forEach(({ f, i }) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "ds-btn" + (i === this.figEdit.index ? " active" : "");
-        b.dataset.figIndex = String(i);
-        b.textContent = (Shapes[f.shape] && Shapes[f.shape].name) || f.shape;
-        b.addEventListener("click", () => { this.figEdit.index = i; this.syncFigureEditor(); });
-        list.appendChild(b);
-      });
+      // Like the layers: the shape in front is on top, the one behind everything (the base) at the bottom; each row has its icon,
+      // its name, an eye, a bin and a handle to drag it
+      const canDelete = mod.figures.length > 1;
+      list.innerHTML = mod.figures.map((f, i) => ({ f, i })).reverse().map(({ f, i }) => {
+        const def = Shapes[f.shape] || Shapes.circle;
+        const shown = f.visible !== false;
+        return `
+        <div class="layer-card fig-row ${i === this.figEdit.index ? "is-active" : ""} ${shown ? "" : "is-hidden"}" data-fig-index="${i}" draggable="true">
+          <div class="layer-preview-box pointer-events-none">${shapeIconHtml(def)}</div>
+          <div class="layer-copy pointer-events-none"><div class="layer-title">${def.name || f.shape}</div></div>
+          <div class="layer-actions">
+            <button type="button" class="layer-action-btn btn-fig-eye" title="Show or hide the shape" aria-label="Show or hide ${def.name || f.shape}">${shown ? '<i class="ph ph-eye" aria-hidden="true"></i>' : '<i class="ph ph-eye-slash opacity-40" aria-hidden="true"></i>'}</button>
+            <button type="button" class="layer-action-btn btn-fig-trash ${canDelete ? "" : "opacity-25 cursor-not-allowed"}" title="${canDelete ? "Delete the shape" : "A module needs at least one shape"}" aria-label="Delete ${def.name || f.shape}" ${canDelete ? "" : "disabled"}><i class="ph ph-trash" aria-hidden="true"></i></button>
+            <span class="layer-action-btn layer-drag-handle" title="Drag to reorder" aria-hidden="true"><i class="ph ph-dots-six-vertical"></i></span>
+          </div>
+        </div>`;
+      }).join("");
     }
     const f = this.currentFigure();
     document.querySelectorAll("#fig-shape-grid [data-fig-shape]").forEach(b => b.classList.toggle("active", !!f && b.dataset.figShape === f.shape));
@@ -3163,9 +3169,7 @@ export class StudioProApp {
     }
     if (f) { set("fig-w", f.width, "px"); set("fig-h", f.height, "px"); set("fig-x", f.x, "px"); set("fig-y", f.y, "px"); set("fig-rot", f.rotation, "º"); }
     document.getElementById("btn-fig-add")?.toggleAttribute("disabled", mod.figures.length >= 4);
-    document.getElementById("btn-fig-delete")?.toggleAttribute("disabled", mod.figures.length <= 1);
-    document.getElementById("btn-fig-up")?.toggleAttribute("disabled", this.figEdit.index >= mod.figures.length - 1);
-    document.getElementById("btn-fig-down")?.toggleAttribute("disabled", this.figEdit.index <= 0);
+    document.getElementById("btn-fig-duplicate")?.toggleAttribute("disabled", mod.figures.length >= 4);
     // Combine: only with two or more shapes
     const combineNow = mod.combine || "none";
     document.getElementById("fig-combine-block")?.classList.toggle("hidden", mod.figures.length < 2);
@@ -3210,24 +3214,72 @@ export class StudioProApp {
       this.recordFigureStep();
       this.syncFigureEditor();
     });
-    document.getElementById("btn-fig-delete")?.addEventListener("click", () => {
-      const m = mod(); if (!m || m.figures.length <= 1) return;
-      m.figures.splice(this.figEdit.index, 1);
-      this.figEdit.index = Math.min(this.figEdit.index, m.figures.length - 1);
+    // Duplicate: an exact copy right above the selected shape, placed where the original is
+    document.getElementById("btn-fig-duplicate")?.addEventListener("click", () => {
+      const m = mod(); if (!m || m.figures.length >= 4) return;
+      const i = this.figEdit.index, r = resolveFigures(m.figures)[i];
+      m.figures.splice(i + 1, 0, { ...m.figures[i], x: Math.round(r.x), y: Math.round(r.y), relation: "free" });
+      this.figEdit.index = i + 1;
       this.recordFigureStep();
       this.syncFigureEditor();
     });
-    const move = (d) => {
-      const m = mod(); if (!m) return;
-      const i = this.figEdit.index, j = i + d;
-      if (j < 0 || j >= m.figures.length) return;
-      [m.figures[i], m.figures[j]] = [m.figures[j], m.figures[i]];
-      this.figEdit.index = j;
+
+    // The rows of the list: select, show or hide, delete, and drag to reorder
+    const list = document.getElementById("fig-list");
+    let dragFrom = null;
+    list?.addEventListener("click", (e) => {
+      const row = e.target.closest(".fig-row");
+      const m = mod();
+      if (!row || !m) return;
+      const i = Number(row.dataset.figIndex);
+      if (e.target.closest(".btn-fig-eye")) {
+        m.figures[i].visible = m.figures[i].visible === false;
+        this.figEdit.index = i;
+        this.recordFigureStep();
+      } else if (e.target.closest(".btn-fig-trash")) {
+        if (m.figures.length <= 1) return;
+        m.figures.splice(i, 1);
+        this.figEdit.index = Math.min(this.figEdit.index > i ? this.figEdit.index - 1 : this.figEdit.index, m.figures.length - 1);
+        this.recordFigureStep();
+      } else {
+        this.figEdit.index = i;
+      }
+      this.syncFigureEditor();
+    });
+    list?.addEventListener("dragstart", (e) => {
+      const row = e.target.closest(".fig-row");
+      if (!row) return;
+      dragFrom = Number(row.dataset.figIndex);
+      row.classList.add("is-dragging");
+      if (e.dataTransfer) { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(dragFrom)); }
+    });
+    list?.addEventListener("dragend", () => {
+      list.querySelectorAll(".fig-row").forEach(r => r.classList.remove("is-dragging", "drag-over"));
+      dragFrom = null;
+    });
+    list?.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      const row = e.target.closest(".fig-row");
+      if (!row || Number(row.dataset.figIndex) === dragFrom) return;
+      row.classList.add("drag-over");
+    });
+    list?.addEventListener("dragleave", (e) => { e.target.closest(".fig-row")?.classList.remove("drag-over"); });
+    list?.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const row = e.target.closest(".fig-row");
+      const m = mod();
+      list.querySelectorAll(".fig-row").forEach(r => r.classList.remove("drag-over"));
+      if (!row || !m || dragFrom === null) return;
+      const to = Number(row.dataset.figIndex);
+      if (to === dragFrom) return;
+      // the dragged shape takes the place of the one it is dropped on
+      const [moved] = m.figures.splice(dragFrom, 1);
+      m.figures.splice(to, 0, moved);
+      this.figEdit.index = to;
+      dragFrom = null;
       this.recordFigureStep();
       this.syncFigureEditor();
-    };
-    document.getElementById("btn-fig-up")?.addEventListener("click", () => move(1));   // up the list = towards the front
-    document.getElementById("btn-fig-down")?.addEventListener("click", () => move(-1));
+    });
 
     document.querySelectorAll("[data-fig-combine]").forEach(btn => btn.addEventListener("click", () => {
       const m = mod();

@@ -2263,14 +2263,29 @@
       assert(L.figures[1].x === 30 && L.figures[1].width === 70 && L.figures[1].rotation === 40 && q("#num-fig-rot").value === "40º" && q("#num-fig-x").value === "30px", "The figure sliders should edit the selected figure, in px");
       q('#fig-shape-grid [data-fig-shape="triangle"]').click(); await wait(30);
       assert(L.figures[1].shape === "triangle", "The editor's shape grid changes the selected figure");
-      q("#btn-fig-down").click(); await wait(30);
-      assert(L.figures[0].shape === "triangle" && app.figEdit.index === 0, "Move down the list (towards the back) swaps the order");
-      q("#btn-fig-up").click(); await wait(30);
-      assert(L.figures[1].shape === "triangle" && app.figEdit.index === 1, "Move up the list (towards the front) swaps it back");
+      // drag to reorder: the dragged shape takes the place of the one it is dropped on
+      const row = (i) => q(`#fig-list [data-fig-index="${i}"]`);
+      const drag = (from, to) => { const dt = new win.DataTransfer(); const ev = (n, el) => el.dispatchEvent(new win.DragEvent(n, { bubbles: true, cancelable: true, dataTransfer: dt })); ev("dragstart", row(from)); ev("dragover", row(to)); ev("drop", row(to)); ev("dragend", row(from)); };
+      drag(1, 0);
+      assert(L.figures[0].shape === "triangle" && app.figEdit.index === 0, "Dragging the front shape onto the back one swaps them");
+      drag(0, 1);
+      assert(L.figures[1].shape === "triangle" && app.figEdit.index === 1, "Dragging it back puts it in front again");
       assert(q("#fig-list").firstElementChild.dataset.figIndex === String(L.figures.length - 1), "The list shows the shape in front on top, like the layers");
-      q("#btn-fig-down").click(); await wait(30);
+      // hide, show and duplicate
+      row(1).querySelector(".btn-fig-eye").click(); await wait(30);
+      assert(L.figures[1].visible === false && row(1).classList.contains("is-hidden") && /Triangle \(hidden\)/.test(d.getElementById("art-log-lines").textContent), "The eye hides the shape (it is greyed out and the Art log says so)");
+      drawRaw(app);
+      const cvx = d.getElementById("studio-canvas"), ink2 = () => { const dd = cvx.getContext("2d").getImageData(0, 0, cvx.width, cvx.height).data; let n = 0; for (let i = 0; i < dd.length; i += 4) if (dd[i] < 128) n++; return n; };
+      const hiddenInk = ink2();
+      row(1).querySelector(".btn-fig-eye").click(); await wait(30);
+      drawRaw(app);
+      assert(L.figures[1].visible === true && ink2() > hiddenInk, "Showing it again draws it again");
+      q("#btn-fig-duplicate").click(); await wait(30);
+      assert(L.figures.length === 3 && L.figures[2].shape === "triangle" && L.figures[2].x === L.figures[1].x && L.figures[2].width === L.figures[1].width && app.figEdit.index === 2, "Duplicate puts an exact copy right above the selected shape and selects it");
+      row(2).querySelector(".btn-fig-trash").click(); await wait(30);
+      assert(L.figures.length === 2 && app.figEdit.index === 1, "The bin of a row deletes that shape");
       for (let i = 0; i < 5; i++) q("#btn-fig-add").click();
-      assert(L.figures.length === 4 && q("#btn-fig-add").hasAttribute("disabled"), "Four figures at most");
+      assert(L.figures.length === 4 && q("#btn-fig-add").hasAttribute("disabled") && q("#btn-fig-duplicate").hasAttribute("disabled"), "Four figures at most");
       // module controls edit the module and Cancel undoes them too
       fire(q("#input-active-container-w"), 150); q("#btn-mode-fill").click();
       assert(L.containerW === 150 && L.figures[app.figEdit.index].wireframe === false && L.wireframe === true, "The module width applies and Fill goes to the shape being edited");
@@ -2288,7 +2303,7 @@
       assert(/Shapes: Square 100 x 100px \(0, 0\) 0º Stroke #18181F 3px \+ Circle 50 x 50px \(-25, 0\) 0º Stroke #18181F 3px/.test(win.document.querySelector(".ds-art-log").innerText), "The Art log should list the figures");
       // Moving to another panel saves too
       q('[data-rail-tab="module"]').click(); await wait(60);
-      q('#fig-list [data-fig-index="1"]').click(); q("#btn-fig-delete").click(); await wait(30);
+      q('#fig-list [data-fig-index="1"] .btn-fig-trash').click(); await wait(30);
       q('[data-rail-tab="layout"]').click(); await wait(60);
       assert(!app.figEdit && L.figures.length === 1 && L.figures[0].shape === "square" && L.shape === "square", "Leaving for another panel saves; a module with one figure keeps it");
     });

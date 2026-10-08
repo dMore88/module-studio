@@ -34,7 +34,8 @@ Con Wong: su **módulo** es la unidad que se repite (aquí, la pieza entera con 
 9. **Relaciones entre shapes, fase 1** (hecha): cada shape, desde la segunda, puede ser *Free*, *Coincident* o *Distance* (dirección + gap: 0 = se tocan, positivo separa, negativo solapa). Se coloca sola y sigue a la anterior.
 10. **Combine, fase 2 de las relaciones** (hecha): un selector para todo el módulo (*None*, *Union*, *Subtract*, *Intersect*, *Exclude*) que junta las shapes con área en una sola figura, no destructivo. El cálculo está en `js/studio/booleans.js` (sin librerías), con pruebas de áreas, huecos, bordes compartidos y velocidad.
 11. **Marco de la shape seleccionada** en el canvas del editor (guía de pantalla, no se exporta).
-12. **El composition container corta,** también en Actual size, donde los módulos conservan su tamaño real y la cuadrícula se centra en la hoja.
+12. **La lista de shapes, como la de capas** (hecho): icono y nombre, ojo para ocultar, papelera, asa para arrastrar, y *Add shape* / *Duplicate*.
+13. **El composition container corta,** también en Actual size, donde los módulos conservan su tamaño real y la cuadrícula se centra en la hoja.
 
 ## Pendiente (fases futuras)
 

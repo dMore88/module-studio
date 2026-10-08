@@ -1053,3 +1053,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
 
 /* A neutral line between groups of controls (Figma catalog: divider) */
 .ds-divider { height: 1px; margin: var(--spacing-3) 0; background: var(--neutral-border-main); border: 0; }
+
+/* The rows of the shape list reuse the layer rows, a bit shorter */
+.fig-list .layer-card.fig-row { height: 48px; }
+.fig-list { gap: 0; }
