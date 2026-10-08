@@ -4153,39 +4153,139 @@ const StudioExporter = {
 
 
   /**
- * Panels described as data. A panel spec lists its groups and controls (tags, chips, sliders, switches); this class draws the
- * panel, shows the state of the active layer in it and listens to its controls, the same way for every panel.
+ * Small pieces of interface shared by every panel: the arrow keys on the value boxes and the dropdowns.
+ * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
+ */
+class UiHelpers {
+  // Value boxes: the up and down arrow keys nudge the number by the slider's step (Shift = ten steps, Alt = a tenth of a step)
+  setupValueSteppers() {
+    document.addEventListener("keydown", (e) => {
+      const box = e.target;
+      if (!box || !box.classList || !box.classList.contains("ds-value")) return;
+      if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+      const slider = box.closest(".ds-slider")?.querySelector('input[type="range"]');
+      const m = String(box.value).match(/^\s*(-?\d*\.?\d+)(.*)$/);
+      if (!slider || !m) return;
+      e.preventDefault();
+      const step = parseFloat(slider.step) || 1;
+      const mult = e.shiftKey ? 10 : e.altKey ? 0.1 : 1;
+      const decimals = Math.max((String(step).split(".")[1] || "").length, e.altKey ? 2 : 0);
+      const min = slider.min !== "" ? parseFloat(slider.min) : -Infinity, max = slider.max !== "" ? parseFloat(slider.max) : Infinity;
+      let next = parseFloat(m[1]) + (e.key === "ArrowUp" ? 1 : -1) * step * mult;
+      next = Math.max(min, Math.min(max, parseFloat(next.toFixed(decimals))));
+      box.value = `${next}${m[2]}`;
+      box.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+  }
+
+  // Dropdowns (.ds-select): the items are the same buttons the controllers already listen to, so a click
+  // only has to close the menu. The trigger always shows whichever item is marked active.
+  setupSelects() {
+    const selects = document.querySelectorAll("[data-select]");
+    const closeAll = (except) => selects.forEach(sel => {
+      if (sel === except) return;
+      sel.querySelector(".ds-dropdown-menu")?.classList.add("hidden");
+      sel.querySelector(".ds-dropdown-trigger")?.setAttribute("aria-expanded", "false");
+    });
+    selects.forEach(sel => {
+      const trigger = sel.querySelector(".ds-dropdown-trigger");
+      const menu = sel.querySelector(".ds-dropdown-menu");
+      const current = sel.querySelector(".ds-dropdown-current");
+      const refresh = () => {
+        const active = menu.querySelector(".ds-dropdown-item.active") || menu.querySelector(".ds-dropdown-item");
+        if (active && current) current.innerHTML = active.innerHTML;
+      };
+      // The menu floats above the panel (fixed), below the trigger, or above it when there is no room below
+      const place = () => {
+        const r = trigger.getBoundingClientRect();
+        const gap = 6, below = window.innerHeight - r.bottom - gap - 8, above = r.top - gap - 8;
+        const want = Math.min(320, menu.scrollHeight);
+        const up = below < want && above > below;
+        const room = Math.max(120, up ? above : below);
+        menu.style.left = `${r.left}px`;
+        menu.style.width = `${r.width}px`;
+        menu.style.maxHeight = `${Math.min(320, room)}px`;
+        const h = Math.min(want, room);
+        menu.style.top = `${up ? r.top - gap - h : r.bottom + gap}px`;
+      };
+      trigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const open = menu.classList.contains("hidden");
+        closeAll(sel);
+        menu.classList.toggle("hidden", !open);
+        trigger.setAttribute("aria-expanded", String(open));
+        if (open) place();
+      });
+      menu.addEventListener("click", () => {
+        menu.classList.add("hidden");
+        trigger.setAttribute("aria-expanded", "false");
+        trigger.focus();
+        refresh();
+      });
+      new MutationObserver(refresh).observe(menu, { attributes: true, attributeFilter: ["class"], subtree: true });
+      refresh();
+    });
+    document.addEventListener("click", () => closeAll(null));
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(null); });
+    // A floating menu would stay behind when the panel scrolls or the window changes size
+    window.addEventListener("resize", () => closeAll(null));
+    document.querySelectorAll(".inspector-flyout-card").forEach(card => card.addEventListener("scroll", () => closeAll(null), { passive: true }));
+  }
+}
+
+
+  /**
+ * Panels described as data. A panel spec lists its groups and controls; this class draws the panel, shows the state of the
+ * active layer in it and listens to its controls, the same way for every panel.
  * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
  *
  * A spec looks like:
  *   { id, cardId, name,                      // name starts the history labels ("Space Mode: ...")
  *     state: (app) => the settings object of the active layer,
- *     enabled: { id, key }, badgeId,         // the switch of the header and the layer badge
+ *     enabled: { id, key, auto?, onToggle? },  // the switch of the header; every edit turns it on unless auto is false; onToggle(app, state, checked) replaces the default
+ *     badgeId,                               // the layer badge in the header
  *     banner: { id, text, hidden: (mod) => bool },   // optional notice under the header
- *     groups: [{ title, advId?, controls: [ ... ] }] }
+ *     top: [ controls ],                     // controls above the groups (Layout's Repetition / Radiation switch)
+ *     groups: [{ title, advId?, region?, floating?, controls: [ ... ] }],
+ *     regions: { id: (state) => bool },      // a group with `region` lives in a box that shows only when its test passes (Layout's two modes)
+ *     syncAll: true,                         // after an edit, refresh every panel (not only this one)
+ *     place: (app, state) => {} }            // called after every refresh: puts the floating groups where they belong
+ * A group with `floating: "id"` is drawn in a box of that id at the end of the panel; `place` moves it.
  *
- * Controls (every one may carry `show: (state, mod) => bool`, to appear only in some cases, and `blockId`, the id of its box):
- *   { type: "tags",   label, key, attr, history, fallback, options: [[value, text], ...] }   one choice among several
- *   { type: "dropdown", label, key, attr, history, fallback, options: [[value, text], ...] | "shapes" }   a list of choices ("shapes": every shape, with its icon)
+ * Controls (every one may carry `show: (state, mod) => bool`, to appear only in some cases, and `blockId`, the id of its box;
+ * `get(state, app)` and `set(state, value, app)` replace the plain `key` when a setting needs more than a number):
+ *   { type: "tags",   label, key, attr, history, fallback, options: [[value, text, title?], ...] }   one choice among several
+ *   { type: "dropdown", label, key, attr, history, fallback, options: [[value, text, iconHtml?], ...] | "shapes" }   a list of choices ("shapes": every shape, with its icon)
+ *   { type: "modes",  label, ariaLabel, attr, options: [[value, text, id], ...], get, onSelect(app, value) }   the two-button switch (a button group)
  *   { type: "chips",  label, ariaLabel, attr, options: [{ key, text, id?, show? }],            chips that switch on and off by themselves
  *       nested }  // optional { key, defaults, history }: the chips live in an object of the setting (Anomaly's attrs: on unless set to false)
- *   { type: "slider", id, label, key, min, max, step, value, suffix, history,
+ *   { type: "slider", id, label, key, min, max, step, value, suffix, history, labelId?,
  *       unit,      // what the setting stores per 1 shown (Texture shows %, stores px: unit 0.1)
  *       divisor,   // the setting stores the shown value divided by this (0 to 100 % shown, 0 to 1 stored: divisor 100)
  *       fallback,  // what the setting holds when it has no value yet (default: value)
  *       invert,    // the setting stores the opposite sign of what is shown (Gradation's speed)
  *       signed,    // shown with a + in front when positive
- *       get, set,  // when the setting needs more than a number (get(state, app) gives the shown value; set(state, shown) stores it)
+ *       meta,      // (state) => { label, min, max, step, suffix, history }: the slider changes its name and range with the state (Layout's grid parameter)
  *       decimal,   // the value box asks for a decimal keyboard
+ *       bind,      // false: drawn only (its controller lives elsewhere)
  *       advanced } // true: the control goes in the group's "Advanced controls" accordion (the group needs advId)
- *   { type: "toggle", id, label, key, history }
- *   { type: "color", prefix, label, key, fallback, history, show?, blockId? }   a colour row without an on/off (Gradation's end colour)
+ *   { type: "toggle", id, label, key, history, labelId?, title?, show? }
+ *   { type: "color",  prefix, label, key, fallback, history, get?, set? }   a colour row without an on/off (Gradation's end colour, a line colour)
  *   { type: "accent", prefix, colorKey, flagKey }   the accent colour row (swatch, hex, remove); picking a colour turns the accent on
+ *   { type: "stack",  id, controls: [...], show? }   a box of controls that shows or hides as one
  *   { type: "hint",   text, blockId?, show? }
- * With two or more groups, every group gets its title and a divider; with one, only the panel has a title.
+ * With two or more groups (in a region: in that region), every group gets its title and a divider; with one, only the panel has a title.
  */
 // The shape names the dropdowns show (a few differ from the shapes' own names)
 const SHAPE_LABELS = { line: "Line", cross: "Greek Cross", wave: "Sine Wave", digit1: "Number 1", digit5: "Number 5", digit9: "Number 9" };
+
+// Every control of a list, the boxes (stack) and what is inside them
+function* walkControls(controls) {
+  for (const c of controls) {
+    yield c;
+    if (c.type === "stack") yield* walkControls(c.controls);
+  }
+}
 
 class PanelBuilder {
   // Draws the controls of every panel described as data (once, before the controllers listen to them)
@@ -4193,103 +4293,162 @@ class PanelBuilder {
     for (const spec of dataPanels()) {
       const card = document.getElementById(spec.cardId);
       if (!card) continue;
-      const titled = spec.groups.length > 1;
       const hid = (c) => (c.show ? " hidden" : "");
       const idAttr = (c) => (c.blockId ? ` id="${c.blockId}"` : "");
-      let html = spec.banner ? `<div id="${spec.banner.id}" class="ds-snackbar hidden" role="status">\n<i class="ph-fill ph-warning"></i>\n<p>${spec.banner.text}</p>\n</div>\n` : "";
-      html += spec.groups.map((g, i) => {
+      const labelIdAttr = (c) => (c.labelId ? ` id="${c.labelId}"` : "");
+
+      // One group: its title and divider (when the panel has several), its controls and its Advanced controls
+      const drawGroup = (g, i, titled) => {
         const head = titled ? `${i > 0 ? '<div class="ds-divider" role="separator"></div>\n' : ""}<div class="ds-label ds-label--overline">${g.title}</div>\n` : "";
+        return head + drawControls(g.controls, g.advId);
+      };
+      // A list of controls; the ones marked `advanced` go in an accordion with the id advId
+      const drawControls = (controls, advId) => {
         let out = "", adv = "", toggles = [];
         let target = "out";
         const add = (t) => { if (target === "adv") adv += t; else out += t; };
         const flush = () => { if (toggles.length) { add(`<div class="ds-toggles">\n${toggles.join("\n")}\n</div>\n`); toggles = []; } };
-        for (const c of g.controls) {
+        for (const c of controls) {
           if (!!c.advanced !== (target === "adv")) { flush(); target = c.advanced ? "adv" : "out"; }
-          if (c.type === "toggle") { toggles.push(`<label class="ds-toggle-item">\n<span class="ds-toggle-label">${c.label}</span>\n<input type="checkbox" id="${c.id}" class="ds-checkbox">\n</label>`); continue; }
-          flush();
-          if (c.type === "tags") {
-            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags">\n${c.options.map(([v, t], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}">${t}</button>`).join("\n")}\n</div>\n</div>\n`);
-          } else if (c.type === "dropdown") {
-            const opts = c.options === "shapes" ? STUDIO_SHAPE_KEYS.map(k => [k, SHAPE_LABELS[k] || Shapes[k].name.replace(/\s*\([^)]*\)\s*/g, ""), shapeIconHtml(Shapes[k])]) : c.options;
-            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-dropdown" data-select>\n<button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>${opts[0][1]}</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>\n<div class="ds-dropdown-menu hidden" role="listbox">\n${opts.map(([v, t, icon]) => `<button type="button" class="ds-dropdown-item" role="option" ${c.attr}="${v}">${icon || ""}<span>${t}</span></button>`).join("\n")}\n</div>\n</div>\n</div>\n`);
-          } else if (c.type === "color") {
-            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-color-row" id="${c.prefix}-accent-row">\n<span class="ds-color-label">${c.label}</span>\n<span class="ds-color-hex" id="${c.prefix}-accent-hex">#F43F5E</span>\n<span class="ds-swatch">\n<input type="color" id="${c.prefix}-accent-color" value="#f43f5e">\n<span class="ds-swatch-fill" id="${c.prefix}-accent-swatch"></span>\n</span>\n</div>\n</div>\n`);
-          } else if (c.type === "accent") {
+          if (c.type === "toggle") {
+            toggles.push(`<label${c.labelId ? ` id="${c.labelId}"` : ""} class="ds-toggle-item${hid(c) && c.labelId ? " hidden" : ""}"${c.title ? ` title="${c.title}"` : ""}>\n<span class="ds-toggle-label">${c.label}</span>\n<input type="checkbox" id="${c.id}" class="ds-checkbox">\n</label>`);
+            continue;
+          }
+          if (c.type === "accent") {
             const P = c.prefix;
             toggles.push(`<div class="ds-color-row" id="${P}-accent-row">\n<span class="ds-color-label">Accent color</span>\n<span class="ds-color-hex" id="${P}-accent-hex">#F43F5E</span>\n<span class="ds-swatch">\n<input type="color" id="${P}-accent-color" value="#f43f5e">\n<span class="ds-swatch-fill" id="${P}-accent-swatch"></span>\n</span>\n<button type="button" class="ds-color-clear" id="${P}-accent-clear" aria-label="Remove accent color" title="Remove accent color"><i class="ph ph-x" aria-hidden="true"></i></button>\n</div>`);
             continue;
+          }
+          flush();
+          if (c.type === "tags") {
+            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags">\n${c.options.map(([v, t, title], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}"${title ? ` title="${title}"` : ""}>${t}</button>`).join("\n")}\n</div>\n</div>\n`);
+          } else if (c.type === "dropdown") {
+            const opts = c.options === "shapes" ? STUDIO_SHAPE_KEYS.map(k => [k, SHAPE_LABELS[k] || Shapes[k].name.replace(/\s*\([^)]*\)\s*/g, ""), shapeIconHtml(Shapes[k])]) : c.options;
+            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-dropdown" data-select>\n<button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current">${opts[0][2] || ""}<span>${opts[0][1]}</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>\n<div class="ds-dropdown-menu hidden" role="listbox">\n${opts.map(([v, t, icon]) => `<button type="button" class="ds-dropdown-item" role="option" ${c.attr}="${v}">${icon || ""}<span>${t}</span></button>`).join("\n")}\n</div>\n</div>\n</div>\n`);
+          } else if (c.type === "modes") {
+            add(`<div${idAttr(c)} class="ds-field">\n<div class="ds-label">${c.label}</div>\n<div class="ds-btn-group" role="group" aria-label="${c.ariaLabel || c.label}">\n${c.options.map(([v, t, id], k) => `<button type="button" id="${id}" class="ds-btn-group__button${k === 0 ? " active" : ""}" ${c.attr}="${v}">${t}</button>`).join("\n")}\n</div>\n</div>\n`);
+          } else if (c.type === "color") {
+            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-color-row" id="${c.prefix}-accent-row">\n<span class="ds-color-label">${c.label}</span>\n<span class="ds-color-hex" id="${c.prefix}-accent-hex">#F43F5E</span>\n<span class="ds-swatch">\n<input type="color" id="${c.prefix}-accent-color" value="#f43f5e">\n<span class="ds-swatch-fill" id="${c.prefix}-accent-swatch"></span>\n</span>\n</div>\n</div>\n`);
           } else if (c.type === "chips") {
             add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags" role="group" aria-label="${c.ariaLabel || c.label}">\n${c.options.map(o => `<button type="button"${o.id ? ` id="${o.id}"` : ""} class="ds-tag${o.show ? " hidden" : ""}" ${c.attr}="${o.key}" aria-pressed="false">${o.text}</button>`).join("\n")}\n</div>\n</div>\n`);
           } else if (c.type === "slider") {
-            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label ds-label-clip">${c.label}</div>\n<div class="ds-slider">\n<input type="range" id="input-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}">\n<input type="text" id="num-${c.id}" class="ds-value" value="${c.value}${c.suffix}" inputmode="${c.decimal ? "decimal" : "numeric"}">\n</div>\n</div>\n`);
+            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div${labelIdAttr(c)} class="ds-label ds-label-clip">${c.label}</div>\n<div class="ds-slider">\n<input type="range" id="input-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}">\n<input type="text" id="num-${c.id}" class="ds-value" value="${c.value}${c.suffix}" inputmode="${c.decimal ? "decimal" : "numeric"}">\n</div>\n</div>\n`);
+          } else if (c.type === "stack") {
+            add(`<div id="${c.id}" class="ds-stack${hid(c)}">\n${drawControls(c.controls)}</div>\n`);
           } else if (c.type === "hint") {
             add(c.blockId ? `<div id="${c.blockId}" class="ds-stack${hid(c)}"><p class="ds-hint">${c.text}</p></div>\n` : `<p class="ds-hint">${c.text}</p>\n`);
           }
         }
         flush();
-        if (adv) out += `<details id="${g.advId}" class="ds-advanced">\n<summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced controls</span></summary>\n<div class="ds-stack">\n${adv}</div>\n</details>\n`;
-        return head + out;
-      }).join("\n");
+        if (adv) out += `<details id="${advId}" class="ds-advanced">\n<summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced controls</span></summary>\n<div class="ds-stack">\n${adv}</div>\n</details>\n`;
+        return out;
+      };
+
+      let html = spec.banner ? `<div id="${spec.banner.id}" class="ds-snackbar hidden" role="status">\n<i class="ph-fill ph-warning"></i>\n<p>${spec.banner.text}</p>\n</div>\n` : "";
+      if (spec.top) html += drawControls(spec.top);
+      // The groups, in order; the ones of a region share a box; the floating ones go in their own box at the end
+      const plain = spec.groups.filter(g => !g.floating);
+      const regionOf = (g) => g.region || "";
+      const countIn = (r) => plain.filter(g => regionOf(g) === r).length;
+      let open = null, index = {};
+      for (const g of plain) {
+        const r = regionOf(g);
+        if (r !== open) {
+          if (open) html += "</div>\n";
+          if (r) html += `<div id="${r}" class="ds-stack${spec.regions && spec.regions[r] ? " hidden" : ""}">\n`;
+          open = r;
+        }
+        index[r] = (index[r] ?? -1) + 1;
+        html += drawGroup(g, index[r], countIn(r) > 1);
+      }
+      if (open) html += "</div>\n";
+      for (const g of spec.groups.filter(g => g.floating)) html += `<div id="${g.floating}" class="ds-stack">\n${drawGroup(g, 1, !!g.title)}</div>\n`;
       card.insertAdjacentHTML("beforeend", html);
     }
+  }
+
+  // The value a control shows
+  dataValue(c, st) {
+    if (c.get) return c.get(st, this);
+    const raw = st[c.key] ?? c.fallback ?? c.value;
+    return Math.round(c.divisor ? raw * c.divisor : raw / (c.unit || 1));
   }
 
   // Shows the state of the active layer in a panel described as data
   syncDataPanel(spec) {
     const mod = this.getActiveModule();
     const st = spec.state(this);
-    if (!mod || !st) return;
+    if (!st) return;
+    if (!mod && !spec.allowNoModule) return;
     const badge = document.getElementById(spec.badgeId);
-    if (badge) badge.textContent = this.compositionName(mod);
+    if (badge && mod) badge.textContent = this.compositionName(mod);
     const sw = document.getElementById(spec.enabled.id);
     if (sw) sw.checked = !!st[spec.enabled.key];
     if (spec.banner) document.getElementById(spec.banner.id)?.classList.toggle("hidden", !!spec.banner.hidden(mod));
-    for (const g of spec.groups) {
-      for (const c of g.controls) {
-        if (c.show && c.blockId) document.getElementById(c.blockId)?.classList.toggle("hidden", !c.show(st, mod));
-        if (c.type === "chips") for (const o of c.options) if (o.show && !o.id) document.querySelector(`#${spec.cardId} [${c.attr}="${o.key}"]`)?.classList.toggle("hidden", !o.show(st, mod));
-        if (c.type === "tags" || c.type === "dropdown") {
-          document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(b => b.classList.toggle("active", b.getAttribute(c.attr) === (st[c.key] || c.fallback)));
-        } else if (c.type === "accent") {
-          this.syncAccentColorRow(c.prefix, st[c.colorKey], !!st[c.flagKey]);
-        } else if (c.type === "color") {
-          this.syncAccentColorRow(c.prefix, st[c.key] || c.fallback, true);
-        } else if (c.type === "chips") {
-          for (const o of c.options) {
-            const chip = o.id ? document.getElementById(o.id) : document.querySelector(`#${spec.cardId} [${c.attr}="${o.key}"]`);
-            if (!chip) continue;
-            const on = c.nested ? (st[c.nested.key] || {})[o.key] !== false : !!st[o.key];
-            chip.classList.toggle("active", on);
-            chip.setAttribute("aria-pressed", String(on));
-            if (o.show) chip.classList.toggle("hidden", !o.show(st, mod));
-          }
-        } else if (c.type === "slider") {
-          const raw = st[c.key] ?? c.fallback ?? c.value;
-          let v = c.get ? c.get(st, this) : Math.round(c.divisor ? raw * c.divisor : raw / (c.unit || 1));
-          if (c.invert) v = v ? -v : 0;
-          this.syncControlValue(`input-${c.id}`, v);
-          const num = document.getElementById(`num-${c.id}`);
-          if (num) num.value = `${c.signed && v > 0 ? "+" : ""}${v}${c.suffix}`;
-        } else if (c.type === "toggle") {
-          this.syncCheckbox(c.id, !!st[c.key]);
-          if (c.show) { const row = document.getElementById(c.id)?.closest("label"); if (row) row.style.display = c.show(st, mod) ? "" : "none"; }
+    if (spec.regions) for (const [id, test] of Object.entries(spec.regions)) document.getElementById(id)?.classList.toggle("hidden", !test(st));
+    const all = [...(spec.top || []), ...spec.groups.flatMap(g => g.controls)];
+    for (const c of walkControls(all)) {
+      // every box that shows or hides: its own box, its stack and its label
+      if (c.show && c.blockId) document.getElementById(c.blockId)?.classList.toggle("hidden", !c.show(st, mod));
+      if (c.type === "tags" || c.type === "dropdown") {
+        const cur = c.get ? c.get(st, this) : (st[c.key] || c.fallback);
+        document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(b => b.classList.toggle("active", b.getAttribute(c.attr) === cur));
+      } else if (c.type === "modes") {
+        const cur = c.get(st, this);
+        for (const [v, , id] of c.options) document.getElementById(id)?.classList.toggle("active", v === cur);
+      } else if (c.type === "accent") {
+        this.syncAccentColorRow(c.prefix, st[c.colorKey], !!st[c.flagKey]);
+      } else if (c.type === "color") {
+        this.syncAccentColorRow(c.prefix, c.get ? c.get(st, this, mod) : (st[c.key] || c.fallback), true);
+      } else if (c.type === "chips") {
+        for (const o of c.options) {
+          const chip = o.id ? document.getElementById(o.id) : document.querySelector(`#${spec.cardId} [${c.attr}="${o.key}"]`);
+          if (!chip) continue;
+          const on = c.nested ? (st[c.nested.key] || {})[o.key] !== false : !!st[o.key];
+          chip.classList.toggle("active", on);
+          chip.setAttribute("aria-pressed", String(on));
+          if (o.show) chip.classList.toggle("hidden", !o.show(st, mod));
         }
+      } else if (c.type === "slider" && c.bind !== false) {
+        const m = c.meta ? c.meta(st) : null;
+        if (c.meta) {
+          const slider = document.getElementById(`input-${c.id}`);
+          if (m && slider) { slider.min = m.min; slider.max = m.max; slider.step = m.step; }
+          if (m && c.labelId) { const lab = document.getElementById(c.labelId); if (lab) lab.textContent = m.label; }
+        }
+        let v = this.dataValue(c, st);
+        if (c.invert) v = v ? -v : 0;
+        this.syncControlValue(`input-${c.id}`, v);
+        const num = document.getElementById(`num-${c.id}`);
+        if (num) num.value = `${c.signed && v > 0 ? "+" : ""}${v}${m ? m.suffix : c.suffix}`;
+      } else if (c.type === "toggle") {
+        this.syncCheckbox(c.id, c.get ? !!c.get(st, this) : !!st[c.key]);
+        if (c.show) {
+          const row = document.getElementById(c.id)?.closest("label");
+          if (row) { if (c.labelId) row.classList.toggle("hidden", !c.show(st, mod)); else row.style.display = c.show(st, mod) ? "" : "none"; }
+        }
+      } else if (c.type === "stack" && c.show) {
+        document.getElementById(c.id)?.classList.toggle("hidden", !c.show(st, mod));
       }
+      if (c.type === "chips") for (const o of c.options) if (o.show && !o.id) document.querySelector(`#${spec.cardId} [${c.attr}="${o.key}"]`)?.classList.toggle("hidden", !o.show(st, mod));
     }
+    if (spec.place) spec.place(this, st);
     this.updateRailIndicatorDots();
   }
 
-  // Listens to the controls of a panel described as data: any edit turns the modifier on, redraws and records a history step.
-  // Returns `commit(mutate, historyLabel)`, for the panels that also react to something else (a click on the canvas).
+  // Listens to the controls of a panel described as data: any edit turns the modifier on (unless the panel says no), redraws and
+  // records a history step. Returns `commit(mutate, historyLabel)`, for the panels that also react to something else (a click on the canvas).
   bindDataPanel(spec) {
     const sw = document.getElementById(spec.enabled.id);
-    const resync = () => this.syncDataPanel(spec);
+    const resync = () => (spec.syncAll ? this.syncAllInspectorsWithActiveLayer() : this.syncDataPanel(spec));
     const commit = (mutate, historyLabel, { sync = true } = {}) => {
       const st = spec.state(this);
       if (!st) return;
       mutate(st);
-      st[spec.enabled.key] = true;
-      if (sw) sw.checked = true;
+      if (spec.enabled.auto !== false) {
+        st[spec.enabled.key] = true;
+        if (sw) sw.checked = true;
+      }
       if (sync) resync();
       this.render();
       this.updateLayerCardsUI();
@@ -4298,76 +4457,83 @@ class PanelBuilder {
     sw?.addEventListener("change", (e) => {
       const st = spec.state(this);
       if (!st) return;
+      if (spec.enabled.onToggle) { spec.enabled.onToggle(this, st, e.target.checked); return; }
       st[spec.enabled.key] = e.target.checked;
       resync();
       this.render();
       this.updateLayerCardsUI();
       this.pushHistory(`Layer ${this.activeLayerId} ${spec.name}: ${st[spec.enabled.key] ? "ON" : "OFF"}`);
     });
-    for (const g of spec.groups) {
-      for (const c of g.controls) {
-        if (c.type === "accent") {
-          document.getElementById(`${c.prefix}-accent-clear`)?.addEventListener("click", () => commit(st => { st[c.flagKey] = false; }, `${spec.name} Accent: none`));
-          // Picking an accent colour also turns the accent on
-          const picker = document.getElementById(`${c.prefix}-accent-color`);
-          picker?.addEventListener("input", (e) => commit(st => { st[c.colorKey] = e.target.value; st[c.flagKey] = true; }, null));
-          picker?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} Accent: ${e.target.value.toUpperCase()}`));
-        } else if (c.type === "color") {
-          // the end colour does not turn the modifier on by itself; it only repaints
-          const picker = document.getElementById(`${c.prefix}-accent-color`);
-          picker?.addEventListener("input", (e) => {
-            const st = spec.state(this);
-            if (!st) return;
-            st[c.key] = e.target.value;
-            this.syncAccentColorRow(c.prefix, e.target.value, true);
-            this.render();
+    const all = [...(spec.top || []), ...spec.groups.flatMap(g => g.controls)];
+    for (const c of walkControls(all)) {
+      if (c.type === "accent") {
+        document.getElementById(`${c.prefix}-accent-clear`)?.addEventListener("click", () => commit(st => { st[c.flagKey] = false; }, `${spec.name} Accent: none`));
+        // Picking an accent colour also turns the accent on
+        const picker = document.getElementById(`${c.prefix}-accent-color`);
+        picker?.addEventListener("input", (e) => commit(st => { st[c.colorKey] = e.target.value; st[c.flagKey] = true; }, null));
+        picker?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} Accent: ${e.target.value.toUpperCase()}`));
+      } else if (c.type === "color") {
+        // a colour without an on/off does not turn the modifier on by itself; it only repaints
+        const picker = document.getElementById(`${c.prefix}-accent-color`);
+        picker?.addEventListener("input", (e) => {
+          const st = spec.state(this);
+          if (!st) return;
+          if (c.set) c.set(st, e.target.value, this); else st[c.key] = e.target.value;
+          this.syncAccentColorRow(c.prefix, e.target.value, true);
+          this.render();
+        });
+        picker?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} ${c.history}: ${e.target.value.toUpperCase()}`));
+      } else if (c.type === "modes") {
+        for (const [v, , id] of c.options) document.getElementById(id)?.addEventListener("click", () => c.onSelect(this, v));
+      } else if (c.type === "tags" || c.type === "dropdown") {
+        document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(btn => {
+          btn.addEventListener("click", () => {
+            const v = btn.getAttribute(c.attr);
+            commit(st => { if (c.set) c.set(st, v, this); else st[c.key] = v; }, `${spec.name} ${c.history}: ${v}`);
           });
-          picker?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} ${c.history}: ${e.target.value.toUpperCase()}`));
-        } else if (c.type === "tags" || c.type === "dropdown") {
-          document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(btn => {
-            btn.addEventListener("click", () => {
-              const v = btn.getAttribute(c.attr);
-              commit(st => { st[c.key] = v; }, `${spec.name} ${c.history}: ${v}`);
-            });
-          });
-        } else if (c.type === "chips") {
-          for (const o of c.options) {
-            const chip = o.id ? document.getElementById(o.id) : document.querySelector(`#${spec.cardId} [${c.attr}="${o.key}"]`);
-            chip?.addEventListener("click", () => {
-              if (c.nested) {
-                commit(st => {
-                  st[c.nested.key] = Object.assign({}, c.nested.defaults, st[c.nested.key]);
-                  st[c.nested.key][o.key] = !st[c.nested.key][o.key];
-                }, `${spec.name} ${c.nested.history} ${o.key}`);
-                return;
-              }
-              const next = chip.getAttribute("aria-pressed") !== "true";
-              commit(st => { st[o.key] = next; }, `${spec.name} ${chip.textContent}: ${next ? "ON" : "OFF"}`);
-            });
-          }
-        } else if (c.type === "slider") {
-          const slider = document.getElementById(`input-${c.id}`), num = document.getElementById(`num-${c.id}`);
-          const parse = (s) => (Number(c.step) % 1 ? parseFloat(s) : parseInt(s, 10));
-          const stored = (val) => (c.set ? val : c.invert ? (val ? -val : 0) : c.divisor ? val / c.divisor : val * (c.unit || 1));
-          const shown = (val) => `${c.signed && val > 0 ? "+" : ""}${val}${c.suffix}`;
-          slider?.addEventListener("input", (e) => {
-            const val = parse(e.target.value);
-            commit(st => { if (c.set) c.set(st, val); else st[c.key] = stored(val); }, null, { sync: false });
-            if (num) num.value = shown(val);
-          });
-          slider?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} ${c.history}: ${e.target.value}${c.suffix}`));
-          num?.addEventListener("change", (e) => {
-            const raw = parse(e.target.value.replace(/[^0-9.-]/g, ""));
-            let val = isNaN(raw) ? Number(c.min) : Math.max(Number(c.min), Math.min(Number(c.max), raw));
-            if (Number(c.step) % 1) val = Math.round(val * 10) / 10;
-            commit(st => { if (c.set) c.set(st, val); else st[c.key] = stored(val); }, `${spec.name} ${c.history}: ${val}${c.suffix}`);
-          });
-        } else if (c.type === "toggle") {
-          document.getElementById(c.id)?.addEventListener("change", (e) => {
-            const checked = e.target.checked;
-            commit(st => { st[c.key] = checked; }, `${spec.name} ${c.history}: ${checked ? "ON" : "OFF"}`);
+        });
+      } else if (c.type === "chips") {
+        for (const o of c.options) {
+          const chip = o.id ? document.getElementById(o.id) : document.querySelector(`#${spec.cardId} [${c.attr}="${o.key}"]`);
+          chip?.addEventListener("click", () => {
+            if (c.nested) {
+              commit(st => {
+                st[c.nested.key] = Object.assign({}, c.nested.defaults, st[c.nested.key]);
+                st[c.nested.key][o.key] = !st[c.nested.key][o.key];
+              }, `${spec.name} ${c.nested.history} ${o.key}`);
+              return;
+            }
+            const next = chip.getAttribute("aria-pressed") !== "true";
+            commit(st => { st[o.key] = next; }, `${spec.name} ${chip.textContent}: ${next ? "ON" : "OFF"}`);
           });
         }
+      } else if (c.type === "slider" && c.bind !== false) {
+        const slider = document.getElementById(`input-${c.id}`), num = document.getElementById(`num-${c.id}`);
+        const meta = () => (c.meta ? c.meta(spec.state(this)) : null);
+        const lo = () => Number(meta() ? meta().min : c.min), hi = () => Number(meta() ? meta().max : c.max);
+        const suffix = () => (meta() ? meta().suffix : c.suffix);
+        const step = () => Number(meta() ? meta().step : c.step);
+        const label = () => (meta() ? meta().history || meta().label : c.history);
+        const parse = (s) => (step() % 1 ? parseFloat(s) : parseInt(s, 10));
+        const apply = (st, val) => { if (c.set) c.set(st, val, this); else st[c.key] = c.invert ? (val ? -val : 0) : c.divisor ? val / c.divisor : val * (c.unit || 1); };
+        const shown = (val) => `${c.signed && val > 0 ? "+" : ""}${val}${suffix()}`;
+        slider?.addEventListener("input", (e) => {
+          const val = parse(e.target.value);
+          commit(st => apply(st, val), null, { sync: false });
+          if (num) num.value = shown(val);
+        });
+        slider?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} ${label()}: ${e.target.value}${suffix()}`));
+        num?.addEventListener("change", (e) => {
+          const raw = parse(e.target.value.replace(/[^0-9.-]/g, ""));
+          let val = isNaN(raw) ? lo() : Math.max(lo(), Math.min(hi(), raw));
+          if (step() % 1) val = Math.round(val * 10) / 10;
+          commit(st => apply(st, val), `${spec.name} ${label()}: ${val}${suffix()}`);
+        });
+      } else if (c.type === "toggle") {
+        document.getElementById(c.id)?.addEventListener("change", (e) => {
+          const checked = e.target.checked;
+          commit(st => { if (c.set) c.set(st, checked, this); else st[c.key] = checked; }, `${spec.name} ${c.history}: ${checked ? "ON" : "OFF"}`);
+        });
       }
     }
     return commit;
@@ -5032,130 +5198,237 @@ class ControlsRail {
     const b = { x: 50, y: 50, w: 100, h: 100, ...(struct.block || {}) };
     return { w: Math.round((b.w / 100) * cfg.w), h: Math.round((b.h / 100) * cfg.h), x: Math.round(((b.x - 50) / 100) * cfg.w), y: Math.round(((b.y - 50) / 100) * cfg.h), cfg };
   }
-
-  syncBlockInspector(struct) {
-    const px = this.blockPixels(struct);
-    for (const [k, id] of [["x", "block-x"], ["y", "block-y"], ["w", "block-w"], ["h", "block-h"]]) {
-      this.syncControlValue(`input-${id}`, px[k]);
-      const num = document.getElementById(`num-${id}`);
-      if (num) num.value = `${px[k]}px`;
-    }
-    const cur = struct.mode === "radiation" ? struct.radiation : struct.repetition;
-    const actual = !!cur && (cur.sizeMode === "actual" || cur.sizeMode === "fixed");
-    // The Composition container is a group of its own, right after the Module group (its controls and its Advanced controls) of the active mode
-    const blockEl = document.getElementById("layout-block");
-    const modAdv = document.getElementById(struct.mode === "radiation" ? "rad-adv-module" : "rep-adv-module");
-    // The module's rotation (how the piece sits in its cell) belongs to the Module group: right before its Advanced controls
-    const rotEl = document.getElementById("layout-module-rotation");
-    if (rotEl && modAdv && modAdv.previousElementSibling !== rotEl) modAdv.parentNode.insertBefore(rotEl, modAdv);
-    if (blockEl && modAdv && modAdv.nextElementSibling !== blockEl) modAdv.parentNode.insertBefore(blockEl, modAdv.nextSibling);
-  }
-
-  syncStructureInspectorWithActiveLayer() {
-    const mod = this.getActiveModule();
-    const struct = this.getActiveLayerStructure();
-    if (!struct) return;
-    this.syncBlockInspector(struct);
-
-    const toggleSwitch = document.getElementById("toggle-layout-structure");
-    const btnRep = document.getElementById("btn-layout-repetition");
-    const btnRad = document.getElementById("btn-layout-radiation");
-    const pnlRep = document.getElementById("subpanel-repetition");
-    const pnlRad = document.getElementById("subpanel-radiation");
-
-    const layoutBadge = document.getElementById("badge-layout-layer");
-    if (layoutBadge) layoutBadge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
-
-    if (toggleSwitch) toggleSwitch.checked = !!struct.enabled;
-
-    const isRad = struct.mode === "radiation";
-    btnRep?.classList.toggle("active", !isRad);
-    btnRad?.classList.toggle("active", isRad);
-
-    if (isRad) {
-      pnlRep?.classList.add("hidden");
-      pnlRad?.classList.remove("hidden");
-    } else {
-      pnlRep?.classList.remove("hidden");
-      pnlRad?.classList.add("hidden");
-    }
-
-    // Sync Repetition Controls
-    const rep = struct.repetition;
-    if (rep) {
-      document.querySelectorAll("[data-grid-var]").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.gridVar === rep.gridType);
-      });
-      this.syncControlValue("input-layout-cols", rep.cols || 4);
-      this.syncControlValue("num-layout-cols", rep.cols || 4);
-      this.syncControlValue("input-layout-rows", rep.rows || 4);
-      this.syncControlValue("num-layout-rows", rep.rows || 4);
-      this.syncCheckbox("chk-rep-clip", !!rep.activeClipping);
-      this.syncCheckbox("chk-rep-gridlines", !!rep.showGridLines);
-      this.syncCheckbox("chk-rep-checker", !!rep.checkerInvert);
-      this.syncRepetitionExtras(rep);
-    }
-
-    // Sync Radiation Controls
-    const rad = struct.radiation;
-    if (rad) {
-      document.querySelectorAll("[data-rad-scheme]").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.radScheme === rad.scheme);
-      });
-      // Actual size can let every ring take as many rays as fit the container's width; then the slider has no meaning
-      const actualRad = rad.sizeMode === "actual" || rad.sizeMode === "fixed";
-      const byContainer = actualRad && !!rad.raysByContainer && rad.scheme !== "centripetal";
-      document.getElementById("rad-raysbycont-item")?.classList.toggle("hidden", !actualRad || rad.scheme === "centripetal");
-      document.getElementById("input-layout-rays")?.closest(".ds-field")?.classList.toggle("hidden", byContainer);
-      this.syncCheckbox("chk-rad-raysbycont", !!rad.raysByContainer);
-      this.syncControlValue("input-layout-rays", rad.rays || 12);
-      this.syncControlValue("num-layout-rays", rad.rays || 12);
-      this.syncControlValue("input-layout-rings", rad.rings || 6);
-      this.syncControlValue("num-layout-rings", rad.rings || 6);
-      this.syncControlValue("input-layout-centers", rad.centerCount || 2);
-      this.syncControlValue("num-layout-centers", rad.centerCount || 2);
-      document.getElementById("rad-centers-block")?.classList.toggle("hidden", rad.scheme !== "multi_center");
-      this.syncControlValue("input-layout-twist", rad.spiralTwist !== undefined ? rad.spiralTwist : 45);
-      this.syncControlValue("num-layout-twist", rad.spiralTwist !== undefined ? rad.spiralTwist : 45);
-      document.querySelectorAll("[data-rad-size]").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.radSize === (rad.sizeMode || "fit"));
-      });
-      document.querySelectorAll("[data-rad-modscale]").forEach(btn => btn.classList.toggle("active", btn.dataset.radModscale === (rad.moduleScale || "uniform")));
-      document.getElementById("rad-modscale-block")?.classList.toggle("hidden", rad.sizeMode === "actual" || rad.sizeMode === "fixed");
-      document.querySelectorAll("[data-rad-dir]").forEach(btn => btn.classList.toggle("active", btn.dataset.radDir === (rad.direction || "repeated")));
-      document.querySelectorAll("[data-rad-shape]").forEach(btn => btn.classList.toggle("active", btn.dataset.radShape === (rad.ringShape || "circle")));
-      // Polygonal rings do not apply to spirals or chevrons
-      document.getElementById("rad-ringshape-block")?.classList.toggle("hidden", rad.scheme === "spiral" || rad.scheme === "centripetal");
-      document.getElementById("rad-lines-block")?.classList.toggle("hidden", !(rad.showRays || rad.showRings));
-      this.syncAccentColorRow("radline", rad.lineColor || mod?.color || "#18181f", true);
-      this.syncControlValue("input-layout-radline", rad.lineWidth ?? 1);
-      this.syncControlValue("num-layout-radline", `${rad.lineWidth ?? 1}px`);
-      this.syncControlValue("input-layout-open", rad.centerOpen || 0);
-      this.syncControlValue("num-layout-open", `${rad.centerOpen || 0}%`);
-      this.syncControlValue("input-layout-ringrot", rad.ringRotation || 0);
-      this.syncControlValue("num-layout-ringrot", `${rad.ringRotation || 0}º`);
-      document.querySelectorAll("[data-rad-orient]").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.radOrient === (rad.orientation || "auto"));
-      });
-      this.syncCheckbox("chk-rad-clip", !!rad.activeClipping);
-      this.syncCheckbox("chk-rad-gridlines", !!(rad.showRays || rad.showRings));
-      this.syncCheckbox("chk-rad-checker", !!rad.checkerInvert);
-    }
-
-    this.updateRailIndicatorDots();
-  }
 }
 
 
   /**
- * The Layout panel (Repetition and Radiation) and the formal structure (Rhythm).
+ * The Layout panel (Repetition and Radiation), described as data (see panel-builder.js). The two modes are two regions of the panel; each is
+ * a list of groups (Grid or Radiation, Module, Rhythm, Lines) with its Advanced controls. The Composition container and the Module
+ * rotation are shared by both modes: they are floating groups that `place` moves after the Module group of the active mode.
+ * Here the controls write each in its own way (the settings live in repetition, radiation, formalStructure and block), so most carry
+ * their own `get` and `set`.
  * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
  */
-class PanelLayout {
-  /* =========================================================================
-     LAYOUT STRUCTURE CONTROLLER (Per Active Layer)
-     ========================================================================= */
+const GRID_ICONS = [
+      ["basic", "Grid", "<svg class=\"ds-icon-grid\" viewBox=\"0 0 22 22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.2\" aria-hidden=\"true\"><rect x=\"2\" y=\"2\" width=\"18\" height=\"18\"/><path d=\"M8 2v18M14 2v18M2 8h18M2 14h18\"/></svg>"],
+      ["curved", "Curved", "<svg class=\"ds-icon-grid\" viewBox=\"0 0 22 22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.2\" aria-hidden=\"true\"><path d=\"M2 5q4.5-3 9 0t9 0M2 11q4.5-3 9 0t9 0M2 17q4.5-3 9 0t9 0\"/></svg>"],
+      ["sliding", "Brick", "<svg class=\"ds-icon-grid\" viewBox=\"0 0 22 22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.2\" aria-hidden=\"true\"><rect x=\"2\" y=\"2\" width=\"18\" height=\"18\"/><path d=\"M2 8h18M2 14h18M8 2v6M14 8v6M8 14v6\"/></svg>"],
+      ["sheared", "Diagonal", "<svg class=\"ds-icon-grid\" viewBox=\"0 0 22 22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.2\" aria-hidden=\"true\"><rect x=\"2\" y=\"2\" width=\"18\" height=\"18\"/><path d=\"M2 10L10 2M2 18L18 2M6 20L20 6M14 20l6-6\"/></svg>"],
+      ["zigzag", "Zigzag", "<svg class=\"ds-icon-grid\" viewBox=\"0 0 22 22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.2\" aria-hidden=\"true\"><path d=\"M2 5l4.5 3 4.5-3 4.5 3 4.5-3M2 11l4.5 3 4.5-3 4.5 3 4.5-3M2 17l4.5 3 4.5-3 4.5 3 4.5-3\"/></svg>"],
+      ["triangular", "Triangular", "<svg class=\"ds-icon-grid\" viewBox=\"0 0 22 22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.2\" aria-hidden=\"true\"><path d=\"M11 3l8 14H3zM7 10h8\"/></svg>"],
+      ["alternating", "Alternating", "<svg class=\"ds-icon-grid\" viewBox=\"0 0 22 22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.2\" aria-hidden=\"true\"><rect x=\"2\" y=\"2\" width=\"18\" height=\"18\"/><path d=\"M11 2v18M2 11h18\"/><path d=\"M2 2h9v9H2zM11 11h9v9h-9z\" fill=\"currentColor\" stroke=\"none\"/></svg>"],
+      ["hexagonal", "Hexagonal", "<svg class=\"ds-icon-grid\" viewBox=\"0 0 22 22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.2\" aria-hidden=\"true\"><path d=\"M11 2l7.5 4.3v8.6L11 19.2 3.5 14.9V6.3z\"/></svg>"],
+      ["free", "Free", "<svg class=\"ds-icon-grid\" viewBox=\"0 0 22 22\" fill=\"currentColor\" stroke=\"none\" aria-hidden=\"true\"><circle cx=\"5\" cy=\"6\" r=\"1.8\"/><circle cx=\"14\" cy=\"4\" r=\"1.8\"/><circle cx=\"9\" cy=\"12\" r=\"1.8\"/><circle cx=\"18\" cy=\"11\" r=\"1.8\"/><circle cx=\"4\" cy=\"18\" r=\"1.8\"/><circle cx=\"14\" cy=\"18\" r=\"1.8\"/></svg>"]
+];
+const LAYOUT_ISRAD = (st) => st.mode === "radiation";
+const LAYOUT_ACTUAL = (o) => !!o && (o.sizeMode === "actual" || o.sizeMode === "fixed");
+// The settings of the Rhythm group (created when the layer has none yet)
+const LAYOUT_FORMAL = (st) => (st.formalStructure ||= { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false });
+const layoutClamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+// A setting of the Repetition (or Radiation) settings; editing it puts the layout in that mode
+const repSet = (key, fix) => (st, v) => { st.repetition[key] = fix ? fix(v) : v; st.mode = "repetition"; };
+const radSet = (key, fix) => (st, v) => { st.radiation[key] = fix ? fix(v) : v; st.mode = "radiation"; };
+// Rhythm: any edit turns the formal structure and the layout on, and leaves Radiation
+const formalSet = (key, fix) => (st, v) => {
+  const f = LAYOUT_FORMAL(st);
+  f[key] = fix(v); f.enabled = true; st.enabled = true;
+  if (st.mode === "radiation") st.mode = "repetition";
+};
+const blockSet = (key) => (st, v, app) => {
+  const cfg = ASPECT_RATIOS[app.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
+  st.block = { x: 50, y: 50, w: 100, h: 100, ...(st.block || {}) };
+  const along = key === "x" || key === "w" ? cfg.w : cfg.h;
+  if (key === "w" || key === "h") st.block[key] = (Math.max(10, v) / along) * 100;
+  else st.block[key] = 50 + (v / along) * 100;
+};
+const blockGet = (key) => (st, app) => app.blockPixels(st)[key];
 
+const LAYOUT_PANEL = {
+  id: "layout", cardId: "card-layout-structure", name: "Layout",
+  state: (app) => app.getActiveLayerStructure(),
+  // the layout switch does not turn on by editing; turning it off also turns off the Rhythm
+  enabled: { id: "toggle-layout-structure", key: "enabled", auto: false,
+    onToggle: (app, st, on) => {
+      st.enabled = on;
+      if (!on && st.formalStructure) st.formalStructure.enabled = false;
+      app.syncAllInspectorsWithActiveLayer(); // every collective modifier shows or hides its "turn on Layout" notice
+      app.render();
+      app.updateLayerCardsUI();
+      app.pushHistory(`Layer ${app.activeLayerId} Layout Structure: ${on ? "ON" : "OFF"}`);
+    } },
+  badgeId: "badge-layout-layer",
+  syncAll: true,
+  allowNoModule: true,
+  top: [
+    { type: "modes", label: "Structure mode", attr: "data-layout-mode", get: (st) => (LAYOUT_ISRAD(st) ? "radiation" : "repetition"),
+      options: [["repetition", "Repetition", "btn-layout-repetition"], ["radiation", "Radiation", "btn-layout-radiation"]],
+      onSelect: (app, mode) => {
+        const st = app.getActiveLayerStructure();
+        if (!st) return;
+        st.mode = mode;
+        st.enabled = true;
+        if (mode === "radiation" && st.formalStructure) st.formalStructure.enabled = false;
+        app.syncAllInspectorsWithActiveLayer();
+        app.render();
+        app.updateLayerCardsUI();
+        app.pushHistory(`Layer ${app.activeLayerId} Layout Mode: ${mode}`);
+      } },
+  ],
+  regions: { "subpanel-repetition": (st) => !LAYOUT_ISRAD(st), "subpanel-radiation": (st) => LAYOUT_ISRAD(st) },
+  // The Module rotation and the Composition container sit right after the Module group of the active mode
+  place: (app, st) => {
+    const modAdv = document.getElementById(LAYOUT_ISRAD(st) ? "rad-adv-module" : "rep-adv-module");
+    const rotEl = document.getElementById("layout-module-rotation"), blockEl = document.getElementById("layout-block");
+    if (rotEl && modAdv && modAdv.previousElementSibling !== rotEl) modAdv.parentNode.insertBefore(rotEl, modAdv);
+    if (blockEl && modAdv && modAdv.nextElementSibling !== blockEl) modAdv.parentNode.insertBefore(blockEl, modAdv.nextSibling);
+  },
+  groups: [
+    // ---- Repetition ----
+    { region: "subpanel-repetition", title: "Grid", advId: "rep-adv-grid", controls: [
+      { type: "dropdown", label: "Grid structure variation", attr: "data-grid-var", history: "Grid Var", options: GRID_ICONS,
+        get: (st) => st.repetition.gridType,
+        set: (st, v) => { st.repetition.gridType = v; st.mode = "repetition"; st.enabled = true; } },
+      // Parameter of the chosen variation: Brick = row offset, Diagonal = shear angle, Curved / Zigzag = wave amount, Free = seed
+      { type: "slider", id: "layout-param", label: "Row offset", labelId: "rep-param-label", blockId: "rep-param-block", min: 0, max: 100, step: 1, value: 50, suffix: "%", decimal: true,
+        show: (st) => !!StudioProApp.REPETITION_PARAMS[st.repetition.gridType],
+        meta: (st) => { const p = StudioProApp.REPETITION_PARAMS[st.repetition.gridType]; return p ? { label: p.label, min: p.min, max: p.max, step: p.step, suffix: p.suffix, history: p.label } : null; },
+        get: (st) => {
+          const r = st.repetition, p = StudioProApp.REPETITION_PARAMS[r.gridType];
+          if (!p) return 0;
+          // A project saved in pixels (curveIntensity) is shown as a share of the cell width, without touching the file
+          const legacy = p.key === "curveAmount" && r.curveAmount === undefined && r.curveIntensity !== undefined;
+          return p.toUi(legacy ? Math.min(1, (r.curveIntensity || 0) / (600 / Math.max(1, r.cols || 4))) : (r[p.key] ?? 0));
+        },
+        set: (st, v) => { const r = st.repetition, p = StudioProApp.REPETITION_PARAMS[r.gridType]; if (!p) return; r[p.key] = p.fromUi(layoutClamp(v, p.min, p.max)); st.mode = "repetition"; } },
+      { type: "slider", id: "layout-cols", label: "Columns", min: 1, max: 100, step: 1, value: 4, suffix: "", decimal: true, history: "Columns", get: (st) => st.repetition.cols || 4, set: repSet("cols") },
+      { type: "slider", id: "layout-rows", label: "Rows", min: 1, max: 100, step: 1, value: 4, suffix: "", decimal: true, history: "Rows", get: (st) => st.repetition.rows || 4, set: repSet("rows") },
+      { type: "dropdown", label: "Reflection", attr: "data-rep-reflect", history: "Reflection", advanced: true, options: [["none", "None"], ["columns", "Columns"], ["rows", "Rows"], ["both", "Both"]],
+        get: (st) => st.repetition.reflection || "none", set: repSet("reflection") },
+      { type: "dropdown", label: "Direction", attr: "data-rep-dir", history: "Direction", advanced: true, options: [["repeated", "Repeated"], ["alternated", "Alternated"], ["undefined", "Undefined"]],
+        get: (st) => st.repetition.direction || "repeated", set: repSet("direction") },
+    ] },
+    { region: "subpanel-repetition", title: "Module", advId: "rep-adv-module", controls: [
+      { type: "tags", label: "Module size", attr: "data-rep-size", history: "Module Size", options: [["fit", "Fit to canvas"], ["actual", "Actual size"]],
+        get: (st) => st.repetition.sizeMode || "fit",
+        set: (st, v, app) => { st.repetition.sizeMode = v; if (v === "actual") app.startContainerFromCell(st.repetition.cols, st.repetition.rows); st.mode = "repetition"; } },
+      // Placement does not apply to the honeycomb; mixed sizes only to the plain and alternating grids
+      { type: "tags", label: "Module placement", attr: "data-rep-place", history: "Module Placement", blockId: "rep-placement-block", show: (st) => !["hexagonal", "free"].includes(st.repetition.gridType),
+        options: [["centers", "Centers"], ["intersections", "Intersections"], ["both", "Both"]], get: (st) => st.repetition.placement || "centers", set: repSet("placement") },
+      { type: "tags", label: "Cell mix", attr: "data-rep-mix", history: "Cell Mix", blockId: "rep-mix-block", show: (st) => st.repetition.gridType === "basic" || st.repetition.gridType === "alternating",
+        options: [["none", "None"], ["merge", "Merged"], ["divide", "Divided"]], get: (st) => st.repetition.cellMix || "none", set: repSet("cellMix") },
+      { type: "slider", id: "layout-inter", label: "Intersection size", blockId: "rep-inter-block", min: 10, max: 100, step: 5, value: 50, suffix: "%", decimal: true, history: "Intersection Size",
+        show: (st) => !["hexagonal", "free"].includes(st.repetition.gridType) && (st.repetition.placement || "centers") !== "centers",
+        get: (st) => st.repetition.interScale ?? 50, set: repSet("interScale", (v) => layoutClamp(v, 10, 100)) },
+      { type: "tags", label: "Module scale", attr: "data-rep-modscale", history: "Module Scale", advanced: true, blockId: "rep-modscale-block", show: (st) => !LAYOUT_ACTUAL(st.repetition),
+        options: [["uniform", "Base size", "Every module keeps its own size, proportional to the whole canvas"], ["cell", "Shrink with cell", "The module shrinks with its cell"]],
+        get: (st) => st.repetition.moduleScale || "uniform", set: repSet("moduleScale") },
+      { type: "toggle", id: "chk-rep-clip", label: "Clip cell", history: "Clip cell", advanced: true, get: (st) => !!st.repetition.activeClipping, set: (st, v) => { st.repetition.activeClipping = v; } },
+      { type: "toggle", id: "chk-rep-checker", label: "Checkerboard inversion", history: "Checkerboard", advanced: true, get: (st) => !!st.repetition.checkerInvert, set: (st, v) => { st.repetition.checkerInvert = v; } },
+    ] },
+    { region: "subpanel-repetition", title: "Rhythm", controls: [
+      { type: "slider", id: "struct-col-ratio", label: "Col B size [% of A]", min: 10, max: 100, step: 5, value: 100, suffix: "%", decimal: true, history: "Col Ratio",
+        get: (st) => Math.round(100 / (LAYOUT_FORMAL(st).colRatio || 1)), set: formalSet("colRatio", (v) => layoutClamp(100 / Math.max(10, v), 1, 10)) },
+      { type: "slider", id: "struct-row-ratio", label: "Row B size [% of A]", min: 10, max: 100, step: 5, value: 100, suffix: "%", decimal: true, history: "Row Ratio",
+        get: (st) => Math.round(100 / (LAYOUT_FORMAL(st).rowRatio || 1)), set: formalSet("rowRatio", (v) => layoutClamp(100 / Math.max(10, v), 1, 10)) },
+      { type: "slider", id: "struct-col-grade", label: "Col gradation", min: -30, max: 30, step: 1, value: 0, suffix: "%", decimal: true, history: "Col Gradation",
+        get: (st) => LAYOUT_FORMAL(st).colGrade || 0, set: formalSet("colGrade", (v) => layoutClamp(v, -30, 30)) },
+      { type: "slider", id: "struct-row-grade", label: "Row gradation", min: -30, max: 30, step: 1, value: 0, suffix: "%", decimal: true, history: "Row Gradation",
+        get: (st) => LAYOUT_FORMAL(st).rowGrade || 0, set: formalSet("rowGrade", (v) => layoutClamp(v, -30, 30)) },
+    ] },
+    { region: "subpanel-repetition", title: "Lines", controls: [
+      { type: "toggle", id: "chk-rep-gridlines", label: "Visible lines", history: "Visible lines", get: (st) => !!st.repetition.showGridLines,
+        set: (st, v) => { st.repetition.showGridLines = v; if (st.formalStructure) st.formalStructure.showGridLines = v; } },
+      // Visible lines are part of the design: they have colour and width and are exported
+      { type: "stack", id: "rep-lines-block", show: (st) => !!st.repetition.showGridLines, controls: [
+        { type: "hint", text: "Lines are part of the design and are exported." },
+        { type: "dropdown", label: "Line direction", attr: "data-rep-linedir", history: "Line Direction", options: [["both", "Both"], ["horizontal", "Horizontal"], ["vertical", "Vertical"]],
+          get: (st) => st.repetition.lineDirection || "both", set: repSet("lineDirection") },
+        { type: "dropdown", label: "Line spacing", attr: "data-rep-linespace", history: "Line Spacing", options: [["all", "All lines"], ["alternate", "Every other"]],
+          get: (st) => st.repetition.lineSpacing || "all", set: repSet("lineSpacing") },
+        { type: "slider", id: "layout-linewidth", label: "Line width", blockId: "rep-linewidth-block", min: 0.5, max: 10, step: 0.5, value: 1.5, suffix: "px", decimal: true, history: "Grid Line Width",
+          get: (st) => st.repetition.gridLineWidth ?? 1.5, set: (st, v) => { st.repetition.gridLineWidth = layoutClamp(v, 0.5, 10); } },
+        { type: "color", prefix: "repline", label: "Line color", history: "Line Color",
+          get: (st, app, mod) => st.repetition.lineColor || mod?.color || "#18181f", set: (st, v) => { st.repetition.lineColor = v; } },
+      ] },
+    ] },
+    // ---- Radiation ----
+    { region: "subpanel-radiation", title: "Radiation", advId: "rad-adv-radiation", controls: [
+      { type: "dropdown", label: "Radiation scheme", attr: "data-rad-scheme", history: "Rad Scheme", get: (st) => st.radiation.scheme,
+        options: [["centrifugal", "Centrifugal"], ["centripetal", "Centripetal"], ["concentric", "Concentric"], ["spiral", "Spiral"], ["multi_center", "Multi-center"]],
+        set: (st, v) => { st.radiation.scheme = v; st.mode = "radiation"; st.enabled = true; } },
+      // Actual size can let every ring take as many rays as fit the container's width; then the slider has no meaning
+      { type: "slider", id: "layout-rays", label: "Angular rays", blockId: "rad-rays-block", min: 3, max: 60, step: 1, value: 12, suffix: "", decimal: true, history: "Angular Rays",
+        show: (st) => !(LAYOUT_ACTUAL(st.radiation) && !!st.radiation.raysByContainer && st.radiation.scheme !== "centripetal"),
+        get: (st) => st.radiation.rays || 12, set: radSet("rays") },
+      { type: "slider", id: "layout-rings", label: "Concentric rings", min: 2, max: 20, step: 1, value: 6, suffix: "", decimal: true, history: "Concentric Rings", get: (st) => st.radiation.rings || 6, set: radSet("rings") },
+      { type: "slider", id: "layout-centers", label: "Centers", blockId: "rad-centers-block", min: 2, max: 8, step: 1, value: 2, suffix: "", decimal: true, history: "Centers", show: (st) => st.radiation.scheme === "multi_center",
+        get: (st) => st.radiation.centerCount || 2, set: (st, v) => { st.radiation.centerCount = layoutClamp(Math.round(v), 2, 8); st.mode = "radiation"; } },
+      { type: "slider", id: "layout-twist", label: "Spiral twist", min: -180, max: 180, step: 1, value: 45, suffix: "", decimal: true, history: "Spiral Twist",
+        get: (st) => (st.radiation.spiralTwist !== undefined ? st.radiation.spiralTwist : 45), set: radSet("spiralTwist") },
+      { type: "dropdown", label: "Direction", attr: "data-rad-dir", history: "Radiation Direction", advanced: true, options: [["repeated", "Repeated"], ["alternated", "Alternated"], ["undefined", "Undefined"]],
+        get: (st) => st.radiation.direction || "repeated", set: radSet("direction") },
+      // Polygonal rings do not apply to spirals or chevrons
+      { type: "dropdown", label: "Ring shape", attr: "data-rad-shape", history: "Ring Shape", advanced: true, blockId: "rad-ringshape-block", show: (st) => st.radiation.scheme !== "spiral" && st.radiation.scheme !== "centripetal",
+        options: [["circle", "Circle"], ["triangle", "Triangle"], ["square", "Square"], ["pentagon", "Pentagon"], ["hexagon", "Hexagon"], ["octagon", "Octagon"]],
+        get: (st) => st.radiation.ringShape || "circle", set: radSet("ringShape") },
+      { type: "slider", id: "layout-open", label: "Open center", min: 0, max: 90, step: 1, value: 0, suffix: "%", decimal: true, history: "Open Center", advanced: true, get: (st) => st.radiation.centerOpen || 0, set: radSet("centerOpen") },
+      { type: "slider", id: "layout-ringrot", label: "Ring rotation", min: -90, max: 90, step: 1, value: 0, suffix: "º", decimal: true, history: "Ring Rotation", advanced: true, get: (st) => st.radiation.ringRotation || 0, set: radSet("ringRotation") },
+      { type: "toggle", id: "chk-rad-raysbycont", label: "Rays follow container", history: "Rays follow container", advanced: true, labelId: "rad-raysbycont-item",
+        title: "Actual size: every ring gets as many rays as fit the container's width, so the cells are as big as the container",
+        show: (st) => LAYOUT_ACTUAL(st.radiation) && st.radiation.scheme !== "centripetal", get: (st) => !!st.radiation.raysByContainer, set: (st, v) => { st.radiation.raysByContainer = v; } },
+    ] },
+    { region: "subpanel-radiation", title: "Module", advId: "rad-adv-module", controls: [
+      { type: "tags", label: "Module size", attr: "data-rad-size", history: "Radiation Module Size", options: [["fit", "Fit to canvas"], ["actual", "Actual size"]],
+        get: (st) => st.radiation.sizeMode || "fit",
+        set: (st, v, app) => {
+          st.radiation.sizeMode = v;
+          if (v === "actual") {
+            // each ring starts as thick as a Fit ring
+            const mod = app.getActiveModule();
+            if (mod && !(mod.containerW > 0 || mod.containerH > 0)) {
+              const cfg = ASPECT_RATIOS[app.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
+              mod.containerH = mod.containerW = Math.round((0.5 * Math.min(cfg.w, cfg.h)) / Math.max(2, st.radiation.rings));
+            }
+          }
+          st.mode = "radiation";
+        } },
+      { type: "tags", label: "Module scale", attr: "data-rad-modscale", history: "Module scale", advanced: true, blockId: "rad-modscale-block", show: (st) => !LAYOUT_ACTUAL(st.radiation),
+        options: [["uniform", "Base size", "Every module keeps its own size, proportional to the whole structure"], ["cell", "Shrink with cell", "The module shrinks with its cell"]],
+        get: (st) => st.radiation.moduleScale || "uniform", set: radSet("moduleScale") },
+      { type: "dropdown", label: "Module orientation", attr: "data-rad-orient", history: "Module Orientation", advanced: true,
+        options: [["auto", "Auto"], ["outward", "Outward"], ["inward", "Inward"], ["tangent", "Tangent"], ["fixed", "Fixed"]], get: (st) => st.radiation.orientation || "auto", set: radSet("orientation") },
+      { type: "toggle", id: "chk-rad-clip", label: "Clip cell", history: "Clip cell", advanced: true, get: (st) => !!st.radiation.activeClipping, set: (st, v) => { st.radiation.activeClipping = v; } },
+      { type: "toggle", id: "chk-rad-checker", label: "Checkerboard inversion", history: "Checkerboard", advanced: true, get: (st) => !!st.radiation.checkerInvert, set: (st, v) => { st.radiation.checkerInvert = v; } },
+    ] },
+    { region: "subpanel-radiation", title: "Lines", controls: [
+      { type: "toggle", id: "chk-rad-gridlines", label: "Visible lines", history: "Visible lines", get: (st) => !!(st.radiation.showRays || st.radiation.showRings),
+        set: (st, v) => { st.radiation.showRays = v; st.radiation.showRings = v; } },
+      { type: "stack", id: "rad-lines-block", show: (st) => !!(st.radiation.showRays || st.radiation.showRings), controls: [
+        { type: "hint", text: "Lines are part of the design and are exported." },
+        { type: "slider", id: "layout-radline", label: "Line width", blockId: "rad-linewidth-block", min: 0.5, max: 10, step: 0.5, value: 1, suffix: "px", decimal: true, history: "Radiation Line Width",
+          get: (st) => st.radiation.lineWidth ?? 1, set: (st, v) => { st.radiation.lineWidth = layoutClamp(v, 0.5, 10); } },
+        { type: "color", prefix: "radline", label: "Line color", history: "Radiation Line Color",
+          get: (st, app, mod) => st.radiation.lineColor || mod?.color || "#18181f", set: (st, v) => { st.radiation.lineColor = v; } },
+      ] },
+    ] },
+    // ---- Shared by both modes (placed after the Module group of the active mode) ----
+    { floating: "layout-module-rotation", controls: [
+      // the Module rotation is controlled with the rest of the module (the shape inspector)
+      { type: "slider", id: "active-rotation", label: "Module rotation", min: 0, max: 360, step: 0.5, value: 0, suffix: "º", decimal: true, bind: false },
+    ] },
+    { floating: "layout-block", title: "Composition container", controls: [
+      // the container's size and offset, in px of the canvas; the project keeps percentages so it follows the canvas if its proportion changes
+      { type: "stack", id: "block-size-fields", controls: [
+        { type: "slider", id: "block-w", label: "Composition container width", min: 10, max: 2000, step: 1, value: 600, suffix: "px", decimal: true, history: "Container Width", get: blockGet("w"), set: blockSet("w") },
+        { type: "slider", id: "block-h", label: "Composition container height", min: 10, max: 2000, step: 1, value: 600, suffix: "px", decimal: true, history: "Container Height", get: blockGet("h"), set: blockSet("h") },
+      ] },
+      { type: "slider", id: "block-x", label: "Composition container offset X", min: -1000, max: 1000, step: 1, value: 0, suffix: "px", decimal: true, history: "Container Offset X", get: blockGet("x"), set: blockSet("x") },
+      { type: "slider", id: "block-y", label: "Composition container offset Y", min: -1000, max: 1000, step: 1, value: 0, suffix: "px", decimal: true, history: "Container Offset Y", get: blockGet("y"), set: blockSet("y") },
+    ] },
+  ],
+};
+
+class PanelLayout {
   // Parameter each grid variation exposes (stored value <-> shown value)
   static get REPETITION_PARAMS() {
     return {
@@ -5177,584 +5450,9 @@ class PanelLayout {
     mod.containerH = Math.round(cfg.h / Math.max(1, rows));
   }
 
-  syncRepetitionExtras(rep) {
-    const spec = StudioProApp.REPETITION_PARAMS[rep.gridType];
-    const block = document.getElementById("rep-param-block");
-    block?.classList.toggle("hidden", !spec);
-    if (spec) {
-      const slider = document.getElementById("input-layout-param");
-      if (slider) { slider.min = spec.min; slider.max = spec.max; slider.step = spec.step; }
-      const label = document.getElementById("rep-param-label");
-      if (label) label.textContent = spec.label;
-      // A project saved in pixels (curveIntensity) is shown as a share of the cell width, without touching the file
-      const legacy = spec.key === "curveAmount" && rep.curveAmount === undefined && rep.curveIntensity !== undefined;
-      const val = spec.toUi(legacy ? Math.min(1, (rep.curveIntensity || 0) / (600 / Math.max(1, rep.cols || 4))) : (rep[spec.key] ?? 0));
-      this.syncControlValue("input-layout-param", val);
-      const num = document.getElementById("num-layout-param");
-      if (num) num.value = `${val}${spec.suffix}`;
-    }
-    document.getElementById("rep-lines-block")?.classList.toggle("hidden", !rep.showGridLines);
-    this.syncAccentColorRow("repline", rep.lineColor || this.getActiveModule()?.color || "#18181f", true);
-    const mark = (attr, value) => document.querySelectorAll(`[${attr}]`).forEach(b => {
-      const v = b.getAttribute(attr);
-      b.classList.toggle("active", v === value);
-    });
-    mark("data-rep-size", rep.sizeMode || "fit");
-    mark("data-rep-modscale", rep.moduleScale || "uniform");
-    document.getElementById("rep-modscale-block")?.classList.toggle("hidden", rep.sizeMode === "actual" || rep.sizeMode === "fixed");
-    mark("data-rep-dir", rep.direction || "repeated");
-    mark("data-rep-place", rep.placement || "centers");
-    mark("data-rep-mix", rep.cellMix || "none");
-    // Placement does not apply to the honeycomb; mixed sizes only to the plain and alternating grids
-    document.getElementById("rep-placement-block")?.classList.toggle("hidden", rep.gridType === "hexagonal" || rep.gridType === "free");
-    document.getElementById("rep-mix-block")?.classList.toggle("hidden", !(rep.gridType === "basic" || rep.gridType === "alternating"));
-    const interOn = rep.gridType !== "hexagonal" && rep.gridType !== "free" && (rep.placement || "centers") !== "centers";
-    document.getElementById("rep-inter-block")?.classList.toggle("hidden", !interOn);
-    this.syncControlValue("input-layout-inter", rep.interScale ?? 50);
-    const ni = document.getElementById("num-layout-inter");
-    if (ni) ni.value = `${rep.interScale ?? 50}%`;
-    mark("data-rep-linedir", rep.lineDirection || "both");
-    mark("data-rep-linespace", rep.lineSpacing || "all");
-    mark("data-rep-reflect", rep.reflection || "none");
-    const w = rep.gridLineWidth ?? 1.5;
-    this.syncControlValue("input-layout-linewidth", w);
-    const nw = document.getElementById("num-layout-linewidth");
-    if (nw) nw.value = `${w}px`;
-  }
+  syncStructureInspectorWithActiveLayer() { this.syncDataPanel(LAYOUT_PANEL); }
 
-  // Value boxes: the up and down arrow keys nudge the number by the slider's step (Shift = ten steps, Alt = a tenth of a step)
-  setupValueSteppers() {
-    document.addEventListener("keydown", (e) => {
-      const box = e.target;
-      if (!box || !box.classList || !box.classList.contains("ds-value")) return;
-      if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
-      const slider = box.closest(".ds-slider")?.querySelector('input[type="range"]');
-      const m = String(box.value).match(/^\s*(-?\d*\.?\d+)(.*)$/);
-      if (!slider || !m) return;
-      e.preventDefault();
-      const step = parseFloat(slider.step) || 1;
-      const mult = e.shiftKey ? 10 : e.altKey ? 0.1 : 1;
-      const decimals = Math.max((String(step).split(".")[1] || "").length, e.altKey ? 2 : 0);
-      const min = slider.min !== "" ? parseFloat(slider.min) : -Infinity, max = slider.max !== "" ? parseFloat(slider.max) : Infinity;
-      let next = parseFloat(m[1]) + (e.key === "ArrowUp" ? 1 : -1) * step * mult;
-      next = Math.max(min, Math.min(max, parseFloat(next.toFixed(decimals))));
-      box.value = `${next}${m[2]}`;
-      box.dispatchEvent(new Event("change", { bubbles: true }));
-    });
-  }
-
-  // Dropdowns (.ds-select): the items are the same buttons the controllers already listen to, so a click
-  // only has to close the menu. The trigger always shows whichever item is marked active.
-  setupSelects() {
-    const selects = document.querySelectorAll("[data-select]");
-    const closeAll = (except) => selects.forEach(sel => {
-      if (sel === except) return;
-      sel.querySelector(".ds-dropdown-menu")?.classList.add("hidden");
-      sel.querySelector(".ds-dropdown-trigger")?.setAttribute("aria-expanded", "false");
-    });
-    selects.forEach(sel => {
-      const trigger = sel.querySelector(".ds-dropdown-trigger");
-      const menu = sel.querySelector(".ds-dropdown-menu");
-      const current = sel.querySelector(".ds-dropdown-current");
-      const refresh = () => {
-        const active = menu.querySelector(".ds-dropdown-item.active") || menu.querySelector(".ds-dropdown-item");
-        if (active && current) current.innerHTML = active.innerHTML;
-      };
-      // The menu floats above the panel (fixed), below the trigger, or above it when there is no room below
-      const place = () => {
-        const r = trigger.getBoundingClientRect();
-        const gap = 6, below = window.innerHeight - r.bottom - gap - 8, above = r.top - gap - 8;
-        const want = Math.min(320, menu.scrollHeight);
-        const up = below < want && above > below;
-        const room = Math.max(120, up ? above : below);
-        menu.style.left = `${r.left}px`;
-        menu.style.width = `${r.width}px`;
-        menu.style.maxHeight = `${Math.min(320, room)}px`;
-        const h = Math.min(want, room);
-        menu.style.top = `${up ? r.top - gap - h : r.bottom + gap}px`;
-      };
-      trigger.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const open = menu.classList.contains("hidden");
-        closeAll(sel);
-        menu.classList.toggle("hidden", !open);
-        trigger.setAttribute("aria-expanded", String(open));
-        if (open) place();
-      });
-      menu.addEventListener("click", () => {
-        menu.classList.add("hidden");
-        trigger.setAttribute("aria-expanded", "false");
-        trigger.focus();
-        refresh();
-      });
-      new MutationObserver(refresh).observe(menu, { attributes: true, attributeFilter: ["class"], subtree: true });
-      refresh();
-    });
-    document.addEventListener("click", () => closeAll(null));
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(null); });
-    // A floating menu would stay behind when the panel scrolls or the window changes size
-    window.addEventListener("resize", () => closeAll(null));
-    document.querySelectorAll(".inspector-flyout-card").forEach(card => card.addEventListener("scroll", () => closeAll(null), { passive: true }));
-  }
-
-  setupRepetitionExtras() {
-    const rep = () => this.getActiveLayerStructure()?.repetition;
-
-    // Variation parameter (row offset / shear angle / wave amount)
-    const slider = document.getElementById("input-layout-param");
-    const num = document.getElementById("num-layout-param");
-    const applyParam = (uiVal, label, push) => {
-      const r = rep(); const spec = r && StudioProApp.REPETITION_PARAMS[r.gridType];
-      if (!spec) return;
-      const v = Math.max(spec.min, Math.min(spec.max, uiVal));
-      r[spec.key] = spec.fromUi(v);
-      this.getActiveLayerStructure().mode = "repetition";
-      this.syncRepetitionExtras(r);
-      this.render();
-      if (push) this.pushHistory(`Layer ${this.activeLayerId} ${spec.label}: ${v}${spec.suffix}`);
-    };
-    slider?.addEventListener("input", (e) => applyParam(parseFloat(e.target.value), "", false));
-    slider?.addEventListener("change", (e) => applyParam(parseFloat(e.target.value), "", true));
-    num?.addEventListener("change", (e) => {
-      const raw = parseFloat(e.target.value.replace(/[^0-9.-]/g, ""));
-      applyParam(isNaN(raw) ? 0 : raw, "", true);
-    });
-
-    // Tags of the line style and of the reflection (one stored value each)
-    const bindTags = (selector, attr, key, label) => {
-      document.querySelectorAll(selector).forEach(btn => {
-        btn.addEventListener("click", () => {
-          const r = rep(); if (!r) return;
-          r[key] = btn.getAttribute(attr);
-          if (key === "sizeMode" && r.sizeMode === "actual") this.startContainerFromCell(r.cols, r.rows);
-          this.getActiveLayerStructure().mode = "repetition";
-          this.syncAllInspectorsWithActiveLayer();
-          this.syncRepetitionExtras(r);
-          this.render();
-          this.pushHistory(`Layer ${this.activeLayerId} ${label}: ${r[key]}`);
-        });
-      });
-    };
-    const bindGuideColor = (id, getBlock, label) => {
-      const input = document.getElementById(id);
-      input?.addEventListener("input", (e) => {
-        const b = getBlock();
-        if (!b) return;
-        b.lineColor = e.target.value;
-        this.syncAccentColorRow(id.replace("-accent-color", ""), e.target.value, true);
-        this.render();
-      });
-      input?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${label}: ${e.target.value.toUpperCase()}`));
-    };
-    bindGuideColor("repline-accent-color", () => this.getActiveLayerStructure()?.repetition, "Line Color");
-    bindGuideColor("radline-accent-color", () => this.getActiveLayerStructure()?.radiation, "Radiation Line Color");
-    bindTags("[data-rep-linedir]", "data-rep-linedir", "lineDirection", "Line Direction");
-    bindTags("[data-rep-linespace]", "data-rep-linespace", "lineSpacing", "Line Spacing");
-    bindTags("[data-rep-reflect]", "data-rep-reflect", "reflection", "Reflection");
-    bindTags("[data-rep-size]", "data-rep-size", "sizeMode", "Module Size");
-    bindTags("[data-rep-modscale]", "data-rep-modscale", "moduleScale", "Module Scale");
-    bindTags("[data-rep-dir]", "data-rep-dir", "direction", "Direction");
-    bindTags("[data-rep-place]", "data-rep-place", "placement", "Module Placement");
-    bindTags("[data-rep-mix]", "data-rep-mix", "cellMix", "Cell Mix");
-    this.bindSliderWithNumber("input-layout-inter", "num-layout-inter", (val) => {
-      const r = rep(); if (!r) return;
-      r.interScale = Math.max(10, Math.min(100, val));
-      this.getActiveLayerStructure().mode = "repetition";
-      this.render();
-    }, "Intersection Size", "%");
-
-    // Line width of the visible grid lines
-    const lw = document.getElementById("input-layout-linewidth");
-    const nlw = document.getElementById("num-layout-linewidth");
-    const applyWidth = (val, push) => {
-      const r = rep(); if (!r) return;
-      const v = Math.max(0.5, Math.min(10, val));
-      r.gridLineWidth = v;
-      this.syncRepetitionExtras(r);
-      this.render();
-      if (push) this.pushHistory(`Layer ${this.activeLayerId} Grid Line Width: ${v}px`);
-    };
-    lw?.addEventListener("input", (e) => applyWidth(parseFloat(e.target.value), false));
-    lw?.addEventListener("change", (e) => applyWidth(parseFloat(e.target.value), true));
-    nlw?.addEventListener("change", (e) => {
-      const raw = parseFloat(e.target.value.replace(/[^0-9.]/g, ""));
-      applyWidth(isNaN(raw) ? 1.5 : raw, true);
-    });
-  }
-
-  setupLayoutStructure() {
-    const toggleSwitch = document.getElementById("toggle-layout-structure");
-    const btnRep = document.getElementById("btn-layout-repetition");
-    const btnRad = document.getElementById("btn-layout-radiation");
-
-    // Header Toggle Switch
-    toggleSwitch?.addEventListener("change", (e) => {
-      const struct = this.getActiveLayerStructure();
-      if (!struct) return;
-      const enabled = e.target.checked;
-      struct.enabled = enabled;
-      if (!enabled && struct.formalStructure) {
-        struct.formalStructure.enabled = false;
-      }
-      this.syncStructureInspectorWithActiveLayer();
-      this.syncFormalStructureInspectorWithActiveLayer();
-      this.syncAllInspectorsWithActiveLayer(); // every collective modifier shows or hides its "turn on Layout" notice
-      this.render();
-      this.updateLayerCardsUI();
-      this.pushHistory(`Layer ${this.activeLayerId} Layout Structure: ${enabled ? "ON" : "OFF"}`);
-    });
-
-    const setMode = (mode) => {
-      const struct = this.getActiveLayerStructure();
-      if (!struct) return;
-      struct.mode = mode;
-      struct.enabled = true;
-      if (mode === "radiation" && struct.formalStructure) {
-        struct.formalStructure.enabled = false;
-      }
-      this.syncStructureInspectorWithActiveLayer();
-      this.syncFormalStructureInspectorWithActiveLayer();
-      this.syncAllInspectorsWithActiveLayer(); // every collective modifier shows or hides its "turn on Layout" notice
-      this.render();
-      this.updateLayerCardsUI();
-      this.pushHistory(`Layer ${this.activeLayerId} Layout Mode: ${mode}`);
-    };
-
-    btnRep?.addEventListener("click", () => setMode("repetition"));
-    btnRad?.addEventListener("click", () => setMode("radiation"));
-
-    // Block: the rectangle the layout lives in (size and offset of its centre from the canvas centre, in px)
-    for (const [key, id, label] of [["x", "block-x", "Block Offset X"], ["y", "block-y", "Block Offset Y"], ["w", "block-w", "Block Width"], ["h", "block-h", "Block Height"]]) {
-      this.bindSliderWithNumber(`input-${id}`, `num-${id}`, (val) => {
-        const struct = this.getActiveLayerStructure();
-        if (!struct) return;
-        const cfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
-        struct.block = { x: 50, y: 50, w: 100, h: 100, ...(struct.block || {}) };
-        const along = key === "x" || key === "w" ? cfg.w : cfg.h;
-        if (key === "w" || key === "h") struct.block[key] = (Math.max(10, val) / along) * 100;
-        else struct.block[key] = 50 + (val / along) * 100;
-        this.render();
-      }, label, "px");
-    }
-
-    // Repetition Variations (Grid, Curved, Brick, Diagonal, Zigzag, Triangular, Alternating)
-    document.querySelectorAll("[data-grid-var]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const struct = this.getActiveLayerStructure();
-        if (!struct) return;
-        struct.repetition.gridType = btn.dataset.gridVar;
-        struct.mode = "repetition";
-        struct.enabled = true;
-        this.syncStructureInspectorWithActiveLayer();
-        this.render();
-        this.updateLayerCardsUI();
-        this.pushHistory(`Layer ${this.activeLayerId} Grid Var: ${btn.dataset.gridVar}`);
-      });
-    });
-
-    // Repetition Sliders (Columns, Rows)
-    this.bindSliderWithNumber("input-layout-cols", "num-layout-cols", (val) => {
-      const struct = this.getActiveLayerStructure();
-      if (!struct) return;
-      struct.repetition.cols = val;
-      struct.mode = "repetition";
-      this.render();
-    });
-
-    this.bindSliderWithNumber("input-layout-rows", "num-layout-rows", (val) => {
-      const struct = this.getActiveLayerStructure();
-      if (!struct) return;
-      struct.repetition.rows = val;
-      struct.mode = "repetition";
-      this.render();
-    });
-
-    // Repetition Checkboxes
-    const chkRepClip = document.getElementById("chk-rep-clip");
-    if (chkRepClip) {
-      chkRepClip.addEventListener("change", (e) => {
-        const struct = this.getActiveLayerStructure();
-        if (struct) struct.repetition.activeClipping = e.target.checked;
-        this.render();
-      });
-    }
-
-    const chkRepGrid = document.getElementById("chk-rep-gridlines");
-    if (chkRepGrid) {
-      chkRepGrid.addEventListener("change", (e) => {
-        const struct = this.getActiveLayerStructure();
-        if (struct) {
-          struct.repetition.showGridLines = e.target.checked;
-          if (struct.formalStructure) {
-            struct.formalStructure.showGridLines = e.target.checked;
-          }
-        }
-        if (struct) this.syncRepetitionExtras(struct.repetition);
-        this.render();
-      });
-    }
-
-    const chkRepChecker = document.getElementById("chk-rep-checker");
-    if (chkRepChecker) {
-      chkRepChecker.addEventListener("change", (e) => {
-        const struct = this.getActiveLayerStructure();
-        if (struct) struct.repetition.checkerInvert = e.target.checked;
-        this.render();
-      });
-    }
-
-    // Radiation Schemes (Centrifugal, Concentric, Spiral, Dual-center)
-    document.querySelectorAll("[data-rad-scheme]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const struct = this.getActiveLayerStructure();
-        if (!struct) return;
-        struct.radiation.scheme = btn.dataset.radScheme;
-        struct.mode = "radiation";
-        struct.enabled = true;
-        this.syncStructureInspectorWithActiveLayer();
-        this.render();
-        this.updateLayerCardsUI();
-        this.pushHistory(`Layer ${this.activeLayerId} Rad Scheme: ${btn.dataset.radScheme}`);
-      });
-    });
-
-    // Radiation Sliders
-    this.bindSliderWithNumber("input-layout-rays", "num-layout-rays", (val) => {
-      const struct = this.getActiveLayerStructure();
-      if (!struct) return;
-      struct.radiation.rays = val;
-      struct.mode = "radiation";
-      this.render();
-    });
-
-    this.bindSliderWithNumber("input-layout-rings", "num-layout-rings", (val) => {
-      const struct = this.getActiveLayerStructure();
-      if (!struct) return;
-      struct.radiation.rings = val;
-      struct.mode = "radiation";
-      this.render();
-    });
-
-    this.bindSliderWithNumber("input-layout-centers", "num-layout-centers", (val) => {
-      const struct = this.getActiveLayerStructure();
-      if (!struct) return;
-      struct.radiation.centerCount = Math.max(2, Math.min(8, Math.round(val)));
-      struct.mode = "radiation";
-      this.render();
-    }, "Centers");
-
-    this.bindSliderWithNumber("input-layout-twist", "num-layout-twist", (val) => {
-      const struct = this.getActiveLayerStructure();
-      if (!struct) return;
-      struct.radiation.spiralTwist = val;
-      struct.mode = "radiation";
-      this.render();
-    });
-
-    const bindRadTags = (selector, dataKey, prop, label) => {
-      document.querySelectorAll(selector).forEach(btn => {
-        btn.addEventListener("click", () => {
-          const struct = this.getActiveLayerStructure();
-          if (!struct) return;
-          struct.radiation[prop] = btn.dataset[dataKey];
-          struct.mode = "radiation";
-          this.syncStructureInspectorWithActiveLayer();
-          this.render();
-          this.pushHistory(`Layer ${this.activeLayerId} ${label}: ${btn.dataset[dataKey]}`);
-        });
-      });
-    };
-    bindRadTags("[data-rad-modscale]", "radModscale", "moduleScale", "Module scale");
-    bindRadTags("[data-rad-dir]", "radDir", "direction", "Radiation Direction");
-    bindRadTags("[data-rad-shape]", "radShape", "ringShape", "Ring Shape");
-    this.bindSliderWithNumber("input-layout-radline", "num-layout-radline", (val) => {
-      const struct = this.getActiveLayerStructure();
-      if (!struct) return;
-      struct.radiation.lineWidth = Math.max(0.5, Math.min(10, val));
-      this.render();
-    }, "Radiation Line Width", "px");
-
-    document.querySelectorAll("[data-rad-size]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const struct = this.getActiveLayerStructure();
-        if (!struct) return;
-        struct.radiation.sizeMode = btn.dataset.radSize;
-        if (struct.radiation.sizeMode === "actual") {
-          // each ring starts as thick as a Fit ring
-          const mod = this.getActiveModule();
-          if (mod && !(mod.containerW > 0 || mod.containerH > 0)) {
-            const cfg = ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
-            mod.containerH = mod.containerW = Math.round((0.5 * Math.min(cfg.w, cfg.h)) / Math.max(2, struct.radiation.rings));
-          }
-        }
-        struct.mode = "radiation";
-        this.syncAllInspectorsWithActiveLayer();
-        this.syncStructureInspectorWithActiveLayer();
-        this.render();
-        this.pushHistory(`Layer ${this.activeLayerId} Radiation Module Size: ${btn.dataset.radSize}`);
-      });
-    });
-
-    this.bindSliderWithNumber("input-layout-open", "num-layout-open", (val) => {
-      const struct = this.getActiveLayerStructure();
-      if (!struct) return;
-      struct.radiation.centerOpen = val;
-      struct.mode = "radiation";
-      this.render();
-    }, "Open Center", "%");
-
-    this.bindSliderWithNumber("input-layout-ringrot", "num-layout-ringrot", (val) => {
-      const struct = this.getActiveLayerStructure();
-      if (!struct) return;
-      struct.radiation.ringRotation = val;
-      struct.mode = "radiation";
-      this.render();
-    }, "Ring Rotation", "º");
-
-    document.querySelectorAll("[data-rad-orient]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const struct = this.getActiveLayerStructure();
-        if (!struct) return;
-        struct.radiation.orientation = btn.dataset.radOrient;
-        struct.mode = "radiation";
-        this.syncStructureInspectorWithActiveLayer();
-        this.render();
-        this.pushHistory(`Layer ${this.activeLayerId} Module Orientation: ${btn.dataset.radOrient}`);
-      });
-    });
-
-    // Radiation Checkboxes
-    document.getElementById("chk-rad-raysbycont")?.addEventListener("change", (e) => {
-      const struct = this.getActiveLayerStructure();
-      if (struct) struct.radiation.raysByContainer = e.target.checked;
-      this.syncStructureInspectorWithActiveLayer();
-      this.render();
-      this.pushHistory(`Layer ${this.activeLayerId} Rays follow container: ${e.target.checked ? "ON" : "OFF"}`);
-    });
-    const chkRadClip = document.getElementById("chk-rad-clip");
-    if (chkRadClip) {
-      chkRadClip.addEventListener("change", (e) => {
-        const struct = this.getActiveLayerStructure();
-        if (struct) struct.radiation.activeClipping = e.target.checked;
-        this.render();
-      });
-    }
-
-    const chkRadGrid = document.getElementById("chk-rad-gridlines");
-    if (chkRadGrid) {
-      chkRadGrid.addEventListener("change", (e) => {
-        const struct = this.getActiveLayerStructure();
-        if (struct) {
-          struct.radiation.showRays = e.target.checked;
-          struct.radiation.showRings = e.target.checked;
-        }
-        this.syncStructureInspectorWithActiveLayer();
-        this.render();
-      });
-    }
-
-    const chkRadChecker = document.getElementById("chk-rad-checker");
-    if (chkRadChecker) {
-      chkRadChecker.addEventListener("change", (e) => {
-        const struct = this.getActiveLayerStructure();
-        if (struct) struct.radiation.checkerInvert = e.target.checked;
-        this.render();
-      });
-    }
-  }
-
-  /* =========================================================================
-     FORMAL STRUCTURE CONTROLLER (Exact match to mockup media_1790991477208.png)
-     Rhythmic Col & Row Ratios, Warning Alert Banner, Visible Grid Lines
-     ========================================================================= */
-
-  syncFormalStructureInspectorWithActiveLayer() {
-    const mod = this.getActiveModule();
-    if (!mod) return;
-
-    if (!mod.structure) {
-      mod.structure = this.getActiveLayerStructure();
-    }
-    if (!mod.structure.formalStructure) {
-      mod.structure.formalStructure = {
-        enabled: false,
-        colRatio: 1.0,
-        rowRatio: 1.0,
-        showGridLines: false
-      };
-    }
-
-    const fs = mod.structure.formalStructure;
-
-    this.syncControlValue("input-struct-col-ratio", Math.round(100 / (fs.colRatio || 1)));
-    this.syncControlValue("num-struct-col-ratio", `${Math.round(100 / (fs.colRatio || 1))}%`);
-    this.syncControlValue("input-struct-col-grade", fs.colGrade || 0);
-    this.syncControlValue("num-struct-col-grade", `${fs.colGrade || 0}%`);
-    this.syncControlValue("input-struct-row-grade", fs.rowGrade || 0);
-    this.syncControlValue("num-struct-row-grade", `${fs.rowGrade || 0}%`);
-    this.syncControlValue("input-struct-row-ratio", Math.round(100 / (fs.rowRatio || 1)));
-    this.syncControlValue("num-struct-row-ratio", `${Math.round(100 / (fs.rowRatio || 1))}%`);
-
-    this.updateRailIndicatorDots();
-  }
-
-  setupFormalStructure() {
-    // Gradation of structure: columns / rows that grow or shrink step by step
-    const bindGrade = (inputId, numId, key, label, lo = -30, hi = 30, suffix = "%") => {
-      this.bindSliderWithNumber(inputId, numId, (val) => {
-        const mod = this.getActiveModule();
-        if (!mod || !mod.structure) return;
-        if (!mod.structure.formalStructure) {
-          mod.structure.formalStructure = { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false };
-        }
-        mod.structure.formalStructure[key] = Math.max(lo, Math.min(hi, val));
-        mod.structure.formalStructure.enabled = true;
-        mod.structure.enabled = true;
-        if (mod.structure.mode === "radiation") mod.structure.mode = "repetition";
-        this.syncStructureInspectorWithActiveLayer();
-        this.render();
-        this.updateLayerCardsUI();
-      }, label, suffix);
-    };
-    bindGrade("input-struct-col-grade", "num-struct-col-grade", "colGrade", "Col Gradation");
-    bindGrade("input-struct-row-grade", "num-struct-row-grade", "rowGrade", "Row Gradation");
-
-    this.bindSliderWithNumber("input-struct-col-ratio", "num-struct-col-ratio", (val) => {
-      const mod = this.getActiveModule();
-      if (!mod || !mod.structure) return;
-      if (!mod.structure.formalStructure) {
-        mod.structure.formalStructure = { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false };
-      }
-      mod.structure.formalStructure.colRatio = Math.max(1, Math.min(10, 100 / Math.max(10, val)));
-      mod.structure.formalStructure.enabled = true;
-      mod.structure.enabled = true;
-      if (mod.structure.mode === "radiation") {
-        mod.structure.mode = "repetition";
-      }
-      this.syncStructureInspectorWithActiveLayer();
-      this.syncFormalStructureInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-    }, "Col Ratio", "%");
-
-    this.bindSliderWithNumber("input-struct-row-ratio", "num-struct-row-ratio", (val) => {
-      const mod = this.getActiveModule();
-      if (!mod || !mod.structure) return;
-      if (!mod.structure.formalStructure) {
-        mod.structure.formalStructure = { enabled: false, colRatio: 1, rowRatio: 1, showGridLines: false };
-      }
-      mod.structure.formalStructure.rowRatio = Math.max(1, Math.min(10, 100 / Math.max(10, val)));
-      mod.structure.formalStructure.enabled = true;
-      mod.structure.enabled = true;
-      if (mod.structure.mode === "radiation") {
-        mod.structure.mode = "repetition";
-      }
-      this.syncStructureInspectorWithActiveLayer();
-      this.syncFormalStructureInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-    }, "Row Ratio", "%");
-  }
+  setupLayoutStructure() { this.bindDataPanel(LAYOUT_PANEL); }
 }
 
 
@@ -6740,7 +6438,7 @@ const ASPECT_RATIOS = {
 };
 
 // The panels described as data (each spec lives in its panel's file in js/studio/app/)
-function dataPanels() { return [SIMILARITY_PANEL, ANOMALY_PANEL, GRADATION_PANEL, CONTRAST_PANEL, CONCENTRATION_PANEL, SPACE_PANEL, TEXTURE_PANEL]; }
+function dataPanels() { return [LAYOUT_PANEL, SIMILARITY_PANEL, ANOMALY_PANEL, GRADATION_PANEL, CONTRAST_PANEL, CONCENTRATION_PANEL, SPACE_PANEL, TEXTURE_PANEL]; }
 
 // Copies the methods (and the static getters) of the area classes (js/studio/app/*.js) onto StudioProApp
 function applyMixins(target, sources) {
@@ -6803,8 +6501,6 @@ class StudioProApp {
     this.setupLayoutStructure();
     this.setupSelects();
     this.setupValueSteppers();
-    this.setupRepetitionExtras();
-    this.setupFormalStructure();
     this.setupSimilarity();
     this.setupGradation();
     this.setupAnomaly();
@@ -6912,7 +6608,6 @@ class StudioProApp {
     if (this.figEdit && this.figEdit.layerId !== this.activeLayerId) { this.endFigureEdit(true); this.beginFigureEdit(); }
     this.syncShapeInspectorWithActiveLayer();
     this.syncStructureInspectorWithActiveLayer();
-    this.syncFormalStructureInspectorWithActiveLayer();
     this.syncSimilarityInspectorWithActiveLayer();
     this.syncGradationInspectorWithActiveLayer();
     this.syncAnomalyInspectorWithActiveLayer();
@@ -7363,7 +7058,7 @@ class StudioProApp {
 }
 
 // The rest of the app's methods live in js/studio/app/*.js, one file per panel or area
-applyMixins(StudioProApp, [PanelBuilder, LayersPanel, ArtLog, ControlsRail, PanelLayout, PanelSimilarity, Accessibility, PanelGradation, PanelAnomaly, PanelContrast, PanelConcentration, PanelSpace, PanelTexture, ModuleEditor]);
+applyMixins(StudioProApp, [UiHelpers, PanelBuilder, LayersPanel, ArtLog, ControlsRail, PanelLayout, PanelSimilarity, Accessibility, PanelGradation, PanelAnomaly, PanelContrast, PanelConcentration, PanelSpace, PanelTexture, ModuleEditor]);
 
 // Auto-boot upon DOM readiness
 document.addEventListener("DOMContentLoaded", () => {

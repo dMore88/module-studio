@@ -25,7 +25,7 @@ export const ASPECT_RATIOS = {
 };
 
 // The panels described as data (each spec lives in its panel's file in js/studio/app/)
-function dataPanels() { return [SIMILARITY_PANEL, ANOMALY_PANEL, GRADATION_PANEL, CONTRAST_PANEL, CONCENTRATION_PANEL, SPACE_PANEL, TEXTURE_PANEL]; }
+function dataPanels() { return [LAYOUT_PANEL, SIMILARITY_PANEL, ANOMALY_PANEL, GRADATION_PANEL, CONTRAST_PANEL, CONCENTRATION_PANEL, SPACE_PANEL, TEXTURE_PANEL]; }
 
 // Copies the methods (and the static getters) of the area classes (js/studio/app/*.js) onto StudioProApp
 function applyMixins(target, sources) {
@@ -89,8 +89,6 @@ export class StudioProApp {
     this.setupLayoutStructure();
     this.setupSelects();
     this.setupValueSteppers();
-    this.setupRepetitionExtras();
-    this.setupFormalStructure();
     this.setupSimilarity();
     this.setupGradation();
     this.setupAnomaly();
@@ -198,7 +196,6 @@ export class StudioProApp {
     if (this.figEdit && this.figEdit.layerId !== this.activeLayerId) { this.endFigureEdit(true); this.beginFigureEdit(); }
     this.syncShapeInspectorWithActiveLayer();
     this.syncStructureInspectorWithActiveLayer();
-    this.syncFormalStructureInspectorWithActiveLayer();
     this.syncSimilarityInspectorWithActiveLayer();
     this.syncGradationInspectorWithActiveLayer();
     this.syncAnomalyInspectorWithActiveLayer();
@@ -649,7 +646,7 @@ export class StudioProApp {
 }
 
 // The rest of the app's methods live in js/studio/app/*.js, one file per panel or area
-applyMixins(StudioProApp, [PanelBuilder, LayersPanel, ArtLog, ControlsRail, PanelLayout, PanelSimilarity, Accessibility, PanelGradation, PanelAnomaly, PanelContrast, PanelConcentration, PanelSpace, PanelTexture, ModuleEditor]);
+applyMixins(StudioProApp, [UiHelpers, PanelBuilder, LayersPanel, ArtLog, ControlsRail, PanelLayout, PanelSimilarity, Accessibility, PanelGradation, PanelAnomaly, PanelContrast, PanelConcentration, PanelSpace, PanelTexture, ModuleEditor]);
 
 // Auto-boot upon DOM readiness
 document.addEventListener("DOMContentLoaded", () => {
