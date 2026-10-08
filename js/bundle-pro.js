@@ -4153,462 +4153,10 @@ const StudioExporter = {
 
 
   /**
- * MODULE STUDIO PRO — Master Application Controller
- * Inspired by Abstract Studio: Canvas-First, Floating Capas Stack, Shape Inspector & Procedural Stack.
+ * The layers panel: every layer is a composition (add, duplicate, delete, show, hide, order, the cards).
+ * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
  */
-
-
-
-
-
-
-// The icon of a shape: a Phosphor icon, or its own drawing (ring) or letter (A, S, R) when Phosphor has none
-function shapeIconHtml(def) {
-  if (def && def.phIcon) return `<i class="ph ph-${def.phIcon}" aria-hidden="true"></i>`;
-  if (def && def.glyph) return `<span class="ph-glyph" aria-hidden="true">${def.glyph}</span>`;
-  if (def && def.id === "ring") return '<svg class="ph-svg" viewBox="0 0 256 256" aria-hidden="true"><circle cx="128" cy="128" r="104" fill="none" stroke="currentColor" stroke-width="16"/><circle cx="128" cy="128" r="52" fill="none" stroke="currentColor" stroke-width="16"/></svg>';
-  return '<i class="ph ph-circle" aria-hidden="true"></i>';
-}
-const ASPECT_RATIOS = {
-  "1:1": { label: "1:1 Square", w: 600, h: 600, css: "1 / 1" },
-  "9:16": { label: "9:16 Story", w: 450, h: 800, css: "9 / 16" },
-  "4:3": { label: "4:3 Editorial", w: 800, h: 600, css: "4 / 3" },
-  "3:4": { label: "3:4 Poster", w: 600, h: 800, css: "3 / 4" },
-  "16:9": { label: "16:9 Cinema", w: 800, h: 450, css: "16 / 9" }
-};
-class StudioProApp {
-  constructor() {
-    this.canvas = document.getElementById("studio-canvas");
-    this.canvasContainer = document.getElementById("canvas-viewport-container");
-    this.artboardWrapper = document.getElementById("artboard-wrapper");
-    
-    this.engine = new StudioEngine(this.canvas);
-    this.state = JSON.parse(JSON.stringify(defaultStudioState));
-    
-    // Artboard size as shown on screen (set by fitArtboard)
-    this.artboardSize = { w: 0, h: 0 };
-
-    // Active Layer Management (Each layer is a module!)
-    this.activeLayerId = "layer-1";
-
-    // Palette (Abstract Studio default: Clean Monochrome / Paper White & Deep Ink)
-    this.activePaletteId = "monochrome";
-    this.customColors = {
-      bg: "#ffffff",
-      fg: "#18181f",
-      accent: "#18181f",
-      grid: "#dcdfe6"
-    };
-
-    // History Stack
-    this.history = [];
-    this.historyIndex = -1;
-    this.maxHistory = 60;
-    this.historyLabels = [];
-
-    // Controls Rail & Inspector Flyout State
-    this.activeRailTab = "module";
-    this.isFlyoutOpen = false; // the Module panel is the smart module editor: opening it shows the module alone, so the app starts with the panels closed
-
-
-    this.init();
-  }
-
-  init() {
-    this.applyAspectRatio(this.state.aspectRatio || "1:1");
-    this.pushHistory("Initial Canvas State");
-    this.setupViewportEvents();
-    this.setupKeyboardShortcuts();
-    this.setupHeaderActions();
-    this.setupFloatingLayersPanel();
-    this.setupControlsRail();
-    this.setupLayoutStructure();
-    this.setupSelects();
-    this.setupValueSteppers();
-    this.setupRepetitionExtras();
-    this.setupFormalStructure();
-    this.setupSimilarity();
-    this.setupGradation();
-    this.setupAnomaly();
-    this.setupContrast();
-    this.setupConcentration();
-    this.setupSpace();
-    this.setupTexture();
-    this.setupAccessibility();
-    document.addEventListener("input", (e) => { if (e.target.matches && e.target.matches('.ds-slider input[type="range"]')) this.paintRange(e.target); });
-    this.paintAllRanges();
-    this.setupShapeInspector();
-    this.setupSmartModule();
-
-    // Initial render
-    this.updateActivePalette();
-    this.render();
-    this.centerArtboard();
-    this.syncAllInspectorsWithActiveLayer();
-    this.updateLayerCardsUI();
-
-    // Sync header button states
-    const gridBtn = document.getElementById("btn-toggle-grid");
-    if (gridBtn) gridBtn.classList.toggle("active", !!this.state.showSafeBounds);
-    this.syncGuideColor();
-    const invertBtn = document.getElementById("btn-toggle-invert");
-    if (invertBtn) invertBtn.classList.toggle("active", !!this.state.invertFigureGround);
-  }
-
-  getActivePalette() {
-    if (this.state.invertFigureGround) {
-      return {
-        bg: "#18181f",
-        fg: "#ffffff",
-        accent: "#f43f5e",
-        grid: "rgba(255, 255, 255, 0.14)",
-        isDark: true
-      };
-    } else {
-      return {
-        bg: "#ffffff",
-        fg: this.customColors.fg || "#18181f",
-        accent: "#18181f",
-        grid: "rgba(0, 0, 0, 0.08)",
-        isDark: false
-      };
-    }
-  }
-
-  updateActivePalette() {
-    // Keep customColors.bg consistent
-    this.customColors.bg = this.state.invertFigureGround ? "#18181f" : "#ffffff";
-  }
-
-  getLayers() {
-    if (!Array.isArray(this.state.layers) || this.state.layers.length === 0) {
-      this.state.layers = [createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5)];
-    }
-    return this.state.layers;
-  }
-
-  getActiveModule() {
-    const layers = this.getLayers();
-    const active = layers.find(l => l.id === this.activeLayerId);
-    if (active) return active;
-    return layers[0] || null;
-  }
-
-  getActiveLayerStructure() {
-    const mod = this.getActiveModule();
-    if (!mod) return null;
-    if (!mod.structure) {
-      mod.structure = createDefaultLayerStructure();
-    }
-    if (!mod.structure.similarity) {
-      mod.structure.similarity = {
-        enabled: false,
-        kinshipType: "distortion",
-        intensity: 50,
-        cellJitter: 0,
-        seed: 42
-      };
-    }
-    if (!mod.structure.gradation) {
-      mod.structure.gradation = createDefaultLayerStructure().gradation;
-    }
-    if (!mod.structure.anomaly) {
-      mod.structure.anomaly = createDefaultLayerStructure().anomaly;
-    }
-    if (!mod.structure.contrast) {
-      mod.structure.contrast = createDefaultLayerStructure().contrast;
-    }
-    if (!mod.structure.concentration) {
-      mod.structure.concentration = createDefaultLayerStructure().concentration;
-    }
-    if (!mod.structure.space) {
-      mod.structure.space = createDefaultLayerStructure().space;
-    }
-    if (!mod.structure.texture) {
-      mod.structure.texture = createDefaultLayerStructure().texture;
-    }
-    return mod.structure;
-  }
-
-  syncAllInspectorsWithActiveLayer() {
-    if (this.figEdit && this.figEdit.layerId !== this.activeLayerId) { this.endFigureEdit(true); this.beginFigureEdit(); }
-    this.syncShapeInspectorWithActiveLayer();
-    this.syncStructureInspectorWithActiveLayer();
-    this.syncFormalStructureInspectorWithActiveLayer();
-    this.syncSimilarityInspectorWithActiveLayer();
-    this.syncGradationInspectorWithActiveLayer();
-    this.syncAnomalyInspectorWithActiveLayer();
-    this.syncContrastInspectorWithActiveLayer();
-    this.syncConcentrationInspectorWithActiveLayer();
-    this.syncSpaceInspectorWithActiveLayer();
-    this.syncTextureInspectorWithActiveLayer();
-    this.updateRailIndicatorDots();
-    this.paintAllRanges();
-  }
-
-  render() {
-    if (!this.engine || !this.canvas) return;
-    this.engine.state = this.state;
-    this.engine.viewState = this.figEdit ? this.stateForFigureEdit() : null;
-    this.syncEditorCanvas();
-    // The Block frame shows only for the layer being edited, while the Layout panel is open
-    this.engine.blockGuideLayerId = this.isFlyoutOpen && this.activeRailTab === "layout" ? this.activeLayerId : null;
-    const palette = this.getActivePalette();
-    try {
-      this.engine.render(palette);
-      this.hideRenderError();
-    } catch (err) {
-      // A failed draw must not leave a silent blank canvas: log it and tell the user.
-      console.error("Render failed:", err);
-      this.showRenderError(err);
-      return;
-    }
-    this.updateArtLog();
-  }
-
-  // While the module is edited the canvas is the module itself: its width and height, whatever the aspect ratio. The canvas is
-  // shown scaled to fit the screen (as every canvas is), and drawn denser so a small module is big and sharp
-  syncEditorCanvas() {
-    const layer = this.figEdit ? this.state.layers.find(l => l.id === this.figEdit.layerId) : null;
-    const key = layer ? `${layer.containerW}x${layer.containerH}` : "";
-    if (key !== this._editorCanvasKey) { this._editorCanvasKey = key; this.fitArtboard(); }
-    this.engine.renderScale = layer && this.artboardSize ? Math.max(1, Math.min(8, Math.ceil(this.artboardSize.w / Math.max(1, layer.containerW)))) : 1;
-  }
-
-  showRenderError(err) {
-    let box = document.getElementById("render-error");
-    if (!box) {
-      box = document.createElement("div");
-      box.id = "render-error";
-      box.className = "render-error";
-      box.setAttribute("role", "alert");
-      document.body.appendChild(box);
-    }
-    box.textContent = `Something went wrong while drawing (${err && err.message ? err.message : "unknown error"}). Press Cmd/Ctrl+Z to go back to the last working state.`;
-    box.hidden = false;
-  }
-
-  hideRenderError() {
-    const box = document.getElementById("render-error");
-    if (box) box.hidden = true;
-  }
-
-  applyAspectRatio(key) {
-    const cfg = ASPECT_RATIOS[key] || ASPECT_RATIOS["1:1"];
-    this.state.aspectRatio = key;
-    this.canvas.width = cfg.w;
-    this.canvas.height = cfg.h;
-    this.fitArtboard();
-
-    const selectEl = document.getElementById("canvas-aspect-ratio");
-    if (selectEl && selectEl.value !== key) selectEl.value = key;
-  }
-
-  /* =========================================================================
-     TOP APPLICATION BAR ACTIONS
-     ========================================================================= */
-
-  setupHeaderActions() {
-    // 1. Aspect Ratio Dropdown
-    const aspectSelect = document.getElementById("canvas-aspect-ratio");
-    if (aspectSelect) {
-      aspectSelect.addEventListener("change", (e) => {
-        const ratio = e.target.value;
-        this.applyAspectRatio(ratio);
-        this.syncAllInspectorsWithActiveLayer(); // the Block shows pixels of the canvas
-        this.render();
-        this.centerArtboard();
-        this.pushHistory(`Aspect Ratio: ${ratio}`);
-      });
-    }
-
-    // 2. Toggle Grid Guides Button
-    const gridBtn = document.getElementById("btn-toggle-grid");
-    if (gridBtn) {
-      gridBtn.addEventListener("click", () => {
-        this.state.showSafeBounds = !this.state.showSafeBounds;
-        gridBtn.classList.toggle("active", this.state.showSafeBounds);
-        this.render();
-        this.pushHistory(`Toggle Grid: ${this.state.showSafeBounds}`);
-      });
-    }
-
-    // 2b. Guide color (one colour for every on-screen guide)
-    const guideInput = document.getElementById("input-guide-color");
-    guideInput?.addEventListener("input", (e) => {
-      this.state.guideColor = e.target.value;
-      this.syncGuideColor();
-      this.render();
-    });
-    guideInput?.addEventListener("change", (e) => this.pushHistory(`Guide Color: ${e.target.value.toUpperCase()}`));
-
-    // 3. Toggle Invert Tone Button
-    const invertBtn = document.getElementById("btn-toggle-invert");
-    if (invertBtn) {
-      invertBtn.addEventListener("click", () => {
-        this.state.invertFigureGround = !this.state.invertFigureGround;
-        invertBtn.classList.toggle("active", this.state.invertFigureGround);
-        this.updateActivePalette();
-        this.render();
-        this.pushHistory(`Toggle Invert Tone: ${this.state.invertFigureGround}`);
-      });
-    }
-
-    // The Download menu: opens under its button, closes after a choice, with Escape or a click outside
-    {
-      const menu = document.getElementById("download-menu");
-      const trigger = document.getElementById("btn-download");
-      const list = menu?.querySelector(".ds-menu__list");
-      const setOpen = (open) => { if (!list) return; list.hidden = !open; trigger.setAttribute("aria-expanded", String(open)); };
-      trigger?.addEventListener("click", (e) => { e.stopPropagation(); setOpen(list.hidden); });
-      list?.addEventListener("click", () => setOpen(false));
-      document.addEventListener("click", (e) => { if (menu && !menu.contains(e.target)) setOpen(false); });
-      document.addEventListener("keydown", (e) => { if (e.key === "Escape") setOpen(false); });
-    }
-
-    // 4. Copy SVG Code
-    const copySvgBtn = document.getElementById("btn-copy-svg-code");
-    if (copySvgBtn) {
-      copySvgBtn.addEventListener("click", async () => {
-        const label = copySvgBtn.querySelector("span");
-        const origText = label.textContent;
-        try {
-          const svgString = StudioExporter.buildSVG(this.engine, this.canvas, this.getActivePalette());
-          await navigator.clipboard.writeText(svgString);
-          label.textContent = "Copied!";
-        } catch (err) {
-          label.textContent = "Copy failed";
-        }
-        setTimeout(() => label.textContent = origText, 1500);
-      });
-    }
-
-    // 5. Download SVG File
-    const downloadSvgBtn = document.getElementById("btn-download-svg");
-    if (downloadSvgBtn) {
-      downloadSvgBtn.addEventListener("click", () => {
-        StudioExporter.exportSVG(this.engine, this.canvas, this.getActivePalette(), "module-studio-composition.svg");
-      });
-    }
-
-    // 6. Config Button
-    const configBtn = document.getElementById("btn-open-config");
-    if (configBtn) {
-      configBtn.addEventListener("click", () => {
-        StudioExporter.exportJSON(this.state, "module-studio-project.json");
-      });
-    }
-
-    // 7. Open a saved project (.json)
-    const openBtn = document.getElementById("btn-open-project");
-    const fileInput = document.getElementById("file-open-project");
-    if (openBtn && fileInput) {
-      openBtn.addEventListener("click", () => fileInput.click());
-      fileInput.addEventListener("change", async () => {
-        const file = fileInput.files && fileInput.files[0];
-        fileInput.value = "";
-        if (!file) return;
-        try {
-          this.loadProjectText(await file.text());
-        } catch (err) {
-          alert(`Could not open the project: ${err.message}`);
-        }
-      });
-    }
-  }
-
-  // Validates a saved project and replaces the current state with it.
-  // Anything missing or malformed falls back to the defaults, so a damaged file cannot break the app.
-  loadProjectText(text) {
-    let data;
-    try { data = JSON.parse(text); } catch (e) { throw new Error("the file is not valid JSON"); }
-    const raw = data && data.state && typeof data.state === "object" ? data.state : data;
-    if (!raw || !Array.isArray(raw.layers) || raw.layers.length === 0) throw new Error("it does not look like a Module Studio project");
-
-    const clone = (v) => JSON.parse(JSON.stringify(v));
-    const merge = (def, src) => {
-      if (def && typeof def === "object" && !Array.isArray(def)) {
-        const out = {};
-        for (const k of Object.keys(def)) {
-          out[k] = src && typeof src === "object" && k in src ? merge(def[k], src[k]) : clone(def[k]);
-        }
-        return out;
-      }
-      if (Array.isArray(def)) return Array.isArray(src) ? clone(src) : clone(def);
-      if (typeof def === "number") return typeof src === "number" && Number.isFinite(src) ? src : def;
-      return typeof src === typeof def ? src : def;
-    };
-
-    // Projects saved before some controls became percentages: convert their pixels (the merge below drops keys it does not know)
-    const migrate = (src) => {
-      const st = src && src.structure;
-      if (!st || typeof st !== "object") return src;
-      const rep = st.repetition;
-      if (rep && typeof rep === "object" && rep.curveAmount === undefined && typeof rep.curveIntensity === "number") {
-        rep.curveAmount = Math.min(1, Math.round((rep.curveIntensity / (600 / Math.max(1, rep.cols || 4))) * 100) / 100);
-      }
-      // Radiation modules used to shrink with their cell; the new default is Base size, so older projects keep what they had
-      const rd = st.radiation;
-      if (rd && typeof rd === "object" && rd.moduleScale === undefined) rd.moduleScale = "cell";
-      if (rep && typeof rep === "object" && rep.moduleScale === undefined) rep.moduleScale = "cell";
-      const sp = st.space;
-      if (sp && typeof sp === "object" && sp.depthPct === undefined && typeof sp.depth === "number") {
-        sp.depthPct = Math.max(5, Math.min(100, Math.round((sp.depth / 85) * 100)));
-      }
-      return src;
-    };
-
-    const used = new Set();
-    const layers = raw.layers.slice(0, 5).map((src, i) => {
-      migrate(src);
-      const layer = merge(createDefaultLayer(`layer-${i + 1}`, `Layer ${i + 1}`), src);
-      if (!STUDIO_SHAPE_KEYS.includes(layer.shape)) layer.shape = "circle";
-      // Smart module: keep only well-formed figures (known shape, finite numbers in range), at most 4. Figures saved as a
-      // % of the module ({ size, x, y }) become px, from the module's own size
-      const num = (v, lo, hi, d) => (typeof v === "number" && Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d);
-      const old = Math.max(layer.width || 100, layer.height || 100);
-      layer.figures = (Array.isArray(layer.figures) ? layer.figures : [])
-        .filter(f => f && STUDIO_SHAPE_KEYS.includes(f.shape)).slice(0, 4)
-        .map(f => (f.width !== undefined || f.height !== undefined)
-          ? { shape: f.shape, width: num(f.width, 1, 2000, 100), height: num(f.height ?? f.width, 1, 2000, 100), x: num(f.x, -1000, 1000, 0), y: num(f.y, -1000, 1000, 0), rotation: num(f.rotation, -360, 360, 0), relation: ["coincident", "distance"].includes(f.relation) ? f.relation : "free", angle: num(f.angle, 0, 360, 0), gap: num(f.gap, -500, 500, 0), ...(typeof f.wireframe === "boolean" ? { wireframe: f.wireframe } : {}), ...(/^#[0-9a-f]{6}$/i.test(f.color || "") ? { color: f.color } : {}), ...(typeof f.strokeWidth === "number" && Number.isFinite(f.strokeWidth) ? { strokeWidth: Math.max(0.2, Math.min(10, f.strokeWidth)) } : {}) }
-          : { shape: f.shape, width: Math.round(num(f.size, 5, 200, 100) / 100 * old), height: Math.round(num(f.size, 5, 200, 100) / 100 * old), x: Math.round(num(f.x, -100, 100, 0) / 100 * old), y: Math.round(num(f.y, -100, 100, 0) / 100 * old), rotation: num(f.rotation, -360, 360, 0) });
-      layer.combine = ["union", "subtract", "intersect", "xor"].includes(layer.combine) ? layer.combine : "none";
-      // The module's size is its container: 10 to 1000 px. Older projects used 0 for "the whole canvas"
-      const ar = ASPECT_RATIOS[raw.aspectRatio] || ASPECT_RATIOS["1:1"];
-      layer.containerW = Math.max(10, Math.min(1000, layer.containerW > 0 ? layer.containerW : ar.w));
-      layer.containerH = Math.max(10, Math.min(1000, layer.containerH > 0 ? layer.containerH : ar.h));
-      if (!layer.id || used.has(layer.id)) layer.id = `layer-${i + 1}-${Date.now() % 100000}`;
-      used.add(layer.id);
-      return layer;
-    });
-    const ids = layers.map(l => l.id);
-    let order = Array.isArray(raw.layerOrder) ? raw.layerOrder.filter(id => ids.includes(id)) : [];
-    for (const id of ids.slice().reverse()) if (!order.includes(id)) order.push(id);
-
-    const ratios = ["1:1", "9:16", "4:3", "3:4", "16:9"];
-    this.state = {
-      aspectRatio: ratios.includes(raw.aspectRatio) ? raw.aspectRatio : "1:1",
-      layers,
-      layerOrder: order,
-      invertFigureGround: !!raw.invertFigureGround,
-      showSafeBounds: raw.showSafeBounds !== false,
-      guideColor: /^#[0-9a-f]{6}$/i.test(raw.guideColor || "") ? raw.guideColor : "#f24822"
-    };
-    this.activeLayerId = layers[0].id;
-    this.figEdit = null; // an open editing session belonged to the old project
-    this.syncEditShell();
-    this.applyAspectRatio(this.state.aspectRatio);
-    document.getElementById("btn-toggle-grid")?.classList.toggle("active", this.state.showSafeBounds);
-    this.syncGuideColor();
-    document.getElementById("btn-toggle-invert")?.classList.toggle("active", this.state.invertFigureGround);
-    this.updateActivePalette();
-    this.render();
-    this.centerArtboard();
-    this.syncAllInspectorsWithActiveLayer();
-    this.updateLayerCardsUI();
-    this.pushHistory("Open project");
-  }
-
+class LayersPanel {
   /* =========================================================================
      FLOATING CAPAS (LAYERS) STACK — EACH LAYER IS A MODULE!
      ========================================================================= */
@@ -4828,6 +4376,103 @@ class StudioProApp {
     this.syncAllInspectorsWithActiveLayer();
   }
 
+  updateLayerCardsUI() {
+    const container = document.getElementById("layers-stack-container");
+    const addBtn = document.getElementById("btn-add-pattern");
+    const layersCountBadge = document.getElementById("layers-count-badge");
+
+    const layers = this.getLayers();
+    const count = layers.length;
+
+    if (layersCountBadge) layersCountBadge.textContent = `${count}`;
+
+    for (const btn of [addBtn, document.getElementById("btn-duplicate-layer")]) {
+      if (!btn) continue;
+      const isMax = count >= 5;
+      btn.disabled = isMax;
+      btn.classList.toggle("opacity-40", isMax);
+      btn.classList.toggle("cursor-not-allowed", isMax);
+    }
+
+    const activeMod = this.getActiveModule();
+    const activeName = activeMod?.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
+    const badgeLayout = document.getElementById("badge-layout-layer");
+    if (badgeLayout) badgeLayout.textContent = activeName;
+    const badgeSimilarity = document.getElementById("badge-similarity-layer");
+    if (badgeSimilarity) badgeSimilarity.textContent = activeName;
+    const badgeGradation = document.getElementById("badge-gradation-layer");
+    if (badgeGradation) badgeGradation.textContent = activeName;
+    const badgeAnomaly = document.getElementById("badge-anomaly-layer");
+    if (badgeAnomaly) badgeAnomaly.textContent = activeName;
+    const badgeContrast = document.getElementById("badge-contrast-layer");
+    if (badgeContrast) badgeContrast.textContent = activeName;
+    const badgeConcentration = document.getElementById("badge-concentration-layer");
+    if (badgeConcentration) badgeConcentration.textContent = activeName;
+    const badgeSpace = document.getElementById("badge-space-layer");
+    if (badgeSpace) badgeSpace.textContent = activeName;
+    const badgeTexture = document.getElementById("badge-texture-layer");
+    if (badgeTexture) badgeTexture.textContent = activeName;
+
+    if (!container) return;
+
+    const order = (this.state.layerOrder && this.state.layerOrder.length > 0)
+      ? this.state.layerOrder
+      : layers.map(l => l.id);
+
+    const orderedLayers = [];
+    for (const id of order) {
+      const found = layers.find(l => l.id === id);
+      if (found) orderedLayers.push(found);
+    }
+    for (const l of layers) {
+      if (!orderedLayers.includes(l)) orderedLayers.push(l);
+    }
+    this.state.layerOrder = orderedLayers.map(l => l.id);
+
+    const canDelete = count > 1;
+    container.innerHTML = orderedLayers.map(l => {
+      const isActive = l.id === this.activeLayerId;
+      const isVis = l.visible !== false;
+      // the icon and the subtitle tell the layout of the composition: Repetition (a grid), Radial, or Default (no layout)
+      const s = l.structure;
+      const kind = s?.enabled ? (s.mode === "radiation" ? "Radial" : "Repetition") : "Default";
+      const icon = `<i class="ph ph-${{ Repetition: "table", Radial: "crosshair", Default: "shapes" }[kind]}" aria-hidden="true"></i>`;
+      const name = this.compositionName(l);
+
+      return `
+        <div id="layer-card-${l.id}" class="layer-card ${isActive ? 'is-active' : ''} ${!isVis ? 'is-hidden' : ''}" data-layer-id="${l.id}" draggable="true">
+          <div class="layer-preview-box pointer-events-none">
+            ${icon}
+          </div>
+          <div class="layer-copy pointer-events-none">
+            <div class="layer-title">${name}</div>
+            <div class="layer-subtitle">${kind}</div>
+          </div>
+          <div class="layer-actions">
+            <button type="button" class="layer-action-btn btn-layer-eye" data-layer="${l.id}" title="Toggle Visibility" aria-label="Toggle visibility of ${name}">
+              ${isVis ? '<i class="ph ph-eye" aria-hidden="true"></i>' : '<i class="ph ph-eye-slash opacity-40" aria-hidden="true"></i>'}
+            </button>
+            <button type="button" class="layer-action-btn btn-layer-delete ${!canDelete ? 'opacity-25 cursor-not-allowed' : ''}" data-layer="${l.id}" title="${canDelete ? 'Delete Layer' : 'Cannot delete the only layer'}" aria-label="Delete ${name}" ${!canDelete ? 'disabled' : ''}>
+              <i class="ph ph-trash" aria-hidden="true"></i>
+            </button>
+            <span class="layer-action-btn layer-drag-handle cursor-grab active:cursor-grabbing" title="Drag to reorder" aria-hidden="true">
+              <i class="ph ph-dots-six-vertical"></i>
+            </span>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    this.updateArtLog();
+  }
+}
+
+
+  /**
+ * The Art log: the recipe of the design, built from the state, with Copy.
+ * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
+ */
+class ArtLog {
   /* =========================================================================
      ART LOG (bottom half of the layers panel)
      Built from the state: the canvas, the modules, then the active layer (its module and one line per control that is ON).
@@ -5040,97 +4685,14 @@ class StudioProApp {
     try { document.execCommand("copy"); done(); } catch (e) { /* the text is still selectable in the log */ }
     ta.remove();
   }
+}
 
-  updateLayerCardsUI() {
-    const container = document.getElementById("layers-stack-container");
-    const addBtn = document.getElementById("btn-add-pattern");
-    const layersCountBadge = document.getElementById("layers-count-badge");
 
-    const layers = this.getLayers();
-    const count = layers.length;
-
-    if (layersCountBadge) layersCountBadge.textContent = `${count}`;
-
-    for (const btn of [addBtn, document.getElementById("btn-duplicate-layer")]) {
-      if (!btn) continue;
-      const isMax = count >= 5;
-      btn.disabled = isMax;
-      btn.classList.toggle("opacity-40", isMax);
-      btn.classList.toggle("cursor-not-allowed", isMax);
-    }
-
-    const activeMod = this.getActiveModule();
-    const activeName = activeMod?.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
-    const badgeLayout = document.getElementById("badge-layout-layer");
-    if (badgeLayout) badgeLayout.textContent = activeName;
-    const badgeSimilarity = document.getElementById("badge-similarity-layer");
-    if (badgeSimilarity) badgeSimilarity.textContent = activeName;
-    const badgeGradation = document.getElementById("badge-gradation-layer");
-    if (badgeGradation) badgeGradation.textContent = activeName;
-    const badgeAnomaly = document.getElementById("badge-anomaly-layer");
-    if (badgeAnomaly) badgeAnomaly.textContent = activeName;
-    const badgeContrast = document.getElementById("badge-contrast-layer");
-    if (badgeContrast) badgeContrast.textContent = activeName;
-    const badgeConcentration = document.getElementById("badge-concentration-layer");
-    if (badgeConcentration) badgeConcentration.textContent = activeName;
-    const badgeSpace = document.getElementById("badge-space-layer");
-    if (badgeSpace) badgeSpace.textContent = activeName;
-    const badgeTexture = document.getElementById("badge-texture-layer");
-    if (badgeTexture) badgeTexture.textContent = activeName;
-
-    if (!container) return;
-
-    const order = (this.state.layerOrder && this.state.layerOrder.length > 0)
-      ? this.state.layerOrder
-      : layers.map(l => l.id);
-
-    const orderedLayers = [];
-    for (const id of order) {
-      const found = layers.find(l => l.id === id);
-      if (found) orderedLayers.push(found);
-    }
-    for (const l of layers) {
-      if (!orderedLayers.includes(l)) orderedLayers.push(l);
-    }
-    this.state.layerOrder = orderedLayers.map(l => l.id);
-
-    const canDelete = count > 1;
-    container.innerHTML = orderedLayers.map(l => {
-      const isActive = l.id === this.activeLayerId;
-      const isVis = l.visible !== false;
-      // the icon and the subtitle tell the layout of the composition: Repetition (a grid), Radial, or Default (no layout)
-      const s = l.structure;
-      const kind = s?.enabled ? (s.mode === "radiation" ? "Radial" : "Repetition") : "Default";
-      const icon = `<i class="ph ph-${{ Repetition: "table", Radial: "crosshair", Default: "shapes" }[kind]}" aria-hidden="true"></i>`;
-      const name = this.compositionName(l);
-
-      return `
-        <div id="layer-card-${l.id}" class="layer-card ${isActive ? 'is-active' : ''} ${!isVis ? 'is-hidden' : ''}" data-layer-id="${l.id}" draggable="true">
-          <div class="layer-preview-box pointer-events-none">
-            ${icon}
-          </div>
-          <div class="layer-copy pointer-events-none">
-            <div class="layer-title">${name}</div>
-            <div class="layer-subtitle">${kind}</div>
-          </div>
-          <div class="layer-actions">
-            <button type="button" class="layer-action-btn btn-layer-eye" data-layer="${l.id}" title="Toggle Visibility" aria-label="Toggle visibility of ${name}">
-              ${isVis ? '<i class="ph ph-eye" aria-hidden="true"></i>' : '<i class="ph ph-eye-slash opacity-40" aria-hidden="true"></i>'}
-            </button>
-            <button type="button" class="layer-action-btn btn-layer-delete ${!canDelete ? 'opacity-25 cursor-not-allowed' : ''}" data-layer="${l.id}" title="${canDelete ? 'Delete Layer' : 'Cannot delete the only layer'}" aria-label="Delete ${name}" ${!canDelete ? 'disabled' : ''}>
-              <i class="ph ph-trash" aria-hidden="true"></i>
-            </button>
-            <span class="layer-action-btn layer-drag-handle cursor-grab active:cursor-grabbing" title="Drag to reorder" aria-hidden="true">
-              <i class="ph ph-dots-six-vertical"></i>
-            </span>
-          </div>
-        </div>
-      `;
-    }).join("");
-
-    this.updateArtLog();
-  }
-
+  /**
+ * The controls rail and its flyout, and the shared Layout pieces (container, rotation).
+ * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
+ */
+class ControlsRail {
   /* =========================================================================
      CONTROLS RAIL & FLYOUT CONTROLLER (Abstract Studio Dock)
      ========================================================================= */
@@ -5359,7 +4921,14 @@ class StudioProApp {
 
     this.updateRailIndicatorDots();
   }
+}
 
+
+  /**
+ * The Layout panel (Repetition and Radiation) and the formal structure (Rhythm).
+ * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
+ */
+class PanelLayout {
   /* =========================================================================
      LAYOUT STRUCTURE CONTROLLER (Per Active Layer)
      ========================================================================= */
@@ -5963,7 +5532,14 @@ class StudioProApp {
       this.updateLayerCardsUI();
     }, "Row Ratio", "%");
   }
+}
 
+
+  /**
+ * The Similarity panel.
+ * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
+ */
+class PanelSimilarity {
   /* =========================================================================
      SIMILARITY INSPECTOR & CONTROLLER (Per Active Layer)
      Visual Kinship: Elastic, 3D tilt, Wobble, Scale, Hybrid
@@ -6170,7 +5746,14 @@ class StudioProApp {
       this.render();
     }, "Cell Jitter", "%");
   }
+}
 
+
+  /**
+ * Accessible names and states for every control.
+ * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
+ */
+class Accessibility {
   /* =========================================================================
      ACCESSIBILITY
      Gives every control an accessible name, keeps aria-pressed in sync with the
@@ -6268,7 +5851,14 @@ class StudioProApp {
 
     this._a11yUid = uid;
   }
+}
 
+
+  /**
+ * The Gradation panel (and the guide and accent colour helpers it shares).
+ * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
+ */
+class PanelGradation {
   /* =========================================================================
      GRADATION INSPECTOR & CONTROLLER (Per Active Layer)
      Attribute (Rotate, Scale, Depth, Drift), Range, Cycles,
@@ -6476,7 +6066,14 @@ class StudioProApp {
     if (label) label.textContent = prefix.endsWith("line") || active ? hex : "None";
     document.getElementById(`${prefix}-accent-row`)?.classList.toggle("is-dimmed", !active);
   }
+}
 
+
+  /**
+ * The Anomaly panel.
+ * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
+ */
+class PanelAnomaly {
   /* =========================================================================
      ANOMALY INSPECTOR & CONTROLLER (Per Active Layer)
      Type (Focal, Rupture, Swell, Void), Focal intruder shape, X/Y position,
@@ -6669,7 +6266,14 @@ class StudioProApp {
       commit(a => { a.epicenterX = nx; a.epicenterY = ny; }, "Anomaly Focal Point");
     });
   }
+}
 
+
+  /**
+ * The Contrast panel.
+ * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
+ */
+class PanelContrast {
   /* =========================================================================
      CONTRAST INSPECTOR & CONTROLLER (Per Active Layer)
      Dimension (Scale, Shape, Angle, Tone), Dominance ratio,
@@ -6825,7 +6429,14 @@ class StudioProApp {
       this.pushHistory(`Layer ${this.activeLayerId} Contrast Accent: ${e.target.value.toUpperCase()}`);
     });
   }
+}
 
+
+  /**
+ * The Concentration panel.
+ * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
+ */
+class PanelConcentration {
   /* =========================================================================
      CONCENTRATION INSPECTOR & CONTROLLER (Per Active Layer)
      Structure (Point, Void, Line, Hotspots), X/Y position, Gathering pull,
@@ -6982,7 +6593,14 @@ class StudioProApp {
       commit(c => { c.attractorX = nx; c.attractorY = ny; }, "Concentration Attractor");
     });
   }
+}
 
+
+  /**
+ * The Space panel.
+ * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
+ */
+class PanelSpace {
   /* =========================================================================
      SPACE INSPECTOR & CONTROLLER (Per Active Layer)
      Mode (Isometric, 3D tilt, Fluctuating, Paradox), Extrusion depth,
@@ -7082,7 +6700,14 @@ class StudioProApp {
       commit(sp => { sp.showIsoGuides = checked; }, `Space Iso Guides: ${checked ? "ON" : "OFF"}`);
     });
   }
+}
 
+
+  /**
+ * The Texture panel.
+ * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
+ */
+class PanelTexture {
   /* =========================================================================
      TEXTURE INSPECTOR & CONTROLLER (Per Active Layer)
      Geometry deformations that read as texture: Jitter, Line skipping,
@@ -7176,7 +6801,14 @@ class StudioProApp {
     bindPair("input-texture-waves", "num-texture-waves", { min: 1, max: 6, suffix: "", label: "Waves", key: "waves" });
     bindPair("input-texture-waveangle", "num-texture-waveangle", { min: 0, max: 360, suffix: "º", label: "Wave Direction", key: "waveAngle" });
   }
+}
 
+
+  /**
+ * The smart module editor (shapes list, shape style, relations, Combine) and the shape inspector.
+ * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
+ */
+class ModuleEditor {
   /* =========================================================================
      CONTEXTUAL SHAPE & STYLE INSPECTOR (Applies to currently active layer)
      ========================================================================= */
@@ -7649,6 +7281,477 @@ class StudioProApp {
     if (swatch) swatch.style.backgroundColor = layerColor;
     if (hexText) hexText.textContent = layerColor.toUpperCase();
   }
+}
+
+
+  /**
+ * MODULE STUDIO PRO — Master Application Controller
+ * Inspired by Abstract Studio: Canvas-First, Floating Capas Stack, Shape Inspector & Procedural Stack.
+ */
+
+
+
+
+
+
+// The icon of a shape: a Phosphor icon, or its own drawing (ring) or letter (A, S, R) when Phosphor has none
+function shapeIconHtml(def) {
+  if (def && def.phIcon) return `<i class="ph ph-${def.phIcon}" aria-hidden="true"></i>`;
+  if (def && def.glyph) return `<span class="ph-glyph" aria-hidden="true">${def.glyph}</span>`;
+  if (def && def.id === "ring") return '<svg class="ph-svg" viewBox="0 0 256 256" aria-hidden="true"><circle cx="128" cy="128" r="104" fill="none" stroke="currentColor" stroke-width="16"/><circle cx="128" cy="128" r="52" fill="none" stroke="currentColor" stroke-width="16"/></svg>';
+  return '<i class="ph ph-circle" aria-hidden="true"></i>';
+}
+const ASPECT_RATIOS = {
+  "1:1": { label: "1:1 Square", w: 600, h: 600, css: "1 / 1" },
+  "9:16": { label: "9:16 Story", w: 450, h: 800, css: "9 / 16" },
+  "4:3": { label: "4:3 Editorial", w: 800, h: 600, css: "4 / 3" },
+  "3:4": { label: "3:4 Poster", w: 600, h: 800, css: "3 / 4" },
+  "16:9": { label: "16:9 Cinema", w: 800, h: 450, css: "16 / 9" }
+};
+
+// Copies the methods (and the static getters) of the area classes (js/studio/app/*.js) onto StudioProApp
+function applyMixins(target, sources) {
+  for (const source of sources) {
+    for (const name of Object.getOwnPropertyNames(source.prototype)) {
+      if (name !== "constructor") Object.defineProperty(target.prototype, name, Object.getOwnPropertyDescriptor(source.prototype, name));
+    }
+    for (const name of Object.getOwnPropertyNames(source)) {
+      if (!["length", "name", "prototype"].includes(name)) Object.defineProperty(target, name, Object.getOwnPropertyDescriptor(source, name));
+    }
+  }
+}
+class StudioProApp {
+  constructor() {
+    this.canvas = document.getElementById("studio-canvas");
+    this.canvasContainer = document.getElementById("canvas-viewport-container");
+    this.artboardWrapper = document.getElementById("artboard-wrapper");
+    
+    this.engine = new StudioEngine(this.canvas);
+    this.state = JSON.parse(JSON.stringify(defaultStudioState));
+    
+    // Artboard size as shown on screen (set by fitArtboard)
+    this.artboardSize = { w: 0, h: 0 };
+
+    // Active Layer Management (Each layer is a module!)
+    this.activeLayerId = "layer-1";
+
+    // Palette (Abstract Studio default: Clean Monochrome / Paper White & Deep Ink)
+    this.activePaletteId = "monochrome";
+    this.customColors = {
+      bg: "#ffffff",
+      fg: "#18181f",
+      accent: "#18181f",
+      grid: "#dcdfe6"
+    };
+
+    // History Stack
+    this.history = [];
+    this.historyIndex = -1;
+    this.maxHistory = 60;
+    this.historyLabels = [];
+
+    // Controls Rail & Inspector Flyout State
+    this.activeRailTab = "module";
+    this.isFlyoutOpen = false; // the Module panel is the smart module editor: opening it shows the module alone, so the app starts with the panels closed
+
+
+    this.init();
+  }
+
+  init() {
+    this.applyAspectRatio(this.state.aspectRatio || "1:1");
+    this.pushHistory("Initial Canvas State");
+    this.setupViewportEvents();
+    this.setupKeyboardShortcuts();
+    this.setupHeaderActions();
+    this.setupFloatingLayersPanel();
+    this.setupControlsRail();
+    this.setupLayoutStructure();
+    this.setupSelects();
+    this.setupValueSteppers();
+    this.setupRepetitionExtras();
+    this.setupFormalStructure();
+    this.setupSimilarity();
+    this.setupGradation();
+    this.setupAnomaly();
+    this.setupContrast();
+    this.setupConcentration();
+    this.setupSpace();
+    this.setupTexture();
+    this.setupAccessibility();
+    document.addEventListener("input", (e) => { if (e.target.matches && e.target.matches('.ds-slider input[type="range"]')) this.paintRange(e.target); });
+    this.paintAllRanges();
+    this.setupShapeInspector();
+    this.setupSmartModule();
+
+    // Initial render
+    this.updateActivePalette();
+    this.render();
+    this.centerArtboard();
+    this.syncAllInspectorsWithActiveLayer();
+    this.updateLayerCardsUI();
+
+    // Sync header button states
+    const gridBtn = document.getElementById("btn-toggle-grid");
+    if (gridBtn) gridBtn.classList.toggle("active", !!this.state.showSafeBounds);
+    this.syncGuideColor();
+    const invertBtn = document.getElementById("btn-toggle-invert");
+    if (invertBtn) invertBtn.classList.toggle("active", !!this.state.invertFigureGround);
+  }
+
+  getActivePalette() {
+    if (this.state.invertFigureGround) {
+      return {
+        bg: "#18181f",
+        fg: "#ffffff",
+        accent: "#f43f5e",
+        grid: "rgba(255, 255, 255, 0.14)",
+        isDark: true
+      };
+    } else {
+      return {
+        bg: "#ffffff",
+        fg: this.customColors.fg || "#18181f",
+        accent: "#18181f",
+        grid: "rgba(0, 0, 0, 0.08)",
+        isDark: false
+      };
+    }
+  }
+
+  updateActivePalette() {
+    // Keep customColors.bg consistent
+    this.customColors.bg = this.state.invertFigureGround ? "#18181f" : "#ffffff";
+  }
+
+  getLayers() {
+    if (!Array.isArray(this.state.layers) || this.state.layers.length === 0) {
+      this.state.layers = [createDefaultLayer("layer-1", "Layer 1", "circle", 0, 0, 4.5)];
+    }
+    return this.state.layers;
+  }
+
+  getActiveModule() {
+    const layers = this.getLayers();
+    const active = layers.find(l => l.id === this.activeLayerId);
+    if (active) return active;
+    return layers[0] || null;
+  }
+
+  getActiveLayerStructure() {
+    const mod = this.getActiveModule();
+    if (!mod) return null;
+    if (!mod.structure) {
+      mod.structure = createDefaultLayerStructure();
+    }
+    if (!mod.structure.similarity) {
+      mod.structure.similarity = {
+        enabled: false,
+        kinshipType: "distortion",
+        intensity: 50,
+        cellJitter: 0,
+        seed: 42
+      };
+    }
+    if (!mod.structure.gradation) {
+      mod.structure.gradation = createDefaultLayerStructure().gradation;
+    }
+    if (!mod.structure.anomaly) {
+      mod.structure.anomaly = createDefaultLayerStructure().anomaly;
+    }
+    if (!mod.structure.contrast) {
+      mod.structure.contrast = createDefaultLayerStructure().contrast;
+    }
+    if (!mod.structure.concentration) {
+      mod.structure.concentration = createDefaultLayerStructure().concentration;
+    }
+    if (!mod.structure.space) {
+      mod.structure.space = createDefaultLayerStructure().space;
+    }
+    if (!mod.structure.texture) {
+      mod.structure.texture = createDefaultLayerStructure().texture;
+    }
+    return mod.structure;
+  }
+
+  syncAllInspectorsWithActiveLayer() {
+    if (this.figEdit && this.figEdit.layerId !== this.activeLayerId) { this.endFigureEdit(true); this.beginFigureEdit(); }
+    this.syncShapeInspectorWithActiveLayer();
+    this.syncStructureInspectorWithActiveLayer();
+    this.syncFormalStructureInspectorWithActiveLayer();
+    this.syncSimilarityInspectorWithActiveLayer();
+    this.syncGradationInspectorWithActiveLayer();
+    this.syncAnomalyInspectorWithActiveLayer();
+    this.syncContrastInspectorWithActiveLayer();
+    this.syncConcentrationInspectorWithActiveLayer();
+    this.syncSpaceInspectorWithActiveLayer();
+    this.syncTextureInspectorWithActiveLayer();
+    this.updateRailIndicatorDots();
+    this.paintAllRanges();
+  }
+
+  render() {
+    if (!this.engine || !this.canvas) return;
+    this.engine.state = this.state;
+    this.engine.viewState = this.figEdit ? this.stateForFigureEdit() : null;
+    this.syncEditorCanvas();
+    // The Block frame shows only for the layer being edited, while the Layout panel is open
+    this.engine.blockGuideLayerId = this.isFlyoutOpen && this.activeRailTab === "layout" ? this.activeLayerId : null;
+    const palette = this.getActivePalette();
+    try {
+      this.engine.render(palette);
+      this.hideRenderError();
+    } catch (err) {
+      // A failed draw must not leave a silent blank canvas: log it and tell the user.
+      console.error("Render failed:", err);
+      this.showRenderError(err);
+      return;
+    }
+    this.updateArtLog();
+  }
+
+  // While the module is edited the canvas is the module itself: its width and height, whatever the aspect ratio. The canvas is
+  // shown scaled to fit the screen (as every canvas is), and drawn denser so a small module is big and sharp
+  syncEditorCanvas() {
+    const layer = this.figEdit ? this.state.layers.find(l => l.id === this.figEdit.layerId) : null;
+    const key = layer ? `${layer.containerW}x${layer.containerH}` : "";
+    if (key !== this._editorCanvasKey) { this._editorCanvasKey = key; this.fitArtboard(); }
+    this.engine.renderScale = layer && this.artboardSize ? Math.max(1, Math.min(8, Math.ceil(this.artboardSize.w / Math.max(1, layer.containerW)))) : 1;
+  }
+
+  showRenderError(err) {
+    let box = document.getElementById("render-error");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "render-error";
+      box.className = "render-error";
+      box.setAttribute("role", "alert");
+      document.body.appendChild(box);
+    }
+    box.textContent = `Something went wrong while drawing (${err && err.message ? err.message : "unknown error"}). Press Cmd/Ctrl+Z to go back to the last working state.`;
+    box.hidden = false;
+  }
+
+  hideRenderError() {
+    const box = document.getElementById("render-error");
+    if (box) box.hidden = true;
+  }
+
+  applyAspectRatio(key) {
+    const cfg = ASPECT_RATIOS[key] || ASPECT_RATIOS["1:1"];
+    this.state.aspectRatio = key;
+    this.canvas.width = cfg.w;
+    this.canvas.height = cfg.h;
+    this.fitArtboard();
+
+    const selectEl = document.getElementById("canvas-aspect-ratio");
+    if (selectEl && selectEl.value !== key) selectEl.value = key;
+  }
+
+  /* =========================================================================
+     TOP APPLICATION BAR ACTIONS
+     ========================================================================= */
+
+  setupHeaderActions() {
+    // 1. Aspect Ratio Dropdown
+    const aspectSelect = document.getElementById("canvas-aspect-ratio");
+    if (aspectSelect) {
+      aspectSelect.addEventListener("change", (e) => {
+        const ratio = e.target.value;
+        this.applyAspectRatio(ratio);
+        this.syncAllInspectorsWithActiveLayer(); // the Block shows pixels of the canvas
+        this.render();
+        this.centerArtboard();
+        this.pushHistory(`Aspect Ratio: ${ratio}`);
+      });
+    }
+
+    // 2. Toggle Grid Guides Button
+    const gridBtn = document.getElementById("btn-toggle-grid");
+    if (gridBtn) {
+      gridBtn.addEventListener("click", () => {
+        this.state.showSafeBounds = !this.state.showSafeBounds;
+        gridBtn.classList.toggle("active", this.state.showSafeBounds);
+        this.render();
+        this.pushHistory(`Toggle Grid: ${this.state.showSafeBounds}`);
+      });
+    }
+
+    // 2b. Guide color (one colour for every on-screen guide)
+    const guideInput = document.getElementById("input-guide-color");
+    guideInput?.addEventListener("input", (e) => {
+      this.state.guideColor = e.target.value;
+      this.syncGuideColor();
+      this.render();
+    });
+    guideInput?.addEventListener("change", (e) => this.pushHistory(`Guide Color: ${e.target.value.toUpperCase()}`));
+
+    // 3. Toggle Invert Tone Button
+    const invertBtn = document.getElementById("btn-toggle-invert");
+    if (invertBtn) {
+      invertBtn.addEventListener("click", () => {
+        this.state.invertFigureGround = !this.state.invertFigureGround;
+        invertBtn.classList.toggle("active", this.state.invertFigureGround);
+        this.updateActivePalette();
+        this.render();
+        this.pushHistory(`Toggle Invert Tone: ${this.state.invertFigureGround}`);
+      });
+    }
+
+    // The Download menu: opens under its button, closes after a choice, with Escape or a click outside
+    {
+      const menu = document.getElementById("download-menu");
+      const trigger = document.getElementById("btn-download");
+      const list = menu?.querySelector(".ds-menu__list");
+      const setOpen = (open) => { if (!list) return; list.hidden = !open; trigger.setAttribute("aria-expanded", String(open)); };
+      trigger?.addEventListener("click", (e) => { e.stopPropagation(); setOpen(list.hidden); });
+      list?.addEventListener("click", () => setOpen(false));
+      document.addEventListener("click", (e) => { if (menu && !menu.contains(e.target)) setOpen(false); });
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape") setOpen(false); });
+    }
+
+    // 4. Copy SVG Code
+    const copySvgBtn = document.getElementById("btn-copy-svg-code");
+    if (copySvgBtn) {
+      copySvgBtn.addEventListener("click", async () => {
+        const label = copySvgBtn.querySelector("span");
+        const origText = label.textContent;
+        try {
+          const svgString = StudioExporter.buildSVG(this.engine, this.canvas, this.getActivePalette());
+          await navigator.clipboard.writeText(svgString);
+          label.textContent = "Copied!";
+        } catch (err) {
+          label.textContent = "Copy failed";
+        }
+        setTimeout(() => label.textContent = origText, 1500);
+      });
+    }
+
+    // 5. Download SVG File
+    const downloadSvgBtn = document.getElementById("btn-download-svg");
+    if (downloadSvgBtn) {
+      downloadSvgBtn.addEventListener("click", () => {
+        StudioExporter.exportSVG(this.engine, this.canvas, this.getActivePalette(), "module-studio-composition.svg");
+      });
+    }
+
+    // 6. Config Button
+    const configBtn = document.getElementById("btn-open-config");
+    if (configBtn) {
+      configBtn.addEventListener("click", () => {
+        StudioExporter.exportJSON(this.state, "module-studio-project.json");
+      });
+    }
+
+    // 7. Open a saved project (.json)
+    const openBtn = document.getElementById("btn-open-project");
+    const fileInput = document.getElementById("file-open-project");
+    if (openBtn && fileInput) {
+      openBtn.addEventListener("click", () => fileInput.click());
+      fileInput.addEventListener("change", async () => {
+        const file = fileInput.files && fileInput.files[0];
+        fileInput.value = "";
+        if (!file) return;
+        try {
+          this.loadProjectText(await file.text());
+        } catch (err) {
+          alert(`Could not open the project: ${err.message}`);
+        }
+      });
+    }
+  }
+
+  // Validates a saved project and replaces the current state with it.
+  // Anything missing or malformed falls back to the defaults, so a damaged file cannot break the app.
+  loadProjectText(text) {
+    let data;
+    try { data = JSON.parse(text); } catch (e) { throw new Error("the file is not valid JSON"); }
+    const raw = data && data.state && typeof data.state === "object" ? data.state : data;
+    if (!raw || !Array.isArray(raw.layers) || raw.layers.length === 0) throw new Error("it does not look like a Module Studio project");
+
+    const clone = (v) => JSON.parse(JSON.stringify(v));
+    const merge = (def, src) => {
+      if (def && typeof def === "object" && !Array.isArray(def)) {
+        const out = {};
+        for (const k of Object.keys(def)) {
+          out[k] = src && typeof src === "object" && k in src ? merge(def[k], src[k]) : clone(def[k]);
+        }
+        return out;
+      }
+      if (Array.isArray(def)) return Array.isArray(src) ? clone(src) : clone(def);
+      if (typeof def === "number") return typeof src === "number" && Number.isFinite(src) ? src : def;
+      return typeof src === typeof def ? src : def;
+    };
+
+    // Projects saved before some controls became percentages: convert their pixels (the merge below drops keys it does not know)
+    const migrate = (src) => {
+      const st = src && src.structure;
+      if (!st || typeof st !== "object") return src;
+      const rep = st.repetition;
+      if (rep && typeof rep === "object" && rep.curveAmount === undefined && typeof rep.curveIntensity === "number") {
+        rep.curveAmount = Math.min(1, Math.round((rep.curveIntensity / (600 / Math.max(1, rep.cols || 4))) * 100) / 100);
+      }
+      // Radiation modules used to shrink with their cell; the new default is Base size, so older projects keep what they had
+      const rd = st.radiation;
+      if (rd && typeof rd === "object" && rd.moduleScale === undefined) rd.moduleScale = "cell";
+      if (rep && typeof rep === "object" && rep.moduleScale === undefined) rep.moduleScale = "cell";
+      const sp = st.space;
+      if (sp && typeof sp === "object" && sp.depthPct === undefined && typeof sp.depth === "number") {
+        sp.depthPct = Math.max(5, Math.min(100, Math.round((sp.depth / 85) * 100)));
+      }
+      return src;
+    };
+
+    const used = new Set();
+    const layers = raw.layers.slice(0, 5).map((src, i) => {
+      migrate(src);
+      const layer = merge(createDefaultLayer(`layer-${i + 1}`, `Layer ${i + 1}`), src);
+      if (!STUDIO_SHAPE_KEYS.includes(layer.shape)) layer.shape = "circle";
+      // Smart module: keep only well-formed figures (known shape, finite numbers in range), at most 4. Figures saved as a
+      // % of the module ({ size, x, y }) become px, from the module's own size
+      const num = (v, lo, hi, d) => (typeof v === "number" && Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d);
+      const old = Math.max(layer.width || 100, layer.height || 100);
+      layer.figures = (Array.isArray(layer.figures) ? layer.figures : [])
+        .filter(f => f && STUDIO_SHAPE_KEYS.includes(f.shape)).slice(0, 4)
+        .map(f => (f.width !== undefined || f.height !== undefined)
+          ? { shape: f.shape, width: num(f.width, 1, 2000, 100), height: num(f.height ?? f.width, 1, 2000, 100), x: num(f.x, -1000, 1000, 0), y: num(f.y, -1000, 1000, 0), rotation: num(f.rotation, -360, 360, 0), relation: ["coincident", "distance"].includes(f.relation) ? f.relation : "free", angle: num(f.angle, 0, 360, 0), gap: num(f.gap, -500, 500, 0), ...(typeof f.wireframe === "boolean" ? { wireframe: f.wireframe } : {}), ...(/^#[0-9a-f]{6}$/i.test(f.color || "") ? { color: f.color } : {}), ...(typeof f.strokeWidth === "number" && Number.isFinite(f.strokeWidth) ? { strokeWidth: Math.max(0.2, Math.min(10, f.strokeWidth)) } : {}) }
+          : { shape: f.shape, width: Math.round(num(f.size, 5, 200, 100) / 100 * old), height: Math.round(num(f.size, 5, 200, 100) / 100 * old), x: Math.round(num(f.x, -100, 100, 0) / 100 * old), y: Math.round(num(f.y, -100, 100, 0) / 100 * old), rotation: num(f.rotation, -360, 360, 0) });
+      layer.combine = ["union", "subtract", "intersect", "xor"].includes(layer.combine) ? layer.combine : "none";
+      // The module's size is its container: 10 to 1000 px. Older projects used 0 for "the whole canvas"
+      const ar = ASPECT_RATIOS[raw.aspectRatio] || ASPECT_RATIOS["1:1"];
+      layer.containerW = Math.max(10, Math.min(1000, layer.containerW > 0 ? layer.containerW : ar.w));
+      layer.containerH = Math.max(10, Math.min(1000, layer.containerH > 0 ? layer.containerH : ar.h));
+      if (!layer.id || used.has(layer.id)) layer.id = `layer-${i + 1}-${Date.now() % 100000}`;
+      used.add(layer.id);
+      return layer;
+    });
+    const ids = layers.map(l => l.id);
+    let order = Array.isArray(raw.layerOrder) ? raw.layerOrder.filter(id => ids.includes(id)) : [];
+    for (const id of ids.slice().reverse()) if (!order.includes(id)) order.push(id);
+
+    const ratios = ["1:1", "9:16", "4:3", "3:4", "16:9"];
+    this.state = {
+      aspectRatio: ratios.includes(raw.aspectRatio) ? raw.aspectRatio : "1:1",
+      layers,
+      layerOrder: order,
+      invertFigureGround: !!raw.invertFigureGround,
+      showSafeBounds: raw.showSafeBounds !== false,
+      guideColor: /^#[0-9a-f]{6}$/i.test(raw.guideColor || "") ? raw.guideColor : "#f24822"
+    };
+    this.activeLayerId = layers[0].id;
+    this.figEdit = null; // an open editing session belonged to the old project
+    this.syncEditShell();
+    this.applyAspectRatio(this.state.aspectRatio);
+    document.getElementById("btn-toggle-grid")?.classList.toggle("active", this.state.showSafeBounds);
+    this.syncGuideColor();
+    document.getElementById("btn-toggle-invert")?.classList.toggle("active", this.state.invertFigureGround);
+    this.updateActivePalette();
+    this.render();
+    this.centerArtboard();
+    this.syncAllInspectorsWithActiveLayer();
+    this.updateLayerCardsUI();
+    this.pushHistory("Open project");
+  }
 
   /* =========================================================================
      VIEWPORT: PAN, ZOOM & ARTBOARD CENTERING
@@ -7824,6 +7927,9 @@ class StudioProApp {
     }
   }
 }
+
+// The rest of the app's methods live in js/studio/app/*.js, one file per panel or area
+applyMixins(StudioProApp, [LayersPanel, ArtLog, ControlsRail, PanelLayout, PanelSimilarity, Accessibility, PanelGradation, PanelAnomaly, PanelContrast, PanelConcentration, PanelSpace, PanelTexture, ModuleEditor]);
 
 // Auto-boot upon DOM readiness
 document.addEventListener("DOMContentLoaded", () => {
