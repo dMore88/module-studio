@@ -4163,7 +4163,10 @@ const StudioExporter = {
  *     enabled: { id, key }, badgeId,         // the switch of the header and the layer badge
  *     groups: [{ title, controls: [
  *       { type: "tags",   label, key, attr, history, options: [[value, text], ...] },
- *       { type: "slider", id, label, key, min, max, step, value, suffix, history },
+ *       { type: "slider", id, label, key, min, max, step, value, suffix, history,
+ *         unit,      // what the setting stores per 1 shown (Texture shows %, stores px: unit 0.1)
+ *         fallback,  // shown when the setting has no value yet (default: value)
+ *         advanced } // true: the control goes in the group's "Advanced controls" accordion (the group needs advId)
  *       { type: "toggle", id, label, key, history } ] }] }
  * With two or more groups, every group gets its title and a divider; with one, only the panel has a title.
  */
@@ -4176,18 +4179,22 @@ class PanelBuilder {
       const titled = spec.groups.length > 1;
       const html = spec.groups.map((g, i) => {
         const head = titled ? `${i > 0 ? '<div class="ds-divider" role="separator"></div>\n' : ""}<div class="ds-label ds-label--overline">${g.title}</div>\n` : "";
-        let out = "", toggles = [];
-        const flush = () => { if (toggles.length) { out += `<div class="ds-toggles">\n${toggles.join("\n")}\n</div>\n`; toggles = []; } };
+        let out = "", adv = "", toggles = [];
+        let target = "out";
+        const add = (t) => { if (target === "adv") adv += t; else out += t; };
+        const flush = () => { if (toggles.length) { add(`<div class="ds-toggles">\n${toggles.join("\n")}\n</div>\n`); toggles = []; } };
         for (const c of g.controls) {
+          if (!!c.advanced !== (target === "adv")) { flush(); target = c.advanced ? "adv" : "out"; }
           if (c.type === "toggle") { toggles.push(`<label class="ds-toggle-item">\n<span class="ds-toggle-label">${c.label}</span>\n<input type="checkbox" id="${c.id}" class="ds-checkbox">\n</label>`); continue; }
           flush();
           if (c.type === "tags") {
-            out += `<div class="ds-field">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags">\n${c.options.map(([v, t], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}">${t}</button>`).join("\n")}\n</div>\n</div>\n`;
+            add(`<div class="ds-field">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags">\n${c.options.map(([v, t], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}">${t}</button>`).join("\n")}\n</div>\n</div>\n`);
           } else if (c.type === "slider") {
-            out += `<div class="ds-field">\n<div class="ds-label ds-label-clip">${c.label}</div>\n<div class="ds-slider">\n<input type="range" id="input-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}">\n<input type="text" id="num-${c.id}" class="ds-value" value="${c.value}${c.suffix}" inputmode="numeric">\n</div>\n</div>\n`;
+            add(`<div class="ds-field">\n<div class="ds-label ds-label-clip">${c.label}</div>\n<div class="ds-slider">\n<input type="range" id="input-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}">\n<input type="text" id="num-${c.id}" class="ds-value" value="${c.value}${c.suffix}" inputmode="numeric">\n</div>\n</div>\n`);
           }
         }
         flush();
+        if (adv) out += `<details id="${g.advId}" class="ds-advanced">\n<summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced controls</span></summary>\n<div class="ds-stack">\n${adv}</div>\n</details>\n`;
         return head + out;
       }).join("\n");
       card.insertAdjacentHTML("beforeend", html);
@@ -4208,7 +4215,7 @@ class PanelBuilder {
         if (c.type === "tags") {
           document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(b => b.classList.toggle("active", b.getAttribute(c.attr) === st[c.key]));
         } else if (c.type === "slider") {
-          const v = st[c.key] ?? c.value;
+          const v = Math.round((st[c.key] ?? c.fallback ?? c.value) / (c.unit || 1));
           this.syncControlValue(`input-${c.id}`, v);
           const num = document.getElementById(`num-${c.id}`);
           if (num) num.value = `${v}${c.suffix}`;
@@ -4258,14 +4265,14 @@ class PanelBuilder {
           const parse = (s) => (Number(c.step) % 1 ? parseFloat(s) : parseInt(s, 10));
           slider?.addEventListener("input", (e) => {
             const val = parse(e.target.value);
-            commit(st => { st[c.key] = val; }, null, { sync: false });
+            commit(st => { st[c.key] = val * (c.unit || 1); }, null, { sync: false });
             if (num) num.value = `${val}${c.suffix}`;
           });
           slider?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} ${c.history}: ${e.target.value}${c.suffix}`));
           num?.addEventListener("change", (e) => {
             const raw = parse(e.target.value.replace(/[^0-9.-]/g, ""));
             const val = isNaN(raw) ? Number(c.min) : Math.max(Number(c.min), Math.min(Number(c.max), raw));
-            commit(st => { st[c.key] = val; }, `${spec.name} ${c.history}: ${val}${c.suffix}`);
+            commit(st => { st[c.key] = val * (c.unit || 1); }, `${spec.name} ${c.history}: ${val}${c.suffix}`);
           });
         } else if (c.type === "toggle") {
           document.getElementById(c.id)?.addEventListener("change", (e) => {
@@ -6760,103 +6767,42 @@ class PanelSpace {
 
 
   /**
- * The Texture panel.
+ * The Texture panel, described as data (see panel-builder.js): geometry deformations that read as texture: Jitter, Line skipping,
+ * Random lines, Plane wave. Autonomous modifier. Jitter and undulation are stored in px for a 100 px module (scaled to the real size)
+ * and shown as 0 to 100 % (unit = px per 1 %). Skipping and crossing only read on strokes.
  * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
  */
-class PanelTexture {
-  /* =========================================================================
-     TEXTURE INSPECTOR & CONTROLLER (Per Active Layer)
-     Geometry deformations that read as texture: Jitter, Line skipping,
-     Random lines, Plane wave. Autonomous modifier.
-     Jitter and undulation are px for a 100px module (scaled to the real size).
-     Skipping and crossing only read on strokes.
-     ========================================================================= */
+const TEXTURE_PANEL = {
+  id: "texture", cardId: "card-texture", name: "Texture",
+  state: (app) => app.getActiveTexture(),
+  enabled: { id: "toggle-texture-active", key: "enabled" },
+  badgeId: "badge-texture-layer",
+  groups: [
+    { title: "Irregularity", controls: [
+      { type: "slider", id: "texture-jitter", label: "Jitter", key: "jitter", min: 0, max: 100, step: 1, value: 10, suffix: "%", unit: 0.1, fallback: 1, history: "Jitter" },
+    ] },
+    { title: "Lines", advId: "tex-adv-lines", controls: [
+      { type: "slider", id: "texture-skip", label: "Line skipping", key: "skipChance", min: 0, max: 90, step: 1, value: 10, suffix: "%", history: "Line Skipping" },
+      { type: "slider", id: "texture-crossing", label: "Random lines", key: "crossing", min: 0, max: 100, step: 1, value: 10, suffix: "%", history: "Random Lines" },
+      { type: "slider", id: "texture-hairopacity", label: "Random lines opacity", key: "hairOpacity", min: 10, max: 100, step: 1, value: 85, suffix: "%", history: "Random Lines Opacity", advanced: true },
+    ] },
+    { title: "Wave", advId: "tex-adv-wave", controls: [
+      { type: "slider", id: "texture-undulation", label: "Plane wave", key: "undulation", min: 0, max: 100, step: 1, value: 30, suffix: "%", unit: 0.3, fallback: 9, history: "Plane Wave" },
+      { type: "slider", id: "texture-waves", label: "Waves", key: "waves", min: 1, max: 6, step: 1, value: 2, suffix: "", history: "Waves", advanced: true },
+      { type: "slider", id: "texture-waveangle", label: "Wave direction", key: "waveAngle", min: 0, max: 360, step: 5, value: 0, suffix: "º", history: "Wave Direction", advanced: true },
+    ] },
+  ],
+};
 
+class PanelTexture {
   getActiveTexture() {
     const struct = this.getActiveLayerStructure();
     return struct ? struct.texture : null;
   }
 
-  syncTextureInspectorWithActiveLayer() {
-    const mod = this.getActiveModule();
-    const tex = this.getActiveTexture();
-    if (!mod || !tex) return;
+  syncTextureInspectorWithActiveLayer() { this.syncDataPanel(TEXTURE_PANEL); }
 
-    const badge = document.getElementById("badge-texture-layer");
-    if (badge) badge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
-
-    const toggle = document.getElementById("toggle-texture-active");
-    if (toggle) toggle.checked = !!tex.enabled;
-
-    // Jitter and undulation are stored in px for a 100 px module but shown as 0 to 100 % (unit = px per 1 %)
-    const setPair = (sliderId, numId, value, suffix, unit = 1) => {
-      const shown = Math.round(value / unit);
-      this.syncControlValue(sliderId, shown);
-      const num = document.getElementById(numId);
-      if (num) num.value = `${shown}${suffix}`;
-    };
-    setPair("input-texture-jitter", "num-texture-jitter", tex.jitter ?? 1, "%", 0.1);
-    setPair("input-texture-skip", "num-texture-skip", tex.skipChance ?? 10, "%");
-    setPair("input-texture-crossing", "num-texture-crossing", tex.crossing ?? 10, "%");
-    setPair("input-texture-undulation", "num-texture-undulation", tex.undulation ?? 9, "%", 0.3);
-    setPair("input-texture-hairopacity", "num-texture-hairopacity", tex.hairOpacity ?? 85, "%");
-    setPair("input-texture-waves", "num-texture-waves", tex.waves ?? 2, "");
-    setPair("input-texture-waveangle", "num-texture-waveangle", tex.waveAngle ?? 0, "º");
-
-    this.updateRailIndicatorDots();
-  }
-
-  setupTexture() {
-    const toggle = document.getElementById("toggle-texture-active");
-
-    // Any edit enables Texture on the active layer, then refreshes everything.
-    const commit = (mutate, historyLabel, { resync = true } = {}) => {
-      const tex = this.getActiveTexture();
-      if (!tex) return;
-      mutate(tex);
-      tex.enabled = true;
-      if (toggle) toggle.checked = true;
-      if (resync) this.syncTextureInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      if (historyLabel) this.pushHistory(`Layer ${this.activeLayerId} ${historyLabel}`);
-    };
-
-    toggle?.addEventListener("change", (e) => {
-      const tex = this.getActiveTexture();
-      if (!tex) return;
-      tex.enabled = e.target.checked;
-      this.syncTextureInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      this.pushHistory(`Layer ${this.activeLayerId} Texture: ${tex.enabled ? "ON" : "OFF"}`);
-    });
-
-    const bindPair = (sliderId, numId, { min, max, suffix, label, key, unit = 1 }) => {
-      const slider = document.getElementById(sliderId);
-      const num = document.getElementById(numId);
-      slider?.addEventListener("input", (e) => {
-        const val = parseInt(e.target.value, 10);
-        commit(t => { t[key] = val * unit; }, null, { resync: false });
-        if (num) num.value = `${val}${suffix}`;
-      });
-      slider?.addEventListener("change", (e) => {
-        this.pushHistory(`Layer ${this.activeLayerId} Texture ${label}: ${e.target.value}${suffix}`);
-      });
-      num?.addEventListener("change", (e) => {
-        const raw = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10);
-        const val = isNaN(raw) ? min : Math.max(min, Math.min(max, raw));
-        commit(t => { t[key] = val * unit; }, `Texture ${label}: ${val}${suffix}`);
-      });
-    };
-    bindPair("input-texture-jitter", "num-texture-jitter", { min: 0, max: 100, suffix: "%", label: "Jitter", key: "jitter", unit: 0.1 });
-    bindPair("input-texture-skip", "num-texture-skip", { min: 0, max: 90, suffix: "%", label: "Line Skipping", key: "skipChance" });
-    bindPair("input-texture-crossing", "num-texture-crossing", { min: 0, max: 100, suffix: "%", label: "Random Lines", key: "crossing" });
-    bindPair("input-texture-undulation", "num-texture-undulation", { min: 0, max: 100, suffix: "%", label: "Plane Wave", key: "undulation", unit: 0.3 });
-    bindPair("input-texture-hairopacity", "num-texture-hairopacity", { min: 10, max: 100, suffix: "%", label: "Random Lines Opacity", key: "hairOpacity" });
-    bindPair("input-texture-waves", "num-texture-waves", { min: 1, max: 6, suffix: "", label: "Waves", key: "waves" });
-    bindPair("input-texture-waveangle", "num-texture-waveangle", { min: 0, max: 360, suffix: "º", label: "Wave Direction", key: "waveAngle" });
-  }
+  setupTexture() { this.bindDataPanel(TEXTURE_PANEL); }
 }
 
 
@@ -7366,7 +7312,7 @@ const ASPECT_RATIOS = {
 };
 
 // The panels described as data (each spec lives in its panel's file in js/studio/app/)
-function dataPanels() { return [SPACE_PANEL]; }
+function dataPanels() { return [SPACE_PANEL, TEXTURE_PANEL]; }
 
 // Copies the methods (and the static getters) of the area classes (js/studio/app/*.js) onto StudioProApp
 function applyMixins(target, sources) {

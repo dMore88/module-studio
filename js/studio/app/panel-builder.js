@@ -9,7 +9,10 @@
  *     enabled: { id, key }, badgeId,         // the switch of the header and the layer badge
  *     groups: [{ title, controls: [
  *       { type: "tags",   label, key, attr, history, options: [[value, text], ...] },
- *       { type: "slider", id, label, key, min, max, step, value, suffix, history },
+ *       { type: "slider", id, label, key, min, max, step, value, suffix, history,
+ *         unit,      // what the setting stores per 1 shown (Texture shows %, stores px: unit 0.1)
+ *         fallback,  // shown when the setting has no value yet (default: value)
+ *         advanced } // true: the control goes in the group's "Advanced controls" accordion (the group needs advId)
  *       { type: "toggle", id, label, key, history } ] }] }
  * With two or more groups, every group gets its title and a divider; with one, only the panel has a title.
  */
@@ -22,18 +25,22 @@ class PanelBuilder {
       const titled = spec.groups.length > 1;
       const html = spec.groups.map((g, i) => {
         const head = titled ? `${i > 0 ? '<div class="ds-divider" role="separator"></div>\n' : ""}<div class="ds-label ds-label--overline">${g.title}</div>\n` : "";
-        let out = "", toggles = [];
-        const flush = () => { if (toggles.length) { out += `<div class="ds-toggles">\n${toggles.join("\n")}\n</div>\n`; toggles = []; } };
+        let out = "", adv = "", toggles = [];
+        let target = "out";
+        const add = (t) => { if (target === "adv") adv += t; else out += t; };
+        const flush = () => { if (toggles.length) { add(`<div class="ds-toggles">\n${toggles.join("\n")}\n</div>\n`); toggles = []; } };
         for (const c of g.controls) {
+          if (!!c.advanced !== (target === "adv")) { flush(); target = c.advanced ? "adv" : "out"; }
           if (c.type === "toggle") { toggles.push(`<label class="ds-toggle-item">\n<span class="ds-toggle-label">${c.label}</span>\n<input type="checkbox" id="${c.id}" class="ds-checkbox">\n</label>`); continue; }
           flush();
           if (c.type === "tags") {
-            out += `<div class="ds-field">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags">\n${c.options.map(([v, t], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}">${t}</button>`).join("\n")}\n</div>\n</div>\n`;
+            add(`<div class="ds-field">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags">\n${c.options.map(([v, t], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}">${t}</button>`).join("\n")}\n</div>\n</div>\n`);
           } else if (c.type === "slider") {
-            out += `<div class="ds-field">\n<div class="ds-label ds-label-clip">${c.label}</div>\n<div class="ds-slider">\n<input type="range" id="input-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}">\n<input type="text" id="num-${c.id}" class="ds-value" value="${c.value}${c.suffix}" inputmode="numeric">\n</div>\n</div>\n`;
+            add(`<div class="ds-field">\n<div class="ds-label ds-label-clip">${c.label}</div>\n<div class="ds-slider">\n<input type="range" id="input-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}">\n<input type="text" id="num-${c.id}" class="ds-value" value="${c.value}${c.suffix}" inputmode="numeric">\n</div>\n</div>\n`);
           }
         }
         flush();
+        if (adv) out += `<details id="${g.advId}" class="ds-advanced">\n<summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced controls</span></summary>\n<div class="ds-stack">\n${adv}</div>\n</details>\n`;
         return head + out;
       }).join("\n");
       card.insertAdjacentHTML("beforeend", html);
@@ -54,7 +61,7 @@ class PanelBuilder {
         if (c.type === "tags") {
           document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(b => b.classList.toggle("active", b.getAttribute(c.attr) === st[c.key]));
         } else if (c.type === "slider") {
-          const v = st[c.key] ?? c.value;
+          const v = Math.round((st[c.key] ?? c.fallback ?? c.value) / (c.unit || 1));
           this.syncControlValue(`input-${c.id}`, v);
           const num = document.getElementById(`num-${c.id}`);
           if (num) num.value = `${v}${c.suffix}`;
@@ -104,14 +111,14 @@ class PanelBuilder {
           const parse = (s) => (Number(c.step) % 1 ? parseFloat(s) : parseInt(s, 10));
           slider?.addEventListener("input", (e) => {
             const val = parse(e.target.value);
-            commit(st => { st[c.key] = val; }, null, { sync: false });
+            commit(st => { st[c.key] = val * (c.unit || 1); }, null, { sync: false });
             if (num) num.value = `${val}${c.suffix}`;
           });
           slider?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} ${c.history}: ${e.target.value}${c.suffix}`));
           num?.addEventListener("change", (e) => {
             const raw = parse(e.target.value.replace(/[^0-9.-]/g, ""));
             const val = isNaN(raw) ? Number(c.min) : Math.max(Number(c.min), Math.min(Number(c.max), raw));
-            commit(st => { st[c.key] = val; }, `${spec.name} ${c.history}: ${val}${c.suffix}`);
+            commit(st => { st[c.key] = val * (c.unit || 1); }, `${spec.name} ${c.history}: ${val}${c.suffix}`);
           });
         } else if (c.type === "toggle") {
           document.getElementById(c.id)?.addEventListener("change", (e) => {
