@@ -504,6 +504,7 @@
         <details id="rep-advanced" class="ds-advanced">
           <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced</span></summary>
           <div class="ds-stack">
+        <div class="ds-label ds-label--overline">Module</div>
 
         <div id="rep-modscale-block" class="ds-field">
           <div class="ds-label">Module scale</div>
@@ -512,6 +513,21 @@
             <button type="button" class="ds-tag" data-rep-modscale="cell" title="The module shrinks with its cell">Shrink with cell</button>
           </div>
         </div>
+
+        <div class="ds-toggles">
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Clip cell</span>
+            <input type="checkbox" id="chk-rep-clip" class="ds-checkbox">
+          </label>
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Checkerboard inversion</span>
+            <input type="checkbox" id="chk-rep-checker" class="ds-checkbox">
+          </label>
+        </div>
+
+        <div class="ds-divider" role="separator"></div>
+
+        <div class="ds-label ds-label--overline">Grid</div>
 
         <div class="ds-field">
           <div class="ds-label">Reflection</div>
@@ -538,6 +554,10 @@
           </div>
         </div>
 
+        <div class="ds-divider" role="separator"></div>
+
+        <div class="ds-label ds-label--overline">Rhythm</div>
+
         <div class="ds-field">
           <div class="ds-label ds-label-clip">Col B size [% of A]</div>
           <div class="ds-slider">
@@ -553,6 +573,7 @@
             <input type="text" id="num-struct-row-ratio" class="ds-value" value="100%" inputmode="decimal">
           </div>
         </div>
+
         <div class="ds-field">
           <div class="ds-label ds-label-clip">Col gradation</div>
           <div class="ds-slider">
@@ -560,6 +581,7 @@
             <input type="text" id="num-struct-col-grade" class="ds-value" value="0%" inputmode="decimal">
           </div>
         </div>
+
         <div class="ds-field">
           <div class="ds-label ds-label-clip">Row gradation</div>
           <div class="ds-slider">
@@ -567,22 +589,18 @@
             <input type="text" id="num-struct-row-grade" class="ds-value" value="0%" inputmode="decimal">
           </div>
         </div>
+
+        <div class="ds-divider" role="separator"></div>
+
+        <div class="ds-label ds-label--overline">Lines</div>
+
         <div class="ds-toggles">
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Clip cell</span>
-            <input type="checkbox" id="chk-rep-clip" class="ds-checkbox">
-          </label>
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Checkerboard inversion</span>
-            <input type="checkbox" id="chk-rep-checker" class="ds-checkbox">
-          </label>
           <label class="ds-toggle-item">
             <span class="ds-toggle-label">Visible lines</span>
             <input type="checkbox" id="chk-rep-gridlines" class="ds-checkbox">
           </label>
         </div>
 
-        <!-- Visible lines are part of the design: they have colour and width and are exported -->
         <div id="rep-lines-block" class="ds-stack hidden">
           <p class="ds-hint">Lines are part of the design and are exported.</p>
 
@@ -626,7 +644,7 @@
             </span>
           </div>
         </div>
-          </div>
+</div>
         </details>
         </div>
 
@@ -692,6 +710,7 @@
         <details id="rad-advanced" class="ds-advanced">
           <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced</span></summary>
           <div class="ds-stack">
+        <div class="ds-label ds-label--overline">Module</div>
 
         <div id="rad-modscale-block" class="ds-field">
           <div class="ds-label">Module scale</div>
@@ -714,6 +733,21 @@
             </div>
           </div>
         </div>
+
+        <div class="ds-toggles">
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Clip cell</span>
+            <input type="checkbox" id="chk-rad-clip" class="ds-checkbox">
+          </label>
+          <label class="ds-toggle-item">
+            <span class="ds-toggle-label">Checkerboard inversion</span>
+            <input type="checkbox" id="chk-rad-checker" class="ds-checkbox">
+          </label>
+        </div>
+
+        <div class="ds-divider" role="separator"></div>
+
+        <div class="ds-label ds-label--overline">Radiation</div>
 
         <div class="ds-field">
           <div class="ds-label">Direction</div>
@@ -757,19 +791,19 @@
             <input type="text" id="num-layout-ringrot" class="ds-value" value="0º" inputmode="decimal">
           </div>
         </div>
+
         <div class="ds-toggles">
           <label id="rad-raysbycont-item" class="ds-toggle-item hidden" title="Actual size: every ring gets as many rays as fit the container's width, so the cells are as big as the container">
             <span class="ds-toggle-label">Rays follow container</span>
             <input type="checkbox" id="chk-rad-raysbycont" class="ds-checkbox">
           </label>
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Clip cell</span>
-            <input type="checkbox" id="chk-rad-clip" class="ds-checkbox">
-          </label>
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Checkerboard inversion</span>
-            <input type="checkbox" id="chk-rad-checker" class="ds-checkbox">
-          </label>
+        </div>
+
+        <div class="ds-divider" role="separator"></div>
+
+        <div class="ds-label ds-label--overline">Lines</div>
+
+        <div class="ds-toggles">
           <label class="ds-toggle-item">
             <span class="ds-toggle-label">Visible lines</span>
             <input type="checkbox" id="chk-rad-gridlines" class="ds-checkbox">
@@ -796,7 +830,7 @@
             </span>
           </div>
         </div>
-          </div>
+</div>
         </details>
         </div>
       </div>
@@ -852,6 +886,8 @@
         <details id="sim-advanced" class="ds-advanced">
           <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced</span></summary>
           <div class="ds-stack">
+        <div class="ds-label ds-label--overline">Association</div>
+
         <div class="ds-field">
           <div class="ds-label">Association (family of shapes)</div>
           <div class="ds-dropdown" data-select>
@@ -866,6 +902,18 @@
         </div>
         </div>
 
+        <div id="sim-assoc-block" class="ds-field hidden">
+            <div class="ds-label ds-label-clip">Association mix</div>
+            <div class="ds-slider">
+              <input type="range" id="input-sim-assoc-mix" min="0" max="100" step="1" value="50">
+              <input type="text" id="num-sim-assoc-mix" class="ds-value" value="50%" inputmode="decimal">
+            </div>
+          </div>
+
+        <div class="ds-divider" role="separator"></div>
+
+        <div class="ds-label ds-label--overline">Imperfection</div>
+
         <div class="ds-field">
           <div class="ds-label">Imperfection</div>
           <div class="ds-dropdown" data-select>
@@ -878,28 +926,22 @@
         </div>
         </div>
 
-          <div class="ds-field">
-            <div class="ds-label ds-label-clip">Spatial cell jitter</div>
-            <div class="ds-slider">
-              <input type="range" id="input-sim-jitter" min="0" max="90" step="1" value="0">
-              <input type="text" id="num-sim-jitter" class="ds-value" value="0%" inputmode="decimal">
-            </div>
-          </div>
-          <div id="sim-assoc-block" class="ds-field hidden">
-            <div class="ds-label ds-label-clip">Association mix</div>
-            <div class="ds-slider">
-              <input type="range" id="input-sim-assoc-mix" min="0" max="100" step="1" value="50">
-              <input type="text" id="num-sim-assoc-mix" class="ds-value" value="50%" inputmode="decimal">
-            </div>
-          </div>
-          <div id="sim-imperf-block" class="ds-field hidden">
+        <div id="sim-imperf-block" class="ds-field hidden">
             <div class="ds-label ds-label-clip">Imperfect modules</div>
             <div class="ds-slider">
               <input type="range" id="input-sim-imperf-amount" min="0" max="100" step="1" value="30">
               <input type="text" id="num-sim-imperf-amount" class="ds-value" value="30%" inputmode="decimal">
             </div>
           </div>
+
+        <div class="ds-field">
+            <div class="ds-label ds-label-clip">Spatial cell jitter</div>
+            <div class="ds-slider">
+              <input type="range" id="input-sim-jitter" min="0" max="90" step="1" value="0">
+              <input type="text" id="num-sim-jitter" class="ds-value" value="0%" inputmode="decimal">
+            </div>
           </div>
+</div>
         </details>
         </div>
       </div>
@@ -1004,6 +1046,8 @@
         </div>
         </div>
 
+          <div class="ds-divider" role="separator"></div>
+          <div class="ds-label ds-label--overline">Progression</div>
           <div class="ds-field">
             <div class="ds-label">Range</div>
             <div class="ds-slider">
@@ -1021,6 +1065,8 @@
         <details id="grad-advanced" class="ds-advanced">
           <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced</span></summary>
           <div class="ds-stack">
+        <div class="ds-label ds-label--overline">Path</div>
+
         <div class="ds-field">
           <div class="ds-label">Sequence</div>
           <div class="ds-dropdown" data-select>
@@ -1032,31 +1078,29 @@
         </div>
         </div>
 
+        <div class="ds-toggles">
+          <label class="ds-toggle-item">
+          <span class="ds-toggle-label">Alternate rows</span>
+          <input type="checkbox" id="toggle-grad-alternate" class="ds-checkbox">
+        </label>
+          <label class="ds-toggle-item">
+          <span class="ds-toggle-label">Reverse Gradient Direction</span>
+          <input type="checkbox" id="toggle-grad-reverse" class="ds-checkbox">
+        </label>
+        </div>
 
+        <div class="ds-divider" role="separator"></div>
 
-          <div class="ds-field">
+        <div class="ds-label ds-label--overline">Progression</div>
+
+        <div class="ds-field">
             <div class="ds-label">Speed</div>
             <div class="ds-slider">
               <input type="range" id="input-grad-easing" min="-100" max="100" step="5" value="0">
               <input type="text" id="num-grad-easing" class="ds-value" value="0" inputmode="numeric">
             </div>
           </div>
-
-
-
-
-        <div class="ds-toggles">
-        <label class="ds-toggle-item">
-          <span class="ds-toggle-label">Alternate rows</span>
-          <input type="checkbox" id="toggle-grad-alternate" class="ds-checkbox">
-        </label>
-
-        <label class="ds-toggle-item">
-          <span class="ds-toggle-label">Reverse Gradient Direction</span>
-          <input type="checkbox" id="toggle-grad-reverse" class="ds-checkbox">
-        </label>
-        </div>
-          </div>
+</div>
         </details>
       </div>
 
@@ -1502,6 +1546,8 @@
             <input type="text" id="num-texture-jitter" class="ds-value" value="10%" inputmode="numeric">
           </div>
         </div>
+        <div class="ds-divider" role="separator"></div>
+        <div class="ds-label ds-label--overline">Lines</div>
         <div class="ds-field">
           <div class="ds-label">Line skipping</div>
           <div class="ds-slider">
@@ -1528,6 +1574,8 @@
         <details id="texture-advanced" class="ds-advanced">
           <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced</span></summary>
           <div class="ds-stack">
+        <div class="ds-label ds-label--overline">Lines</div>
+
         <div class="ds-field">
           <div class="ds-label">Random lines opacity</div>
           <div class="ds-slider">
@@ -1535,6 +1583,11 @@
             <input type="text" id="num-texture-hairopacity" class="ds-value" value="85%" inputmode="numeric">
           </div>
         </div>
+
+        <div class="ds-divider" role="separator"></div>
+
+        <div class="ds-label ds-label--overline">Wave</div>
+
         <div class="ds-field">
           <div class="ds-label">Waves</div>
           <div class="ds-slider">
@@ -1542,6 +1595,7 @@
             <input type="text" id="num-texture-waves" class="ds-value" value="2" inputmode="numeric">
           </div>
         </div>
+
         <div class="ds-field">
           <div class="ds-label">Wave direction</div>
           <div class="ds-slider">
@@ -1549,7 +1603,7 @@
             <input type="text" id="num-texture-waveangle" class="ds-value" value="0º" inputmode="numeric">
           </div>
         </div>
-          </div>
+</div>
         </details>
       </div>
 

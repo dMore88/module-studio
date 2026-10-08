@@ -389,4 +389,16 @@ Para incorporar estos conceptos dentro de [Abstract Studio](https://github.com/d
 4. **Arquetipos Radiales Avanzados:** expandir los generadores radiales con los esquemas de `Radiation`: `centrifugal`, `concentric`, `spiral` con torsión continua (`spiralTwist`), centros múltiples (`multi_center`) y anillos poligonales (`ringShape`).
 
 
-**Grupos con título.** Cada panel de controles se divide en grupos con título en mayúsculas y una línea divisoria, como en la plantilla del diseño: Layout (*Grid*, *Module*, *Composition container*; en Radiation, *Radiation* y *Module*), Similarity (*Kinship*), Gradation (*Attribute*, *Path*), Anomaly (*Anomaly*, *Zone*), Contrast (*Minority*, *Proportion*), Concentration (*Concentration*, *Strength*), Texture (*Irregularity*, *Wave*) y Space (*Space*, *Depth*).
+**Grupos con título.** Los controles de cada panel se agrupan por **tipo de propiedad**, con un título en mayúsculas y una línea divisoria entre grupos, como en la plantilla del diseño. La regla: un panel lleva títulos de grupo solo si tiene dos o más grupos (contando lo que hay dentro de *Advanced*); si tuviera uno solo, solo llevaría el título del panel. *Advanced* sigue la misma regla, con sus propios títulos:
+
+| Panel | Grupos (principal) | Grupos (dentro de Advanced) |
+|---|---|---|
+| Layout › Repetition | Grid, Module, Composition container | Module, Grid, Rhythm, Lines |
+| Layout › Radiation | Radiation, Module | Module, Radiation, Lines |
+| Similarity | Kinship | Association, Imperfection |
+| Gradation | Attribute, Path, Progression | Path, Progression |
+| Anomaly | Anomaly, Zone | |
+| Contrast | Minority, Proportion | |
+| Concentration | Concentration, Strength | |
+| Texture | Irregularity, Lines, Wave | Lines, Wave |
+| Space | Space, Depth | |
