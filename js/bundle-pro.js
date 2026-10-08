@@ -4167,16 +4167,20 @@ const StudioExporter = {
  * Controls (every one may carry `show: (state, mod) => bool`, to appear only in some cases, and `blockId`, the id of its box):
  *   { type: "tags",   label, key, attr, history, fallback, options: [[value, text], ...] }   one choice among several
  *   { type: "dropdown", label, key, attr, history, fallback, options: [[value, text], ...] | "shapes" }   a list of choices ("shapes": every shape, with its icon)
- *   { type: "chips",  label, ariaLabel, attr, options: [{ key, text, id?, show? }] }          chips that switch on and off by themselves
+ *   { type: "chips",  label, ariaLabel, attr, options: [{ key, text, id?, show? }],            chips that switch on and off by themselves
+ *       nested }  // optional { key, defaults, history }: the chips live in an object of the setting (Anomaly's attrs: on unless set to false)
  *   { type: "slider", id, label, key, min, max, step, value, suffix, history,
  *       unit,      // what the setting stores per 1 shown (Texture shows %, stores px: unit 0.1)
  *       divisor,   // the setting stores the shown value divided by this (0 to 100 % shown, 0 to 1 stored: divisor 100)
  *       fallback,  // what the setting holds when it has no value yet (default: value)
+ *       invert,    // the setting stores the opposite sign of what is shown (Gradation's speed)
+ *       signed,    // shown with a + in front when positive
  *       decimal,   // the value box asks for a decimal keyboard
  *       advanced } // true: the control goes in the group's "Advanced controls" accordion (the group needs advId)
  *   { type: "toggle", id, label, key, history }
+ *   { type: "color", prefix, label, key, fallback, history, show?, blockId? }   a colour row without an on/off (Gradation's end colour)
  *   { type: "accent", prefix, colorKey, flagKey }   the accent colour row (swatch, hex, remove); picking a colour turns the accent on
- *   { type: "hint",   text }
+ *   { type: "hint",   text, blockId?, show? }
  * With two or more groups, every group gets its title and a divider; with one, only the panel has a title.
  */
 // The shape names the dropdowns show (a few differ from the shapes' own names)
@@ -4207,15 +4211,18 @@ class PanelBuilder {
           } else if (c.type === "dropdown") {
             const opts = c.options === "shapes" ? STUDIO_SHAPE_KEYS.map(k => [k, SHAPE_LABELS[k] || Shapes[k].name.replace(/\s*\([^)]*\)\s*/g, ""), shapeIconHtml(Shapes[k])]) : c.options;
             add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-dropdown" data-select>\n<button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>${opts[0][1]}</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>\n<div class="ds-dropdown-menu hidden" role="listbox">\n${opts.map(([v, t, icon]) => `<button type="button" class="ds-dropdown-item" role="option" ${c.attr}="${v}">${icon || ""}<span>${t}</span></button>`).join("\n")}\n</div>\n</div>\n</div>\n`);
+          } else if (c.type === "color") {
+            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-color-row" id="${c.prefix}-accent-row">\n<span class="ds-color-label">${c.label}</span>\n<span class="ds-color-hex" id="${c.prefix}-accent-hex">#F43F5E</span>\n<span class="ds-swatch">\n<input type="color" id="${c.prefix}-accent-color" value="#f43f5e">\n<span class="ds-swatch-fill" id="${c.prefix}-accent-swatch"></span>\n</span>\n</div>\n</div>\n`);
           } else if (c.type === "accent") {
             const P = c.prefix;
-            add(`<div class="ds-toggles">\n<div class="ds-color-row" id="${P}-accent-row">\n<span class="ds-color-label">Accent color</span>\n<span class="ds-color-hex" id="${P}-accent-hex">#F43F5E</span>\n<span class="ds-swatch">\n<input type="color" id="${P}-accent-color" value="#f43f5e">\n<span class="ds-swatch-fill" id="${P}-accent-swatch"></span>\n</span>\n<button type="button" class="ds-color-clear" id="${P}-accent-clear" aria-label="Remove accent color" title="Remove accent color"><i class="ph ph-x" aria-hidden="true"></i></button>\n</div>\n</div>\n`);
+            toggles.push(`<div class="ds-color-row" id="${P}-accent-row">\n<span class="ds-color-label">Accent color</span>\n<span class="ds-color-hex" id="${P}-accent-hex">#F43F5E</span>\n<span class="ds-swatch">\n<input type="color" id="${P}-accent-color" value="#f43f5e">\n<span class="ds-swatch-fill" id="${P}-accent-swatch"></span>\n</span>\n<button type="button" class="ds-color-clear" id="${P}-accent-clear" aria-label="Remove accent color" title="Remove accent color"><i class="ph ph-x" aria-hidden="true"></i></button>\n</div>`);
+            continue;
           } else if (c.type === "chips") {
             add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags" role="group" aria-label="${c.ariaLabel || c.label}">\n${c.options.map(o => `<button type="button"${o.id ? ` id="${o.id}"` : ""} class="ds-tag${o.show ? " hidden" : ""}" ${c.attr}="${o.key}" aria-pressed="false">${o.text}</button>`).join("\n")}\n</div>\n</div>\n`);
           } else if (c.type === "slider") {
             add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label ds-label-clip">${c.label}</div>\n<div class="ds-slider">\n<input type="range" id="input-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}">\n<input type="text" id="num-${c.id}" class="ds-value" value="${c.value}${c.suffix}" inputmode="${c.decimal ? "decimal" : "numeric"}">\n</div>\n</div>\n`);
           } else if (c.type === "hint") {
-            add(`<p class="ds-hint">${c.text}</p>\n`);
+            add(c.blockId ? `<div id="${c.blockId}" class="ds-stack${hid(c)}"><p class="ds-hint">${c.text}</p></div>\n` : `<p class="ds-hint">${c.text}</p>\n`);
           }
         }
         flush();
@@ -4239,27 +4246,32 @@ class PanelBuilder {
     for (const g of spec.groups) {
       for (const c of g.controls) {
         if (c.show && c.blockId) document.getElementById(c.blockId)?.classList.toggle("hidden", !c.show(st, mod));
+        if (c.type === "chips") for (const o of c.options) if (o.show && !o.id) document.querySelector(`#${spec.cardId} [${c.attr}="${o.key}"]`)?.classList.toggle("hidden", !o.show(st, mod));
         if (c.type === "tags" || c.type === "dropdown") {
           document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(b => b.classList.toggle("active", b.getAttribute(c.attr) === (st[c.key] || c.fallback)));
         } else if (c.type === "accent") {
           this.syncAccentColorRow(c.prefix, st[c.colorKey], !!st[c.flagKey]);
+        } else if (c.type === "color") {
+          this.syncAccentColorRow(c.prefix, st[c.key] || c.fallback, true);
         } else if (c.type === "chips") {
           for (const o of c.options) {
             const chip = o.id ? document.getElementById(o.id) : document.querySelector(`#${spec.cardId} [${c.attr}="${o.key}"]`);
             if (!chip) continue;
-            const on = !!st[o.key];
+            const on = c.nested ? (st[c.nested.key] || {})[o.key] !== false : !!st[o.key];
             chip.classList.toggle("active", on);
             chip.setAttribute("aria-pressed", String(on));
             if (o.show) chip.classList.toggle("hidden", !o.show(st, mod));
           }
         } else if (c.type === "slider") {
           const raw = st[c.key] ?? c.fallback ?? c.value;
-          const v = Math.round(c.divisor ? raw * c.divisor : raw / (c.unit || 1));
+          let v = Math.round(c.divisor ? raw * c.divisor : raw / (c.unit || 1));
+          if (c.invert) v = v ? -v : 0;
           this.syncControlValue(`input-${c.id}`, v);
           const num = document.getElementById(`num-${c.id}`);
-          if (num) num.value = `${v}${c.suffix}`;
+          if (num) num.value = `${c.signed && v > 0 ? "+" : ""}${v}${c.suffix}`;
         } else if (c.type === "toggle") {
           this.syncCheckbox(c.id, !!st[c.key]);
+          if (c.show) { const row = document.getElementById(c.id)?.closest("label"); if (row) row.style.display = c.show(st, mod) ? "" : "none"; }
         }
       }
     }
@@ -4299,6 +4311,17 @@ class PanelBuilder {
           const picker = document.getElementById(`${c.prefix}-accent-color`);
           picker?.addEventListener("input", (e) => commit(st => { st[c.colorKey] = e.target.value; st[c.flagKey] = true; }, null));
           picker?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} Accent: ${e.target.value.toUpperCase()}`));
+        } else if (c.type === "color") {
+          // the end colour does not turn the modifier on by itself; it only repaints
+          const picker = document.getElementById(`${c.prefix}-accent-color`);
+          picker?.addEventListener("input", (e) => {
+            const st = spec.state(this);
+            if (!st) return;
+            st[c.key] = e.target.value;
+            this.syncAccentColorRow(c.prefix, e.target.value, true);
+            this.render();
+          });
+          picker?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} ${c.history}: ${e.target.value.toUpperCase()}`));
         } else if (c.type === "tags" || c.type === "dropdown") {
           document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(btn => {
             btn.addEventListener("click", () => {
@@ -4310,6 +4333,13 @@ class PanelBuilder {
           for (const o of c.options) {
             const chip = o.id ? document.getElementById(o.id) : document.querySelector(`#${spec.cardId} [${c.attr}="${o.key}"]`);
             chip?.addEventListener("click", () => {
+              if (c.nested) {
+                commit(st => {
+                  st[c.nested.key] = Object.assign({}, c.nested.defaults, st[c.nested.key]);
+                  st[c.nested.key][o.key] = !st[c.nested.key][o.key];
+                }, `${spec.name} ${c.nested.history} ${o.key}`);
+                return;
+              }
               const next = chip.getAttribute("aria-pressed") !== "true";
               commit(st => { st[o.key] = next; }, `${spec.name} ${chip.textContent}: ${next ? "ON" : "OFF"}`);
             });
@@ -4317,11 +4347,12 @@ class PanelBuilder {
         } else if (c.type === "slider") {
           const slider = document.getElementById(`input-${c.id}`), num = document.getElementById(`num-${c.id}`);
           const parse = (s) => (Number(c.step) % 1 ? parseFloat(s) : parseInt(s, 10));
-          const stored = (val) => (c.divisor ? val / c.divisor : val * (c.unit || 1));
+          const stored = (val) => (c.invert ? (val ? -val : 0) : c.divisor ? val / c.divisor : val * (c.unit || 1));
+          const shown = (val) => `${c.signed && val > 0 ? "+" : ""}${val}${c.suffix}`;
           slider?.addEventListener("input", (e) => {
             const val = parse(e.target.value);
             commit(st => { st[c.key] = stored(val); }, null, { sync: false });
-            if (num) num.value = `${val}${c.suffix}`;
+            if (num) num.value = shown(val);
           });
           slider?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} ${c.history}: ${e.target.value}${c.suffix}`));
           num?.addEventListener("change", (e) => {
@@ -6046,198 +6077,51 @@ class Accessibility {
 
 
   /**
- * The Gradation panel (and the guide and accent colour helpers it shares).
+ * The Gradation panel, described as data (see panel-builder.js): the Attribute that changes along the path (Rotate, Scale, Depth, Drift,
+ * Shape, Texture, Color), the Pathway direction, Range and Cycles, and in each group's Advanced controls the Sequence, the checkboxes and
+ * the Speed. Also holds the guide and accent colour helpers it shares with other panels.
  * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
  */
-class PanelGradation {
-  /* =========================================================================
-     GRADATION INSPECTOR & CONTROLLER (Per Active Layer)
-     Attribute (Rotate, Scale, Depth, Drift), Range, Cycles,
-     Pathway direction, Reverse
-     ========================================================================= */
+const GRADATION_PANEL = {
+  id: "gradation", cardId: "card-gradation", name: "Gradation",
+  state: (app) => app.getActiveGradation(),
+  enabled: { id: "toggle-gradation-active", key: "enabled" },
+  badgeId: "badge-gradation-layer",
+  banner: { id: "warning-gradation-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+  groups: [
+    { title: "Attribute", controls: [
+      { type: "dropdown", label: "Attribute", key: "type", attr: "data-grad-type", history: "Attribute",
+        options: [["rotation", "Rotate"], ["scale", "Scale"], ["depth", "Depth"], ["drift", "Drift"], ["shape", "Shape"], ["texture", "Texture"], ["color", "Color"]] },
+      { type: "color", prefix: "grad", label: "End color", key: "endColor", fallback: "#f43f5e", history: "End Color", blockId: "grad-color-block", show: (st) => st.type === "color" },
+      { type: "dropdown", label: "Becomes", key: "targetShape", attr: "data-grad-target", history: "Becomes", fallback: "triangle", options: "shapes", blockId: "grad-target-block", show: (st) => st.type === "shape" },
+    ] },
+    { title: "Path", advId: "grad-adv-path", controls: [
+      { type: "dropdown", label: "Pathway direction", key: "pathway", attr: "data-grad-pathway", history: "Pathway",
+        options: [["diagonal", "Diagonal"], ["horizontal", "Horizontal"], ["vertical", "Vertical"], ["concentric", "Concentric"], ["zigzag", "Zigzag"]] },
+      { type: "dropdown", label: "Sequence", key: "sequence", attr: "data-grad-sequence", history: "Sequence", fallback: "restart", advanced: true,
+        options: [["restart", "Restart"], ["pingpong", "Ping-pong"]] },
+      // Alternate rows has nothing to do on the snake path, which already runs back and forth
+      { type: "toggle", id: "toggle-grad-alternate", label: "Alternate rows", key: "alternate", history: "Alternate", advanced: true, show: (st) => st.pathway !== "zigzag" },
+      { type: "toggle", id: "toggle-grad-reverse", label: "Reverse Gradient Direction", key: "reverse", history: "Reverse", advanced: true },
+    ] },
+    { title: "Progression", advId: "grad-adv-prog", controls: [
+      { type: "slider", id: "grad-range", label: "Range", key: "range", min: 5, max: 360, step: 5, value: 180, suffix: "º", history: "Range" },
+      { type: "slider", id: "grad-steps", label: "Cycles", key: "steps", min: 1, max: 10, step: 1, value: 1, suffix: "", history: "Cycles" },
+      // Speed is shown the other way round from the stored easing: + reaches the full effect early, - late
+      { type: "slider", id: "grad-easing", label: "Speed", key: "easing", min: -100, max: 100, step: 5, value: 0, suffix: "", invert: true, signed: true, history: "Speed", advanced: true },
+    ] },
+  ],
+};
 
+class PanelGradation {
   getActiveGradation() {
     const struct = this.getActiveLayerStructure();
     return struct ? struct.gradation : null;
   }
 
-  syncGradationInspectorWithActiveLayer() {
-    const mod = this.getActiveModule();
-    const grad = this.getActiveGradation();
-    if (!mod || !grad) return;
+  syncGradationInspectorWithActiveLayer() { this.syncDataPanel(GRADATION_PANEL); }
 
-    const badge = document.getElementById("badge-gradation-layer");
-    if (badge) badge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
-
-    const hasGrid = !!mod.structure.enabled;
-    const warnBox = document.getElementById("warning-gradation-grid");
-    if (warnBox) warnBox.classList.toggle("hidden", hasGrid);
-
-    const toggle = document.getElementById("toggle-gradation-active");
-    if (toggle) toggle.checked = !!grad.enabled;
-
-    document.querySelectorAll("#card-gradation [data-grad-type]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.gradType === grad.type);
-    });
-    document.querySelectorAll("#card-gradation [data-grad-pathway]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.gradPathway === grad.pathway);
-    });
-
-    const range = grad.range ?? 180;
-    this.syncControlValue("input-grad-range", range);
-    const numRange = document.getElementById("num-grad-range");
-    if (numRange) numRange.value = `${range}º`;
-
-    const steps = grad.steps ?? 1;
-    this.syncControlValue("input-grad-steps", steps);
-    this.syncControlValue("num-grad-steps", steps);
-
-    // Speed is shown the other way round from the stored easing: + reaches the full effect early, - late
-    const speed = grad.easing ? -grad.easing : 0;
-    this.syncControlValue("input-grad-easing", speed);
-    this.syncControlValue("num-grad-easing", speed > 0 ? `+${speed}` : `${speed}`);
-
-    document.querySelectorAll("#card-gradation [data-grad-sequence]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.gradSequence === (grad.sequence || "restart"));
-    });
-    document.querySelectorAll("#card-gradation [data-grad-target]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.gradTarget === (grad.targetShape || "triangle"));
-    });
-    document.getElementById("grad-target-block")?.classList.toggle("hidden", grad.type !== "shape");
-    document.getElementById("grad-color-block")?.classList.toggle("hidden", grad.type !== "color");
-    this.syncAccentColorRow("grad", grad.endColor || "#f43f5e", true);
-
-    // Alternate rows has nothing to do on the snake path, which already runs back and forth
-    const altRow = document.getElementById("toggle-grad-alternate")?.closest("label");
-    if (altRow) altRow.style.display = grad.pathway === "zigzag" ? "none" : "";
-    const alternate = document.getElementById("toggle-grad-alternate");
-    if (alternate) alternate.checked = !!grad.alternate;
-
-    const reverse = document.getElementById("toggle-grad-reverse");
-    if (reverse) reverse.checked = !!grad.reverse;
-
-    this.updateRailIndicatorDots();
-  }
-
-  setupGradation() {
-    const toggle = document.getElementById("toggle-gradation-active");
-
-    // Any edit enables Gradation on the active layer, then refreshes everything.
-    const commit = (mutate, historyLabel, { resync = true } = {}) => {
-      const grad = this.getActiveGradation();
-      if (!grad) return;
-      mutate(grad);
-      grad.enabled = true;
-      if (toggle) toggle.checked = true;
-      if (resync) this.syncGradationInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      if (historyLabel) this.pushHistory(`Layer ${this.activeLayerId} ${historyLabel}`);
-    };
-
-    toggle?.addEventListener("change", (e) => {
-      const grad = this.getActiveGradation();
-      if (!grad) return;
-      grad.enabled = e.target.checked;
-      this.syncGradationInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      this.pushHistory(`Layer ${this.activeLayerId} Gradation: ${grad.enabled ? "ON" : "OFF"}`);
-    });
-
-    const gradColor = document.getElementById("grad-accent-color");
-    gradColor?.addEventListener("input", (e) => {
-      const grad = this.getActiveGradation();
-      if (!grad) return;
-      grad.endColor = e.target.value;
-      this.syncAccentColorRow("grad", e.target.value, true);
-      this.render();
-    });
-    gradColor?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} Gradation End Color: ${e.target.value.toUpperCase()}`));
-
-    document.querySelectorAll("#card-gradation [data-grad-type]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(g => { g.type = btn.dataset.gradType; }, `Gradation Attribute: ${btn.dataset.gradType}`);
-      });
-    });
-    document.querySelectorAll("#card-gradation [data-grad-pathway]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(g => { g.pathway = btn.dataset.gradPathway; }, `Gradation Pathway: ${btn.dataset.gradPathway}`);
-      });
-    });
-
-    // Range (5º to 360º)
-    const inputRange = document.getElementById("input-grad-range");
-    const numRange = document.getElementById("num-grad-range");
-    inputRange?.addEventListener("input", (e) => {
-      const val = parseInt(e.target.value, 10);
-      commit(g => { g.range = val; }, null, { resync: false });
-      if (numRange) numRange.value = `${val}º`;
-    });
-    inputRange?.addEventListener("change", (e) => {
-      this.pushHistory(`Layer ${this.activeLayerId} Gradation Range: ${e.target.value}º`);
-    });
-    numRange?.addEventListener("change", (e) => {
-      const raw = parseInt(e.target.value.replace(/[^0-9-]/g, ""), 10);
-      const val = isNaN(raw) ? 180 : Math.max(5, Math.min(360, raw));
-      commit(g => { g.range = val; }, `Gradation Range: ${val}º`);
-    });
-
-    // Cycles (1 to 10)
-    const inputSteps = document.getElementById("input-grad-steps");
-    const numSteps = document.getElementById("num-grad-steps");
-    inputSteps?.addEventListener("input", (e) => {
-      const val = parseInt(e.target.value, 10);
-      commit(g => { g.steps = val; }, null, { resync: false });
-      if (numSteps) numSteps.value = val;
-    });
-    inputSteps?.addEventListener("change", (e) => {
-      this.pushHistory(`Layer ${this.activeLayerId} Gradation Cycles: ${e.target.value}`);
-    });
-    numSteps?.addEventListener("change", (e) => {
-      const raw = parseInt(e.target.value, 10);
-      const val = isNaN(raw) ? 1 : Math.max(1, Math.min(10, raw));
-      commit(g => { g.steps = val; }, `Gradation Cycles: ${val}`);
-    });
-
-    // Speed (-100 slow, 100 fast); stored as easing with the opposite sign
-    const inputEasing = document.getElementById("input-grad-easing");
-    const numEasing = document.getElementById("num-grad-easing");
-    const showEasing = (v) => { if (numEasing) numEasing.value = v > 0 ? `+${v}` : `${v}`; };
-    inputEasing?.addEventListener("input", (e) => {
-      const val = parseInt(e.target.value, 10);
-      commit(g => { g.easing = val ? -val : 0; }, null, { resync: false });
-      showEasing(val);
-    });
-    inputEasing?.addEventListener("change", (e) => {
-      this.pushHistory(`Layer ${this.activeLayerId} Gradation Speed: ${e.target.value}`);
-    });
-    numEasing?.addEventListener("change", (e) => {
-      const raw = parseInt(e.target.value.replace(/[^0-9-]/g, ""), 10);
-      const val = isNaN(raw) ? 0 : Math.max(-100, Math.min(100, raw));
-      commit(g => { g.easing = val ? -val : 0; }, `Gradation Speed: ${val}`);
-    });
-
-    document.querySelectorAll("#card-gradation [data-grad-sequence]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(g => { g.sequence = btn.dataset.gradSequence; }, `Gradation Sequence: ${btn.dataset.gradSequence}`);
-      });
-    });
-    document.querySelectorAll("#card-gradation [data-grad-target]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(g => { g.targetShape = btn.dataset.gradTarget; }, `Gradation Becomes: ${btn.dataset.gradTarget}`);
-      });
-    });
-    document.getElementById("toggle-grad-alternate")?.addEventListener("change", (e) => {
-      const checked = e.target.checked;
-      commit(g => { g.alternate = checked; }, `Gradation Alternate: ${checked ? "ON" : "OFF"}`);
-    });
-
-    document.getElementById("toggle-grad-reverse")?.addEventListener("change", (e) => {
-      const checked = e.target.checked;
-      commit(g => { g.reverse = checked; }, `Gradation Reverse: ${checked ? "ON" : "OFF"}`);
-    });
-  }
+  setupGradation() { this.bindDataPanel(GRADATION_PANEL); }
 
   // Accent color row (swatch + hex) shared by modifiers that can highlight elements.
   syncGuideColor() {
@@ -6261,17 +6145,46 @@ class PanelGradation {
 
 
   /**
- * The Anomaly panel.
+ * The Anomaly panel, described as data (see panel-builder.js): the Type (Focal, Rupture, Swell, Void, Another grid), where and how the
+ * anomaly is spread, what it deviates in, its focal intruder shape, Radius, Severity, the accent colour and the focal point reticle.
+ * Each type and distribution only shows the controls it needs. Clicking the canvas while the Anomaly tab is open sets the focal point.
  * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
  */
-class PanelAnomaly {
-  /* =========================================================================
-     ANOMALY INSPECTOR & CONTROLLER (Per Active Layer)
-     Type (Focal, Rupture, Swell, Void), Focal intruder shape, X/Y position,
-     Radius, Severity, Highlight with accent color, Epicenter reticle.
-     Clicking the canvas while the Anomaly tab is open sets the focal point.
-     ========================================================================= */
+const ANOMALY_PANEL = {
+  id: "anomaly", cardId: "card-anomaly", name: "Anomaly",
+  state: (app) => app.getActiveAnomaly(),
+  enabled: { id: "toggle-anomaly-active", key: "enabled" },
+  badgeId: "badge-anomaly-layer",
+  banner: { id: "warning-anomaly-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+  groups: [
+    { title: "Anomaly", controls: [
+      { type: "tags", label: "Type", key: "type", attr: "data-anom-type", history: "Type",
+        options: [["focal", "Focal"], ["fracture", "Rupture"], ["swell", "Swell"], ["tear", "Void"], ["regrid", "Another grid"]] },
+      // "Another grid": the zone only needs its grid variation, position and radius
+      { type: "dropdown", label: "Grid inside the zone", key: "zoneGrid", attr: "data-anom-zonegrid", history: "Zone Grid", fallback: "sliding", blockId: "anom-zonegrid-block", show: (st) => st.type === "regrid",
+        options: [["sliding", "Brick"], ["sheared", "Diagonal"], ["curved", "Curved"], ["zigzag", "Zigzag"], ["triangular", "Triangular"], ["alternating", "Alternating"]] },
+    ] },
+    { title: "Zone", controls: [
+      { type: "tags", label: "Distribution", key: "distribution", attr: "data-anom-dist", history: "Distribution", fallback: "single",
+        options: [["single", "Single"], ["regular", "Scattered regular"], ["random", "Scattered random"]] },
+      // The attributes each anomaly type can deviate in
+      { type: "chips", label: "Deviates in", attr: "data-anom-attr", blockId: "anom-attrs-block", show: (st) => st.type !== "regrid",
+        nested: { key: "attrs", defaults: { shape: true, scale: true, rotation: true, position: true }, history: "Deviates in" },
+        options: ["shape", "scale", "rotation", "position"].map(k => ({ key: k, text: k[0].toUpperCase() + k.slice(1), show: (st) => (StudioProApp.ANOMALY_ATTRS[st.type] || []).includes(k) })) },
+      { type: "dropdown", label: "Focal Intruder Shape", key: "anomalousShape", attr: "data-anom-shape", history: "Shape", options: "shapes", blockId: "anom-shape-block",
+        show: (st) => st.type === "focal" && (st.attrs || {}).shape !== false },
+      { type: "hint", text: "Click anywhere on the canvas to set focal point", blockId: "anom-position-block", show: (st) => (st.distribution || "single") === "single" },
+      { type: "slider", id: "anom-count", label: "Count", key: "count", min: 1, max: 10, step: 1, value: 5, suffix: "", history: "Count", blockId: "anom-count-block", show: (st) => (st.distribution || "single") !== "single" },
+      { type: "slider", id: "anom-seed", label: "Seed", key: "seed", min: 1, max: 99, step: 1, value: 7, suffix: "", history: "Seed", blockId: "anom-seed-block", show: (st) => st.distribution === "random" },
+      { type: "slider", id: "anom-radius", label: "Radius", key: "radius", min: 10, max: 350, step: 5, value: 150, suffix: "px", history: "Radius" },
+      { type: "slider", id: "anom-intensity", label: "Severity", key: "intensity", min: 5, max: 100, step: 1, value: 60, suffix: "%", history: "Severity", blockId: "anom-severity-block", show: (st) => st.type !== "regrid" },
+      { type: "accent", prefix: "anom", colorKey: "accentColor", flagKey: "highlightColor" },
+      { type: "toggle", id: "toggle-anom-reticle", label: "Show focal point", key: "showReticle", history: "Reticle" },
+    ] },
+  ],
+};
 
+class PanelAnomaly {
   getActiveAnomaly() {
     const struct = this.getActiveLayerStructure();
     return struct ? struct.anomaly : null;
@@ -6288,165 +6201,10 @@ class PanelAnomaly {
     };
   }
 
-  syncAnomalyInspectorWithActiveLayer() {
-    const mod = this.getActiveModule();
-    const anom = this.getActiveAnomaly();
-    if (!mod || !anom) return;
-
-    const badge = document.getElementById("badge-anomaly-layer");
-    if (badge) badge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
-
-    const hasGrid = !!mod.structure.enabled;
-    const warnBox = document.getElementById("warning-anomaly-grid");
-    if (warnBox) warnBox.classList.toggle("hidden", hasGrid);
-
-    const toggle = document.getElementById("toggle-anomaly-active");
-    if (toggle) toggle.checked = !!anom.enabled;
-
-    document.querySelectorAll("#card-anomaly [data-anom-type]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.anomType === anom.type);
-    });
-    document.querySelectorAll("#card-anomaly [data-anom-shape]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.anomShape === anom.anomalousShape);
-    });
-
-    const setPair = (sliderId, numId, value, suffix) => {
-      this.syncControlValue(sliderId, value);
-      const num = document.getElementById(numId);
-      if (num) num.value = `${value}${suffix}`;
-    };
-    setPair("input-anom-radius", "num-anom-radius", anom.radius ?? 150, "px");
-    setPair("input-anom-count", "num-anom-count", anom.count ?? 5, "");
-    setPair("input-anom-seed", "num-anom-seed", anom.seed ?? 7, "");
-
-    // Distribution, the attributes it can deviate in and the controls each choice needs
-    const dist = anom.distribution || "single";
-    document.querySelectorAll("#card-anomaly [data-anom-dist]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.anomDist === dist);
-    });
-    const relevant = StudioProApp.ANOMALY_ATTRS[anom.type] || [];
-    document.querySelectorAll("#card-anomaly [data-anom-attr]").forEach(btn => {
-      const key = btn.dataset.anomAttr;
-      btn.classList.toggle("hidden", !relevant.includes(key));
-      btn.classList.toggle("active", (anom.attrs || {})[key] !== false);
-    });
-    const shapeUsed = anom.type === "focal" && (anom.attrs || {}).shape !== false;
-    document.getElementById("anom-shape-block")?.classList.toggle("hidden", !shapeUsed);
-    // "Another grid": the zone only needs its grid variation, position and radius
-    const regrid = anom.type === "regrid";
-    document.getElementById("anom-zonegrid-block")?.classList.toggle("hidden", !regrid);
-    document.getElementById("anom-attrs-block")?.classList.toggle("hidden", regrid);
-    document.getElementById("anom-severity-block")?.classList.toggle("hidden", regrid);
-    document.querySelectorAll("#card-anomaly [data-anom-zonegrid]").forEach(btn => btn.classList.toggle("active", btn.dataset.anomZonegrid === (anom.zoneGrid || "sliding")));
-    document.getElementById("anom-position-block")?.classList.toggle("hidden", dist !== "single");
-    document.getElementById("anom-count-block")?.classList.toggle("hidden", dist === "single");
-    document.getElementById("anom-seed-block")?.classList.toggle("hidden", dist !== "random");
-    setPair("input-anom-intensity", "num-anom-intensity", anom.intensity ?? 60, "%");
-
-    this.syncAccentColorRow("anom", anom.accentColor, !!anom.highlightColor);
-    this.syncCheckbox("toggle-anom-reticle", !!anom.showReticle);
-
-    this.updateRailIndicatorDots();
-  }
+  syncAnomalyInspectorWithActiveLayer() { this.syncDataPanel(ANOMALY_PANEL); }
 
   setupAnomaly() {
-    const toggle = document.getElementById("toggle-anomaly-active");
-
-    // Any edit enables Anomaly on the active layer, then refreshes everything.
-    const commit = (mutate, historyLabel, { resync = true } = {}) => {
-      const anom = this.getActiveAnomaly();
-      if (!anom) return;
-      mutate(anom);
-      anom.enabled = true;
-      if (toggle) toggle.checked = true;
-      if (resync) this.syncAnomalyInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      if (historyLabel) this.pushHistory(`Layer ${this.activeLayerId} ${historyLabel}`);
-    };
-
-    toggle?.addEventListener("change", (e) => {
-      const anom = this.getActiveAnomaly();
-      if (!anom) return;
-      anom.enabled = e.target.checked;
-      this.syncAnomalyInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      this.pushHistory(`Layer ${this.activeLayerId} Anomaly: ${anom.enabled ? "ON" : "OFF"}`);
-    });
-
-    document.querySelectorAll("#card-anomaly [data-anom-type]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(a => { a.type = btn.dataset.anomType; }, `Anomaly Type: ${btn.dataset.anomType}`);
-      });
-    });
-    document.querySelectorAll("#card-anomaly [data-anom-zonegrid]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(a => { a.zoneGrid = btn.dataset.anomZonegrid; }, `Anomaly Zone Grid: ${btn.dataset.anomZonegrid}`);
-      });
-    });
-    document.querySelectorAll("#card-anomaly [data-anom-shape]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(a => { a.anomalousShape = btn.dataset.anomShape; }, `Anomaly Shape: ${btn.dataset.anomShape}`);
-      });
-    });
-
-    document.querySelectorAll("#card-anomaly [data-anom-dist]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(a => { a.distribution = btn.dataset.anomDist; }, `Anomaly Distribution: ${btn.dataset.anomDist}`);
-      });
-    });
-    // Multi-select chips: each one switches an attribute on or off
-    document.querySelectorAll("#card-anomaly [data-anom-attr]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const key = btn.dataset.anomAttr;
-        commit(a => {
-          a.attrs = Object.assign({ shape: true, scale: true, rotation: true, position: true }, a.attrs);
-          a.attrs[key] = !a.attrs[key];
-        }, `Anomaly Deviates in ${key}`);
-      });
-    });
-
-    // Slider + value box pairs. `toValue` maps the UI value to the stored value.
-    const bindPair = (sliderId, numId, { min, max, suffix, toStored, label, key }) => {
-      const slider = document.getElementById(sliderId);
-      const num = document.getElementById(numId);
-      slider?.addEventListener("input", (e) => {
-        const val = parseInt(e.target.value, 10);
-        commit(a => { a[key] = toStored(val); }, null, { resync: false });
-        if (num) num.value = `${val}${suffix}`;
-      });
-      slider?.addEventListener("change", (e) => {
-        this.pushHistory(`Layer ${this.activeLayerId} Anomaly ${label}: ${e.target.value}${suffix}`);
-      });
-      num?.addEventListener("change", (e) => {
-        const raw = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10);
-        const val = isNaN(raw) ? min : Math.max(min, Math.min(max, raw));
-        commit(a => { a[key] = toStored(val); }, `Anomaly ${label}: ${val}${suffix}`);
-      });
-    };
-    bindPair("input-anom-count", "num-anom-count", { min: 1, max: 10, suffix: "", toStored: v => v, label: "Count", key: "count" });
-    bindPair("input-anom-seed", "num-anom-seed", { min: 1, max: 99, suffix: "", toStored: v => v, label: "Seed", key: "seed" });
-    bindPair("input-anom-radius", "num-anom-radius", { min: 10, max: 350, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
-    bindPair("input-anom-intensity", "num-anom-intensity", { min: 5, max: 100, suffix: "%", toStored: v => v, label: "Severity", key: "intensity" });
-
-    // Removing the accent colour turns the highlight off
-    document.getElementById("anom-accent-clear")?.addEventListener("click", () => {
-      commit(a => { a.highlightColor = false; }, "Anomaly Accent: none");
-    });
-    // Picking an accent color also turns the highlight on.
-    const anomColor = document.getElementById("anom-accent-color");
-    anomColor?.addEventListener("input", (e) => {
-      commit(a => { a.accentColor = e.target.value; a.highlightColor = true; }, null);
-    });
-    anomColor?.addEventListener("change", (e) => {
-      this.pushHistory(`Layer ${this.activeLayerId} Anomaly Accent: ${e.target.value.toUpperCase()}`);
-    });
-    document.getElementById("toggle-anom-reticle")?.addEventListener("change", (e) => {
-      const checked = e.target.checked;
-      commit(a => { a.showReticle = checked; }, `Anomaly Reticle: ${checked ? "ON" : "OFF"}`);
-    });
-
+    const commit = this.bindDataPanel(ANOMALY_PANEL);
     // Click on the canvas sets the focal point while the Anomaly tab is open.
     this.canvas?.addEventListener("click", (e) => {
       if (!this.isFlyoutOpen || this.activeRailTab !== "anomaly") return;
@@ -7146,7 +6904,7 @@ const ASPECT_RATIOS = {
 };
 
 // The panels described as data (each spec lives in its panel's file in js/studio/app/)
-function dataPanels() { return [CONTRAST_PANEL, CONCENTRATION_PANEL, SPACE_PANEL, TEXTURE_PANEL]; }
+function dataPanels() { return [ANOMALY_PANEL, GRADATION_PANEL, CONTRAST_PANEL, CONCENTRATION_PANEL, SPACE_PANEL, TEXTURE_PANEL]; }
 
 // Copies the methods (and the static getters) of the area classes (js/studio/app/*.js) onto StudioProApp
 function applyMixins(target, sources) {

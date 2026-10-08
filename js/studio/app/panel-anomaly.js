@@ -1,15 +1,44 @@
 /**
- * The Anomaly panel.
+ * The Anomaly panel, described as data (see panel-builder.js): the Type (Focal, Rupture, Swell, Void, Another grid), where and how the
+ * anomaly is spread, what it deviates in, its focal intruder shape, Radius, Severity, the accent colour and the focal point reticle.
+ * Each type and distribution only shows the controls it needs. Clicking the canvas while the Anomaly tab is open sets the focal point.
  * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
  */
-class PanelAnomaly {
-  /* =========================================================================
-     ANOMALY INSPECTOR & CONTROLLER (Per Active Layer)
-     Type (Focal, Rupture, Swell, Void), Focal intruder shape, X/Y position,
-     Radius, Severity, Highlight with accent color, Epicenter reticle.
-     Clicking the canvas while the Anomaly tab is open sets the focal point.
-     ========================================================================= */
+const ANOMALY_PANEL = {
+  id: "anomaly", cardId: "card-anomaly", name: "Anomaly",
+  state: (app) => app.getActiveAnomaly(),
+  enabled: { id: "toggle-anomaly-active", key: "enabled" },
+  badgeId: "badge-anomaly-layer",
+  banner: { id: "warning-anomaly-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+  groups: [
+    { title: "Anomaly", controls: [
+      { type: "tags", label: "Type", key: "type", attr: "data-anom-type", history: "Type",
+        options: [["focal", "Focal"], ["fracture", "Rupture"], ["swell", "Swell"], ["tear", "Void"], ["regrid", "Another grid"]] },
+      // "Another grid": the zone only needs its grid variation, position and radius
+      { type: "dropdown", label: "Grid inside the zone", key: "zoneGrid", attr: "data-anom-zonegrid", history: "Zone Grid", fallback: "sliding", blockId: "anom-zonegrid-block", show: (st) => st.type === "regrid",
+        options: [["sliding", "Brick"], ["sheared", "Diagonal"], ["curved", "Curved"], ["zigzag", "Zigzag"], ["triangular", "Triangular"], ["alternating", "Alternating"]] },
+    ] },
+    { title: "Zone", controls: [
+      { type: "tags", label: "Distribution", key: "distribution", attr: "data-anom-dist", history: "Distribution", fallback: "single",
+        options: [["single", "Single"], ["regular", "Scattered regular"], ["random", "Scattered random"]] },
+      // The attributes each anomaly type can deviate in
+      { type: "chips", label: "Deviates in", attr: "data-anom-attr", blockId: "anom-attrs-block", show: (st) => st.type !== "regrid",
+        nested: { key: "attrs", defaults: { shape: true, scale: true, rotation: true, position: true }, history: "Deviates in" },
+        options: ["shape", "scale", "rotation", "position"].map(k => ({ key: k, text: k[0].toUpperCase() + k.slice(1), show: (st) => (StudioProApp.ANOMALY_ATTRS[st.type] || []).includes(k) })) },
+      { type: "dropdown", label: "Focal Intruder Shape", key: "anomalousShape", attr: "data-anom-shape", history: "Shape", options: "shapes", blockId: "anom-shape-block",
+        show: (st) => st.type === "focal" && (st.attrs || {}).shape !== false },
+      { type: "hint", text: "Click anywhere on the canvas to set focal point", blockId: "anom-position-block", show: (st) => (st.distribution || "single") === "single" },
+      { type: "slider", id: "anom-count", label: "Count", key: "count", min: 1, max: 10, step: 1, value: 5, suffix: "", history: "Count", blockId: "anom-count-block", show: (st) => (st.distribution || "single") !== "single" },
+      { type: "slider", id: "anom-seed", label: "Seed", key: "seed", min: 1, max: 99, step: 1, value: 7, suffix: "", history: "Seed", blockId: "anom-seed-block", show: (st) => st.distribution === "random" },
+      { type: "slider", id: "anom-radius", label: "Radius", key: "radius", min: 10, max: 350, step: 5, value: 150, suffix: "px", history: "Radius" },
+      { type: "slider", id: "anom-intensity", label: "Severity", key: "intensity", min: 5, max: 100, step: 1, value: 60, suffix: "%", history: "Severity", blockId: "anom-severity-block", show: (st) => st.type !== "regrid" },
+      { type: "accent", prefix: "anom", colorKey: "accentColor", flagKey: "highlightColor" },
+      { type: "toggle", id: "toggle-anom-reticle", label: "Show focal point", key: "showReticle", history: "Reticle" },
+    ] },
+  ],
+};
 
+class PanelAnomaly {
   getActiveAnomaly() {
     const struct = this.getActiveLayerStructure();
     return struct ? struct.anomaly : null;
@@ -26,165 +55,10 @@ class PanelAnomaly {
     };
   }
 
-  syncAnomalyInspectorWithActiveLayer() {
-    const mod = this.getActiveModule();
-    const anom = this.getActiveAnomaly();
-    if (!mod || !anom) return;
-
-    const badge = document.getElementById("badge-anomaly-layer");
-    if (badge) badge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
-
-    const hasGrid = !!mod.structure.enabled;
-    const warnBox = document.getElementById("warning-anomaly-grid");
-    if (warnBox) warnBox.classList.toggle("hidden", hasGrid);
-
-    const toggle = document.getElementById("toggle-anomaly-active");
-    if (toggle) toggle.checked = !!anom.enabled;
-
-    document.querySelectorAll("#card-anomaly [data-anom-type]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.anomType === anom.type);
-    });
-    document.querySelectorAll("#card-anomaly [data-anom-shape]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.anomShape === anom.anomalousShape);
-    });
-
-    const setPair = (sliderId, numId, value, suffix) => {
-      this.syncControlValue(sliderId, value);
-      const num = document.getElementById(numId);
-      if (num) num.value = `${value}${suffix}`;
-    };
-    setPair("input-anom-radius", "num-anom-radius", anom.radius ?? 150, "px");
-    setPair("input-anom-count", "num-anom-count", anom.count ?? 5, "");
-    setPair("input-anom-seed", "num-anom-seed", anom.seed ?? 7, "");
-
-    // Distribution, the attributes it can deviate in and the controls each choice needs
-    const dist = anom.distribution || "single";
-    document.querySelectorAll("#card-anomaly [data-anom-dist]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.anomDist === dist);
-    });
-    const relevant = StudioProApp.ANOMALY_ATTRS[anom.type] || [];
-    document.querySelectorAll("#card-anomaly [data-anom-attr]").forEach(btn => {
-      const key = btn.dataset.anomAttr;
-      btn.classList.toggle("hidden", !relevant.includes(key));
-      btn.classList.toggle("active", (anom.attrs || {})[key] !== false);
-    });
-    const shapeUsed = anom.type === "focal" && (anom.attrs || {}).shape !== false;
-    document.getElementById("anom-shape-block")?.classList.toggle("hidden", !shapeUsed);
-    // "Another grid": the zone only needs its grid variation, position and radius
-    const regrid = anom.type === "regrid";
-    document.getElementById("anom-zonegrid-block")?.classList.toggle("hidden", !regrid);
-    document.getElementById("anom-attrs-block")?.classList.toggle("hidden", regrid);
-    document.getElementById("anom-severity-block")?.classList.toggle("hidden", regrid);
-    document.querySelectorAll("#card-anomaly [data-anom-zonegrid]").forEach(btn => btn.classList.toggle("active", btn.dataset.anomZonegrid === (anom.zoneGrid || "sliding")));
-    document.getElementById("anom-position-block")?.classList.toggle("hidden", dist !== "single");
-    document.getElementById("anom-count-block")?.classList.toggle("hidden", dist === "single");
-    document.getElementById("anom-seed-block")?.classList.toggle("hidden", dist !== "random");
-    setPair("input-anom-intensity", "num-anom-intensity", anom.intensity ?? 60, "%");
-
-    this.syncAccentColorRow("anom", anom.accentColor, !!anom.highlightColor);
-    this.syncCheckbox("toggle-anom-reticle", !!anom.showReticle);
-
-    this.updateRailIndicatorDots();
-  }
+  syncAnomalyInspectorWithActiveLayer() { this.syncDataPanel(ANOMALY_PANEL); }
 
   setupAnomaly() {
-    const toggle = document.getElementById("toggle-anomaly-active");
-
-    // Any edit enables Anomaly on the active layer, then refreshes everything.
-    const commit = (mutate, historyLabel, { resync = true } = {}) => {
-      const anom = this.getActiveAnomaly();
-      if (!anom) return;
-      mutate(anom);
-      anom.enabled = true;
-      if (toggle) toggle.checked = true;
-      if (resync) this.syncAnomalyInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      if (historyLabel) this.pushHistory(`Layer ${this.activeLayerId} ${historyLabel}`);
-    };
-
-    toggle?.addEventListener("change", (e) => {
-      const anom = this.getActiveAnomaly();
-      if (!anom) return;
-      anom.enabled = e.target.checked;
-      this.syncAnomalyInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      this.pushHistory(`Layer ${this.activeLayerId} Anomaly: ${anom.enabled ? "ON" : "OFF"}`);
-    });
-
-    document.querySelectorAll("#card-anomaly [data-anom-type]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(a => { a.type = btn.dataset.anomType; }, `Anomaly Type: ${btn.dataset.anomType}`);
-      });
-    });
-    document.querySelectorAll("#card-anomaly [data-anom-zonegrid]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(a => { a.zoneGrid = btn.dataset.anomZonegrid; }, `Anomaly Zone Grid: ${btn.dataset.anomZonegrid}`);
-      });
-    });
-    document.querySelectorAll("#card-anomaly [data-anom-shape]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(a => { a.anomalousShape = btn.dataset.anomShape; }, `Anomaly Shape: ${btn.dataset.anomShape}`);
-      });
-    });
-
-    document.querySelectorAll("#card-anomaly [data-anom-dist]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(a => { a.distribution = btn.dataset.anomDist; }, `Anomaly Distribution: ${btn.dataset.anomDist}`);
-      });
-    });
-    // Multi-select chips: each one switches an attribute on or off
-    document.querySelectorAll("#card-anomaly [data-anom-attr]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const key = btn.dataset.anomAttr;
-        commit(a => {
-          a.attrs = Object.assign({ shape: true, scale: true, rotation: true, position: true }, a.attrs);
-          a.attrs[key] = !a.attrs[key];
-        }, `Anomaly Deviates in ${key}`);
-      });
-    });
-
-    // Slider + value box pairs. `toValue` maps the UI value to the stored value.
-    const bindPair = (sliderId, numId, { min, max, suffix, toStored, label, key }) => {
-      const slider = document.getElementById(sliderId);
-      const num = document.getElementById(numId);
-      slider?.addEventListener("input", (e) => {
-        const val = parseInt(e.target.value, 10);
-        commit(a => { a[key] = toStored(val); }, null, { resync: false });
-        if (num) num.value = `${val}${suffix}`;
-      });
-      slider?.addEventListener("change", (e) => {
-        this.pushHistory(`Layer ${this.activeLayerId} Anomaly ${label}: ${e.target.value}${suffix}`);
-      });
-      num?.addEventListener("change", (e) => {
-        const raw = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10);
-        const val = isNaN(raw) ? min : Math.max(min, Math.min(max, raw));
-        commit(a => { a[key] = toStored(val); }, `Anomaly ${label}: ${val}${suffix}`);
-      });
-    };
-    bindPair("input-anom-count", "num-anom-count", { min: 1, max: 10, suffix: "", toStored: v => v, label: "Count", key: "count" });
-    bindPair("input-anom-seed", "num-anom-seed", { min: 1, max: 99, suffix: "", toStored: v => v, label: "Seed", key: "seed" });
-    bindPair("input-anom-radius", "num-anom-radius", { min: 10, max: 350, suffix: "px", toStored: v => v, label: "Radius", key: "radius" });
-    bindPair("input-anom-intensity", "num-anom-intensity", { min: 5, max: 100, suffix: "%", toStored: v => v, label: "Severity", key: "intensity" });
-
-    // Removing the accent colour turns the highlight off
-    document.getElementById("anom-accent-clear")?.addEventListener("click", () => {
-      commit(a => { a.highlightColor = false; }, "Anomaly Accent: none");
-    });
-    // Picking an accent color also turns the highlight on.
-    const anomColor = document.getElementById("anom-accent-color");
-    anomColor?.addEventListener("input", (e) => {
-      commit(a => { a.accentColor = e.target.value; a.highlightColor = true; }, null);
-    });
-    anomColor?.addEventListener("change", (e) => {
-      this.pushHistory(`Layer ${this.activeLayerId} Anomaly Accent: ${e.target.value.toUpperCase()}`);
-    });
-    document.getElementById("toggle-anom-reticle")?.addEventListener("change", (e) => {
-      const checked = e.target.checked;
-      commit(a => { a.showReticle = checked; }, `Anomaly Reticle: ${checked ? "ON" : "OFF"}`);
-    });
-
+    const commit = this.bindDataPanel(ANOMALY_PANEL);
     // Click on the canvas sets the focal point while the Anomaly tab is open.
     this.canvas?.addEventListener("click", (e) => {
       if (!this.isFlyoutOpen || this.activeRailTab !== "anomaly") return;

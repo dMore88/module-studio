@@ -100,7 +100,7 @@ open http://localhost:5173
 - `js/studio/studio-engine.js` and `shapes.js`, `booleans.js`, `exporter.js`: the drawing engine (canvas, shapes, boolean operations, SVG export). They know nothing about the interface.
 - `js/studio/studio-pro-app.js`: the app's core (start, render, header actions, history, viewport).
 - `js/studio/app/*.js`: one file per area or panel (layers, Art log, rail, Layout, Similarity, Gradation, Anomaly, Contrast, Concentration, Space, Texture, the smart module editor). Their methods are added to the app class when it starts.
-- `js/studio/app/panel-builder.js`: panels described as **data** (a list of groups and controls) are drawn, shown and listened to by one shared piece of code. Space, Texture, Concentration and Contrast work this way (the builder handles tags, chips, dropdowns, sliders, switches, accent colour rows, controls that appear only in some cases, a dependency banner and a per-group *Advanced controls*); the others are being moved one by one. A new panel is written as a list in its own file.
+- `js/studio/app/panel-builder.js`: panels described as **data** (a list of groups and controls) are drawn, shown and listened to by one shared piece of code. Space, Texture, Concentration, Contrast, Gradation and Anomaly work this way (the builder handles tags, chips, dropdowns, sliders, switches, accent colour rows, controls that appear only in some cases, a dependency banner and a per-group *Advanced controls*); the others are being moved one by one. A new panel is written as a list in its own file.
 
 ### Building the Standalone Bundle
 ```bash
