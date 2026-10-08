@@ -4166,16 +4166,22 @@ const StudioExporter = {
  *
  * Controls (every one may carry `show: (state, mod) => bool`, to appear only in some cases, and `blockId`, the id of its box):
  *   { type: "tags",   label, key, attr, history, fallback, options: [[value, text], ...] }   one choice among several
+ *   { type: "dropdown", label, key, attr, history, fallback, options: [[value, text], ...] | "shapes" }   a list of choices ("shapes": every shape, with its icon)
  *   { type: "chips",  label, ariaLabel, attr, options: [{ key, text, id?, show? }] }          chips that switch on and off by themselves
  *   { type: "slider", id, label, key, min, max, step, value, suffix, history,
  *       unit,      // what the setting stores per 1 shown (Texture shows %, stores px: unit 0.1)
  *       divisor,   // the setting stores the shown value divided by this (0 to 100 % shown, 0 to 1 stored: divisor 100)
  *       fallback,  // what the setting holds when it has no value yet (default: value)
+ *       decimal,   // the value box asks for a decimal keyboard
  *       advanced } // true: the control goes in the group's "Advanced controls" accordion (the group needs advId)
  *   { type: "toggle", id, label, key, history }
+ *   { type: "accent", prefix, colorKey, flagKey }   the accent colour row (swatch, hex, remove); picking a colour turns the accent on
  *   { type: "hint",   text }
  * With two or more groups, every group gets its title and a divider; with one, only the panel has a title.
  */
+// The shape names the dropdowns show (a few differ from the shapes' own names)
+const SHAPE_LABELS = { line: "Line", cross: "Greek Cross", wave: "Sine Wave", digit1: "Number 1", digit5: "Number 5", digit9: "Number 9" };
+
 class PanelBuilder {
   // Draws the controls of every panel described as data (once, before the controllers listen to them)
   buildDataPanels() {
@@ -4198,10 +4204,16 @@ class PanelBuilder {
           flush();
           if (c.type === "tags") {
             add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags">\n${c.options.map(([v, t], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}">${t}</button>`).join("\n")}\n</div>\n</div>\n`);
+          } else if (c.type === "dropdown") {
+            const opts = c.options === "shapes" ? STUDIO_SHAPE_KEYS.map(k => [k, SHAPE_LABELS[k] || Shapes[k].name.replace(/\s*\([^)]*\)\s*/g, ""), shapeIconHtml(Shapes[k])]) : c.options;
+            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-dropdown" data-select>\n<button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>${opts[0][1]}</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>\n<div class="ds-dropdown-menu hidden" role="listbox">\n${opts.map(([v, t, icon]) => `<button type="button" class="ds-dropdown-item" role="option" ${c.attr}="${v}">${icon || ""}<span>${t}</span></button>`).join("\n")}\n</div>\n</div>\n</div>\n`);
+          } else if (c.type === "accent") {
+            const P = c.prefix;
+            add(`<div class="ds-toggles">\n<div class="ds-color-row" id="${P}-accent-row">\n<span class="ds-color-label">Accent color</span>\n<span class="ds-color-hex" id="${P}-accent-hex">#F43F5E</span>\n<span class="ds-swatch">\n<input type="color" id="${P}-accent-color" value="#f43f5e">\n<span class="ds-swatch-fill" id="${P}-accent-swatch"></span>\n</span>\n<button type="button" class="ds-color-clear" id="${P}-accent-clear" aria-label="Remove accent color" title="Remove accent color"><i class="ph ph-x" aria-hidden="true"></i></button>\n</div>\n</div>\n`);
           } else if (c.type === "chips") {
             add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags" role="group" aria-label="${c.ariaLabel || c.label}">\n${c.options.map(o => `<button type="button"${o.id ? ` id="${o.id}"` : ""} class="ds-tag${o.show ? " hidden" : ""}" ${c.attr}="${o.key}" aria-pressed="false">${o.text}</button>`).join("\n")}\n</div>\n</div>\n`);
           } else if (c.type === "slider") {
-            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label ds-label-clip">${c.label}</div>\n<div class="ds-slider">\n<input type="range" id="input-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}">\n<input type="text" id="num-${c.id}" class="ds-value" value="${c.value}${c.suffix}" inputmode="numeric">\n</div>\n</div>\n`);
+            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label ds-label-clip">${c.label}</div>\n<div class="ds-slider">\n<input type="range" id="input-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}">\n<input type="text" id="num-${c.id}" class="ds-value" value="${c.value}${c.suffix}" inputmode="${c.decimal ? "decimal" : "numeric"}">\n</div>\n</div>\n`);
           } else if (c.type === "hint") {
             add(`<p class="ds-hint">${c.text}</p>\n`);
           }
@@ -4227,8 +4239,10 @@ class PanelBuilder {
     for (const g of spec.groups) {
       for (const c of g.controls) {
         if (c.show && c.blockId) document.getElementById(c.blockId)?.classList.toggle("hidden", !c.show(st, mod));
-        if (c.type === "tags") {
+        if (c.type === "tags" || c.type === "dropdown") {
           document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(b => b.classList.toggle("active", b.getAttribute(c.attr) === (st[c.key] || c.fallback)));
+        } else if (c.type === "accent") {
+          this.syncAccentColorRow(c.prefix, st[c.colorKey], !!st[c.flagKey]);
         } else if (c.type === "chips") {
           for (const o of c.options) {
             const chip = o.id ? document.getElementById(o.id) : document.querySelector(`#${spec.cardId} [${c.attr}="${o.key}"]`);
@@ -4279,7 +4293,13 @@ class PanelBuilder {
     });
     for (const g of spec.groups) {
       for (const c of g.controls) {
-        if (c.type === "tags") {
+        if (c.type === "accent") {
+          document.getElementById(`${c.prefix}-accent-clear`)?.addEventListener("click", () => commit(st => { st[c.flagKey] = false; }, `${spec.name} Accent: none`));
+          // Picking an accent colour also turns the accent on
+          const picker = document.getElementById(`${c.prefix}-accent-color`);
+          picker?.addEventListener("input", (e) => commit(st => { st[c.colorKey] = e.target.value; st[c.flagKey] = true; }, null));
+          picker?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} Accent: ${e.target.value.toUpperCase()}`));
+        } else if (c.type === "tags" || c.type === "dropdown") {
           document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(btn => {
             btn.addEventListener("click", () => {
               const v = btn.getAttribute(c.attr);
@@ -4306,7 +4326,8 @@ class PanelBuilder {
           slider?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} ${c.history}: ${e.target.value}${c.suffix}`));
           num?.addEventListener("change", (e) => {
             const raw = parse(e.target.value.replace(/[^0-9.-]/g, ""));
-            const val = isNaN(raw) ? Number(c.min) : Math.max(Number(c.min), Math.min(Number(c.max), raw));
+            let val = isNaN(raw) ? Number(c.min) : Math.max(Number(c.min), Math.min(Number(c.max), raw));
+            if (Number(c.step) % 1) val = Math.round(val * 10) / 10;
             commit(st => { st[c.key] = stored(val); }, `${spec.name} ${c.history}: ${val}${c.suffix}`);
           });
         } else if (c.type === "toggle") {
@@ -6440,165 +6461,46 @@ class PanelAnomaly {
 
 
   /**
- * The Contrast panel.
+ * The Contrast panel, described as data (see panel-builder.js): the Dimension the minority differs in (Scale, Shape, Angle, Position,
+ * Tone, Texture, Space), how it is spread, the Dominance ratio and the values of its dimension, and the accent colour.
+ * Each dimension only shows the controls that drive it.
  * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
  */
-class PanelContrast {
-  /* =========================================================================
-     CONTRAST INSPECTOR & CONTROLLER (Per Active Layer)
-     Dimension (Scale, Shape, Angle, Tone), Dominance ratio,
-     Contrast scale multiplier, Accentuate minority elements.
-     ========================================================================= */
+const CONTRAST_PANEL = {
+  id: "contrast", cardId: "card-contrast", name: "Contrast",
+  state: (app) => app.getActiveContrast(),
+  enabled: { id: "toggle-contrast-active", key: "enabled" },
+  badgeId: "badge-contrast-layer",
+  banner: { id: "warning-contrast-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+  groups: [
+    { title: "Minority", controls: [
+      { type: "dropdown", label: "Dimension", key: "dimension", attr: "data-contrast-dimension", history: "Dimension",
+        options: [["scale", "Scale"], ["shape", "Shape"], ["direction", "Angle"], ["position", "Position"], ["tone", "Tone"], ["texture", "Texture"], ["space", "Space"]] },
+      { type: "dropdown", label: "Minority Shape", key: "contrastShape", attr: "data-contrast-shape", history: "Shape", options: "shapes", blockId: "contrast-shape-block", show: (st) => st.dimension === "shape" },
+    ] },
+    { title: "Proportion", controls: [
+      { type: "dropdown", label: "Minority spread", key: "spread", attr: "data-contrast-spread", history: "Spread", fallback: "scattered", blockId: "contrast-spread-block",
+        options: [["scattered", "Scattered"], ["balanced", "Balanced"], ["edge", "Toward the edges"], ["center", "Toward the center"]] },
+      { type: "slider", id: "contrast-dominance", label: "Dominance ratio", key: "dominanceRatio", min: 50, max: 95, step: 1, value: 80, suffix: "%", decimal: true, history: "Dominance", blockId: "contrast-dominance-block" },
+      { type: "slider", id: "contrast-scale", label: "Contrast Scale Multiplier", key: "scaleFactor", min: 0.2, max: 5, step: 0.1, value: 2, suffix: "x", decimal: true, history: "Scale", blockId: "contrast-scale-block", show: (st) => st.dimension === "scale" },
+      { type: "slider", id: "contrast-tone", label: "Tone", key: "toneAmount", min: 0, max: 100, step: 5, value: 50, suffix: "%", decimal: true, history: "Tone", blockId: "contrast-tone-block", show: (st) => st.dimension === "tone" },
+      { type: "slider", id: "contrast-shift", label: "Shift", key: "positionShift", min: 0, max: 50, step: 1, value: 25, suffix: "%", decimal: true, history: "Shift", blockId: "contrast-shift-block", show: (st) => st.dimension === "position" },
+      { type: "slider", id: "contrast-shiftangle", label: "Shift direction", key: "positionAngle", min: 0, max: 360, step: 5, value: 45, suffix: "º", decimal: true, history: "Shift direction", blockId: "contrast-shiftangle-block", show: (st) => st.dimension === "position" },
+      { type: "slider", id: "contrast-angle", label: "Clash Angle", key: "angle", min: 5, max: 90, step: 5, value: 45, suffix: "º", decimal: true, history: "Angle", blockId: "contrast-angle-block", show: (st) => st.dimension === "direction" },
+      { type: "accent", prefix: "contrast", colorKey: "accentColor", flagKey: "highlightContrast" },
+    ] },
+  ],
+};
 
+class PanelContrast {
   getActiveContrast() {
     const struct = this.getActiveLayerStructure();
     return struct ? struct.contrast : null;
   }
 
-  syncContrastInspectorWithActiveLayer() {
-    const mod = this.getActiveModule();
-    const con = this.getActiveContrast();
-    if (!mod || !con) return;
+  syncContrastInspectorWithActiveLayer() { this.syncDataPanel(CONTRAST_PANEL); }
 
-    const badge = document.getElementById("badge-contrast-layer");
-    if (badge) badge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
-
-    const hasGrid = !!mod.structure.enabled;
-    const warnBox = document.getElementById("warning-contrast-grid");
-    if (warnBox) warnBox.classList.toggle("hidden", hasGrid);
-
-    const toggle = document.getElementById("toggle-contrast-active");
-    if (toggle) toggle.checked = !!con.enabled;
-
-    document.querySelectorAll("#card-contrast [data-contrast-spread]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.contrastSpread === (con.spread || "scattered"));
-    });
-    document.querySelectorAll("#card-contrast [data-contrast-dimension]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.contrastDimension === con.dimension);
-    });
-
-    const dominance = con.dominanceRatio ?? 80;
-    this.syncControlValue("input-contrast-dominance", dominance);
-    const numDominance = document.getElementById("num-contrast-dominance");
-    if (numDominance) numDominance.value = `${dominance}%`;
-
-    const scale = con.scaleFactor ?? 2;
-    this.syncControlValue("input-contrast-scale", scale);
-    const numScale = document.getElementById("num-contrast-scale");
-    if (numScale) numScale.value = `${scale}x`;
-
-    const tone = con.toneAmount ?? 50;
-    this.syncControlValue("input-contrast-tone", tone);
-    const numTone = document.getElementById("num-contrast-tone");
-    if (numTone) numTone.value = `${tone}%`;
-    document.getElementById("contrast-tone-block")?.classList.toggle("hidden", con.dimension !== "tone");
-    const shift = con.positionShift ?? 25, shiftAngle = con.positionAngle ?? 45;
-    this.syncControlValue("input-contrast-shift", shift);
-    const numShift = document.getElementById("num-contrast-shift");
-    if (numShift) numShift.value = `${shift}%`;
-    this.syncControlValue("input-contrast-shiftangle", shiftAngle);
-    const numShiftAngle = document.getElementById("num-contrast-shiftangle");
-    if (numShiftAngle) numShiftAngle.value = `${shiftAngle}º`;
-    document.getElementById("contrast-shift-block")?.classList.toggle("hidden", con.dimension !== "position");
-    document.getElementById("contrast-shiftangle-block")?.classList.toggle("hidden", con.dimension !== "position");
-    const angle = con.angle ?? 45;
-    this.syncControlValue("input-contrast-angle", angle);
-    const numAngle = document.getElementById("num-contrast-angle");
-    if (numAngle) numAngle.value = `${angle}º`;
-
-    document.querySelectorAll("#card-contrast [data-contrast-shape]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.contrastShape === con.contrastShape);
-    });
-
-    // Each dimension only shows the controls that drive it.
-    document.getElementById("contrast-shape-block")?.classList.toggle("hidden", con.dimension !== "shape");
-    document.getElementById("contrast-scale-block")?.classList.toggle("hidden", con.dimension !== "scale");
-    document.getElementById("contrast-angle-block")?.classList.toggle("hidden", con.dimension !== "direction");
-
-    this.syncAccentColorRow("contrast", con.accentColor, !!con.highlightContrast);
-
-    this.updateRailIndicatorDots();
-  }
-
-  setupContrast() {
-    const toggle = document.getElementById("toggle-contrast-active");
-
-    // Any edit enables Contrast on the active layer, then refreshes everything.
-    const commit = (mutate, historyLabel, { resync = true } = {}) => {
-      const con = this.getActiveContrast();
-      if (!con) return;
-      mutate(con);
-      con.enabled = true;
-      if (toggle) toggle.checked = true;
-      if (resync) this.syncContrastInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      if (historyLabel) this.pushHistory(`Layer ${this.activeLayerId} ${historyLabel}`);
-    };
-
-    toggle?.addEventListener("change", (e) => {
-      const con = this.getActiveContrast();
-      if (!con) return;
-      con.enabled = e.target.checked;
-      this.syncContrastInspectorWithActiveLayer();
-      this.render();
-      this.updateLayerCardsUI();
-      this.pushHistory(`Layer ${this.activeLayerId} Contrast: ${con.enabled ? "ON" : "OFF"}`);
-    });
-
-    document.querySelectorAll("#card-contrast [data-contrast-spread]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(c => { c.spread = btn.dataset.contrastSpread; }, `Contrast Spread: ${btn.dataset.contrastSpread}`);
-      });
-    });
-    document.querySelectorAll("#card-contrast [data-contrast-dimension]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(c => { c.dimension = btn.dataset.contrastDimension; }, `Contrast Dimension: ${btn.dataset.contrastDimension}`);
-      });
-    });
-
-    const bindPair = (sliderId, numId, { min, max, suffix, label, key }) => {
-      const slider = document.getElementById(sliderId);
-      const num = document.getElementById(numId);
-      slider?.addEventListener("input", (e) => {
-        const val = parseFloat(e.target.value);
-        commit(c => { c[key] = val; }, null, { resync: false });
-        if (num) num.value = `${val}${suffix}`;
-      });
-      slider?.addEventListener("change", (e) => {
-        this.pushHistory(`Layer ${this.activeLayerId} Contrast ${label}: ${e.target.value}${suffix}`);
-      });
-      num?.addEventListener("change", (e) => {
-        const raw = parseFloat(e.target.value.replace(/[^0-9.]/g, ""));
-        const val = isNaN(raw) ? min : Math.round(Math.max(min, Math.min(max, raw)) * 10) / 10;
-        commit(c => { c[key] = val; }, `Contrast ${label}: ${val}${suffix}`);
-      });
-    };
-    bindPair("input-contrast-dominance", "num-contrast-dominance", { min: 50, max: 95, suffix: "%", label: "Dominance", key: "dominanceRatio" });
-    bindPair("input-contrast-scale", "num-contrast-scale", { min: 0.2, max: 5, suffix: "x", label: "Scale", key: "scaleFactor" });
-    bindPair("input-contrast-angle", "num-contrast-angle", { min: 5, max: 90, suffix: "º", label: "Angle", key: "angle" });
-    bindPair("input-contrast-tone", "num-contrast-tone", { min: 0, max: 100, suffix: "%", label: "Tone", key: "toneAmount" });
-    bindPair("input-contrast-shift", "num-contrast-shift", { min: 0, max: 50, suffix: "%", label: "Shift", key: "positionShift" });
-    bindPair("input-contrast-shiftangle", "num-contrast-shiftangle", { min: 0, max: 360, suffix: "º", label: "Shift direction", key: "positionAngle" });
-
-    document.querySelectorAll("#card-contrast [data-contrast-shape]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        commit(c => { c.contrastShape = btn.dataset.contrastShape; }, `Contrast Shape: ${btn.dataset.contrastShape}`);
-      });
-    });
-
-    document.getElementById("contrast-accent-clear")?.addEventListener("click", () => {
-      commit(c => { c.highlightContrast = false; }, "Contrast Accent: none");
-    });
-    // Picking an accent color also turns the accentuation on.
-    const contrastColor = document.getElementById("contrast-accent-color");
-    contrastColor?.addEventListener("input", (e) => {
-      commit(c => { c.accentColor = e.target.value; c.highlightContrast = true; }, null);
-    });
-    contrastColor?.addEventListener("change", (e) => {
-      this.pushHistory(`Layer ${this.activeLayerId} Contrast Accent: ${e.target.value.toUpperCase()}`);
-    });
-  }
+  setupContrast() { this.bindDataPanel(CONTRAST_PANEL); }
 }
 
 
@@ -7244,7 +7146,7 @@ const ASPECT_RATIOS = {
 };
 
 // The panels described as data (each spec lives in its panel's file in js/studio/app/)
-function dataPanels() { return [CONCENTRATION_PANEL, SPACE_PANEL, TEXTURE_PANEL]; }
+function dataPanels() { return [CONTRAST_PANEL, CONCENTRATION_PANEL, SPACE_PANEL, TEXTURE_PANEL]; }
 
 // Copies the methods (and the static getters) of the area classes (js/studio/app/*.js) onto StudioProApp
 function applyMixins(target, sources) {

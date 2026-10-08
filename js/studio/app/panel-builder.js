@@ -12,16 +12,22 @@
  *
  * Controls (every one may carry `show: (state, mod) => bool`, to appear only in some cases, and `blockId`, the id of its box):
  *   { type: "tags",   label, key, attr, history, fallback, options: [[value, text], ...] }   one choice among several
+ *   { type: "dropdown", label, key, attr, history, fallback, options: [[value, text], ...] | "shapes" }   a list of choices ("shapes": every shape, with its icon)
  *   { type: "chips",  label, ariaLabel, attr, options: [{ key, text, id?, show? }] }          chips that switch on and off by themselves
  *   { type: "slider", id, label, key, min, max, step, value, suffix, history,
  *       unit,      // what the setting stores per 1 shown (Texture shows %, stores px: unit 0.1)
  *       divisor,   // the setting stores the shown value divided by this (0 to 100 % shown, 0 to 1 stored: divisor 100)
  *       fallback,  // what the setting holds when it has no value yet (default: value)
+ *       decimal,   // the value box asks for a decimal keyboard
  *       advanced } // true: the control goes in the group's "Advanced controls" accordion (the group needs advId)
  *   { type: "toggle", id, label, key, history }
+ *   { type: "accent", prefix, colorKey, flagKey }   the accent colour row (swatch, hex, remove); picking a colour turns the accent on
  *   { type: "hint",   text }
  * With two or more groups, every group gets its title and a divider; with one, only the panel has a title.
  */
+// The shape names the dropdowns show (a few differ from the shapes' own names)
+const SHAPE_LABELS = { line: "Line", cross: "Greek Cross", wave: "Sine Wave", digit1: "Number 1", digit5: "Number 5", digit9: "Number 9" };
+
 class PanelBuilder {
   // Draws the controls of every panel described as data (once, before the controllers listen to them)
   buildDataPanels() {
@@ -44,10 +50,16 @@ class PanelBuilder {
           flush();
           if (c.type === "tags") {
             add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags">\n${c.options.map(([v, t], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}">${t}</button>`).join("\n")}\n</div>\n</div>\n`);
+          } else if (c.type === "dropdown") {
+            const opts = c.options === "shapes" ? STUDIO_SHAPE_KEYS.map(k => [k, SHAPE_LABELS[k] || Shapes[k].name.replace(/\s*\([^)]*\)\s*/g, ""), shapeIconHtml(Shapes[k])]) : c.options;
+            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-dropdown" data-select>\n<button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>${opts[0][1]}</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>\n<div class="ds-dropdown-menu hidden" role="listbox">\n${opts.map(([v, t, icon]) => `<button type="button" class="ds-dropdown-item" role="option" ${c.attr}="${v}">${icon || ""}<span>${t}</span></button>`).join("\n")}\n</div>\n</div>\n</div>\n`);
+          } else if (c.type === "accent") {
+            const P = c.prefix;
+            add(`<div class="ds-toggles">\n<div class="ds-color-row" id="${P}-accent-row">\n<span class="ds-color-label">Accent color</span>\n<span class="ds-color-hex" id="${P}-accent-hex">#F43F5E</span>\n<span class="ds-swatch">\n<input type="color" id="${P}-accent-color" value="#f43f5e">\n<span class="ds-swatch-fill" id="${P}-accent-swatch"></span>\n</span>\n<button type="button" class="ds-color-clear" id="${P}-accent-clear" aria-label="Remove accent color" title="Remove accent color"><i class="ph ph-x" aria-hidden="true"></i></button>\n</div>\n</div>\n`);
           } else if (c.type === "chips") {
             add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags" role="group" aria-label="${c.ariaLabel || c.label}">\n${c.options.map(o => `<button type="button"${o.id ? ` id="${o.id}"` : ""} class="ds-tag${o.show ? " hidden" : ""}" ${c.attr}="${o.key}" aria-pressed="false">${o.text}</button>`).join("\n")}\n</div>\n</div>\n`);
           } else if (c.type === "slider") {
-            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label ds-label-clip">${c.label}</div>\n<div class="ds-slider">\n<input type="range" id="input-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}">\n<input type="text" id="num-${c.id}" class="ds-value" value="${c.value}${c.suffix}" inputmode="numeric">\n</div>\n</div>\n`);
+            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label ds-label-clip">${c.label}</div>\n<div class="ds-slider">\n<input type="range" id="input-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}">\n<input type="text" id="num-${c.id}" class="ds-value" value="${c.value}${c.suffix}" inputmode="${c.decimal ? "decimal" : "numeric"}">\n</div>\n</div>\n`);
           } else if (c.type === "hint") {
             add(`<p class="ds-hint">${c.text}</p>\n`);
           }
@@ -73,8 +85,10 @@ class PanelBuilder {
     for (const g of spec.groups) {
       for (const c of g.controls) {
         if (c.show && c.blockId) document.getElementById(c.blockId)?.classList.toggle("hidden", !c.show(st, mod));
-        if (c.type === "tags") {
+        if (c.type === "tags" || c.type === "dropdown") {
           document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(b => b.classList.toggle("active", b.getAttribute(c.attr) === (st[c.key] || c.fallback)));
+        } else if (c.type === "accent") {
+          this.syncAccentColorRow(c.prefix, st[c.colorKey], !!st[c.flagKey]);
         } else if (c.type === "chips") {
           for (const o of c.options) {
             const chip = o.id ? document.getElementById(o.id) : document.querySelector(`#${spec.cardId} [${c.attr}="${o.key}"]`);
@@ -125,7 +139,13 @@ class PanelBuilder {
     });
     for (const g of spec.groups) {
       for (const c of g.controls) {
-        if (c.type === "tags") {
+        if (c.type === "accent") {
+          document.getElementById(`${c.prefix}-accent-clear`)?.addEventListener("click", () => commit(st => { st[c.flagKey] = false; }, `${spec.name} Accent: none`));
+          // Picking an accent colour also turns the accent on
+          const picker = document.getElementById(`${c.prefix}-accent-color`);
+          picker?.addEventListener("input", (e) => commit(st => { st[c.colorKey] = e.target.value; st[c.flagKey] = true; }, null));
+          picker?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} Accent: ${e.target.value.toUpperCase()}`));
+        } else if (c.type === "tags" || c.type === "dropdown") {
           document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(btn => {
             btn.addEventListener("click", () => {
               const v = btn.getAttribute(c.attr);
@@ -152,7 +172,8 @@ class PanelBuilder {
           slider?.addEventListener("change", (e) => this.pushHistory(`Layer ${this.activeLayerId} ${spec.name} ${c.history}: ${e.target.value}${c.suffix}`));
           num?.addEventListener("change", (e) => {
             const raw = parse(e.target.value.replace(/[^0-9.-]/g, ""));
-            const val = isNaN(raw) ? Number(c.min) : Math.max(Number(c.min), Math.min(Number(c.max), raw));
+            let val = isNaN(raw) ? Number(c.min) : Math.max(Number(c.min), Math.min(Number(c.max), raw));
+            if (Number(c.step) % 1) val = Math.round(val * 10) / 10;
             commit(st => { st[c.key] = stored(val); }, `${spec.name} ${c.history}: ${val}${c.suffix}`);
           });
         } else if (c.type === "toggle") {
