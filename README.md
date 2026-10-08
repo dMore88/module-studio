@@ -68,7 +68,11 @@ Every feature and interaction in Module Studio strictly follows the design contr
 - [**`docs/DESIGN_SYSTEM_TOKENS.md`**](./docs/DESIGN_SYSTEM_TOKENS.md): Design system from Figma: tokens (`css/tokens.css`), components and open design decisions.
 - [**`docs/design-concepts-in-app.md`**](./docs/design-concepts-in-app.md): Map of every concept in Wong's book, the control that implements it, and its status.
 - [**`docs/BACKLOG.md`**](./docs/BACKLOG.md): Pending work derived from Wong's book, with priorities and decisions.
-- [**`docs/AUDITORIA_CONTROLES.md`**](./docs/AUDITORIA_CONTROLES.md): Usability audit of the controls (what is visible, what goes in *Advanced*).
+- [**`docs/LIMITES_Y_VALORES.md`**](./docs/LIMITES_Y_VALORES.md): Every limit and default value in the app.
+- [**`docs/IDEA_SMART_MODULE.md`**](./docs/IDEA_SMART_MODULE.md): The smart module (several shapes in a module): model, decisions and open points.
+- [`docs/archivo/`](./docs/archivo): Historical reports (the controls audit and the first code review), kept for reference and not maintained.
+
+**Where each kind of knowledge lives:** the *design system* (tokens, components, spacing) in `DESIGN_SYSTEM_TOKENS.md`; the *design concepts* (what each Wong concept is and which control implements it) in `design-concepts-in-app.md`; *how every control behaves* in `STUDIO_CONTROLS_GUIDE.md`; the *rules the app must respect* in `STUDIO_RULES.md`; *what is pending* in `BACKLOG.md`.
 
 ---
 
@@ -92,6 +96,12 @@ python3 -m http.server 5173
 open http://localhost:5173
 ```
 
+### Code structure
+- `js/studio/studio-engine.js` and `shapes.js`, `booleans.js`, `exporter.js`: the drawing engine (canvas, shapes, boolean operations, SVG export). They know nothing about the interface.
+- `js/studio/studio-pro-app.js`: the app's core (start, render, header actions, history, viewport).
+- `js/studio/app/*.js`: one file per area or panel (layers, Art log, rail, Layout, Similarity, Gradation, Anomaly, Contrast, Concentration, Space, Texture, the smart module editor). Their methods are added to the app class when it starts.
+- `js/studio/app/panel-builder.js`: panels described as **data** (a list of groups and controls) are drawn, shown and listened to by one shared piece of code. Space and Texture work this way; the others are being moved one by one. A new panel is written as a list in its own file.
+
 ### Building the Standalone Bundle
 ```bash
 python3 build-pro.py
@@ -112,4 +122,4 @@ git config core.hooksPath .githooks
 python3 -m http.server 5173
 # open http://localhost:5173/tests/smoke.html
 ```
-The smoke page draws all 22 shapes, runs 400 random combinations of every control, and checks determinism, undo/redo, layers, the vector SVG against the canvas, project save/open and the on-screen error notice. It must end in **All tests passed** (currently 47 checks).
+The smoke page draws all 22 shapes, runs 400 random combinations of every control, and checks determinism, undo/redo, layers, the vector SVG against the canvas, project save/open and the on-screen error notice. It must end in **All tests passed** (currently 84 checks).

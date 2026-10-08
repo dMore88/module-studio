@@ -76,13 +76,13 @@ Medido el 6 oct 2026 (círculo en trazo, Fit to canvas, 600 px): 100 módulos 2 
 
 | ID | Ítem | Estado |
 | :-- | :-- | :-- |
-| Q1 | Revisión de código | ✅ Informe histórico en [REVISION_CODIGO.md](./REVISION_CODIGO.md); sus arreglos (F1 a F9) están hechos |
+| Q1 | Revisión de código | ✅ Informe histórico en [REVISION_CODIGO.md](./archivo/REVISION_CODIGO.md); sus arreglos (F1 a F9) están hechos |
 | Q2 | Auditoría de lo propuesto frente a lo que la app ya hace | ✅ Hecha en cada ítem; el mapa de conceptos la formaliza |
 | Q3 | Design system desde Figma | ✅ [DESIGN_SYSTEM_TOKENS.md](./DESIGN_SYSTEM_TOKENS.md) y `css/tokens.css` |
 | Q3b, Q3d | Migrar paneles, barra superior, tarjetas de capas y riel al diseño de Figma | ✅ |
 | Q3c | Decisiones de diseño pendientes: tokens para la caja de valor y la pista del slider, fuente monoespaciada (DM Mono o Roboto Mono), unificar interruptor y checkbox entre librería y diseño | ⏳ **En espera**: Diego revisará el diseño en Figma (por ejemplo, reducir el alto de los campos para un estilo más de software) y lo pasará |
 | Q4 | Revisión de salud del código (7 oct 2026) | ✅ Sin errores de JavaScript ni ids duplicados. Los tres pendientes menores también se hicieron: se borraron los manejadores del panel *Structure* antiguo, se quitó Tailwind (sus 18 clases de utilidad y el reset base viven en `css/studio-pro.css`; se comprobó elemento por elemento que ningún estilo cambió en los nueve paneles, el encabezado y la lista de capas) y el Art log lista los valores en uso de cada modificador. Queda de la revisión #9: empaquetar iconos y fuentes en el repositorio para que la app funcione sin conexión |
-| U1 | Reorganizar los controles: lo esencial visible, lo demás en *Advanced*, dropdowns, guías con color global | ✅ Ver [AUDITORIA_CONTROLES.md](./AUDITORIA_CONTROLES.md) |
+| U1 | Reorganizar los controles: lo esencial visible, lo demás en *Advanced*, dropdowns, guías con color global | ✅ Ver [AUDITORIA_CONTROLES.md](./archivo/AUDITORIA_CONTROLES.md) |
 
 ## 4. Otros
 | ID | Ítem | Estado |
