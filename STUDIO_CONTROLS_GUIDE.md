@@ -387,3 +387,6 @@ Para incorporar estos conceptos dentro de [Abstract Studio](https://github.com/d
 2. **Curvas de Gradación en la Trama Lineal:** en lugar de una separación lineal idéntica entre líneas, aplicar la lógica de `Gradation` (`steps`, `pathway`, `rotation`, `scale`) para modular densidad y grosor de trazo en forma de onda.
 3. **Campos Atractores en el Esculpido Automático:** la lógica de `Concentration` (`mode: point`, `mode: void`, `radius`, `power`) puede integrarse como un modo generativo previo o complementario al pincel de esculpido manual.
 4. **Arquetipos Radiales Avanzados:** expandir los generadores radiales con los esquemas de `Radiation`: `centrifugal`, `concentric`, `spiral` con torsión continua (`spiralTwist`), centros múltiples (`multi_center`) y anillos poligonales (`ringShape`).
+
+
+**Grupos con título.** Cada panel de controles se divide en grupos con título en mayúsculas y una línea divisoria, como en la plantilla del diseño: Layout (*Grid*, *Module*, *Composition container*; en Radiation, *Radiation* y *Module*), Similarity (*Kinship*), Gradation (*Attribute*, *Path*), Anomaly (*Anomaly*, *Zone*), Contrast (*Minority*, *Proportion*), Concentration (*Concentration*, *Strength*), Texture (*Irregularity*, *Wave*) y Space (*Space*, *Depth*).
