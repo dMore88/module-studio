@@ -104,7 +104,7 @@ git config core.hooksPath .githooks
 ```
 
 ### Save, open and export
-- **Download** is a menu: **JSON** saves the project as `.json` (**Open** loads it back), **SVG** downloads the vector file and **Copy SVG** copies it. Damaged files are cleaned up (missing values fall back to defaults) or refused with a message.
+- **Download** is a menu: **JSON** saves the project as `.json` (**Open** loads it back) and **SVG** downloads the vector file; **Copy SVG** is its own button. Damaged files are cleaned up (missing values fall back to defaults) or refused with a message.
 - **SVG** and **Copy SVG** produce a real vector SVG (paths, not an embedded image), drawn by the same engine as the canvas. Guides are left out; visible lines, being part of the design, are included.
 
 ### Tests

@@ -4866,7 +4866,7 @@ class StudioProApp {
       const mod = layers.find(l => l.id === id);
       const s = mod && mod.structure;
       if (!mod || !s) continue;
-      out.push({ h: `${mod.name || mod.id}${mod.id === this.activeLayerId ? " (active)" : ""}${mod.visible === false ? " (hidden)" : ""}` });
+      out.push({ h: `${this.compositionName(mod)}${mod.id === this.activeLayerId ? " (active)" : ""}${mod.visible === false ? " (hidden)" : ""}` });
 
       // The module: its size (the piece of paper), the shapes drawn on it, and how they are drawn
       const fill = mod.wireframe === false;
@@ -5014,13 +5014,19 @@ class StudioProApp {
     }
   }
 
+  // The layers are shown as compositions: "Layer 2" reads "Composition 2" (a name the user typed is left as it is)
+  compositionName(layer) {
+    const n = layer.name || layer.id;
+    return /^Layer \d+$/.test(n) ? n.replace("Layer", "Composition") : n;
+  }
+
   copyArtLog() {
     const text = this.artLogText();
     const btn = document.getElementById("btn-art-log-copy");
     const done = () => {
       if (!btn) return;
-      const label = btn.querySelector("span");
-      if (label) { label.textContent = "Copied"; setTimeout(() => { label.textContent = "Copy"; }, 1200); }
+      const icon = btn.querySelector("i");
+      if (icon) { icon.className = "ph ph-check"; setTimeout(() => { icon.className = "ph ph-copy"; }, 1200); }
     };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(done, () => this.copyArtLogFallback(text, done));
@@ -5092,11 +5098,11 @@ class StudioProApp {
     container.innerHTML = orderedLayers.map(l => {
       const isActive = l.id === this.activeLayerId;
       const isVis = l.visible !== false;
-      const shapeDef = Shapes[l.shape] || Shapes.circle;
-      const icon = shapeIconHtml(shapeDef);
-      const mode = l.wireframe !== false ? "stroke" : "fill";
+      // the icon and the subtitle tell the layout of the composition: Repetition (a grid), Radial, or Default (no layout)
       const s = l.structure;
-      const structText = s?.enabled ? (s.mode === "radiation" ? " • radiation" : " • grid") : "";
+      const kind = s?.enabled ? (s.mode === "radiation" ? "Radial" : "Repetition") : "Default";
+      const icon = `<i class="ph ph-${{ Repetition: "table", Radial: "crosshair", Default: "shapes" }[kind]}" aria-hidden="true"></i>`;
+      const name = this.compositionName(l);
 
       return `
         <div id="layer-card-${l.id}" class="layer-card ${isActive ? 'is-active' : ''} ${!isVis ? 'is-hidden' : ''}" data-layer-id="${l.id}" draggable="true">
@@ -5104,14 +5110,14 @@ class StudioProApp {
             ${icon}
           </div>
           <div class="layer-copy pointer-events-none">
-            <div class="layer-title">${l.name || l.id}</div>
-            <div class="layer-subtitle">${l.shape} • ${mode}${structText}</div>
+            <div class="layer-title">${name}</div>
+            <div class="layer-subtitle">${kind}</div>
           </div>
           <div class="layer-actions">
-            <button type="button" class="layer-action-btn btn-layer-eye" data-layer="${l.id}" title="Toggle Visibility" aria-label="Toggle visibility of ${l.name || l.id}">
+            <button type="button" class="layer-action-btn btn-layer-eye" data-layer="${l.id}" title="Toggle Visibility" aria-label="Toggle visibility of ${name}">
               ${isVis ? '<i class="ph ph-eye" aria-hidden="true"></i>' : '<i class="ph ph-eye-slash opacity-40" aria-hidden="true"></i>'}
             </button>
-            <button type="button" class="layer-action-btn btn-layer-delete ${!canDelete ? 'opacity-25 cursor-not-allowed' : ''}" data-layer="${l.id}" title="${canDelete ? 'Delete Layer' : 'Cannot delete the only layer'}" aria-label="Delete ${l.name || l.id}" ${!canDelete ? 'disabled' : ''}>
+            <button type="button" class="layer-action-btn btn-layer-delete ${!canDelete ? 'opacity-25 cursor-not-allowed' : ''}" data-layer="${l.id}" title="${canDelete ? 'Delete Layer' : 'Cannot delete the only layer'}" aria-label="Delete ${name}" ${!canDelete ? 'disabled' : ''}>
               <i class="ph ph-trash" aria-hidden="true"></i>
             </button>
             <span class="layer-action-btn layer-drag-handle cursor-grab active:cursor-grabbing" title="Drag to reorder" aria-hidden="true">
@@ -5273,7 +5279,7 @@ class StudioProApp {
     const pnlRad = document.getElementById("subpanel-radiation");
 
     const layoutBadge = document.getElementById("badge-layout-layer");
-    if (layoutBadge) layoutBadge.textContent = mod?.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
+    if (layoutBadge) layoutBadge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
 
     if (toggleSwitch) toggleSwitch.checked = !!struct.enabled;
 
@@ -5985,7 +5991,7 @@ class StudioProApp {
 
     // Update layer badge
     const badge = document.getElementById("badge-similarity-layer");
-    if (badge) badge.textContent = mod?.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
+    if (badge) badge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
 
     // Dependency warning: Shown only when Similarity is ON but Layout Structure is OFF (neither Repetition nor Radiation)
     const hasGrid = !!(mod.structure && mod.structure.enabled);
@@ -6280,7 +6286,7 @@ class StudioProApp {
     if (!mod || !grad) return;
 
     const badge = document.getElementById("badge-gradation-layer");
-    if (badge) badge.textContent = mod.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
+    if (badge) badge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
 
     const hasGrid = !!mod.structure.enabled;
     const warnBox = document.getElementById("warning-gradation-grid");
@@ -6500,7 +6506,7 @@ class StudioProApp {
     if (!mod || !anom) return;
 
     const badge = document.getElementById("badge-anomaly-layer");
-    if (badge) badge.textContent = mod.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
+    if (badge) badge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
 
     const hasGrid = !!mod.structure.enabled;
     const warnBox = document.getElementById("warning-anomaly-grid");
@@ -6681,7 +6687,7 @@ class StudioProApp {
     if (!mod || !con) return;
 
     const badge = document.getElementById("badge-contrast-layer");
-    if (badge) badge.textContent = mod.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
+    if (badge) badge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
 
     const hasGrid = !!mod.structure.enabled;
     const warnBox = document.getElementById("warning-contrast-grid");
@@ -6838,7 +6844,7 @@ class StudioProApp {
     if (!mod || !conc) return;
 
     const badge = document.getElementById("badge-concentration-layer");
-    if (badge) badge.textContent = mod.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
+    if (badge) badge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
 
     const hasGrid = !!mod.structure.enabled;
     const warnBox = document.getElementById("warning-concentration-grid");
@@ -6995,7 +7001,7 @@ class StudioProApp {
     if (!mod || !space) return;
 
     const badge = document.getElementById("badge-space-layer");
-    if (badge) badge.textContent = mod.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
+    if (badge) badge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
 
     const toggle = document.getElementById("toggle-space-active");
     if (toggle) toggle.checked = !!space.enabled;
@@ -7096,7 +7102,7 @@ class StudioProApp {
     if (!mod || !tex) return;
 
     const badge = document.getElementById("badge-texture-layer");
-    if (badge) badge.textContent = mod.name || (this.activeLayerId === "layer-2" ? "Layer 2" : "Layer 1");
+    if (badge) badge.textContent = (mod ? this.compositionName(mod) : "Composition 1");
 
     const toggle = document.getElementById("toggle-texture-active");
     if (toggle) toggle.checked = !!tex.enabled;
@@ -7471,7 +7477,8 @@ class StudioProApp {
     document.querySelectorAll("[data-fig-combine]").forEach(btn => btn.addEventListener("click", () => {
       const m = mod();
       if (!m) return;
-      m.combine = btn.dataset.figCombine;
+      // the four operations toggle: pressing the one that is on goes back to none (the shapes stay stacked)
+      m.combine = (m.combine || "none") === btn.dataset.figCombine ? "none" : btn.dataset.figCombine;
       this.recordFigureStep();
       this.syncFigureEditor();
     }));

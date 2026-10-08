@@ -35,10 +35,10 @@
         <span class="ds-select__button" aria-hidden="true"><i class="ph ph-caret-down"></i></span>
       </div>
       <button type="button" id="btn-toggle-grid" class="ds-icon-btn active" title="Toggle Grid Guides" aria-label="Toggle grid guides">
-        <i class="ph ph-grid-nine" aria-hidden="true"></i>
+        <i class="ph ph-hash" aria-hidden="true"></i>
       </button>
       <button type="button" id="btn-toggle-invert" class="ds-icon-btn" title="Toggle Figure / Ground Tone" aria-label="Toggle figure and ground tone">
-        <i class="ph ph-circle-half" aria-hidden="true"></i>
+        <i class="ph ph-palette" aria-hidden="true"></i>
       </button>
       <span class="ds-icon-btn ds-guide-btn" id="btn-guide-color" title="Guide color">
         <i class="ph ph-ruler" aria-hidden="true"></i>
@@ -55,20 +55,23 @@
         <span>Save module</span>
         <i class="ph ph-check-circle" aria-hidden="true"></i>
       </button>
+      <button type="button" id="btn-copy-svg-code" class="ds-btn" title="Copy Vector SVG to Clipboard">
+        <span>Copy SVG</span>
+        <i class="ph ph-file-svg" aria-hidden="true"></i>
+      </button>
       <button type="button" id="btn-open-project" class="ds-btn" title="Open a saved project (.json)">
         <span>Open</span>
         <i class="ph ph-folder-open" aria-hidden="true"></i>
       </button>
       <input type="file" id="file-open-project" accept=".json,application/json" aria-label="Project file to open" hidden>
       <div class="ds-menu" id="download-menu">
-        <button type="button" id="btn-download" class="ds-btn" aria-haspopup="menu" aria-expanded="false" title="Download or copy the design">
+        <button type="button" id="btn-download" class="ds-btn" aria-haspopup="menu" aria-expanded="false" title="Download the design or the project">
           <span>Download</span>
-          <i class="ph ph-download-simple" aria-hidden="true"></i>
+          <i class="ph ph-caret-down" aria-hidden="true"></i>
         </button>
         <div class="ds-menu__list" role="menu" hidden>
           <button type="button" id="btn-open-config" class="ds-menu__item" role="menuitem" title="Save the project (.json)"><i class="ph ph-file-code" aria-hidden="true"></i><span>JSON</span></button>
           <button type="button" id="btn-download-svg" class="ds-menu__item" role="menuitem" title="Download SVG File"><i class="ph ph-file-svg" aria-hidden="true"></i><span>SVG</span></button>
-          <button type="button" id="btn-copy-svg-code" class="ds-menu__item" role="menuitem" title="Copy Vector SVG to Clipboard"><i class="ph ph-copy" aria-hidden="true"></i><span>Copy SVG</span></button>
         </div>
       </div>
     </div>
@@ -81,7 +84,7 @@
     <div class="ds-layers-panel">
       <div class="ds-layers-toolbar">
         <div class="ds-layers-count">
-          <span class="ds-layers-title">COMPOSITION</span>
+          <span class="ds-layers-title">LAYERS</span>
           <span id="layers-count-badge" class="ds-badge">2</span>
         </div>
         <div class="ds-layers-actions">
@@ -91,7 +94,7 @@
           </button>
           <button type="button" id="btn-add-pattern" class="ds-btn" title="Add a layer (5 maximum)">
             <span>Add</span>
-            <i class="ph ph-plus-circle" aria-hidden="true"></i>
+            <i class="ph ph-stack-plus" aria-hidden="true"></i>
           </button>
         </div>
       </div>
@@ -104,7 +107,6 @@
         <div class="art-log__head">
           <p id="art-log-title" class="art-log__title">Art log</p>
           <button type="button" id="btn-art-log-copy" class="ds-btn art-log__copy" title="Copy the whole log as text">
-            <span>Copy</span>
             <i class="ph ph-copy" aria-hidden="true"></i>
           </button>
         </div>
@@ -161,7 +163,7 @@
         <i class="ph ph-radio-button text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="texture" title="Texture">
-        <i class="ph ph-drop-half-bottom text-[16px]"></i>
+        <i class="ph ph-leaf text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="space" title="Space & Depth">
         <i class="ph ph-cube-transparent text-[16px]"></i>
@@ -219,12 +221,11 @@
 
         <div id="fig-combine-block" class="ds-field">
           <div class="ds-label">Combine the shapes</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-fig-combine="none" title="The shapes stay stacked, each one whole">None</button>
-            <button type="button" class="ds-tag" data-fig-combine="union" title="Merge all the shapes into one">Union</button>
-            <button type="button" class="ds-tag" data-fig-combine="subtract" title="The first shape minus all the others">Subtract</button>
-            <button type="button" class="ds-tag" data-fig-combine="intersect" title="Only what all the shapes share">Intersect</button>
-            <button type="button" class="ds-tag" data-fig-combine="xor" title="Everything except where shapes overlap">Exclude</button>
+          <div class="shape-grid">
+            <button type="button" class="shape-circle-btn" data-fig-combine="union" title="Union: merge all the shapes into one" aria-label="Union"><svg class="ph-svg" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.9144 5.08562C10.7481 4.19007 10.3403 3.35695 9.73513 2.67623C9.12992 1.9955 8.35026 1.49302 7.48033 1.22306C6.6104 0.953089 5.68324 0.925887 4.79898 1.14439C3.91472 1.36289 3.10694 1.81879 2.46286 2.46286C1.81879 3.10694 1.36289 3.91472 1.14439 4.79898C0.925887 5.68324 0.953089 6.6104 1.22306 7.48033C1.49302 8.35026 1.9955 9.12992 2.67623 9.73513C3.35695 10.3403 4.19007 10.7481 5.08562 10.9144C5.25191 11.8099 5.65966 12.643 6.26487 13.3238C6.87008 14.0045 7.64974 14.507 8.51967 14.7769C9.3896 15.0469 10.3168 15.0741 11.201 14.8556C12.0853 14.6371 12.8931 14.1812 13.5371 13.5371C14.1812 12.8931 14.6371 12.0853 14.8556 11.201C15.0741 10.3168 15.0469 9.3896 14.7769 8.51967C14.507 7.64974 14.0045 6.87008 13.3238 6.26487C12.643 5.65966 11.8099 5.25191 10.9144 5.08562ZM14 10C14 10.095 13.9956 10.1875 13.9887 10.2819L10.8637 7.15687C10.9449 6.81859 10.9906 6.47276 11 6.125C11.8584 6.34785 12.6186 6.84917 13.1615 7.5504C13.7043 8.25164 13.9993 9.11317 14 10ZM2.84187 3.54937L6.13062 6.8375C5.88763 7.13445 5.6794 7.45822 5.51 7.8025L2.26875 4.5625C2.40937 4.19865 2.60246 3.85733 2.84187 3.54937ZM4.5625 2.26875L7.80375 5.51C7.45947 5.6794 7.1357 5.88763 6.83875 6.13062L3.54937 2.84187C3.85733 2.60246 4.19865 2.40937 4.5625 2.26875ZM8.40375 9.19562L6.80562 7.5975C7.03184 7.29754 7.29879 7.03059 7.59875 6.80437L9.19687 8.4025C8.97027 8.70255 8.7029 8.9695 8.4025 9.19562H8.40375ZM9.70687 7.5L8.5 6.29312C8.97628 6.09912 9.48573 5.99957 10 6C10.0004 6.51427 9.90088 7.02372 9.70687 7.5ZM6.29312 8.5L7.5 9.70687C7.02372 9.90088 6.51427 10.0004 6 10C5.99957 9.48573 6.09912 8.97628 6.29312 8.5ZM9.1625 9.86937L12.4506 13.1581C12.1427 13.3975 11.8013 13.5906 11.4375 13.7312L8.19625 10.49C8.54096 10.3207 8.86516 10.1125 9.1625 9.86937ZM9.86937 9.1625C10.1124 8.86555 10.3206 8.54178 10.49 8.1975L13.7312 11.4375C13.5905 11.8009 13.3974 12.1418 13.1581 12.4494L9.86937 9.1625ZM9.875 5.00312C9.52777 5.01158 9.18236 5.0562 8.84437 5.13625L5.71937 2.01125C5.8125 2.00437 5.905 2 6 2C6.88724 2.00091 7.74909 2.29628 8.45038 2.83978C9.15167 3.38328 9.65274 4.14417 9.875 5.00312ZM2 6C2 5.905 2.00437 5.8125 2.01125 5.71812L5.13625 8.84312C5.05611 9.18152 5.0115 9.52735 5.00312 9.875C4.14417 9.65274 3.38328 9.15167 2.83978 8.45038C2.29628 7.74909 2.00091 6.88724 2 6ZM6.125 11C6.47223 10.9915 6.81764 10.9469 7.15562 10.8669L10.2806 13.9919C10.1875 13.9987 10.0931 14.0031 9.99875 14.0031C9.11172 14.0019 8.25016 13.7064 7.54912 13.163C6.84809 12.6195 6.34721 11.8587 6.125 11Z" fill="currentColor"/></svg></button>
+            <button type="button" class="shape-circle-btn" data-fig-combine="subtract" title="Subtract: the first shape minus all the others" aria-label="Subtract"><svg class="ph-svg" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.9144 5.08437C10.7478 4.189 10.3399 3.35612 9.73464 2.67564C9.12936 1.99515 8.34972 1.4929 7.47987 1.22311C6.61002 0.953318 5.683 0.926229 4.79889 1.14477C3.91477 1.3633 3.10713 1.81917 2.46315 2.46315C1.81917 3.10713 1.3633 3.91477 1.14477 4.79889C0.926229 5.683 0.953318 6.61002 1.22311 7.47987C1.4929 8.34972 1.99515 9.12936 2.67564 9.73464C3.35612 10.3399 4.189 10.7478 5.08437 10.9144C5.25091 11.8097 5.65884 12.6426 6.26411 13.3231C6.86939 14.0036 7.64903 14.5058 8.51888 14.7756C9.38873 15.0454 10.3157 15.0725 11.1999 14.854C12.084 14.6354 12.8916 14.1796 13.5356 13.5356C14.1796 12.8916 14.6354 12.084 14.854 11.1999C15.0725 10.3157 15.0454 9.38873 14.7756 8.51888C14.5058 7.64903 14.0036 6.86939 13.3231 6.26411C12.6426 5.65884 11.8097 5.25091 10.9144 5.08437ZM14 10C14 10.095 13.9956 10.1875 13.9887 10.2819L10.8638 7.15687C10.9449 6.81858 10.9905 6.47276 11 6.125C11.86 6.34493 12.622 6.84547 13.1654 7.54735C13.7088 8.24924 14.0025 9.11235 14 10ZM9.1625 9.86937L12.4506 13.1581C12.1427 13.3975 11.8013 13.5906 11.4375 13.7312L8.19625 10.49C8.54096 10.3207 8.86516 10.1125 9.1625 9.86937ZM9.86937 9.1625C10.1124 8.86555 10.3206 8.54178 10.49 8.1975L13.7312 11.4375C13.5905 11.8009 13.3974 12.1418 13.1581 12.4494L9.86937 9.1625ZM2 6C2 5.20887 2.2346 4.43552 2.67412 3.77772C3.11365 3.11992 3.73836 2.60723 4.46927 2.30448C5.20017 2.00173 6.00444 1.92252 6.78036 2.07686C7.55628 2.2312 8.26902 2.61216 8.82843 3.17157C9.38784 3.73098 9.7688 4.44371 9.92314 5.21964C10.0775 5.99556 9.99827 6.79983 9.69552 7.53073C9.39277 8.26164 8.88008 8.88635 8.22228 9.32588C7.56448 9.7654 6.79113 10 6 10C4.93949 9.99884 3.92275 9.57704 3.17285 8.82715C2.42296 8.07725 2.00116 7.06051 2 6ZM6.125 11C6.47244 10.9915 6.81805 10.9469 7.15625 10.8669L10.2812 13.9919C10.1881 13.9987 10.0937 14.0031 9.99937 14.0031C9.11142 14.0053 8.24813 13.7111 7.54632 13.1671C6.8445 12.6231 6.34431 11.8605 6.125 11Z" fill="currentColor"/></svg></button>
+            <button type="button" class="shape-circle-btn" data-fig-combine="intersect" title="Intersect: only what all the shapes share" aria-label="Intersect"><svg class="ph-svg" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.9144 5.08562C10.7481 4.19007 10.3403 3.35695 9.73513 2.67623C9.12992 1.9955 8.35026 1.49302 7.48033 1.22306C6.6104 0.953089 5.68324 0.925887 4.79898 1.14439C3.91472 1.36289 3.10694 1.81879 2.46286 2.46286C1.81879 3.10694 1.36289 3.91472 1.14439 4.79898C0.925887 5.68324 0.953089 6.6104 1.22306 7.48033C1.49302 8.35026 1.9955 9.12992 2.67623 9.73513C3.35695 10.3403 4.19007 10.7481 5.08562 10.9144C5.25191 11.8099 5.65966 12.643 6.26487 13.3238C6.87008 14.0045 7.64974 14.507 8.51967 14.7769C9.3896 15.0469 10.3168 15.0741 11.201 14.8556C12.0853 14.6371 12.8931 14.1812 13.5371 13.5371C14.1812 12.8931 14.6371 12.0853 14.8556 11.201C15.0741 10.3168 15.0469 9.3896 14.7769 8.51967C14.507 7.64974 14.0045 6.87008 13.3238 6.26487C12.643 5.65966 11.8099 5.25191 10.9144 5.08562ZM6.29312 8.5L7.5 9.70687C7.02372 9.90088 6.51427 10.0004 6 10C5.99957 9.48573 6.09912 8.97628 6.29312 8.5ZM8.4025 9.19562L6.80437 7.5975C7.03059 7.29754 7.29754 7.03059 7.5975 6.80437L9.19562 8.4025C8.96941 8.70246 8.70246 8.96941 8.4025 9.19562ZM9.70687 7.5L8.5 6.29312C8.97628 6.09912 9.48573 5.99957 10 6C10.0004 6.51427 9.90088 7.02372 9.70687 7.5ZM2 6C1.99808 5.02505 2.3523 4.08296 2.99609 3.3508C3.63989 2.61864 4.52892 2.14681 5.4961 2.02399C6.46329 1.90117 7.44203 2.13583 8.24838 2.68384C9.05474 3.23186 9.63318 4.05551 9.875 5C8.59299 5.03369 7.37282 5.55821 6.46628 6.46534C5.55973 7.37246 5.03599 8.59297 5.00312 9.875C4.14417 9.65274 3.38328 9.15167 2.83978 8.45038C2.29628 7.74909 2.00091 6.88724 2 6ZM10 14C9.11317 13.9993 8.25164 13.7043 7.5504 13.1615C6.84917 12.6186 6.34785 11.8584 6.125 11C7.40756 10.9671 8.62851 10.4429 9.53571 9.53571C10.4429 8.62851 10.9671 7.40756 11 6.125C11.9445 6.36682 12.7681 6.94526 13.3162 7.75162C13.8642 8.55797 14.0988 9.53671 13.976 10.5039C13.8532 11.4711 13.3814 12.3601 12.6492 13.0039C11.917 13.6477 10.9749 14.0019 10 14Z" fill="currentColor"/></svg></button>
+            <button type="button" class="shape-circle-btn" data-fig-combine="xor" title="Exclude: everything except where shapes overlap" aria-label="Exclude"><svg class="ph-svg" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.9144 5.08562C10.7481 4.19007 10.3403 3.35695 9.73513 2.67623C9.12992 1.9955 8.35026 1.49302 7.48033 1.22306C6.6104 0.953089 5.68324 0.925887 4.79898 1.14439C3.91472 1.36289 3.10694 1.81879 2.46286 2.46286C1.81879 3.10694 1.36289 3.91472 1.14439 4.79898C0.925887 5.68324 0.953089 6.6104 1.22306 7.48033C1.49302 8.35026 1.9955 9.12992 2.67623 9.73513C3.35695 10.3403 4.19007 10.7481 5.08562 10.9144C5.25191 11.8099 5.65966 12.643 6.26487 13.3238C6.87008 14.0045 7.64974 14.507 8.51967 14.7769C9.3896 15.0469 10.3168 15.0741 11.201 14.8556C12.0853 14.6371 12.8931 14.1812 13.5371 13.5371C14.1812 12.8931 14.6371 12.0853 14.8556 11.201C15.0741 10.3168 15.0469 9.3896 14.7769 8.51967C14.507 7.64974 14.0045 6.87008 13.3238 6.26487C12.643 5.65966 11.8099 5.25191 10.9144 5.08562ZM14 10C14 10.095 13.9956 10.1875 13.9887 10.2819L10.8637 7.15687C10.9449 6.81859 10.9906 6.47276 11 6.125C11.8584 6.34785 12.6186 6.84917 13.1615 7.5504C13.7043 8.25164 13.9993 9.11317 14 10ZM13.1581 12.4506L9.86937 9.1625C10.1124 8.86555 10.3206 8.54178 10.49 8.1975L13.7312 11.4375C13.5906 11.8013 13.3975 12.1427 13.1581 12.4506ZM11.4375 13.7312L8.19625 10.49C8.54053 10.3206 8.8643 10.1124 9.16125 9.86937L12.4494 13.1581C12.1418 13.3974 11.8009 13.5905 11.4375 13.7312ZM2.84187 3.54937L6.13062 6.8375C5.88763 7.13445 5.6794 7.45822 5.51 7.8025L2.26875 4.5625C2.40937 4.19865 2.60246 3.85733 2.84187 3.54937ZM4.5625 2.26875L7.80375 5.51C7.45947 5.6794 7.1357 5.88763 6.83875 6.13062L3.54937 2.84187C3.85733 2.60246 4.19865 2.40937 4.5625 2.26875ZM10 6C9.99884 7.06051 9.57704 8.07725 8.82715 8.82715C8.07725 9.57704 7.06051 9.99884 6 10C6.00116 8.93949 6.42296 7.92275 7.17285 7.17285C7.92275 6.42296 8.93949 6.00116 10 6ZM9.875 5C9.52777 5.00846 9.18236 5.05307 8.84437 5.13312L5.71937 2.00813C5.8125 2.00438 5.905 2 6 2C6.88724 2.00091 7.74909 2.29628 8.45038 2.83978C9.15167 3.38328 9.65274 4.14417 9.875 5.00312V5ZM2 6C2 5.905 2.00437 5.8125 2.01125 5.71812L5.13625 8.84312C5.05611 9.18152 5.0115 9.52735 5.00312 9.875C4.14417 9.65274 3.38328 9.15167 2.83978 8.45038C2.29628 7.74909 2.00091 6.88724 2 6ZM6.125 11C6.47223 10.9915 6.81764 10.9469 7.15562 10.8669L10.2806 13.9919C10.1875 13.9987 10.0931 14.0031 9.99875 14.0031C9.11172 14.0019 8.25016 13.7064 7.54912 13.163C6.84809 12.6195 6.34721 11.8587 6.125 11Z" fill="currentColor"/></svg></button>
           </div>
         </div>
 
@@ -374,6 +375,7 @@
         <!-- SUB-PANEL A: REPETITION MODE -->
         <div id="subpanel-repetition" class="ds-stack">
 
+        <div class="ds-label ds-label--overline">Grid</div>
         <div class="ds-field">
           <div class="ds-label">Grid structure variation</div>
           <div class="ds-dropdown" data-select>
@@ -417,6 +419,8 @@
           </div>
         </div>
 
+        <div class="ds-divider" role="separator"></div>
+        <div class="ds-label ds-label--overline">Module</div>
         <div class="ds-field">
           <div class="ds-label">Module size</div>
           <div class="ds-tags">
@@ -463,6 +467,8 @@
         </div>
 
         <div id="layout-block" class="ds-stack">
+          <div class="ds-divider" role="separator"></div>
+          <div class="ds-label ds-label--overline">Composition container</div>
           <div id="block-size-fields" class="ds-stack">
             <div class="ds-field">
               <div class="ds-label">Composition container width</div>
@@ -1595,7 +1601,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=9d1cf9c7"></script>
+  <script src="js/bundle-pro.js?v=9ed45a32"></script>
 
 </body>
 </html>

@@ -373,14 +373,14 @@
       const L2 = app.getActiveModule(); L2.name = "Second"; L2.visible = true; L2.structure.repetition.showGridLines = false; L2.structure.repetition.activeClipping = false; L2.structure.repetition.checkerInvert = false;
       app.render();
       const t = log();
-      assert(/Layer 1/.test(t) && /Second \(active\)/.test(t), "Every layer has its heading, the active one marked: " + t);
+      assert(/Composition 1/.test(t) && /Second \(active\)/.test(t), "Every layer has its heading, the active one marked: " + t);
       assert((t.match(/Style: Fill \/ #2244CC/g) || []).length === 2 && (t.match(/Shape: Square 120 x 80px/g) || []).length === 2, "Both layers list their shape and style: " + t);
       assert(/Module: 100 x 100px \/ rotation 15º \/ offset 10, -5px/.test(t), "The module's size and placement are listed: " + t);
       assert(/Reflection Both/.test(t) && /Row offset 50%/.test(t), "The structure lists all its values: " + t);
       assert(/Visible lines: on \/ stroke 2px \/ #112233 \/ Both \/ all lines/.test(t) && /Clip cell: on/.test(t) && /Checkerboard: on/.test(t), "Checks that are on are listed with their values: " + t);
       assert((t.match(/Visible lines/g) || []).length === 1 && (t.match(/Clip cell/g) || []).length === 1, "Checks that are off do not appear: " + t);
       const text = app.artLogText();
-      assert(/^Canvas: /.test(text) && /\nLayer 1\nModule: /.test(text) && !/<|&lt;/.test(text), "Copy gives plain text: " + text.slice(0, 200));
+      assert(/^Canvas: /.test(text) && /\nComposition 1\nModule: /.test(text) && !/<|&lt;/.test(text), "Copy gives plain text: " + text.slice(0, 200));
       assert(d.getElementById("btn-art-log-copy") && getComputedStyle(d.getElementById("art-log-lines")).userSelect !== "none", "The log has a Copy button and its text can be selected");
       reset();
     });
@@ -1157,7 +1157,7 @@
     await test("Icons match the Figma design (rail, shape grids, header)", () => {
       const d = win.document;
       const iconOf = (el) => { const i = el.querySelector("i"); return i ? Array.from(i.classList).find((c) => c.startsWith("ph-") && c !== "ph-fill") : null; };
-      const rail = { module: "shapes", layout: "circles-four", similarity: "copy-simple", gradation: "angle", anomaly: "circles-three-plus", contrast: "circle-half", concentration: "radio-button", texture: "drop-half-bottom", space: "cube-transparent" };
+      const rail = { module: "shapes", layout: "circles-four", similarity: "copy-simple", gradation: "angle", anomaly: "circles-three-plus", contrast: "circle-half", concentration: "radio-button", texture: "leaf", space: "cube-transparent" };
       for (const [tab, icon] of Object.entries(rail)) assert(iconOf(d.querySelector(`[data-rail-tab="${tab}"]`)) === "ph-" + icon, `Rail icon for ${tab} is ${iconOf(d.querySelector(`[data-rail-tab="${tab}"]`))}, expected ${icon}`);
       const expected = { circle: "circle", square: "square", triangle: "triangle", line: "minus", cross: "plus", ring: null, semicircle: "circle-half", quarter: "chart-pie-slice", crescent: "moon", wave: "tilde", spiral: "spiral", arrow: "arrow-fat-up", pentagon: "pentagon", hexagon: "hexagon", octagon: "octagon", star: "star", letterA: null, letterS: null, letterR: null, digit1: "number-one", digit5: "number-five", digit9: "number-nine" };
       for (const attr of ["data-fig-shape", "data-anom-shape", "data-contrast-shape", "data-grad-target"]) {
@@ -1171,7 +1171,7 @@
           }
         }
       }
-      assert(iconOf(d.querySelector("#btn-download")) === "ph-download-simple" && iconOf(d.querySelector("#btn-toggle-grid")) === "ph-grid-nine" && iconOf(d.querySelector(".ds-brand-icon").parentElement) === "ph-gradient", "Header or toolbar icons differ from Figma");
+      assert(iconOf(d.querySelector("#btn-download")) === "ph-caret-down" && iconOf(d.querySelector("#btn-copy-svg-code")) === "ph-file-svg" && iconOf(d.querySelector("#btn-toggle-grid")) === "ph-hash" && iconOf(d.querySelector("#btn-toggle-invert")) === "ph-palette" && iconOf(d.querySelector(".ds-brand-icon").parentElement) === "ph-gradient", "Header or toolbar icons differ from Figma");
     });
 
     await test("Anomaly: scattered epicenters and the attributes it deviates in", async () => {
@@ -2538,7 +2538,7 @@
       q('[data-rail-tab="module"]').click(); await wait(60);
       assert(q("#fig-combine-block").classList.contains("hidden"), "With one shape there is nothing to combine");
       q("#btn-fig-add").click(); await wait(30);
-      assert(!q("#fig-combine-block").classList.contains("hidden") && q('[data-fig-combine="none"]').classList.contains("active"), "With two shapes Combine appears, on None");
+      assert(!q("#fig-combine-block").classList.contains("hidden") && !q("#fig-list").ownerDocument.querySelector("[data-fig-combine].active"), "With two shapes Combine appears, on None (no operation on)");
       q('[data-fig-combine="union"]').click(); await wait(30);
       assert(L.combine === "union" && q('[data-fig-combine="union"]').classList.contains("active"), "The chip sets the operation");
       assert(/Combine: Union/.test(d.getElementById("art-log-lines").textContent), "The Art log lists it");
@@ -2584,10 +2584,10 @@
       q('#fig-list [data-fig-index="0"]').click(); await wait(30);
       assert(q("#btn-mode-stroke").classList.contains("active") && q("#text-color-hex").textContent === "#0000FF", "Selecting a shape shows its look");
       // Combine: one figure with the look of the base shape (the first): an outline, not a fill
-      q('#fig-list [data-fig-index="1"]').click(); q('[data-fig-combine="union"]').click(); await wait(30);
+      q('#fig-list [data-fig-index="1"]').click(); L.combine = "none"; q('[data-fig-combine="union"]').click(); await wait(30);
       drawRaw(app);
       assert(!is(rgb(50, 0), 255, 0, 0) && rgb(30, 0)[0] > 200, `A combined module takes the look of its base shape (${rgb(50, 0)} at the second shape)`);
-      q('[data-fig-combine="none"]').click(); await wait(30);
+      q('[data-fig-combine="union"]').click(); await wait(30); assert(L.combine === "none", "Pressing the operation that is on goes back to none");
       // a modifier's colour change reaches every shape: a mix towards green at 100 %
       L.figures[1].color = "#ff0000"; L.figures[1].wireframe = false;
       const ctx = cv.getContext("2d");
