@@ -2583,6 +2583,40 @@
       reset();
     });
 
+    await test("Letters and numbers are filled outlines with straight ends (copied from the design): they fill, combine and keep their overlapping parts", async () => {
+      reset();
+      const d = win.document, cv = d.getElementById("studio-canvas");
+      const dpr = cv.width / 600;
+      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: false, containerW: 200, containerH: 200 }); app.state.showSafeBounds = false;
+      const dark = (x, y) => cv.getContext("2d").getImageData(Math.round(x * dpr), Math.round(y * dpr), 1, 1).data[0] < 120;
+      const ink = () => { const dd = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < dd.length; i += 4) if (dd[i] < 128) n++; return n; };
+      for (const s of ["letterA", "letterS", "letterR", "digit1", "digit5", "digit9"]) {
+        assert(!win.Shapes[s].skeleton && win.Shapes[s].draw && win.Shapes[s].svgPath, `${s} is a shape with an area`);
+        L.figures = [{ shape: s, width: 200, height: 200, x: 0, y: 0, rotation: 0 }];
+        drawRaw(app);
+        assert(ink() > 3000, `${s} fills (${ink()} px of ink)`);
+      }
+      // the A: a leg, the bar and the place where the bar meets a leg (glyph x 22, y 67 of 89 x 100), with the middle between the legs empty
+      L.figures = [{ shape: "letterA", width: 200, height: 200, x: 0, y: 0, rotation: 0 }];
+      drawRaw(app);
+      const gx = (x) => 300 + (x - 44.5) * 2, gy = (y) => 300 + (y - 50) * 2;
+      assert(dark(gx(22), gy(67)) && dark(gx(44), gy(67)) && !dark(gx(44), gy(90)) && dark(gx(44), gy(5)), "The A has its legs, its bar and the opening under it");
+      // two of them united are still an A (the bar overlaps the legs and must not cancel out there)
+      L.figures = [{ shape: "letterA", width: 200, height: 200, x: 0, y: 0, rotation: 0 }, { shape: "letterA", width: 200, height: 200, x: 0, y: 0, rotation: 0 }];
+      L.combine = "union"; drawRaw(app);
+      assert(dark(gx(22), gy(67)) && dark(gx(44), gy(67)) && !dark(gx(44), gy(90)), "United with itself it is still the same A (nothing cancels where the bar meets the legs)");
+      L.combine = "subtract"; drawRaw(app);
+      assert(ink() < 200, `An A minus itself leaves nothing (${ink()})`);
+      // the R keeps its bowl open: the counter of the R is empty, its stem and leg are filled
+      L.combine = "none"; L.figures = [{ shape: "letterR", width: 200, height: 200, x: 0, y: 0, rotation: 0 }];
+      drawRaw(app);
+      const rx = (x) => 300 + (x - 37) * 2;
+      assert(dark(rx(5), gy(50)) && dark(rx(60), gy(90)) && !dark(rx(30), gy(31)), "The R has its stem and leg, and an empty counter");
+      L.combine = "union"; L.figures.push({ shape: "circle", width: 40, height: 40, x: -60, y: 70, rotation: 0 }); drawRaw(app);
+      assert(dark(rx(5), gy(50)) && !dark(rx(30), gy(31)), "The R keeps its counter when it is combined with another shape");
+      reset();
+    });
+
     const failed = results.filter(r => !r.ok).length;
     summary.textContent = failed === 0 ? `All ${results.length} tests passed` : `${failed} of ${results.length} tests FAILED`;
     summary.className = failed === 0 ? "pass" : "fail";

@@ -229,6 +229,45 @@ function pathShape(opsFor) {
     }
   };
 }
+
+// ---- Letters and numbers as filled outlines ----
+// Copied from the design (Figma, "Module studio" shapes), not drawn as strokes: they have an area, so they fill, combine with
+// other shapes and take Space and Texture like any other shape. Each glyph is `w` x `h` (the height is 100), absolute SVG path
+// commands (M L H V C Z); it is drawn with its height equal to the shape's size and centred.
+const GLYPHS = {
+  "A": { w: 89, h: 100, d: "M15.9432 100H0L35.8236 0H53.1764L89 100H73.0568L44.9132 18.1641H44.1354L15.9432 100ZM18.6166 60.8398H70.3348V73.5352H18.6166V60.8398Z" },
+  "S": { w: 72, h: 100, d: "M56.5984 26.8246C56.0945 22.3381 54.0157 18.8626 50.3622 16.3981C46.7087 13.9021 42.1102 12.654 36.5669 12.654C32.5984 12.654 29.1654 13.2859 26.2677 14.5498C23.3701 15.782 21.1181 17.4882 19.5118 19.6682C17.937 21.8167 17.1496 24.2654 17.1496 27.0142C17.1496 29.3207 17.685 31.3112 18.7559 32.9858C19.8583 34.6603 21.2913 36.0663 23.0551 37.2038C24.8504 38.3096 26.7717 39.2417 28.8189 40C30.8661 40.7267 32.8346 41.327 34.7244 41.8009L44.1732 44.2654C47.2598 45.0237 50.4252 46.0506 53.6693 47.346C56.9134 48.6414 59.9213 50.3475 62.6929 52.4645C65.4646 54.5814 67.7008 57.2038 69.4016 60.3318C71.1339 63.4597 72 67.2038 72 71.564C72 77.0616 70.5827 81.9431 67.748 86.2085C64.9449 90.4739 60.8661 93.8389 55.5118 96.3033C50.189 98.7678 43.748 100 36.189 100C28.9449 100 22.6772 98.8468 17.3858 96.5403C12.0945 94.2338 7.95276 90.9637 4.96063 86.7299C1.9685 82.4645 0.31496 77.4092 0 71.564H14.6457C14.9291 75.0711 16.063 77.9937 18.0472 80.3318C20.063 82.6382 22.6299 84.3602 25.748 85.4976C28.8976 86.6035 32.3465 87.1564 36.0945 87.1564C40.2205 87.1564 43.8898 86.5087 47.1024 85.2133C50.3465 83.8863 52.8976 82.0537 54.7559 79.7156C56.6142 77.346 57.5433 74.5814 57.5433 71.4218C57.5433 68.5466 56.7244 66.1927 55.0866 64.3602C53.4803 62.5276 51.2913 61.0111 48.5197 59.8104C45.7795 58.6098 42.6772 57.5513 39.2126 56.6351L27.7795 53.5071C20.0315 51.3902 13.8898 48.278 9.35433 44.1706C4.85039 40.0632 2.59843 34.6288 2.59843 27.8673C2.59843 22.2749 4.11024 17.3934 7.13386 13.2227C10.1575 9.05213 14.252 5.81359 19.4173 3.50711C24.5827 1.16904 30.4094 0 36.8976 0C43.4488 0 49.2283 1.15324 54.2362 3.45972C59.2756 5.7662 63.2441 8.94155 66.1417 12.9858C69.0394 16.9984 70.5512 21.6114 70.6772 26.8246H56.5984Z" },
+  "R": { w: 74, h: 100, d: "M0 100V0H35.6098C43.3496 0 49.7724 1.33464 54.878 4.00391C60.0163 6.67318 63.8537 10.3678 66.3902 15.0879C68.9268 19.7754 70.1951 25.1953 70.1951 31.3477C70.1951 37.4674 68.9106 42.8548 66.3415 47.5098C63.8049 52.1322 59.9675 55.7292 54.8293 58.3008C49.7236 60.8724 43.3008 62.1582 35.561 62.1582H8.58537V49.1699H34.1951C39.0732 49.1699 43.0406 48.4701 46.0976 47.0703C49.187 45.6706 51.4471 43.6361 52.878 40.9668C54.3089 38.2975 55.0244 35.0911 55.0244 31.3477C55.0244 27.5716 54.2927 24.3001 52.8293 21.5332C51.3984 18.7663 49.1382 16.6504 46.0488 15.1856C42.9919 13.6882 38.9756 12.9395 34 12.9395H15.0732V100H0ZM49.3171 54.8828L74 100H56.8293L32.6341 54.8828H49.3171Z" },
+  "1": { w: 40, h: 100, d: "M40 0V100H24.7291V15.1367H24.1379L0 30.7617V16.3086L25.1724 0H40Z" },
+  "5": { w: 66, h: 100, d: "M32.1843 100C26.1727 100 20.7687 98.8439 15.9722 96.5318C11.2078 94.1875 7.40256 90.9762 4.55665 86.8979C1.71074 82.8195 0.191859 78.1631 0 72.9287H14.3894C14.7412 77.1676 16.6118 80.6519 20.0013 83.3815C23.3908 86.1111 27.4518 87.4759 32.1843 87.4759C35.9575 87.4759 39.2991 86.6089 42.2089 84.8748C45.1508 83.1085 47.4531 80.684 49.1159 77.6012C50.8106 74.5183 51.658 71.0019 51.658 67.052C51.658 63.0379 50.7946 59.4573 49.0679 56.3102C47.3412 53.1631 44.9589 50.6904 41.9212 48.8921C38.9154 47.0938 35.4619 46.1785 31.5608 46.1464C28.587 46.1464 25.5972 46.6602 22.5914 47.6879C19.5856 48.7155 17.1554 50.0642 15.3007 51.7341L1.72673 49.711L7.24267 0H61.2509V12.7649H19.5696L16.4519 40.3661H17.0275C18.9461 38.5035 21.4882 36.9461 24.6539 35.6936C27.8515 34.4412 31.273 33.815 34.9183 33.815C40.8979 33.815 46.222 35.2441 50.8906 38.1021C55.5911 40.9602 59.2844 44.8619 61.9704 49.8073C64.6884 54.7206 66.0314 60.3725 65.9994 66.763C66.0314 73.1535 64.5925 78.8536 61.6826 83.8632C58.8047 88.8728 54.8077 92.8227 49.6914 95.7129C44.6072 98.571 38.7715 100 32.1843 100Z" },
+  "9": { w: 69, h: 100, d: "M33.6251 0.00200128C37.9445 0.0336873 42.2008 0.825814 46.3941 2.37838C50.5874 3.93095 54.3708 6.46575 57.7443 9.98279C61.1494 13.4998 63.8609 18.2526 65.8787 24.2411C67.928 30.1978 68.9685 37.6122 69 46.484C69 55.0072 68.1487 62.5958 66.4462 69.2497C64.7437 75.8718 62.3002 81.4642 59.1158 86.0269C55.963 90.5895 52.1323 94.0591 47.6237 96.4354C43.1151 98.8118 38.0391 100 32.3955 100C26.6258 100 21.5024 98.8593 17.0254 96.578C12.5483 94.2967 8.90678 91.144 6.10075 87.12C3.29472 83.0643 1.54489 78.4066 0.851268 73.1469H15.2755C16.2214 77.3293 18.1446 80.7197 21.0452 83.3178C23.9774 85.8843 27.7608 87.1676 32.3955 87.1676C39.4894 87.1676 45.0226 84.0624 48.9952 77.8522C52.9678 71.6102 54.9698 62.8968 55.0014 51.712H54.2447C52.6052 54.4369 50.5559 56.7816 48.0966 58.7461C45.669 60.7105 42.9417 62.2314 39.915 63.3087C36.8883 64.386 33.6566 64.9247 30.22 64.9247C24.6395 64.9247 19.5634 63.5464 14.9918 60.7898C10.4202 58.0332 6.77861 54.2468 4.06717 49.4307C1.35572 44.6145 0 39.1172 0 32.9386C0 26.7917 1.38725 21.2151 4.16175 16.2089C6.96779 11.2027 10.8773 7.24204 15.8903 4.32701C20.9349 1.3803 26.8465 -0.0613707 33.6251 0.00200128ZM33.6724 12.3592C29.9836 12.3592 26.6573 13.278 23.6936 15.1158C20.7615 16.9218 18.4441 19.3774 16.7416 22.4825C15.0391 25.556 14.1878 28.978 14.1878 32.7485C14.1878 36.519 15.0075 39.941 16.647 43.0144C18.318 46.0562 20.5881 48.4801 23.4572 50.2862C26.3578 52.0605 29.6683 52.9477 33.3886 52.9477C36.1631 52.9477 38.7485 52.4091 41.1446 51.3318C43.5408 50.2545 45.6374 48.7653 47.4345 46.8642C49.2317 44.9314 50.6347 42.7451 51.6436 40.3054C52.6525 37.8656 53.157 35.2991 53.157 32.6059C53.157 29.0255 52.3057 25.6986 50.6032 22.6251C48.9321 19.5517 46.6306 17.0802 43.6984 15.2108C40.7663 13.3097 37.4243 12.3592 33.6724 12.3592Z" }
+};
+
+const glyphCache = {};
+function glyphOps(key) {
+  if (glyphCache[key]) return glyphCache[key];
+  const g = GLYPHS[key];
+  const tokens = g.d.match(/[MLHVCZ]|-?\d*\.?\d+(?:e-?\d+)?/g);
+  const nx = (x) => (x - g.w / 2) / g.h, ny = (y) => (y - g.h / 2) / g.h; // the height becomes 1, centred on the middle
+  const ops = [];
+  let i = 0, cx = 0, cy = 0, cmd = "";
+  const num = () => parseFloat(tokens[i++]);
+  while (i < tokens.length) {
+    if (/[MLHVCZ]/.test(tokens[i])) cmd = tokens[i++];
+    if (cmd === "Z") { ops.push(["Z"]); continue; }
+    if (cmd === "M" || cmd === "L") { cx = num(); cy = num(); ops.push([cmd, nx(cx), ny(cy)]); if (cmd === "M") cmd = "L"; }
+    else if (cmd === "H") { cx = num(); ops.push(["L", nx(cx), ny(cy)]); }
+    else if (cmd === "V") { cy = num(); ops.push(["L", nx(cx), ny(cy)]); }
+    else if (cmd === "C") { const a = num(), b = num(), c = num(), d = num(); cx = num(); cy = num(); ops.push(["C", nx(a), ny(b), nx(c), ny(d), nx(cx), ny(cy)]); }
+  }
+  glyphCache[key] = ops;
+  return ops;
+}
+
+function glyphShape(key) {
+  const scaled = (size) => glyphOps(key).map(([op, ...a]) => [op, ...a.map(v => v * size)]);
+  return pathShape(scaled);
+}
 const Shapes = {
   circle: {
     id: "circle",
@@ -405,60 +444,25 @@ const Shapes = {
 
   digit1: {
     id: "digit1",
-    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Digit 1",
     category: "symbolic",
-    draw(ctx, size) {
-      const s = size;
-      ctx.beginPath();
-      ctx.moveTo(-0.17 * s, -0.2 * s);
-      ctx.lineTo(0.03 * s, -0.4 * s);
-      ctx.lineTo(0.03 * s, 0.4 * s);
-    },
-    svgPath(size) {
-      const s = size;
-      return `<path d="M ${-0.17*s} ${-0.2*s} L ${0.03*s} ${-0.4*s} L ${0.03*s} ${0.4*s}" fill="none" stroke="currentColor" stroke-width="${s*0.14}" stroke-linecap="round" stroke-linejoin="round" />`;
-    },
+    ...glyphShape("1"),
     phIcon: "number-one"
   },
 
   digit5: {
     id: "digit5",
-    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Digit 5",
     category: "symbolic",
-    draw(ctx, size) {
-      const s = size;
-      ctx.beginPath();
-      ctx.moveTo(0.2 * s, -0.4 * s);
-      ctx.lineTo(-0.17 * s, -0.4 * s);
-      ctx.lineTo(-0.21 * s, -0.02 * s);
-      ctx.bezierCurveTo(0.0 * s, -0.14 * s, 0.3 * s, -0.04 * s, 0.3 * s, 0.17 * s);
-      ctx.bezierCurveTo(0.3 * s, 0.4 * s, 0.0 * s, 0.46 * s, -0.24 * s, 0.3 * s);
-    },
-    svgPath(size) {
-      const s = size;
-      return `<path d="M ${0.2*s} ${-0.4*s} L ${-0.17*s} ${-0.4*s} L ${-0.21*s} ${-0.02*s} C ${0} ${-0.14*s} ${0.3*s} ${-0.04*s} ${0.3*s} ${0.17*s} C ${0.3*s} ${0.4*s} ${0} ${0.46*s} ${-0.24*s} ${0.3*s}" fill="none" stroke="currentColor" stroke-width="${s*0.14}" stroke-linecap="round" stroke-linejoin="round" />`;
-    },
+    ...glyphShape("5"),
     phIcon: "number-five"
   },
 
   digit9: {
     id: "digit9",
-    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Digit 9",
     category: "symbolic",
-    draw(ctx, size) {
-      const s = size;
-      ctx.beginPath();
-      ctx.arc(0, -0.15 * s, 0.22 * s, 0, Math.PI * 2);
-      ctx.moveTo(0.22 * s, -0.15 * s);
-      ctx.bezierCurveTo(0.22 * s, 0.2 * s, 0.1 * s, 0.4 * s, -0.2 * s, 0.4 * s);
-    },
-    svgPath(size) {
-      const s = size;
-      return `<path d="M ${0.22*s} ${-0.15*s} A ${0.22*s} ${0.22*s} 0 1 1 ${-0.22*s} ${-0.15*s} A ${0.22*s} ${0.22*s} 0 1 1 ${0.22*s} ${-0.15*s} M ${0.22*s} ${-0.15*s} C ${0.22*s} ${0.2*s} ${0.1*s} ${0.4*s} ${-0.2*s} ${0.4*s}" fill="none" stroke="currentColor" stroke-width="${s*0.14}" stroke-linecap="round" stroke-linejoin="round" />`;
-    },
+    ...glyphShape("9"),
     phIcon: "number-nine"
   },
 
@@ -547,28 +551,25 @@ const Shapes = {
 
   letterA: {
     id: "letterA",
-    skeleton: true, // letters are drawn as strokes, like the numbers
     name: "Letter A",
     category: "symbolic",
-    ...pathShape((s) => [["M", -0.28 * s, 0.4 * s], ["L", 0, -0.4 * s], ["L", 0.28 * s, 0.4 * s], ["M", -0.17 * s, 0.12 * s], ["L", 0.17 * s, 0.12 * s]]),
+    ...glyphShape("A"),
     glyph: "A"
   },
 
   letterS: {
     id: "letterS",
-    skeleton: true,
     name: "Letter S",
     category: "symbolic",
-    ...pathShape((s) => [["M", 0.24 * s, -0.26 * s], ["C", 0.12 * s, -0.43 * s, -0.26 * s, -0.43 * s, -0.26 * s, -0.19 * s], ["C", -0.26 * s, 0.03 * s, 0.26 * s, -0.03 * s, 0.26 * s, 0.2 * s], ["C", 0.26 * s, 0.44 * s, -0.12 * s, 0.44 * s, -0.25 * s, 0.26 * s]]),
+    ...glyphShape("S"),
     glyph: "S"
   },
 
   letterR: {
     id: "letterR",
-    skeleton: true,
     name: "Letter R",
     category: "symbolic",
-    ...pathShape((s) => [["M", -0.2 * s, 0.4 * s], ["L", -0.2 * s, -0.4 * s], ["L", 0.05 * s, -0.4 * s], ["C", 0.3 * s, -0.4 * s, 0.3 * s, 0.02 * s, 0.05 * s, 0.02 * s], ["L", -0.2 * s, 0.02 * s], ["M", 0.03 * s, 0.02 * s], ["L", 0.26 * s, 0.4 * s]]),
+    ...glyphShape("R"),
     glyph: "R"
   }
 };
@@ -853,7 +854,20 @@ function shapeRegion(f, def) {
     if (!sp.closed || sp.pts.length < 3) continue;
     out.push(sp.pts.map(p => { const qx = p.x * sx, qy = p.y * sy; return { x: (f.x || 0) + qx * c - qy * s, y: (f.y || 0) + qx * s + qy * c }; }));
   }
-  return out;
+  if (out.length < 2) return out;
+  // The outlines of one shape fill by the nonzero rule (as they are drawn): those that turn the way of the biggest one are solid,
+  // the others are holes. Solid ones can overlap (the bar of an A over its legs), so they are united first.
+  const areas = out.map(contourArea);
+  const big = areas.reduce((m, v) => (Math.abs(v) > Math.abs(m) ? v : m), 0);
+  const solids = out.filter((c, i) => areas[i] * big > 0), holes = out.filter((c, i) => areas[i] * big < 0);
+  let region = [solids[0]];
+  for (let i = 1; i < solids.length; i++) region = regionBoolean("union", region, [solids[i]]);
+  if (holes.length) {
+    let h = [holes[0]];
+    for (let i = 1; i < holes.length; i++) h = regionBoolean("union", h, [holes[i]]);
+    region = regionBoolean("subtract", region, h);
+  }
+  return region;
 }
 function compositeShape(figures, ref = 100, combine = "none") {
   const R = ref > 0 ? ref : 100;

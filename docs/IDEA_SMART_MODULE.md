@@ -45,7 +45,7 @@ Con Wong: su **módulo** es la unidad que se repite (aquí, la pieza entera con 
 
 ## Cosas a vigilar
 
-- Una **línea, onda o carácter** dentro de un módulo con shapes rellenas no se ve en *Fill* (no tiene área para rellenar); en *Stroke* sí. Hoy no entran en *Combine*.
+- Una **línea, onda o espiral** dentro de un módulo con shapes rellenas no se ve en *Fill* (no tiene área para rellenar); en *Stroke* sí. No entran en *Combine*. Las letras y los números ya son siluetas con área y sí entran.
 - Con *Combine* las shapes comparten el estilo de la base: el estilo propio de las demás no se ve mientras estén combinadas.
 
 - Las curvas de una shape cortada se aproximan con segmentos finos cuando hay Texture o Space (en shapes muy grandes podría notarse un facetado).
