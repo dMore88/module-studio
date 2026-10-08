@@ -303,9 +303,9 @@
       const same = inkInside(80);
       assert(same > shrink * 3, `Base size should leave far more ink near the centre (${shrink} -> ${same})`);
       d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
-      assert(!d.getElementById("rad-modscale-block").classList.contains("hidden"), "Fit offers Module scale");
+      assert(!d.getElementById("rad-modscale-block").classList.contains("is-disabled"), "Fit offers Module scale");
       st.radiation.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("rad-modscale-block").classList.contains("hidden"), "Actual size hides Module scale");
+      assert(d.getElementById("rad-modscale-block").classList.contains("is-disabled"), "Actual size hides Module scale");
       reset();
     });
 
@@ -331,7 +331,7 @@
       st.radiation.sizeMode = "fit"; st.radiation.rings = 3; st.radiation.rays = 8;
       assert(changes(120) === 8, "Fit to canvas keeps the Angular rays");
       d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
-      assert(!d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("hidden"), "Fit shows Angular rays");
+      assert(!d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("is-disabled"), "Fit shows Angular rays");
       // Switching to Actual size keeps the container as it is (100 x 100, the module's size), in both layouts
       L.containerW = 100; L.containerH = 100; st.radiation.sizeMode = "fit"; st.repetition.sizeMode = "fit"; st.mode = "radiation"; app.syncAllInspectorsWithActiveLayer();
       d.querySelector('[data-rad-size="actual"]').click(); await wait(40);
@@ -341,14 +341,14 @@
       assert(L.containerW === 100 && L.containerH === 100, `Grid Actual size should keep the container (${L.containerW} x ${L.containerH})`);
       st.mode = "radiation"; st.radiation.sizeMode = "actual"; st.repetition.sizeMode = "fit";
       st.radiation.sizeMode = "actual"; st.radiation.raysByContainer = false; app.syncAllInspectorsWithActiveLayer();
-      assert(!d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("hidden"), "Actual size keeps Angular rays unless the rays follow the container");
-      assert(!d.getElementById("rad-raysbycont-item").classList.contains("hidden"), "Actual size offers Rays follow container");
+      assert(!d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("is-disabled"), "Actual size keeps Angular rays unless the rays follow the container");
+      assert(!d.getElementById("rad-raysbycont-item").classList.contains("is-disabled"), "Actual size offers Rays follow container");
       d.getElementById("chk-rad-raysbycont").click(); await wait(40);
-      assert(st.radiation.raysByContainer === true && d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("hidden"), "With Rays follow container the Angular rays slider is hidden");
+      assert(st.radiation.raysByContainer === true && d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("is-disabled"), "With Rays follow container the Angular rays slider is hidden");
       st.radiation.scheme = "centripetal"; app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("rad-raysbycont-item").classList.contains("hidden") && !d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("hidden"), "Centripetal keeps its rays (the chevrons of a wedge must nest)");
+      assert(d.getElementById("rad-raysbycont-item").classList.contains("is-disabled") && !d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("is-disabled"), "Centripetal keeps its rays (the chevrons of a wedge must nest)");
       st.radiation.scheme = "concentric"; st.radiation.sizeMode = "fit"; app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("rad-raysbycont-item").classList.contains("hidden"), "Fit to canvas has no Rays follow container");
+      assert(d.getElementById("rad-raysbycont-item").classList.contains("is-disabled"), "Fit to canvas has no Rays follow container");
     });
 
     await test("Clip cell in a Centripetal layout cuts the module to its chevron band, in every shape", () => {
@@ -854,9 +854,9 @@
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="gradation"]').click();
       q('[data-grad-pathway="zigzag"]').click();
-      assert(q("#toggle-grad-alternate").closest("label").style.display === "none", "Alternate rows should be hidden on the zigzag path");
+      assert(q("#toggle-grad-alternate").closest("label").classList.contains("is-disabled"), "Alternate rows should be hidden on the zigzag path");
       q('[data-grad-pathway="diagonal"]').click();
-      assert(q("#toggle-grad-alternate").closest("label").style.display === "", "Alternate rows should be back on the other paths");
+      assert(!q("#toggle-grad-alternate").closest("label").classList.contains("is-disabled"), "Alternate rows should be back on the other paths");
     });
 
     await test("Gradation attribute Color moves the module colour toward the end colour", () => {
@@ -930,6 +930,8 @@
       assert(g().sequence === "pingpong" && q('[data-grad-sequence="pingpong"]').classList.contains("active"), "Ping-pong did not apply");
       fire(q("#input-grad-easing"), 40);
       assert(g().easing === -40 && q("#num-grad-easing").value === "+40", `Speed value box shows ${q("#num-grad-easing").value}`);
+      assert(q("#toggle-grad-alternate").disabled, "Alternate rows is disabled on the zigzag path");
+      q('[data-grad-pathway="horizontal"]').click();
       q("#toggle-grad-alternate").click();
       assert(g().alternate === true, "Alternate rows did not apply");
       // each layer keeps its own settings
@@ -1216,7 +1218,7 @@
       q('[data-anom-attr="shape"]').click();
       assert(an().attrs.shape === false && q("#anom-shape-block").classList.contains("hidden") && !q('[data-anom-attr="shape"]').classList.contains("active"), "Switching Shape off should hide the intruder shape");
       q('[data-anom-type="swell"]').click();
-      assert(q('[data-anom-attr="shape"]').classList.contains("hidden") && !q('[data-anom-attr="position"]').classList.contains("hidden"), "Swell should offer position and scale, not shape");
+      assert(q('[data-anom-attr="shape"]').classList.contains("is-disabled") && !q('[data-anom-attr="position"]').classList.contains("is-disabled"), "Swell should offer position and scale, not shape");
     });
 
     await test("Actual size repeats the module's container as it is, centred; Fit to canvas stays proportional", async () => {
@@ -1278,7 +1280,7 @@
       assert(q('[data-rep-size="fit"]').textContent.trim() === "Fit to canvas" && q('[data-rep-size="actual"]').textContent.trim() === "Actual size", "The chips should read Fit to canvas and Actual size");
       q('[data-rep-size="actual"]').click(); await wait(40);
       assert(rep().sizeMode === "actual" && app.getActiveModule().containerW === Math.round(600 / rep().cols), "Actual size should start with a container as big as a Fit cell");
-      assert(!q("#input-layout-cols").closest(".ds-field").classList.contains("hidden"), "Actual size should keep the Columns and Rows controls");
+      assert(!q("#input-layout-cols").closest(".ds-field").classList.contains("is-disabled"), "Actual size should keep the Columns and Rows controls");
       q("#btn-layout-radiation").click(); await wait(60);
       q('[data-rad-size="actual"]').click(); await wait(40);
       assert(app.getActiveLayerStructure().radiation.sizeMode === "actual" && q('[data-rad-size="actual"]').classList.contains("active"), "Radial Actual size did not apply");
@@ -1310,7 +1312,7 @@
       assert(q("#input-fig-w").max === "2000" && q("#input-fig-h").max === "2000", "Width and Height should go up to 2000");
       for (const shape of ["circle", "square", "triangle", "wave", "ring", "semicircle", "quarter", "crescent", "spiral", "arrow", "pentagon", "hexagon", "octagon", "star", "cross", "letterA", "letterS", "letterR", "digit1", "digit5", "digit9"]) {
         q(`[data-fig-shape="${shape}"]`).click();
-        assert(!q("#input-fig-h").closest(".ds-field").classList.contains("hidden"), `${shape}: Height should be available`);
+        assert(!q("#input-fig-h").closest(".ds-field").classList.contains("is-disabled"), `${shape}: Height should be available`);
       }
       q('[data-fig-shape="circle"]').click();
       fire(q("#input-fig-w"), 1800); fire(q("#input-fig-h"), 1800);
@@ -1320,7 +1322,7 @@
       q('[data-fig-shape="line"]').click();
       assert(q("#input-fig-h").closest(".ds-field").classList.contains("hidden"), "The line should not show Height");
       q('[data-fig-shape="square"]').click();
-      assert(!q("#input-fig-h").closest(".ds-field").classList.contains("hidden"), "Height should come back for other shapes");
+      assert(!q("#input-fig-h").closest(".ds-field").classList.contains("is-disabled"), "Height should come back for other shapes");
     });
 
     await test("Similarity: association of shapes and imperfection (cut, broken)", async () => {
@@ -1427,13 +1429,13 @@
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="concentration"]').click(); await wait(80);
       const cs = () => app.getActiveLayerStructure().concentration;
-      assert(!q("#conc-method-block").classList.contains("hidden") && q("#conc-fade-block").classList.contains("hidden"), "Point should offer the method and no fade");
+      assert(!q("#conc-method-block").classList.contains("is-disabled") && q("#conc-fade-block").classList.contains("is-disabled"), "Point should offer the method and no fade");
       q('[data-conc-method="absence"]').click();
       assert(cs().method === "absence" && q('[data-conc-method="absence"]').classList.contains("active"), "Absence chip did not apply");
       q('[data-conc-mode="line_void"]').click();
       assert(cs().mode === "line_void" && !q("#conc-axis-block").classList.contains("hidden"), "Away from line should offer the axis");
       q('[data-conc-mode="dense"]').click();
-      assert(q("#conc-method-block").classList.contains("hidden") && q("#conc-radius-field").classList.contains("hidden") && !q("#conc-fade-block").classList.contains("hidden"), "Dense should hide method and radius and offer the edge fade");
+      assert(q("#conc-method-block").classList.contains("is-disabled") && q("#conc-radius-field").classList.contains("is-disabled") && !q("#conc-fade-block").classList.contains("is-disabled"), "Dense should hide method and radius and offer the edge fade");
       q('[data-conc-flag="edgeFade"]').click();
       assert(cs().edgeFade === true && q('[data-conc-flag="edgeFade"]').classList.contains("active"), "Edge fade chip did not apply");
       // The style chips can be mixed
@@ -1744,10 +1746,11 @@
       // Inspector
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="layout"]').click(); await wait(80); q("#toggle-layout-structure").click(); q("#btn-layout-radiation").click(); await wait(60);
+      q('[data-rad-scheme="centrifugal"]').click();
       q('[data-rad-shape="hexagon"]').click();
       assert(app.getActiveLayerStructure().radiation.ringShape === "hexagon" && /Hexagon/.test(q("#rad-ringshape-block .ds-dropdown-current").textContent), "The Ring shape dropdown did not apply");
       q('[data-rad-scheme="spiral"]').click(); await wait(40);
-      assert(q("#rad-ringshape-block").classList.contains("hidden"), "Ring shape does not apply to spirals");
+      assert(q("#rad-ringshape-block").classList.contains("is-disabled"), "Ring shape does not apply to spirals");
       reset();
     });
 
@@ -2044,7 +2047,7 @@
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="concentration"]').click(); await wait(60);
       q('[data-conc-mode="point"]').click(); await wait(40);
-      assert(q("#conc-foci-block").classList.contains("hidden"), "Foci should be hidden outside Hotspots");
+      assert(q("#conc-foci-block").classList.contains("hidden"), "The hotspots count should be hidden outside Hotspots");
       q('[data-conc-mode="free"]').click(); await wait(40);
       assert(!q("#conc-foci-block").classList.contains("hidden"), "Foci should show with Hotspots");
       const inp = q("#input-conc-foci"); inp.value = 4; inp.dispatchEvent(new win.Event("input", { bubbles: true }));
@@ -2083,7 +2086,7 @@
       q('[data-rail-tab="layout"]').click(); await wait(80); q("#toggle-layout-structure").click();
       q('[data-grid-var="free"]').click(); await wait(40);
       assert(!q("#rep-param-block").classList.contains("hidden") && q("#rep-param-label").textContent === "Seed", "Free should offer the Seed slider");
-      assert(q("#rep-placement-block").classList.contains("hidden"), "Module placement does not apply to the free distribution");
+      assert(q("#rep-placement-block").classList.contains("is-disabled"), "Module placement does not apply to the free distribution");
       reset();
     });
 
@@ -2119,7 +2122,7 @@
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="anomaly"]').click(); await wait(60);
       q('[data-anom-type="regrid"]').click(); await wait(40);
-      assert(!q("#anom-zonegrid-block").classList.contains("hidden") && q("#anom-attrs-block").classList.contains("hidden") && q("#anom-severity-block").classList.contains("hidden"), "Another grid shows its grid dropdown and hides Deviates in and Severity");
+      assert(!q("#anom-zonegrid-block").classList.contains("hidden") && q("#anom-attrs-block").classList.contains("is-disabled") && q("#anom-severity-block").classList.contains("is-disabled"), "Another grid shows its grid dropdown and hides Deviates in and Severity");
       q('[data-anom-zonegrid="zigzag"]').click();
       assert(app.getActiveLayerStructure().anomaly.zoneGrid === "zigzag" && /Zigzag/.test(q("#anom-zonegrid-block .ds-dropdown-current").textContent), "The zone grid did not apply");
       q('[data-anom-type="focal"]').click(); await wait(40);
@@ -2165,9 +2168,9 @@
       const shrunk = ink();
       assert(base > shrunk * 2, `Base size should leave far more ink than Shrink with cell (${shrunk} -> ${base})`);
       d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
-      assert(!d.getElementById("rep-modscale-block").classList.contains("hidden"), "Fit offers Module scale in Repetition");
+      assert(!d.getElementById("rep-modscale-block").classList.contains("is-disabled"), "Fit offers Module scale in Repetition");
       st.repetition.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("rep-modscale-block").classList.contains("hidden"), "Actual size hides Module scale in Repetition");
+      assert(d.getElementById("rep-modscale-block").classList.contains("is-disabled"), "Actual size hides Module scale in Repetition");
       reset();
     });
 

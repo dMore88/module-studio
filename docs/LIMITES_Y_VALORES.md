@@ -164,7 +164,7 @@ Vale para Repetition y Radiation; es la hoja de papel del canvas donde vive el l
 ### Concentration
 | Control | Mín. | Máx. | Paso | Por defecto | Razón |
 | :-- | :-- | :-- | :-- | :-- | :-- |
-| Foci (Hotspots) | 2 | 8 | 1 | 2 | Focos de Hotspots; con 1 es el modo Point. |
+| Number of hotspots | 2 | 8 | 1 | 2 | Focos de Hotspots; con 1 es el modo Point. |
 | X / Y position | 0 % | 100 % | 1 % | 50 % / 50 % | El atractor puede ir hasta el borde o la esquina del lienzo. Con varios focos, estos mueven solo el primero. |
 | Gathering pull | 10 % | 100 % | 1 % | 50 % | Fuerza de atracción; 10 % deja una atracción muy sutil. |
 | Field radius | 10 px | 500 px | 5 px | 250 px | Alcance del campo; 10 px sirve para composiciones de módulos pequeños. |

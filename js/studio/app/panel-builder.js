@@ -16,7 +16,9 @@
  *     place: (app, state) => {} }            // called after every refresh: puts the floating groups where they belong
  * A group with `floating: "id"` is drawn in a box of that id at the end of the panel; `place` moves it.
  *
- * Controls (every one may carry `show: (state, mod) => bool`, to appear only in some cases, and `blockId`, the id of its box;
+ * Controls (every one may carry `show: (state, mod) => bool`, to appear only in some cases (the detail of an option that was chosen),
+ * `enable: (state, mod) => bool` with `why`, to stay in view but dimmed and without response when it does not apply (a function of the
+ * panel that is not available now; `why` tells the reason, as a tooltip), and `blockId`, the id of its box;
  * `get(state, app)` and `set(state, value, app)` replace the plain `key` when a setting needs more than a number):
  *   { type: "tags",   label, key, attr, history, fallback, options: [[value, text, title?], ...] }   one choice among several
  *   { type: "dropdown", label, key, attr, history, fallback, options: [[value, text, iconHtml?], ...] | "shapes" }   a list of choices ("shapes": every shape, with its icon)
@@ -42,6 +44,16 @@
  */
 // The shape names the dropdowns show (a few differ from the shapes' own names)
 const SHAPE_LABELS = { line: "Line", cross: "Greek Cross", wave: "Sine Wave", digit1: "Number 1", digit5: "Number 5", digit9: "Number 9" };
+
+// Dims a control that does not apply now, or gives it back: it stays in view, without response, with the reason as a tooltip
+function setControlEnabled(el, enabled, why) {
+  if (!el) return;
+  el.classList.toggle("is-disabled", !enabled);
+  if (enabled) { el.removeAttribute("aria-disabled"); if (el.dataset.why !== undefined) { el.removeAttribute("title"); delete el.dataset.why; } }
+  else { el.setAttribute("aria-disabled", "true"); if (why) { el.title = why; el.dataset.why = "1"; } }
+  const own = el.matches("button, input") ? [el] : [];
+  for (const x of [...own, ...el.querySelectorAll("button, input")]) x.disabled = !enabled;
+}
 
 // Every control of a list, the boxes (stack) and what is inside them
 function* walkControls(controls) {
@@ -154,6 +166,10 @@ class PanelBuilder {
     for (const c of walkControls(all)) {
       // every box that shows or hides: its own box, its stack and its label
       if (c.show && c.blockId) document.getElementById(c.blockId)?.classList.toggle("hidden", !c.show(st, mod));
+      if (c.enable) {
+        const box = c.blockId ? document.getElementById(c.blockId) : (c.type === "toggle" ? document.getElementById(c.id)?.closest("label") : null);
+        setControlEnabled(box, !!c.enable(st, mod), typeof c.why === "function" ? c.why(st) : c.why);
+      }
       if (c.type === "tags" || c.type === "dropdown") {
         const cur = c.get ? c.get(st, this) : (st[c.key] || c.fallback);
         document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(b => b.classList.toggle("active", b.getAttribute(c.attr) === cur));
@@ -172,6 +188,7 @@ class PanelBuilder {
           chip.classList.toggle("active", on);
           chip.setAttribute("aria-pressed", String(on));
           if (o.show) chip.classList.toggle("hidden", !o.show(st, mod));
+          if (o.enable) setControlEnabled(chip, !!o.enable(st, mod), o.why);
         }
       } else if (c.type === "slider" && c.bind !== false) {
         const m = c.meta ? c.meta(st) : null;

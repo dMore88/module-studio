@@ -109,14 +109,14 @@ const LAYOUT_PANEL = {
         get: (st) => st.repetition.sizeMode || "fit",
         set: (st, v, app) => { st.repetition.sizeMode = v; if (v === "actual") app.startContainerFromCell(st.repetition.cols, st.repetition.rows); st.mode = "repetition"; } },
       // Placement does not apply to the honeycomb; mixed sizes only to the plain and alternating grids
-      { type: "tags", label: "Module placement", attr: "data-rep-place", history: "Module Placement", blockId: "rep-placement-block", show: (st) => !["hexagonal", "free"].includes(st.repetition.gridType),
+      { type: "tags", label: "Module placement", attr: "data-rep-place", history: "Module Placement", blockId: "rep-placement-block", enable: (st) => !["hexagonal", "free"].includes(st.repetition.gridType), why: "Does not apply to the hexagonal grid or to Free",
         options: [["centers", "Centers"], ["intersections", "Intersections"], ["both", "Both"]], get: (st) => st.repetition.placement || "centers", set: repSet("placement") },
-      { type: "tags", label: "Cell mix", attr: "data-rep-mix", history: "Cell Mix", blockId: "rep-mix-block", show: (st) => st.repetition.gridType === "basic" || st.repetition.gridType === "alternating",
+      { type: "tags", label: "Cell mix", attr: "data-rep-mix", history: "Cell Mix", blockId: "rep-mix-block", enable: (st) => st.repetition.gridType === "basic" || st.repetition.gridType === "alternating", why: "Only with the Grid and Alternating variations",
         options: [["none", "None"], ["merge", "Merged"], ["divide", "Divided"]], get: (st) => st.repetition.cellMix || "none", set: repSet("cellMix") },
       { type: "slider", id: "layout-inter", label: "Intersection size", blockId: "rep-inter-block", min: 10, max: 100, step: 5, value: 50, suffix: "%", decimal: true, history: "Intersection Size",
         show: (st) => !["hexagonal", "free"].includes(st.repetition.gridType) && (st.repetition.placement || "centers") !== "centers",
         get: (st) => st.repetition.interScale ?? 50, set: repSet("interScale", (v) => layoutClamp(v, 10, 100)) },
-      { type: "tags", label: "Module scale", attr: "data-rep-modscale", history: "Module Scale", advanced: true, blockId: "rep-modscale-block", show: (st) => !LAYOUT_ACTUAL(st.repetition),
+      { type: "tags", label: "Module scale", attr: "data-rep-modscale", history: "Module Scale", advanced: true, blockId: "rep-modscale-block", enable: (st) => !LAYOUT_ACTUAL(st.repetition), why: "In Actual size every module keeps its own size",
         options: [["uniform", "Base size", "Every module keeps its own size, proportional to the whole canvas"], ["cell", "Shrink with cell", "The module shrinks with its cell"]],
         get: (st) => st.repetition.moduleScale || "uniform", set: repSet("moduleScale") },
       { type: "toggle", id: "chk-rep-clip", label: "Clip cell", history: "Clip cell", advanced: true, get: (st) => !!st.repetition.activeClipping, set: (st, v) => { st.repetition.activeClipping = v; } },
@@ -155,7 +155,7 @@ const LAYOUT_PANEL = {
         set: (st, v) => { st.radiation.scheme = v; st.mode = "radiation"; st.enabled = true; } },
       // Actual size can let every ring take as many rays as fit the container's width; then the slider has no meaning
       { type: "slider", id: "layout-rays", label: "Angular rays", blockId: "rad-rays-block", min: 3, max: 60, step: 1, value: 12, suffix: "", decimal: true, history: "Angular Rays",
-        show: (st) => !(LAYOUT_ACTUAL(st.radiation) && !!st.radiation.raysByContainer && st.radiation.scheme !== "centripetal"),
+        enable: (st) => !(LAYOUT_ACTUAL(st.radiation) && !!st.radiation.raysByContainer && st.radiation.scheme !== "centripetal"), why: "The container decides the rays",
         get: (st) => st.radiation.rays || 12, set: radSet("rays") },
       { type: "slider", id: "layout-rings", label: "Concentric rings", min: 2, max: 20, step: 1, value: 6, suffix: "", decimal: true, history: "Concentric Rings", get: (st) => st.radiation.rings || 6, set: radSet("rings") },
       { type: "slider", id: "layout-centers", label: "Centers", blockId: "rad-centers-block", min: 2, max: 8, step: 1, value: 2, suffix: "", decimal: true, history: "Centers", show: (st) => st.radiation.scheme === "multi_center",
@@ -165,14 +165,14 @@ const LAYOUT_PANEL = {
       { type: "dropdown", label: "Direction", attr: "data-rad-dir", history: "Radiation Direction", advanced: true, options: [["repeated", "Repeated"], ["alternated", "Alternated"], ["undefined", "Undefined"]],
         get: (st) => st.radiation.direction || "repeated", set: radSet("direction") },
       // Polygonal rings do not apply to spirals or chevrons
-      { type: "dropdown", label: "Ring shape", attr: "data-rad-shape", history: "Ring Shape", advanced: true, blockId: "rad-ringshape-block", show: (st) => st.radiation.scheme !== "spiral" && st.radiation.scheme !== "centripetal",
+      { type: "dropdown", label: "Ring shape", attr: "data-rad-shape", history: "Ring Shape", advanced: true, blockId: "rad-ringshape-block", enable: (st) => st.radiation.scheme !== "spiral" && st.radiation.scheme !== "centripetal", why: "Does not apply to Spiral or Centripetal",
         options: [["circle", "Circle"], ["triangle", "Triangle"], ["square", "Square"], ["pentagon", "Pentagon"], ["hexagon", "Hexagon"], ["octagon", "Octagon"]],
         get: (st) => st.radiation.ringShape || "circle", set: radSet("ringShape") },
       { type: "slider", id: "layout-open", label: "Open center", min: 0, max: 90, step: 1, value: 0, suffix: "%", decimal: true, history: "Open Center", advanced: true, get: (st) => st.radiation.centerOpen || 0, set: radSet("centerOpen") },
       { type: "slider", id: "layout-ringrot", label: "Ring rotation", min: -90, max: 90, step: 1, value: 0, suffix: "º", decimal: true, history: "Ring Rotation", advanced: true, get: (st) => st.radiation.ringRotation || 0, set: radSet("ringRotation") },
       { type: "toggle", id: "chk-rad-raysbycont", label: "Rays follow container", history: "Rays follow container", advanced: true, labelId: "rad-raysbycont-item",
         title: "Actual size: every ring gets as many rays as fit the container's width, so the cells are as big as the container",
-        show: (st) => LAYOUT_ACTUAL(st.radiation) && st.radiation.scheme !== "centripetal", get: (st) => !!st.radiation.raysByContainer, set: (st, v) => { st.radiation.raysByContainer = v; } },
+        enable: (st) => LAYOUT_ACTUAL(st.radiation) && st.radiation.scheme !== "centripetal", why: "Only in Actual size, and not with Centripetal", get: (st) => !!st.radiation.raysByContainer, set: (st, v) => { st.radiation.raysByContainer = v; } },
     ] },
     { region: "subpanel-radiation", title: "Module", advId: "rad-adv-module", controls: [
       { type: "tags", label: "Module size", attr: "data-rad-size", history: "Radiation Module Size", options: [["fit", "Fit to canvas"], ["actual", "Actual size"]],
@@ -189,7 +189,7 @@ const LAYOUT_PANEL = {
           }
           st.mode = "radiation";
         } },
-      { type: "tags", label: "Module scale", attr: "data-rad-modscale", history: "Module scale", advanced: true, blockId: "rad-modscale-block", show: (st) => !LAYOUT_ACTUAL(st.radiation),
+      { type: "tags", label: "Module scale", attr: "data-rad-modscale", history: "Module scale", advanced: true, blockId: "rad-modscale-block", enable: (st) => !LAYOUT_ACTUAL(st.radiation), why: "In Actual size every module keeps its own size",
         options: [["uniform", "Base size", "Every module keeps its own size, proportional to the whole structure"], ["cell", "Shrink with cell", "The module shrinks with its cell"]],
         get: (st) => st.radiation.moduleScale || "uniform", set: radSet("moduleScale") },
       { type: "dropdown", label: "Module orientation", attr: "data-rad-orient", history: "Module Orientation", advanced: true,

@@ -4252,7 +4252,9 @@ class UiHelpers {
  *     place: (app, state) => {} }            // called after every refresh: puts the floating groups where they belong
  * A group with `floating: "id"` is drawn in a box of that id at the end of the panel; `place` moves it.
  *
- * Controls (every one may carry `show: (state, mod) => bool`, to appear only in some cases, and `blockId`, the id of its box;
+ * Controls (every one may carry `show: (state, mod) => bool`, to appear only in some cases (the detail of an option that was chosen),
+ * `enable: (state, mod) => bool` with `why`, to stay in view but dimmed and without response when it does not apply (a function of the
+ * panel that is not available now; `why` tells the reason, as a tooltip), and `blockId`, the id of its box;
  * `get(state, app)` and `set(state, value, app)` replace the plain `key` when a setting needs more than a number):
  *   { type: "tags",   label, key, attr, history, fallback, options: [[value, text, title?], ...] }   one choice among several
  *   { type: "dropdown", label, key, attr, history, fallback, options: [[value, text, iconHtml?], ...] | "shapes" }   a list of choices ("shapes": every shape, with its icon)
@@ -4278,6 +4280,16 @@ class UiHelpers {
  */
 // The shape names the dropdowns show (a few differ from the shapes' own names)
 const SHAPE_LABELS = { line: "Line", cross: "Greek Cross", wave: "Sine Wave", digit1: "Number 1", digit5: "Number 5", digit9: "Number 9" };
+
+// Dims a control that does not apply now, or gives it back: it stays in view, without response, with the reason as a tooltip
+function setControlEnabled(el, enabled, why) {
+  if (!el) return;
+  el.classList.toggle("is-disabled", !enabled);
+  if (enabled) { el.removeAttribute("aria-disabled"); if (el.dataset.why !== undefined) { el.removeAttribute("title"); delete el.dataset.why; } }
+  else { el.setAttribute("aria-disabled", "true"); if (why) { el.title = why; el.dataset.why = "1"; } }
+  const own = el.matches("button, input") ? [el] : [];
+  for (const x of [...own, ...el.querySelectorAll("button, input")]) x.disabled = !enabled;
+}
 
 // Every control of a list, the boxes (stack) and what is inside them
 function* walkControls(controls) {
@@ -4390,6 +4402,10 @@ class PanelBuilder {
     for (const c of walkControls(all)) {
       // every box that shows or hides: its own box, its stack and its label
       if (c.show && c.blockId) document.getElementById(c.blockId)?.classList.toggle("hidden", !c.show(st, mod));
+      if (c.enable) {
+        const box = c.blockId ? document.getElementById(c.blockId) : (c.type === "toggle" ? document.getElementById(c.id)?.closest("label") : null);
+        setControlEnabled(box, !!c.enable(st, mod), typeof c.why === "function" ? c.why(st) : c.why);
+      }
       if (c.type === "tags" || c.type === "dropdown") {
         const cur = c.get ? c.get(st, this) : (st[c.key] || c.fallback);
         document.querySelectorAll(`#${spec.cardId} [${c.attr}]`).forEach(b => b.classList.toggle("active", b.getAttribute(c.attr) === cur));
@@ -4408,6 +4424,7 @@ class PanelBuilder {
           chip.classList.toggle("active", on);
           chip.setAttribute("aria-pressed", String(on));
           if (o.show) chip.classList.toggle("hidden", !o.show(st, mod));
+          if (o.enable) setControlEnabled(chip, !!o.enable(st, mod), o.why);
         }
       } else if (c.type === "slider" && c.bind !== false) {
         const m = c.meta ? c.meta(st) : null;
@@ -5312,14 +5329,14 @@ const LAYOUT_PANEL = {
         get: (st) => st.repetition.sizeMode || "fit",
         set: (st, v, app) => { st.repetition.sizeMode = v; if (v === "actual") app.startContainerFromCell(st.repetition.cols, st.repetition.rows); st.mode = "repetition"; } },
       // Placement does not apply to the honeycomb; mixed sizes only to the plain and alternating grids
-      { type: "tags", label: "Module placement", attr: "data-rep-place", history: "Module Placement", blockId: "rep-placement-block", show: (st) => !["hexagonal", "free"].includes(st.repetition.gridType),
+      { type: "tags", label: "Module placement", attr: "data-rep-place", history: "Module Placement", blockId: "rep-placement-block", enable: (st) => !["hexagonal", "free"].includes(st.repetition.gridType), why: "Does not apply to the hexagonal grid or to Free",
         options: [["centers", "Centers"], ["intersections", "Intersections"], ["both", "Both"]], get: (st) => st.repetition.placement || "centers", set: repSet("placement") },
-      { type: "tags", label: "Cell mix", attr: "data-rep-mix", history: "Cell Mix", blockId: "rep-mix-block", show: (st) => st.repetition.gridType === "basic" || st.repetition.gridType === "alternating",
+      { type: "tags", label: "Cell mix", attr: "data-rep-mix", history: "Cell Mix", blockId: "rep-mix-block", enable: (st) => st.repetition.gridType === "basic" || st.repetition.gridType === "alternating", why: "Only with the Grid and Alternating variations",
         options: [["none", "None"], ["merge", "Merged"], ["divide", "Divided"]], get: (st) => st.repetition.cellMix || "none", set: repSet("cellMix") },
       { type: "slider", id: "layout-inter", label: "Intersection size", blockId: "rep-inter-block", min: 10, max: 100, step: 5, value: 50, suffix: "%", decimal: true, history: "Intersection Size",
         show: (st) => !["hexagonal", "free"].includes(st.repetition.gridType) && (st.repetition.placement || "centers") !== "centers",
         get: (st) => st.repetition.interScale ?? 50, set: repSet("interScale", (v) => layoutClamp(v, 10, 100)) },
-      { type: "tags", label: "Module scale", attr: "data-rep-modscale", history: "Module Scale", advanced: true, blockId: "rep-modscale-block", show: (st) => !LAYOUT_ACTUAL(st.repetition),
+      { type: "tags", label: "Module scale", attr: "data-rep-modscale", history: "Module Scale", advanced: true, blockId: "rep-modscale-block", enable: (st) => !LAYOUT_ACTUAL(st.repetition), why: "In Actual size every module keeps its own size",
         options: [["uniform", "Base size", "Every module keeps its own size, proportional to the whole canvas"], ["cell", "Shrink with cell", "The module shrinks with its cell"]],
         get: (st) => st.repetition.moduleScale || "uniform", set: repSet("moduleScale") },
       { type: "toggle", id: "chk-rep-clip", label: "Clip cell", history: "Clip cell", advanced: true, get: (st) => !!st.repetition.activeClipping, set: (st, v) => { st.repetition.activeClipping = v; } },
@@ -5358,7 +5375,7 @@ const LAYOUT_PANEL = {
         set: (st, v) => { st.radiation.scheme = v; st.mode = "radiation"; st.enabled = true; } },
       // Actual size can let every ring take as many rays as fit the container's width; then the slider has no meaning
       { type: "slider", id: "layout-rays", label: "Angular rays", blockId: "rad-rays-block", min: 3, max: 60, step: 1, value: 12, suffix: "", decimal: true, history: "Angular Rays",
-        show: (st) => !(LAYOUT_ACTUAL(st.radiation) && !!st.radiation.raysByContainer && st.radiation.scheme !== "centripetal"),
+        enable: (st) => !(LAYOUT_ACTUAL(st.radiation) && !!st.radiation.raysByContainer && st.radiation.scheme !== "centripetal"), why: "The container decides the rays",
         get: (st) => st.radiation.rays || 12, set: radSet("rays") },
       { type: "slider", id: "layout-rings", label: "Concentric rings", min: 2, max: 20, step: 1, value: 6, suffix: "", decimal: true, history: "Concentric Rings", get: (st) => st.radiation.rings || 6, set: radSet("rings") },
       { type: "slider", id: "layout-centers", label: "Centers", blockId: "rad-centers-block", min: 2, max: 8, step: 1, value: 2, suffix: "", decimal: true, history: "Centers", show: (st) => st.radiation.scheme === "multi_center",
@@ -5368,14 +5385,14 @@ const LAYOUT_PANEL = {
       { type: "dropdown", label: "Direction", attr: "data-rad-dir", history: "Radiation Direction", advanced: true, options: [["repeated", "Repeated"], ["alternated", "Alternated"], ["undefined", "Undefined"]],
         get: (st) => st.radiation.direction || "repeated", set: radSet("direction") },
       // Polygonal rings do not apply to spirals or chevrons
-      { type: "dropdown", label: "Ring shape", attr: "data-rad-shape", history: "Ring Shape", advanced: true, blockId: "rad-ringshape-block", show: (st) => st.radiation.scheme !== "spiral" && st.radiation.scheme !== "centripetal",
+      { type: "dropdown", label: "Ring shape", attr: "data-rad-shape", history: "Ring Shape", advanced: true, blockId: "rad-ringshape-block", enable: (st) => st.radiation.scheme !== "spiral" && st.radiation.scheme !== "centripetal", why: "Does not apply to Spiral or Centripetal",
         options: [["circle", "Circle"], ["triangle", "Triangle"], ["square", "Square"], ["pentagon", "Pentagon"], ["hexagon", "Hexagon"], ["octagon", "Octagon"]],
         get: (st) => st.radiation.ringShape || "circle", set: radSet("ringShape") },
       { type: "slider", id: "layout-open", label: "Open center", min: 0, max: 90, step: 1, value: 0, suffix: "%", decimal: true, history: "Open Center", advanced: true, get: (st) => st.radiation.centerOpen || 0, set: radSet("centerOpen") },
       { type: "slider", id: "layout-ringrot", label: "Ring rotation", min: -90, max: 90, step: 1, value: 0, suffix: "º", decimal: true, history: "Ring Rotation", advanced: true, get: (st) => st.radiation.ringRotation || 0, set: radSet("ringRotation") },
       { type: "toggle", id: "chk-rad-raysbycont", label: "Rays follow container", history: "Rays follow container", advanced: true, labelId: "rad-raysbycont-item",
         title: "Actual size: every ring gets as many rays as fit the container's width, so the cells are as big as the container",
-        show: (st) => LAYOUT_ACTUAL(st.radiation) && st.radiation.scheme !== "centripetal", get: (st) => !!st.radiation.raysByContainer, set: (st, v) => { st.radiation.raysByContainer = v; } },
+        enable: (st) => LAYOUT_ACTUAL(st.radiation) && st.radiation.scheme !== "centripetal", why: "Only in Actual size, and not with Centripetal", get: (st) => !!st.radiation.raysByContainer, set: (st, v) => { st.radiation.raysByContainer = v; } },
     ] },
     { region: "subpanel-radiation", title: "Module", advId: "rad-adv-module", controls: [
       { type: "tags", label: "Module size", attr: "data-rad-size", history: "Radiation Module Size", options: [["fit", "Fit to canvas"], ["actual", "Actual size"]],
@@ -5392,7 +5409,7 @@ const LAYOUT_PANEL = {
           }
           st.mode = "radiation";
         } },
-      { type: "tags", label: "Module scale", attr: "data-rad-modscale", history: "Module scale", advanced: true, blockId: "rad-modscale-block", show: (st) => !LAYOUT_ACTUAL(st.radiation),
+      { type: "tags", label: "Module scale", attr: "data-rad-modscale", history: "Module scale", advanced: true, blockId: "rad-modscale-block", enable: (st) => !LAYOUT_ACTUAL(st.radiation), why: "In Actual size every module keeps its own size",
         options: [["uniform", "Base size", "Every module keeps its own size, proportional to the whole structure"], ["cell", "Shrink with cell", "The module shrinks with its cell"]],
         get: (st) => st.radiation.moduleScale || "uniform", set: radSet("moduleScale") },
       { type: "dropdown", label: "Module orientation", attr: "data-rad-orient", history: "Module Orientation", advanced: true,
@@ -5635,7 +5652,8 @@ const GRADATION_PANEL = {
       { type: "dropdown", label: "Sequence", key: "sequence", attr: "data-grad-sequence", history: "Sequence", fallback: "restart", advanced: true,
         options: [["restart", "Restart"], ["pingpong", "Ping-pong"]] },
       // Alternate rows has nothing to do on the snake path, which already runs back and forth
-      { type: "toggle", id: "toggle-grad-alternate", label: "Alternate rows", key: "alternate", history: "Alternate", advanced: true, show: (st) => st.pathway !== "zigzag" },
+      { type: "toggle", id: "toggle-grad-alternate", label: "Alternate rows", key: "alternate", history: "Alternate", advanced: true,
+        enable: (st) => st.pathway !== "zigzag", why: "The zigzag path already runs back and forth" },
       { type: "toggle", id: "toggle-grad-reverse", label: "Reverse Gradient Direction", key: "reverse", history: "Reverse", advanced: true },
     ] },
     { title: "Progression", advId: "grad-adv-prog", controls: [
@@ -5702,16 +5720,16 @@ const ANOMALY_PANEL = {
       { type: "tags", label: "Distribution", key: "distribution", attr: "data-anom-dist", history: "Distribution", fallback: "single",
         options: [["single", "Single"], ["regular", "Scattered regular"], ["random", "Scattered random"]] },
       // The attributes each anomaly type can deviate in
-      { type: "chips", label: "Deviates in", attr: "data-anom-attr", blockId: "anom-attrs-block", show: (st) => st.type !== "regrid",
+      { type: "chips", label: "Deviates in", attr: "data-anom-attr", blockId: "anom-attrs-block", enable: (st) => st.type !== "regrid", why: "With Another grid only the grid of the zone counts",
         nested: { key: "attrs", defaults: { shape: true, scale: true, rotation: true, position: true }, history: "Deviates in" },
-        options: ["shape", "scale", "rotation", "position"].map(k => ({ key: k, text: k[0].toUpperCase() + k.slice(1), show: (st) => (StudioProApp.ANOMALY_ATTRS[st.type] || []).includes(k) })) },
+        options: ["shape", "scale", "rotation", "position"].map(k => ({ key: k, text: k[0].toUpperCase() + k.slice(1), enable: (st) => (StudioProApp.ANOMALY_ATTRS[st.type] || []).includes(k), why: "This type does not change this property" })) },
       { type: "dropdown", label: "Focal Intruder Shape", key: "anomalousShape", attr: "data-anom-shape", history: "Shape", options: "shapes", blockId: "anom-shape-block",
         show: (st) => st.type === "focal" && (st.attrs || {}).shape !== false },
       { type: "hint", text: "Click anywhere on the canvas to set focal point", blockId: "anom-position-block", show: (st) => (st.distribution || "single") === "single" },
       { type: "slider", id: "anom-count", label: "Count", key: "count", min: 1, max: 10, step: 1, value: 5, suffix: "", history: "Count", blockId: "anom-count-block", show: (st) => (st.distribution || "single") !== "single" },
       { type: "slider", id: "anom-seed", label: "Seed", key: "seed", min: 1, max: 99, step: 1, value: 7, suffix: "", history: "Seed", blockId: "anom-seed-block", show: (st) => st.distribution === "random" },
       { type: "slider", id: "anom-radius", label: "Radius", key: "radius", min: 10, max: 350, step: 5, value: 150, suffix: "px", history: "Radius" },
-      { type: "slider", id: "anom-intensity", label: "Severity", key: "intensity", min: 5, max: 100, step: 1, value: 60, suffix: "%", history: "Severity", blockId: "anom-severity-block", show: (st) => st.type !== "regrid" },
+      { type: "slider", id: "anom-intensity", label: "Severity", key: "intensity", min: 5, max: 100, step: 1, value: 60, suffix: "%", history: "Severity", blockId: "anom-severity-block", enable: (st) => st.type !== "regrid", why: "With Another grid only the grid of the zone counts" },
       { type: "accent", prefix: "anom", colorKey: "accentColor", flagKey: "highlightColor" },
       { type: "toggle", id: "toggle-anom-reticle", label: "Show focal point", key: "showReticle", history: "Reticle" },
     ] },
@@ -5813,22 +5831,22 @@ const CONCENTRATION_PANEL = {
     { title: "Concentration", controls: [
       { type: "tags", label: "Structure", key: "mode", attr: "data-conc-mode", history: "Structure",
         options: [["point", "Point"], ["void", "Void"], ["line", "Line"], ["line_void", "Away from line"], ["free", "Hotspots"], ["dense", "Dense"], ["sparse", "Sparse"]] },
-      { type: "tags", label: "Method", key: "method", attr: "data-conc-method", history: "Method", fallback: "move", blockId: "conc-method-block", show: (st) => !CONC_WHOLE(st),
+      { type: "tags", label: "Method", key: "method", attr: "data-conc-method", history: "Method", fallback: "move", blockId: "conc-method-block", enable: (st) => !CONC_WHOLE(st), why: "Dense and Sparse work on the whole design",
         options: [["move", "Move"], ["absence", "Absence"]] },
       { type: "tags", label: "Line axis", key: "lineAxis", attr: "data-conc-axis", history: "Axis", blockId: "conc-axis-block", show: (st) => st.mode === "line" || st.mode === "line_void",
         options: [["horizontal", "Horizontal"], ["vertical", "Vertical"]] },
       { type: "chips", label: "Field style", attr: "data-conc-flag", options: [
-        { key: "edgeFade", text: "Soft edge", id: "conc-fade-block", show: (st) => CONC_WHOLE(st) },
+        { key: "edgeFade", text: "Soft edge", id: "conc-fade-block", enable: (st) => CONC_WHOLE(st), why: "Only with Dense or Sparse" },
         { key: "alignToField", text: "Flowing" },
         { key: "densityScale", text: "Dynamic density" } ] },
-      { type: "slider", id: "conc-foci", label: "Foci", key: "focusCount", min: 2, max: 8, step: 1, value: 2, suffix: "", history: "Foci", blockId: "conc-foci-block", show: (st) => st.mode === "free" },
+      { type: "slider", id: "conc-foci", label: "Number of hotspots", key: "focusCount", min: 2, max: 8, step: 1, value: 2, suffix: "", history: "Foci", blockId: "conc-foci-block", show: (st) => st.mode === "free" },
       { type: "slider", id: "conc-x", label: "X position", key: "attractorX", min: 0, max: 100, step: 1, value: 50, suffix: "%", divisor: 100, fallback: 0.5, history: "X" },
       { type: "slider", id: "conc-y", label: "Y position", key: "attractorY", min: 0, max: 100, step: 1, value: 50, suffix: "%", divisor: 100, fallback: 0.5, history: "Y" },
       { type: "hint", text: "Click anywhere on the canvas to reposition the attractor" },
     ] },
     { title: "Strength", controls: [
       { type: "slider", id: "conc-power", label: "Gathering pull", key: "power", min: 10, max: 100, step: 1, value: 50, suffix: "%", history: "Pull" },
-      { type: "slider", id: "conc-radius", label: "Field radius", key: "radius", min: 10, max: 500, step: 5, value: 250, suffix: "px", history: "Radius", blockId: "conc-radius-field", show: (st) => !CONC_WHOLE(st) },
+      { type: "slider", id: "conc-radius", label: "Field radius", key: "radius", min: 10, max: 500, step: 5, value: 250, suffix: "px", history: "Radius", blockId: "conc-radius-field", enable: (st) => !CONC_WHOLE(st), why: "Dense and Sparse work on the whole design" },
       { type: "toggle", id: "toggle-conc-guide", label: "Display Attractor Guide", key: "showAttractor", history: "Attractor Guide" },
     ] },
   ],

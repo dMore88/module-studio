@@ -23,7 +23,8 @@ const GRADATION_PANEL = {
       { type: "dropdown", label: "Sequence", key: "sequence", attr: "data-grad-sequence", history: "Sequence", fallback: "restart", advanced: true,
         options: [["restart", "Restart"], ["pingpong", "Ping-pong"]] },
       // Alternate rows has nothing to do on the snake path, which already runs back and forth
-      { type: "toggle", id: "toggle-grad-alternate", label: "Alternate rows", key: "alternate", history: "Alternate", advanced: true, show: (st) => st.pathway !== "zigzag" },
+      { type: "toggle", id: "toggle-grad-alternate", label: "Alternate rows", key: "alternate", history: "Alternate", advanced: true,
+        enable: (st) => st.pathway !== "zigzag", why: "The zigzag path already runs back and forth" },
       { type: "toggle", id: "toggle-grad-reverse", label: "Reverse Gradient Direction", key: "reverse", history: "Reverse", advanced: true },
     ] },
     { title: "Progression", advId: "grad-adv-prog", controls: [
