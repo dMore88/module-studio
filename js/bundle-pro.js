@@ -4454,6 +4454,18 @@ class StudioProApp {
       });
     }
 
+    // The Download menu: opens under its button, closes after a choice, with Escape or a click outside
+    {
+      const menu = document.getElementById("download-menu");
+      const trigger = document.getElementById("btn-download");
+      const list = menu?.querySelector(".ds-menu__list");
+      const setOpen = (open) => { if (!list) return; list.hidden = !open; trigger.setAttribute("aria-expanded", String(open)); };
+      trigger?.addEventListener("click", (e) => { e.stopPropagation(); setOpen(list.hidden); });
+      list?.addEventListener("click", () => setOpen(false));
+      document.addEventListener("click", (e) => { if (menu && !menu.contains(e.target)) setOpen(false); });
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape") setOpen(false); });
+    }
+
     // 4. Copy SVG Code
     const copySvgBtn = document.getElementById("btn-copy-svg-code");
     if (copySvgBtn) {

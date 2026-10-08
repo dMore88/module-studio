@@ -1171,7 +1171,7 @@
           }
         }
       }
-      assert(iconOf(d.querySelector("#btn-open-config")) === "ph-gear-six" && iconOf(d.querySelector("#btn-toggle-grid")) === "ph-grid-nine" && iconOf(d.querySelector(".ds-brand-icon").parentElement) === "ph-gradient", "Header or toolbar icons differ from Figma");
+      assert(iconOf(d.querySelector("#btn-download")) === "ph-download-simple" && iconOf(d.querySelector("#btn-toggle-grid")) === "ph-grid-nine" && iconOf(d.querySelector(".ds-brand-icon").parentElement) === "ph-gradient", "Header or toolbar icons differ from Figma");
     });
 
     await test("Anomaly: scattered epicenters and the attributes it deviates in", async () => {
@@ -2307,14 +2307,14 @@
       assert(d.body.classList.contains("is-editing-module") && d.getElementById("mode-chip-text").textContent === "Smart module mode" && d.getElementById("mode-chip").classList.contains("ds-mode-chip--smart"), "The chip says Smart module mode");
       assert(getComputedStyle(q(".ds-shapes-panel")).display !== "none" && getComputedStyle(q(".ds-layers-panel:not(.ds-shapes-panel)")).display === "none" && q("#fig-list").closest(".ds-shapes-panel") && q("#shapes-count-badge").textContent === String(app.state.layers.find(l => l.id === app.figEdit.layerId).figures.length), "The shapes list takes the place of the layers and the Art log on the left");
       assert(d.getElementById("canvas-aspect-ratio").disabled && [...d.querySelectorAll("#controls-rail .rail-btn")].every(b => (b.dataset.railTab === "module") === !b.disabled), "The aspect ratio and every panel but Module are disabled");
-      assert(d.querySelector(".ds-export-actions").contains(q("#btn-fig-save")) && d.querySelector(".ds-export-actions").contains(q("#btn-fig-cancel")) && getComputedStyle(q("#btn-fig-save")).display !== "none" && getComputedStyle(q("#btn-download-svg")).display === "none" && getComputedStyle(q("#btn-open-project")).display === "none", "Save module and Cancel edition replace the document buttons in the header");
+      assert(d.querySelector(".ds-export-actions").contains(q("#btn-fig-save")) && d.querySelector(".ds-export-actions").contains(q("#btn-fig-cancel")) && getComputedStyle(q("#btn-fig-save")).display !== "none" && getComputedStyle(q("#download-menu")).display === "none" && getComputedStyle(q("#btn-open-project")).display === "none", "Save module and Cancel edition replace the document buttons in the header");
       assert(getComputedStyle(q("#active-layer-inspector .close-flyout-btn")).display === "none", "The panel has no close button");
       q('[data-rail-tab="layout"]').click(); await wait(60);
       q("#active-layer-inspector .close-flyout-btn").click(); await wait(30);
       assert(app.figEdit && app.activeRailTab === "module" && app.isFlyoutOpen, "Another panel and the close button do nothing while editing");
       q('#fig-list [data-fig-index="1"] .btn-fig-trash').click(); await wait(30);
       q("#btn-fig-save").click(); await wait(60);
-      assert(!app.figEdit && !d.body.classList.contains("is-editing-module") && d.getElementById("mode-chip-text").textContent === "Composition mode" && !d.getElementById("canvas-aspect-ratio").disabled && [...d.querySelectorAll("#controls-rail .rail-btn")].every(b => !b.disabled) && getComputedStyle(q("#btn-download-svg")).display !== "none", "Saving gives the composition its look back");
+      assert(!app.figEdit && !d.body.classList.contains("is-editing-module") && d.getElementById("mode-chip-text").textContent === "Composition mode" && !d.getElementById("canvas-aspect-ratio").disabled && [...d.querySelectorAll("#controls-rail .rail-btn")].every(b => !b.disabled) && getComputedStyle(q("#download-menu")).display !== "none", "Saving gives the composition its look back");
       assert(L.figures.length === 1 && L.figures[0].shape === "square" && L.shape === "square", "A module with one figure keeps it");
     });
 

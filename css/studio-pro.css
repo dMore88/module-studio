@@ -1071,7 +1071,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .is-edit-only { display: none; }
 body.is-editing-module .is-edit-only { display: inline-flex; }
 /* in the editor the only ways out are Save and Cancel: the document buttons give way to them, and the rest of the app waits */
-body.is-editing-module .ds-export-actions > .ds-btn:not(.is-edit-only) { display: none; }
+body.is-editing-module .ds-export-actions > .ds-btn:not(.is-edit-only), body.is-editing-module .ds-export-actions > .ds-menu { display: none; }
 body.is-editing-module #controls-rail .rail-btn:not([data-rail-tab="module"]) { opacity: 0.4; pointer-events: none; }
 body.is-editing-module #inspector-flyout .close-flyout-btn { display: none; }
 /* the shapes take the place of the layers and the Art log on the left */
@@ -1088,3 +1088,17 @@ body.is-editing-module .ds-artboard::after {
 }
 body.is-editing-module .ds-select { opacity: 0.5; pointer-events: none; }
 .ds-btn--dark i { color: var(--neutral-icon-inverted); }
+
+/* Download menu in the header: one button that opens JSON, SVG and Copy SVG */
+.ds-menu { position: relative; }
+.ds-menu__list {
+  position: absolute; right: 0; top: calc(100% + var(--spacing-2)); z-index: 50; min-width: 160px; padding: var(--spacing-2);
+  display: flex; flex-direction: column; gap: var(--spacing-1); border-radius: var(--border-radius-2);
+  background: var(--neutral-bg-light); box-shadow: var(--elevation-5x);
+}
+.ds-menu__list[hidden] { display: none; }
+.ds-menu__item {
+  display: flex; align-items: center; gap: var(--spacing-3); height: var(--sizing-6); padding: 0 var(--spacing-3); border: 0; border-radius: var(--border-radius-1);
+  background: transparent; color: var(--neutral-text-main); font: inherit; font-size: var(--font-size-xs); cursor: pointer; text-align: left;
+}
+.ds-menu__item:hover { background: var(--neutral-bg-strong); }
