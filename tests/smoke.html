@@ -767,12 +767,12 @@
       }
       assert(/Canvas: \d+ × \d+ PX/.test(d.getElementById("art-log-lines").textContent), "The Art log does not show the canvas size");
       for (const btn of d.querySelectorAll("#controls-rail .rail-btn")) {
-        btn.click(); await wait(30);
+        btn.click(); await wait(400);
         const tab = d.querySelector(`.flyout-tab-content[data-flyout-tab="${btn.dataset.railTab}"]`);
         assert(flyout.scrollWidth <= flyout.clientWidth + 1, `${btn.dataset.railTab}: the panel overflows horizontally`);
         const tops = Array.from(tab.querySelectorAll(".ds-slider .ds-value")).filter(v => v.offsetParent).map(v => Math.round(v.getBoundingClientRect().top));
         assert(new Set(tops).size === tops.length, `${btn.dataset.railTab}: two sliders share a row`);
-        assert(flyout.getBoundingClientRect().width === 300, `${btn.dataset.railTab}: the panel is not 300 px wide`);
+        assert(flyout.getBoundingClientRect().width === 300, `${btn.dataset.railTab}: the panel is not 300 px wide (${flyout.getBoundingClientRect().width})`);
         for (const sw of Array.from(tab.querySelectorAll(".ds-swatch")).filter(e => e.offsetParent)) assert(Math.round(sw.getBoundingClientRect().width) === 24, `${btn.dataset.railTab}: a color swatch is not 24 px`);
         const fields = Array.from(tab.querySelectorAll(".ds-field")).filter(e => e.offsetParent && e.querySelector(":scope > .ds-slider")).sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
         for (let i = 1; i < fields.length; i++) {
@@ -2305,6 +2305,7 @@
       // The editor changes the look of the app, and its only ways out are Save and Cancel
       q('[data-rail-tab="module"]').click(); await wait(60);
       assert(d.body.classList.contains("is-editing-module") && d.getElementById("mode-chip-text").textContent === "Smart module mode" && d.getElementById("mode-chip").classList.contains("ds-mode-chip--smart"), "The chip says Smart module mode");
+      assert(getComputedStyle(q(".ds-shapes-panel")).display !== "none" && getComputedStyle(q(".ds-layers-panel:not(.ds-shapes-panel)")).display === "none" && q("#fig-list").closest(".ds-shapes-panel") && q("#shapes-count-badge").textContent === String(app.state.layers.find(l => l.id === app.figEdit.layerId).figures.length), "The shapes list takes the place of the layers and the Art log on the left");
       assert(d.getElementById("canvas-aspect-ratio").disabled && [...d.querySelectorAll("#controls-rail .rail-btn")].every(b => (b.dataset.railTab === "module") === !b.disabled), "The aspect ratio and every panel but Module are disabled");
       assert(d.querySelector(".ds-export-actions").contains(q("#btn-fig-save")) && d.querySelector(".ds-export-actions").contains(q("#btn-fig-cancel")) && getComputedStyle(q("#btn-fig-save")).display !== "none" && getComputedStyle(q("#btn-download-svg")).display === "none" && getComputedStyle(q("#btn-open-project")).display === "none", "Save module and Cancel edition replace the document buttons in the header");
       assert(getComputedStyle(q("#active-layer-inspector .close-flyout-btn")).display === "none", "The panel has no close button");

@@ -3190,6 +3190,7 @@ export class StudioProApp {
       const ns = document.getElementById("num-active-stroke"); if (ns) ns.value = `${look.sw || 1}px`;
     }
     if (f) { set("fig-w", f.width, "px"); set("fig-h", f.height, "px"); set("fig-x", f.x, "px"); set("fig-y", f.y, "px"); set("fig-rot", f.rotation, "º"); }
+    const badge = document.getElementById("shapes-count-badge"); if (badge) badge.textContent = String(mod.figures.length);
     document.getElementById("btn-fig-add")?.toggleAttribute("disabled", mod.figures.length >= 4);
     document.getElementById("btn-fig-duplicate")?.toggleAttribute("disabled", mod.figures.length >= 4);
     // Combine: only with two or more shapes

@@ -1074,6 +1074,17 @@ body.is-editing-module .is-edit-only { display: inline-flex; }
 body.is-editing-module .ds-export-actions > .ds-btn:not(.is-edit-only) { display: none; }
 body.is-editing-module #controls-rail .rail-btn:not([data-rail-tab="module"]) { opacity: 0.4; pointer-events: none; }
 body.is-editing-module #inspector-flyout .close-flyout-btn { display: none; }
-body.is-editing-module .ds-layers-panel { opacity: 0.5; pointer-events: none; }
+/* the shapes take the place of the layers and the Art log on the left */
+.ds-shapes-panel { display: none; }
+body.is-editing-module .ds-shapes-panel { display: flex; }
+body.is-editing-module .ds-layers-panel:not(.ds-shapes-panel) { display: none; }
+/* a small cross marks the centre of the module canvas (a guide, never exported) */
+body.is-editing-module .ds-artboard { position: relative; }
+body.is-editing-module .ds-artboard::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: 13px; height: 13px; transform: translate(-50%, -50%); pointer-events: none;
+  background:
+    linear-gradient(#9aa0a6, #9aa0a6) center / 1px 100% no-repeat,
+    linear-gradient(#9aa0a6, #9aa0a6) center / 100% 1px no-repeat;
+}
 body.is-editing-module .ds-select { opacity: 0.5; pointer-events: none; }
 .ds-btn--dark i { color: var(--neutral-icon-inverted); }
