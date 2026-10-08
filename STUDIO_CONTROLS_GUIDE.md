@@ -389,16 +389,18 @@ Para incorporar estos conceptos dentro de [Abstract Studio](https://github.com/d
 4. **Arquetipos Radiales Avanzados:** expandir los generadores radiales con los esquemas de `Radiation`: `centrifugal`, `concentric`, `spiral` con torsión continua (`spiralTwist`), centros múltiples (`multi_center`) y anillos poligonales (`ringShape`).
 
 
-**Grupos con título.** Los controles de cada panel se agrupan por **tipo de propiedad**, con un título en mayúsculas y una línea divisoria entre grupos, como en la plantilla del diseño. La regla: un panel lleva títulos de grupo solo si tiene dos o más grupos (contando lo que hay dentro de *Advanced*); si tuviera uno solo, solo llevaría el título del panel. *Advanced* sigue la misma regla, con sus propios títulos:
+**Grupos con título.** Los controles de cada panel se agrupan por **tipo de propiedad**, con un título en mayúsculas y una línea divisoria entre grupos, como en la plantilla del diseño. Un panel lleva títulos de grupo solo si tiene dos o más grupos; con uno solo, solo lleva el título del panel. Cada grupo puede tener sus **controles secundarios** en su propio acordeón *Advanced controls*, al final del grupo y cerrado por defecto; un grupo cuyos controles son todos esenciales (por ejemplo *Rhythm*, *Lines*, *Association*) no lo lleva.
 
-| Panel | Grupos (principal) | Grupos (dentro de Advanced) |
-|---|---|---|
-| Layout › Repetition | Grid, Module, Composition container | Module, Grid, Rhythm, Lines |
-| Layout › Radiation | Radiation, Module | Module, Radiation, Lines |
-| Similarity | Kinship | Association, Imperfection |
-| Gradation | Attribute, Path, Progression | Path, Progression |
-| Anomaly | Anomaly, Zone | |
-| Contrast | Minority, Proportion | |
-| Concentration | Concentration, Strength | |
-| Texture | Irregularity, Lines, Wave | Lines, Wave |
-| Space | Space, Depth | |
+| Panel | Grupos (con sus *Advanced controls*) |
+|---|---|
+| Layout › Repetition | Grid (reflexión, dirección), Module (escala, Clip cell, Checkerboard), Composition container, Rhythm, Lines |
+| Layout › Radiation | Radiation (dirección, forma de anillo, centro abierto, rotación de anillos, Rays follow container), Module (escala, orientación, Clip cell, Checkerboard), Lines |
+| Similarity | Kinship, Association, Imperfection (jitter espacial) |
+| Gradation | Attribute, Path (sequence, Alternate rows, Reverse), Progression (speed) |
+| Anomaly | Anomaly, Zone |
+| Contrast | Minority, Proportion |
+| Concentration | Concentration, Strength |
+| Texture | Irregularity, Lines (opacidad), Wave (waves y dirección) |
+| Space | Space, Depth |
+
+**Espaciados** (del diseño): panel con 24 px de margen; 16 px entre el título de un grupo y sus controles y entre controles; 24 px alrededor de cada línea divisoria y entre dos sliders seguidos; 8 px entre una etiqueta y su control. El acordeón es de 10 px, sin línea debajo.

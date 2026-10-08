@@ -494,7 +494,7 @@
       // The inspector: four sliders, the size ones hidden in Actual size, and the art log says it
       d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
       assert(d.getElementById("num-block-x").value === "-150px" && d.getElementById("num-block-w").value === "300px", `The block sliders should show pixels of the canvas (${d.getElementById("num-block-x").value} / ${d.getElementById("num-block-w").value})`);
-      assert(d.getElementById("layout-block").nextElementSibling === d.getElementById("rep-advanced"), "The Block should sit right before the Repetition Advanced section");
+      assert(d.getElementById("layout-block").previousElementSibling === d.getElementById("rep-adv-module"), "The Composition container should be its own group, right after the Repetition Module group");
       assert(!d.getElementById("block-size-fields").classList.contains("hidden"), "Fit shows the block size");
       st.repetition.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer(); app.render();
       assert(!d.getElementById("block-size-fields").classList.contains("hidden"), "Actual size also shows the composition container's size (it cuts the grid)");
@@ -502,7 +502,7 @@
       fire0(d.getElementById("input-block-x"), 60);
       assert(Math.abs(st.block.x - 60) < 1e-9, `A 60 px offset should store 60 % of the canvas away from the middle... (${st.block.x})`);
       st.mode = "radiation"; app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("layout-block").nextElementSibling === d.getElementById("rad-advanced"), "In Radiation the Block should move before the Radiation Advanced section");
+      assert(d.getElementById("layout-block").previousElementSibling === d.getElementById("rad-adv-module"), "In Radiation the Composition container should move after the Radiation Module group");
     });
 
     await test("Block frame: a dashed guide of the block while the Layout panel is open, never when it is the whole canvas or in an export", async () => {
@@ -1689,18 +1689,18 @@
       reset();
     });
 
-    await test("Gradation and Similarity: essentials up front, the rest in Advanced, dropdowns follow the state", async () => {
+    await test("Gradation and Similarity: essentials up front, the rest in each group's Advanced controls, dropdowns follow the state", async () => {
       reset();
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="gradation"]').click(); await wait(60);
-      const gAdv = q("#grad-advanced");
-      assert(gAdv && gAdv.contains(q("#input-grad-easing")) && gAdv.contains(q("#toggle-grad-reverse")) && gAdv.contains(q('[data-grad-sequence="pingpong"]')), "Sequence, Acceleration and the checkboxes belong in Gradation > Advanced");
-      assert(!gAdv.contains(q("#input-grad-range")) && !gAdv.contains(q("#input-grad-steps")), "Range and Cycles stay up front");
+      const gAdvPath = q("#grad-adv-path"), gAdvProg = q("#grad-adv-prog");
+      assert(gAdvPath && gAdvProg && gAdvProg.contains(q("#input-grad-easing")) && gAdvPath.contains(q("#toggle-grad-reverse")) && gAdvPath.contains(q('[data-grad-sequence="pingpong"]')), "Sequence and the checkboxes belong in Gradation > Path > Advanced controls, Speed in Progression");
+      assert(!gAdvProg.contains(q("#input-grad-range")) && !gAdvProg.contains(q("#input-grad-steps")) && !gAdvPath.contains(q("#input-grad-range")), "Range and Cycles stay up front");
       q('[data-grad-type="scale"]').click();
       assert(/Scale/.test(q('[data-grad-type="scale"]').closest(".ds-dropdown").querySelector(".ds-dropdown-current").textContent), "The Attribute dropdown should show the chosen attribute");
       q('[data-rail-tab="similarity"]').click(); await wait(60);
-      const sAdv = q("#sim-advanced");
-      assert(sAdv && sAdv.contains(q('[data-sim-assoc="round"]')) && sAdv.contains(q("#input-sim-jitter")) && !sAdv.contains(q("#input-sim-intensity")), "Association, Imperfection and jitter belong in Similarity > Advanced; Fluctuation stays up front");
+      const sAdv = q("#sim-adv-imperf");
+      assert(sAdv && sAdv.contains(q("#input-sim-jitter")) && !sAdv.contains(q("#input-sim-intensity")) && !sAdv.contains(q('[data-sim-assoc="round"]')) && q('[data-sim-assoc="round"]').closest(".ds-field") && q("#input-sim-intensity"), "Association and Imperfection are groups in view; the jitter is in Imperfection > Advanced controls; Fluctuation stays up front");
       q('[data-kinship-type="hybrid"]').click();
       assert(/Hybrid/.test(q('[data-kinship-type="hybrid"]').closest(".ds-dropdown").querySelector(".ds-dropdown-current").textContent), "The kinship dropdown should show the chosen type");
       reset();

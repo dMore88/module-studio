@@ -257,7 +257,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .ds-card {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-6);
+  gap: var(--spacing-5); /* 16 inside a group; the dividers add 8 on each side, so 24 around them (Figma) */
   font-family: var(--typography-family-body);
   color: var(--neutral-text-main);
 }
@@ -267,6 +267,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
+  margin-bottom: var(--spacing-3); /* 16 + 8 = the 24 of the design under the title */
 }
 .ds-card-title {
   flex: 1;
@@ -587,16 +588,15 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .ds-advanced > summary {
   display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-3);
   list-style: none; cursor: pointer;
-  padding: var(--spacing-3) var(--spacing-1);
-  border-bottom: var(--border-weight-1) solid var(--neutral-border-main);
-  font-size: var(--font-size-sm); font-weight: var(--typography-weight-400);
-  line-height: var(--line-height-small);
+  padding: var(--spacing-2) var(--spacing-1); /* 4 / 2, no line under it (Figma accordion item) */
+  font-size: var(--font-size-xs); font-weight: var(--typography-weight-500); letter-spacing: var(--letter-spacing-label);
+  line-height: var(--line-height-tight);
   color: var(--neutral-text-main);
 }
 .ds-advanced > summary::-webkit-details-marker { display: none; }
-.ds-advanced > summary i { order: 2; font-size: var(--sizing-6); transition: transform 0.15s ease; }
+.ds-advanced > summary i { order: 2; font-size: var(--sizing-4); transition: transform 0.15s ease; }
 .ds-advanced[open] > summary i { transform: rotate(180deg); }
-.ds-advanced > .ds-stack { padding-top: var(--spacing-3); }
+.ds-advanced > .ds-stack { padding-top: var(--spacing-5); }
 .ds-hint { margin: 0; font-size: var(--font-size-xs); line-height: var(--line-height-body); color: var(--neutral-text-subtle); }
 
 /* Visible notice when a draw fails (instead of a silent blank canvas) */
@@ -651,10 +651,12 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .ds-btn-group__button:focus-visible { outline: var(--border-weight-2) solid var(--neutral-interactive-default); outline-offset: calc(var(--spacing-1) * -1); }
 
 /* Vertical stack of fields inside a card (sub-panels) */
-.ds-stack { display: flex; flex-direction: column; gap: var(--spacing-6); }
+.ds-stack { display: flex; flex-direction: column; gap: var(--spacing-5); }
+/* two sliders in a row are 24 apart (the other controls, 16) */
+.ds-field:has(> .ds-slider) + .ds-field:has(> .ds-slider) { margin-top: var(--spacing-3); }
 .ds-stack.hidden { display: none !important; }
 /* a hint that belongs to the fields above it */
-.ds-stack > .ds-hint { margin-top: calc(var(--spacing-4) * -1); }
+.ds-stack > .ds-hint { margin-top: calc(var(--spacing-2) * -1); }
 
 /* Snackbar (Figma "snackbar", warning): dependency notice shown inside a card */
 .ds-snackbar {

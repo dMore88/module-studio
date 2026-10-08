@@ -419,7 +419,36 @@
           </div>
         </div>
 
-        <div class="ds-divider" role="separator"></div>
+        <details id="rep-adv-grid" class="ds-advanced">
+<summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced controls</span></summary>
+<div class="ds-stack">
+<div class="ds-field">
+          <div class="ds-label">Reflection</div>
+          <div class="ds-dropdown" data-select>
+            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>None</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
+            <div class="ds-dropdown-menu hidden" role="listbox">
+              <button type="button" class="ds-dropdown-item active" role="option" data-rep-reflect="none"><span>None</span></button>
+              <button type="button" class="ds-dropdown-item" role="option" data-rep-reflect="columns"><span>Columns</span></button>
+              <button type="button" class="ds-dropdown-item" role="option" data-rep-reflect="rows"><span>Rows</span></button>
+              <button type="button" class="ds-dropdown-item" role="option" data-rep-reflect="both"><span>Both</span></button>
+            </div>
+          </div>
+        </div>
+<div class="ds-field">
+          <div class="ds-label">Direction</div>
+          <div class="ds-dropdown" data-select>
+            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Repeated</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
+            <div class="ds-dropdown-menu hidden" role="listbox">
+              <button type="button" class="ds-dropdown-item active" role="option" data-rep-dir="repeated"><span>Repeated</span></button>
+              <button type="button" class="ds-dropdown-item" role="option" data-rep-dir="alternated"><span>Alternated</span></button>
+              <button type="button" class="ds-dropdown-item" role="option" data-rep-dir="undefined"><span>Undefined</span></button>
+            </div>
+          </div>
+        </div>
+</div>
+</details>
+
+<div class="ds-divider" role="separator"></div>
         <div class="ds-label ds-label--overline">Module</div>
         <div class="ds-field">
           <div class="ds-label">Module size</div>
@@ -466,7 +495,30 @@
           </div>
         </div>
 
-        <div id="layout-block" class="ds-stack">
+        <details id="rep-adv-module" class="ds-advanced">
+<summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced controls</span></summary>
+<div class="ds-stack">
+<div id="rep-modscale-block" class="ds-field">
+          <div class="ds-label">Module scale</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-rep-modscale="uniform" title="Every module keeps its own size, proportional to the whole canvas">Base size</button>
+            <button type="button" class="ds-tag" data-rep-modscale="cell" title="The module shrinks with its cell">Shrink with cell</button>
+          </div>
+        </div>
+<div class="ds-toggles">
+<label class="ds-toggle-item">
+            <span class="ds-toggle-label">Clip cell</span>
+            <input type="checkbox" id="chk-rep-clip" class="ds-checkbox">
+          </label>
+<label class="ds-toggle-item">
+            <span class="ds-toggle-label">Checkerboard inversion</span>
+            <input type="checkbox" id="chk-rep-checker" class="ds-checkbox">
+          </label>
+</div>
+</div>
+</details>
+
+<div id="layout-block" class="ds-stack">
           <div class="ds-divider" role="separator"></div>
           <div class="ds-label ds-label--overline">Composition container</div>
           <div id="block-size-fields" class="ds-stack">
@@ -501,88 +553,30 @@
           </div>
         </div>
 
-        <details id="rep-advanced" class="ds-advanced">
-          <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced</span></summary>
-          <div class="ds-stack">
-        <div class="ds-label ds-label--overline">Module</div>
-
-        <div id="rep-modscale-block" class="ds-field">
-          <div class="ds-label">Module scale</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-rep-modscale="uniform" title="Every module keeps its own size, proportional to the whole canvas">Base size</button>
-            <button type="button" class="ds-tag" data-rep-modscale="cell" title="The module shrinks with its cell">Shrink with cell</button>
-          </div>
-        </div>
-
-        <div class="ds-toggles">
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Clip cell</span>
-            <input type="checkbox" id="chk-rep-clip" class="ds-checkbox">
-          </label>
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Checkerboard inversion</span>
-            <input type="checkbox" id="chk-rep-checker" class="ds-checkbox">
-          </label>
-        </div>
-
         <div class="ds-divider" role="separator"></div>
-
-        <div class="ds-label ds-label--overline">Grid</div>
-
-        <div class="ds-field">
-          <div class="ds-label">Reflection</div>
-          <div class="ds-dropdown" data-select>
-            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>None</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-            <div class="ds-dropdown-menu hidden" role="listbox">
-              <button type="button" class="ds-dropdown-item active" role="option" data-rep-reflect="none"><span>None</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rep-reflect="columns"><span>Columns</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rep-reflect="rows"><span>Rows</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rep-reflect="both"><span>Both</span></button>
-            </div>
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Direction</div>
-          <div class="ds-dropdown" data-select>
-            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Repeated</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-            <div class="ds-dropdown-menu hidden" role="listbox">
-              <button type="button" class="ds-dropdown-item active" role="option" data-rep-dir="repeated"><span>Repeated</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rep-dir="alternated"><span>Alternated</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rep-dir="undefined"><span>Undefined</span></button>
-            </div>
-          </div>
-        </div>
-
-        <div class="ds-divider" role="separator"></div>
-
-        <div class="ds-label ds-label--overline">Rhythm</div>
-
-        <div class="ds-field">
+<div class="ds-label ds-label--overline">Rhythm</div>
+<div class="ds-field">
           <div class="ds-label ds-label-clip">Col B size [% of A]</div>
           <div class="ds-slider">
             <input type="range" id="input-struct-col-ratio" min="10" max="100" step="5" value="100">
             <input type="text" id="num-struct-col-ratio" class="ds-value" value="100%" inputmode="decimal">
           </div>
         </div>
-
-        <div class="ds-field">
+<div class="ds-field">
           <div class="ds-label ds-label-clip">Row B size [% of A]</div>
           <div class="ds-slider">
             <input type="range" id="input-struct-row-ratio" min="10" max="100" step="5" value="100">
             <input type="text" id="num-struct-row-ratio" class="ds-value" value="100%" inputmode="decimal">
           </div>
         </div>
-
-        <div class="ds-field">
+<div class="ds-field">
           <div class="ds-label ds-label-clip">Col gradation</div>
           <div class="ds-slider">
             <input type="range" id="input-struct-col-grade" min="-30" max="30" step="1" value="0">
             <input type="text" id="num-struct-col-grade" class="ds-value" value="0%" inputmode="decimal">
           </div>
         </div>
-
-        <div class="ds-field">
+<div class="ds-field">
           <div class="ds-label ds-label-clip">Row gradation</div>
           <div class="ds-slider">
             <input type="range" id="input-struct-row-grade" min="-30" max="30" step="1" value="0">
@@ -590,18 +584,15 @@
           </div>
         </div>
 
-        <div class="ds-divider" role="separator"></div>
-
-        <div class="ds-label ds-label--overline">Lines</div>
-
-        <div class="ds-toggles">
-          <label class="ds-toggle-item">
+<div class="ds-divider" role="separator"></div>
+<div class="ds-label ds-label--overline">Lines</div>
+<div class="ds-toggles">
+<label class="ds-toggle-item">
             <span class="ds-toggle-label">Visible lines</span>
             <input type="checkbox" id="chk-rep-gridlines" class="ds-checkbox">
           </label>
-        </div>
-
-        <div id="rep-lines-block" class="ds-stack hidden">
+</div>
+<div id="rep-lines-block" class="ds-stack hidden">
           <p class="ds-hint">Lines are part of the design and are exported.</p>
 
         <div class="ds-field">
@@ -644,8 +635,6 @@
             </span>
           </div>
         </div>
-</div>
-        </details>
         </div>
 
         <!-- SUB-PANEL B: RADIATION MODE -->
@@ -697,59 +686,10 @@
           </div>
         </div>
 
-        <div class="ds-divider" role="separator"></div>
-        <div class="ds-label ds-label--overline">Module</div>
-        <div class="ds-field">
-          <div class="ds-label">Module size</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-rad-size="fit">Fit to canvas</button>
-            <button type="button" class="ds-tag" data-rad-size="actual">Actual size</button>
-          </div>
-        </div>
-
-        <details id="rad-advanced" class="ds-advanced">
-          <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced</span></summary>
-          <div class="ds-stack">
-        <div class="ds-label ds-label--overline">Module</div>
-
-        <div id="rad-modscale-block" class="ds-field">
-          <div class="ds-label">Module scale</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-rad-modscale="uniform" title="Every module keeps its own size, proportional to the whole structure">Base size</button>
-            <button type="button" class="ds-tag" data-rad-modscale="cell" title="The module shrinks with its cell">Shrink with cell</button>
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Module orientation</div>
-          <div class="ds-dropdown" data-select>
-            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Auto</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-            <div class="ds-dropdown-menu hidden" role="listbox">
-              <button type="button" class="ds-dropdown-item active" role="option" data-rad-orient="auto"><span>Auto</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rad-orient="outward"><span>Outward</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rad-orient="inward"><span>Inward</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rad-orient="tangent"><span>Tangent</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rad-orient="fixed"><span>Fixed</span></button>
-            </div>
-          </div>
-        </div>
-
-        <div class="ds-toggles">
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Clip cell</span>
-            <input type="checkbox" id="chk-rad-clip" class="ds-checkbox">
-          </label>
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Checkerboard inversion</span>
-            <input type="checkbox" id="chk-rad-checker" class="ds-checkbox">
-          </label>
-        </div>
-
-        <div class="ds-divider" role="separator"></div>
-
-        <div class="ds-label ds-label--overline">Radiation</div>
-
-        <div class="ds-field">
+        <details id="rad-adv-radiation" class="ds-advanced">
+<summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced controls</span></summary>
+<div class="ds-stack">
+<div class="ds-field">
           <div class="ds-label">Direction</div>
           <div class="ds-dropdown" data-select>
             <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Repeated</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
@@ -760,8 +700,7 @@
             </div>
           </div>
         </div>
-
-        <div id="rad-ringshape-block" class="ds-field">
+<div id="rad-ringshape-block" class="ds-field">
           <div class="ds-label">Ring shape</div>
           <div class="ds-dropdown" data-select>
           <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Circle</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
@@ -775,42 +714,84 @@
           </div>
         </div>
         </div>
-
-        <div class="ds-field">
+<div class="ds-field">
           <div class="ds-label">Open center</div>
           <div class="ds-slider">
             <input type="range" id="input-layout-open" min="0" max="90" step="1" value="0">
             <input type="text" id="num-layout-open" class="ds-value" value="0%" inputmode="decimal">
           </div>
         </div>
-
-        <div class="ds-field">
+<div class="ds-field">
           <div class="ds-label">Ring rotation</div>
           <div class="ds-slider">
             <input type="range" id="input-layout-ringrot" min="-90" max="90" step="1" value="0">
             <input type="text" id="num-layout-ringrot" class="ds-value" value="0º" inputmode="decimal">
           </div>
         </div>
-
-        <div class="ds-toggles">
-          <label id="rad-raysbycont-item" class="ds-toggle-item hidden" title="Actual size: every ring gets as many rays as fit the container's width, so the cells are as big as the container">
+<div class="ds-toggles">
+<label id="rad-raysbycont-item" class="ds-toggle-item hidden" title="Actual size: every ring gets as many rays as fit the container's width, so the cells are as big as the container">
             <span class="ds-toggle-label">Rays follow container</span>
             <input type="checkbox" id="chk-rad-raysbycont" class="ds-checkbox">
           </label>
+</div>
+</div>
+</details>
+
+<div class="ds-divider" role="separator"></div>
+        <div class="ds-label ds-label--overline">Module</div>
+        <div class="ds-field">
+          <div class="ds-label">Module size</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-rad-size="fit">Fit to canvas</button>
+            <button type="button" class="ds-tag" data-rad-size="actual">Actual size</button>
+          </div>
         </div>
 
-        <div class="ds-divider" role="separator"></div>
+        <details id="rad-adv-module" class="ds-advanced">
+<summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced controls</span></summary>
+<div class="ds-stack">
+<div id="rad-modscale-block" class="ds-field">
+          <div class="ds-label">Module scale</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-rad-modscale="uniform" title="Every module keeps its own size, proportional to the whole structure">Base size</button>
+            <button type="button" class="ds-tag" data-rad-modscale="cell" title="The module shrinks with its cell">Shrink with cell</button>
+          </div>
+        </div>
+<div class="ds-field">
+          <div class="ds-label">Module orientation</div>
+          <div class="ds-dropdown" data-select>
+            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Auto</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
+            <div class="ds-dropdown-menu hidden" role="listbox">
+              <button type="button" class="ds-dropdown-item active" role="option" data-rad-orient="auto"><span>Auto</span></button>
+              <button type="button" class="ds-dropdown-item" role="option" data-rad-orient="outward"><span>Outward</span></button>
+              <button type="button" class="ds-dropdown-item" role="option" data-rad-orient="inward"><span>Inward</span></button>
+              <button type="button" class="ds-dropdown-item" role="option" data-rad-orient="tangent"><span>Tangent</span></button>
+              <button type="button" class="ds-dropdown-item" role="option" data-rad-orient="fixed"><span>Fixed</span></button>
+            </div>
+          </div>
+        </div>
+<div class="ds-toggles">
+<label class="ds-toggle-item">
+            <span class="ds-toggle-label">Clip cell</span>
+            <input type="checkbox" id="chk-rad-clip" class="ds-checkbox">
+          </label>
+<label class="ds-toggle-item">
+            <span class="ds-toggle-label">Checkerboard inversion</span>
+            <input type="checkbox" id="chk-rad-checker" class="ds-checkbox">
+          </label>
+</div>
+</div>
+</details>
 
-        <div class="ds-label ds-label--overline">Lines</div>
-
-        <div class="ds-toggles">
-          <label class="ds-toggle-item">
+<div class="ds-divider" role="separator"></div>
+<div class="ds-label ds-label--overline">Lines</div>
+<div class="ds-toggles">
+<label class="ds-toggle-item">
             <span class="ds-toggle-label">Visible lines</span>
             <input type="checkbox" id="chk-rad-gridlines" class="ds-checkbox">
           </label>
-        </div>
-
-        <div id="rad-lines-block" class="ds-stack hidden">
+</div>
+<div id="rad-lines-block" class="ds-stack hidden">
           <p class="ds-hint">Lines are part of the design and are exported.</p>
 
         <div id="rad-linewidth-block" class="ds-field">
@@ -830,8 +811,6 @@
             </span>
           </div>
         </div>
-</div>
-        </details>
         </div>
       </div>
 
@@ -883,12 +862,9 @@
               <input type="text" id="num-sim-intensity" class="ds-value" value="50%" inputmode="decimal">
             </div>
           </div>
-        <details id="sim-advanced" class="ds-advanced">
-          <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced</span></summary>
-          <div class="ds-stack">
-        <div class="ds-label ds-label--overline">Association</div>
-
-        <div class="ds-field">
+        <div class="ds-divider" role="separator"></div>
+<div class="ds-label ds-label--overline">Association</div>
+<div class="ds-field">
           <div class="ds-label">Association (family of shapes)</div>
           <div class="ds-dropdown" data-select>
           <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>None</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
@@ -901,8 +877,7 @@
           </div>
         </div>
         </div>
-
-        <div id="sim-assoc-block" class="ds-field hidden">
+<div id="sim-assoc-block" class="ds-field hidden">
             <div class="ds-label ds-label-clip">Association mix</div>
             <div class="ds-slider">
               <input type="range" id="input-sim-assoc-mix" min="0" max="100" step="1" value="50">
@@ -910,11 +885,9 @@
             </div>
           </div>
 
-        <div class="ds-divider" role="separator"></div>
-
-        <div class="ds-label ds-label--overline">Imperfection</div>
-
-        <div class="ds-field">
+<div class="ds-divider" role="separator"></div>
+<div class="ds-label ds-label--overline">Imperfection</div>
+<div class="ds-field">
           <div class="ds-label">Imperfection</div>
           <div class="ds-dropdown" data-select>
           <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>None</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
@@ -925,16 +898,17 @@
           </div>
         </div>
         </div>
-
-        <div id="sim-imperf-block" class="ds-field hidden">
+<div id="sim-imperf-block" class="ds-field hidden">
             <div class="ds-label ds-label-clip">Imperfect modules</div>
             <div class="ds-slider">
               <input type="range" id="input-sim-imperf-amount" min="0" max="100" step="1" value="30">
               <input type="text" id="num-sim-imperf-amount" class="ds-value" value="30%" inputmode="decimal">
             </div>
           </div>
-
-        <div class="ds-field">
+<details id="sim-adv-imperf" class="ds-advanced">
+<summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced controls</span></summary>
+<div class="ds-stack">
+<div class="ds-field">
             <div class="ds-label ds-label-clip">Spatial cell jitter</div>
             <div class="ds-slider">
               <input type="range" id="input-sim-jitter" min="0" max="90" step="1" value="0">
@@ -942,7 +916,7 @@
             </div>
           </div>
 </div>
-        </details>
+</details>
         </div>
       </div>
 
@@ -1046,7 +1020,33 @@
         </div>
         </div>
 
-          <div class="ds-divider" role="separator"></div>
+          <details id="grad-adv-path" class="ds-advanced">
+<summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced controls</span></summary>
+<div class="ds-stack">
+<div class="ds-field">
+          <div class="ds-label">Sequence</div>
+          <div class="ds-dropdown" data-select>
+          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Restart</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
+          <div class="ds-dropdown-menu hidden" role="listbox">
+            <button type="button" class="ds-dropdown-item active" role="option" data-grad-sequence="restart"><span>Restart</span></button>
+            <button type="button" class="ds-dropdown-item" role="option" data-grad-sequence="pingpong"><span>Ping-pong</span></button>
+          </div>
+        </div>
+        </div>
+<div class="ds-toggles">
+<label class="ds-toggle-item">
+          <span class="ds-toggle-label">Alternate rows</span>
+          <input type="checkbox" id="toggle-grad-alternate" class="ds-checkbox">
+        </label>
+<label class="ds-toggle-item">
+          <span class="ds-toggle-label">Reverse Gradient Direction</span>
+          <input type="checkbox" id="toggle-grad-reverse" class="ds-checkbox">
+        </label>
+</div>
+</div>
+</details>
+
+<div class="ds-divider" role="separator"></div>
           <div class="ds-label ds-label--overline">Progression</div>
           <div class="ds-field">
             <div class="ds-label">Range</div>
@@ -1062,38 +1062,10 @@
               <input type="text" id="num-grad-steps" class="ds-value" value="1" inputmode="numeric">
             </div>
           </div>
-        <details id="grad-advanced" class="ds-advanced">
-          <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced</span></summary>
-          <div class="ds-stack">
-        <div class="ds-label ds-label--overline">Path</div>
-
-        <div class="ds-field">
-          <div class="ds-label">Sequence</div>
-          <div class="ds-dropdown" data-select>
-          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Restart</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-          <div class="ds-dropdown-menu hidden" role="listbox">
-            <button type="button" class="ds-dropdown-item active" role="option" data-grad-sequence="restart"><span>Restart</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-grad-sequence="pingpong"><span>Ping-pong</span></button>
-          </div>
-        </div>
-        </div>
-
-        <div class="ds-toggles">
-          <label class="ds-toggle-item">
-          <span class="ds-toggle-label">Alternate rows</span>
-          <input type="checkbox" id="toggle-grad-alternate" class="ds-checkbox">
-        </label>
-          <label class="ds-toggle-item">
-          <span class="ds-toggle-label">Reverse Gradient Direction</span>
-          <input type="checkbox" id="toggle-grad-reverse" class="ds-checkbox">
-        </label>
-        </div>
-
-        <div class="ds-divider" role="separator"></div>
-
-        <div class="ds-label ds-label--overline">Progression</div>
-
-        <div class="ds-field">
+        <details id="grad-adv-prog" class="ds-advanced">
+<summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced controls</span></summary>
+<div class="ds-stack">
+<div class="ds-field">
             <div class="ds-label">Speed</div>
             <div class="ds-slider">
               <input type="range" id="input-grad-easing" min="-100" max="100" step="5" value="0">
@@ -1101,7 +1073,7 @@
             </div>
           </div>
 </div>
-        </details>
+</details>
       </div>
 
       <!-- ===================================================================
@@ -1562,7 +1534,20 @@
             <input type="text" id="num-texture-crossing" class="ds-value" value="10%" inputmode="numeric">
           </div>
         </div>
-        <div class="ds-divider" role="separator"></div>
+        <details id="tex-adv-lines" class="ds-advanced">
+<summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced controls</span></summary>
+<div class="ds-stack">
+<div class="ds-field">
+          <div class="ds-label">Random lines opacity</div>
+          <div class="ds-slider">
+            <input type="range" id="input-texture-hairopacity" min="10" max="100" step="1" value="85">
+            <input type="text" id="num-texture-hairopacity" class="ds-value" value="85%" inputmode="numeric">
+          </div>
+        </div>
+</div>
+</details>
+
+<div class="ds-divider" role="separator"></div>
         <div class="ds-label ds-label--overline">Wave</div>
         <div class="ds-field">
           <div class="ds-label">Plane wave</div>
@@ -1571,32 +1556,17 @@
             <input type="text" id="num-texture-undulation" class="ds-value" value="30%" inputmode="numeric">
           </div>
         </div>
-        <details id="texture-advanced" class="ds-advanced">
-          <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced</span></summary>
-          <div class="ds-stack">
-        <div class="ds-label ds-label--overline">Lines</div>
-
-        <div class="ds-field">
-          <div class="ds-label">Random lines opacity</div>
-          <div class="ds-slider">
-            <input type="range" id="input-texture-hairopacity" min="10" max="100" step="1" value="85">
-            <input type="text" id="num-texture-hairopacity" class="ds-value" value="85%" inputmode="numeric">
-          </div>
-        </div>
-
-        <div class="ds-divider" role="separator"></div>
-
-        <div class="ds-label ds-label--overline">Wave</div>
-
-        <div class="ds-field">
+        <details id="tex-adv-wave" class="ds-advanced">
+<summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced controls</span></summary>
+<div class="ds-stack">
+<div class="ds-field">
           <div class="ds-label">Waves</div>
           <div class="ds-slider">
             <input type="range" id="input-texture-waves" min="1" max="6" step="1" value="2">
             <input type="text" id="num-texture-waves" class="ds-value" value="2" inputmode="numeric">
           </div>
         </div>
-
-        <div class="ds-field">
+<div class="ds-field">
           <div class="ds-label">Wave direction</div>
           <div class="ds-slider">
             <input type="range" id="input-texture-waveangle" min="0" max="360" step="5" value="0">
@@ -1604,7 +1574,7 @@
           </div>
         </div>
 </div>
-        </details>
+</details>
       </div>
 
       <!-- ===================================================================
@@ -1677,7 +1647,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=9ed45a32"></script>
+  <script src="js/bundle-pro.js?v=2e8e3427"></script>
 
 </body>
 </html>

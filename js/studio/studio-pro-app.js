@@ -1105,13 +1105,13 @@ export class StudioProApp {
     }
     const cur = struct.mode === "radiation" ? struct.radiation : struct.repetition;
     const actual = !!cur && (cur.sizeMode === "actual" || cur.sizeMode === "fixed");
-    // The Block sits right under the design controls of the active mode, before its Advanced section
+    // The Composition container is a group of its own, right after the Module group (its controls and its Advanced controls) of the active mode
     const blockEl = document.getElementById("layout-block");
-    const adv = document.getElementById(struct.mode === "radiation" ? "rad-advanced" : "rep-advanced");
-    // The module's rotation (how the piece sits in its cell) goes right before it, under the design controls
+    const modAdv = document.getElementById(struct.mode === "radiation" ? "rad-adv-module" : "rep-adv-module");
+    // The module's rotation (how the piece sits in its cell) belongs to the Module group: right before its Advanced controls
     const rotEl = document.getElementById("layout-module-rotation");
-    if (blockEl && adv && blockEl.nextElementSibling !== adv) adv.parentNode.insertBefore(blockEl, adv);
-    if (rotEl && blockEl && rotEl.nextElementSibling !== blockEl) blockEl.parentNode.insertBefore(rotEl, blockEl);
+    if (rotEl && modAdv && modAdv.previousElementSibling !== rotEl) modAdv.parentNode.insertBefore(rotEl, modAdv);
+    if (blockEl && modAdv && modAdv.nextElementSibling !== blockEl) modAdv.parentNode.insertBefore(blockEl, modAdv.nextSibling);
   }
 
   syncStructureInspectorWithActiveLayer() {
