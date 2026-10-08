@@ -804,14 +804,15 @@ input[type="range"]:hover::-webkit-slider-thumb {
 
 /* Workspace: layers | canvas column | rail, with the controls panel floating over the right edge */
 .ds-workspace {
-  --flyout-right: 90px; /* 16 margin + 64 rail + 10 air */
+  --flyout-right: 62px; /* 16 margin + 36 rail (32 button + 2 + 2) + 10 air */
   position: relative;
   display: flex;
   flex: 1;
   gap: var(--spacing-6);
   min-height: 0;
   padding: 0 var(--spacing-5) var(--spacing-6);
-  overflow: hidden;
+  overflow: clip;
+  overflow-clip-margin: 6px; /* the ring and the shadows of the buttons at the edge are not cut */
 }
 .ds-canvas-column {
   display: flex;
@@ -965,7 +966,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
   align-self: stretch;
   gap: var(--spacing-4);
   box-sizing: border-box;
-  width: var(--sizing-12);
+  width: 36px; /* 32 button + 2 px each side: the buttons sit flush with the workspace's 16 px margin */
   padding: 0 var(--spacing-1);
   border-radius: var(--border-radius-1);
   z-index: 35;
