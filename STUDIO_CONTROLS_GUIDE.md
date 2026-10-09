@@ -365,7 +365,7 @@ El motor implementa el modelo de **Contrato Asistido (Opción B)**, aplicado por
 
 ### Regla 3: Modificadores Colectivos Asistidos
 * `Similarity`, `Gradation`, `Anomaly`, `Contrast` y `Concentration` operan sobre una **población de módulos**.
-* En módulo único (sin `Repetition` ni `Radiation`) se pueden encender y calibrar, y la interfaz muestra un aviso no intrusivo mientras la retícula esté apagada, aunque el modificador no esté encendido: *Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.* El aviso desaparece al encender Layout.
+* En módulo único (sin `Repetition` ni `Radiation`) se pueden encender y calibrar, y la interfaz muestra un aviso no intrusivo mientras la retícula esté apagada, aunque el modificador no esté encendido: *Turn on Layout structure to see this modifier in action.* El aviso desaparece al encender Layout.
 * Si se apaga temporalmente la retícula, los modificadores **no pierden su calibración**.
 
 ### Regla 3b: Precedencia cuando varios modificadores tocan lo mismo

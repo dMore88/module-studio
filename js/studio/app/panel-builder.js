@@ -8,7 +8,7 @@
  *     state: (app) => the settings object of the active layer,
  *     enabled: { id, key, auto?, onToggle? },  // the switch of the header; every edit turns it on unless auto is false; onToggle(app, state, checked) replaces the default
  *     badgeId,                               // the layer badge in the header
- *     banner: { id, text, hidden: (mod) => bool },   // optional notice under the header
+ *     banner: { id, hidden: (mod) => bool, text? },   // optional notice under the header (the dependency notice by default)
  *     help: { is, does },                    // the (?) beside the panel title (see help-popover.js); a group may carry its own help beside its title
  *     top: [ controls ],                     // controls above the groups (Layout's Repetition / Radiation switch)
  *     groups: [{ title, advId?, region?, floating?, controls: [ ... ] }],
@@ -122,7 +122,7 @@ class PanelBuilder {
         return out;
       };
 
-      let html = spec.banner ? `<div id="${spec.banner.id}" class="ds-snackbar hidden" role="status">\n<i class="ph-fill ph-warning"></i>\n<p>${spec.banner.text}</p>\n</div>\n` : "";
+      let html = spec.banner ? `<div id="${spec.banner.id}" class="ds-snackbar hidden" role="status">\n<span class="ds-snackbar__icon"><span class="ds-snackbar__icon-inner"><i class="ph ph-warning" aria-hidden="true"></i></span></span>\n<p>${spec.banner.text || "Turn on Layout structure to see this modifier in action."}</p>\n</div>\n` : "";
       if (spec.top) html += drawControls(spec.top);
       // The groups, in order; the ones of a region share a box; the floating ones go in their own box at the end
       const plain = spec.groups.filter(g => !g.floating);

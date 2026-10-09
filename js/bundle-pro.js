@@ -4333,7 +4333,7 @@ class UiHelpers {
  *     state: (app) => the settings object of the active layer,
  *     enabled: { id, key, auto?, onToggle? },  // the switch of the header; every edit turns it on unless auto is false; onToggle(app, state, checked) replaces the default
  *     badgeId,                               // the layer badge in the header
- *     banner: { id, text, hidden: (mod) => bool },   // optional notice under the header
+ *     banner: { id, hidden: (mod) => bool, text? },   // optional notice under the header (the dependency notice by default)
  *     help: { is, does },                    // the (?) beside the panel title (see help-popover.js); a group may carry its own help beside its title
  *     top: [ controls ],                     // controls above the groups (Layout's Repetition / Radiation switch)
  *     groups: [{ title, advId?, region?, floating?, controls: [ ... ] }],
@@ -4447,7 +4447,7 @@ class PanelBuilder {
         return out;
       };
 
-      let html = spec.banner ? `<div id="${spec.banner.id}" class="ds-snackbar hidden" role="status">\n<i class="ph-fill ph-warning"></i>\n<p>${spec.banner.text}</p>\n</div>\n` : "";
+      let html = spec.banner ? `<div id="${spec.banner.id}" class="ds-snackbar hidden" role="status">\n<span class="ds-snackbar__icon"><span class="ds-snackbar__icon-inner"><i class="ph ph-warning" aria-hidden="true"></i></span></span>\n<p>${spec.banner.text || "Turn on Layout structure to see this modifier in action."}</p>\n</div>\n` : "";
       if (spec.top) html += drawControls(spec.top);
       // The groups, in order; the ones of a region share a box; the floating ones go in their own box at the end
       const plain = spec.groups.filter(g => !g.floating);
@@ -5583,7 +5583,7 @@ const SIMILARITY_PANEL = {
   },
   enabled: { id: "toggle-similarity-active", key: "enabled" },
   badgeId: "badge-similarity-layer",
-  banner: { id: "warning-similarity-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!(mod.structure && mod.structure.enabled) },
+  banner: { id: "warning-similarity-grid", hidden: (mod) => !!(mod.structure && mod.structure.enabled) },
   groups: [
     { title: "Kinship", controls: [
       { type: "dropdown", label: "Visual kinship type", key: "kinshipType", attr: "data-kinship-type", history: "Kinship Type", fallback: "distortion",
@@ -5730,7 +5730,7 @@ const GRADATION_PANEL = {
   state: (app) => app.getActiveGradation(),
   enabled: { id: "toggle-gradation-active", key: "enabled" },
   badgeId: "badge-gradation-layer",
-  banner: { id: "warning-gradation-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+  banner: { id: "warning-gradation-grid", hidden: (mod) => !!mod.structure.enabled },
   groups: [
     { title: "Attribute", controls: [
       { type: "dropdown", label: "Attribute", key: "type", attr: "data-grad-type", history: "Attribute",
@@ -5799,7 +5799,7 @@ const ANOMALY_PANEL = {
   state: (app) => app.getActiveAnomaly(),
   enabled: { id: "toggle-anomaly-active", key: "enabled" },
   badgeId: "badge-anomaly-layer",
-  banner: { id: "warning-anomaly-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+  banner: { id: "warning-anomaly-grid", hidden: (mod) => !!mod.structure.enabled },
   groups: [
     { title: "Anomaly", controls: [
       { type: "tags", label: "Type", key: "type", attr: "data-anom-type", history: "Type",
@@ -5874,20 +5874,20 @@ const CONTRAST_PANEL = {
   enabled: { id: "toggle-contrast-active", key: "enabled" },
   badgeId: "badge-contrast-layer",
   help: {
-    is: "Contrast appears when elements of a design differ in a visual quality: form, size, direction, position, color, texture or space. The difference lets some elements stand out against the rest and gives the design a focus.",
-    does: "Turns a minority of modules into the contrasting ones. Minority chooses the quality that changes; Proportion decides how many modules change and where." },
-  banner: { id: "warning-contrast-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+    is: "Contrast appears when elements differ in a visual quality, such as size, shape or direction. The difference makes some elements stand out and gives the design a focus.",
+    does: "Turns a minority of modules into the contrasting ones. Minority picks what changes; Proportion decides how many modules change and where." },
+  banner: { id: "warning-contrast-grid", hidden: (mod) => !!mod.structure.enabled },
   groups: [
     { title: "Minority", help: {
-        is: "The minority is the group of elements that departs from the rest. The quality in which it departs is the dimension of the contrast: a larger scale, another shape, a turned angle, a shifted position, a different tone.",
-        does: "Dimension picks the quality that differs (Scale, Shape, Angle, Position, Tone, Texture, Space). The values that appear below set how strong the difference is." }, controls: [
+        is: "The minority is the group of elements that departs from the rest. The quality it departs in is the dimension of the contrast.",
+        does: "Dimension picks the quality that differs. The values that appear below set how strong the difference is." }, controls: [
       { type: "dropdown", label: "Dimension", key: "dimension", attr: "data-contrast-dimension", history: "Dimension",
         options: [["scale", "Scale"], ["shape", "Shape"], ["direction", "Angle"], ["position", "Position"], ["tone", "Tone"], ["texture", "Texture"], ["space", "Space"]] },
       { type: "dropdown", label: "Minority Shape", key: "contrastShape", attr: "data-contrast-shape", history: "Shape", options: "shapes", blockId: "contrast-shape-block", show: (st) => st.dimension === "shape" },
     ] },
     { title: "Proportion", help: {
-        is: "The strength of a contrast depends on proportion: a few different elements among many alike stand out more than an even split between the two.",
-        does: "Minority spread sets where the minority sits (scattered, balanced, toward the edges or the center); Dominance ratio sets the share of modules that stays like the rest; the accent color can mark the minority." }, controls: [
+        is: "The strength of a contrast depends on proportion: a few different elements among many alike stand out more than an even split.",
+        does: "Minority spread sets where the minority sits; Dominance ratio sets the share that stays like the rest; the accent color can mark the minority." }, controls: [
       { type: "dropdown", label: "Minority spread", key: "spread", attr: "data-contrast-spread", history: "Spread", fallback: "scattered", blockId: "contrast-spread-block",
         options: [["scattered", "Scattered"], ["balanced", "Balanced"], ["edge", "Toward the edges"], ["center", "Toward the center"]] },
       { type: "slider", id: "contrast-dominance", label: "Dominance ratio", key: "dominanceRatio", min: 50, max: 95, step: 1, value: 80, suffix: "%", decimal: true, history: "Dominance", blockId: "contrast-dominance-block" },
@@ -5925,7 +5925,7 @@ const CONCENTRATION_PANEL = {
   state: (app) => app.getActiveConcentration(),
   enabled: { id: "toggle-concentration-active", key: "enabled" },
   badgeId: "badge-concentration-layer",
-  banner: { id: "warning-concentration-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+  banner: { id: "warning-concentration-grid", hidden: (mod) => !!mod.structure.enabled },
   groups: [
     { title: "Concentration", controls: [
       { type: "tags", label: "Structure", key: "mode", attr: "data-conc-mode", history: "Structure",

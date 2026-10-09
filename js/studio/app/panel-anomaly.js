@@ -9,7 +9,7 @@ const ANOMALY_PANEL = {
   state: (app) => app.getActiveAnomaly(),
   enabled: { id: "toggle-anomaly-active", key: "enabled" },
   badgeId: "badge-anomaly-layer",
-  banner: { id: "warning-anomaly-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+  banner: { id: "warning-anomaly-grid", hidden: (mod) => !!mod.structure.enabled },
   groups: [
     { title: "Anomaly", controls: [
       { type: "tags", label: "Type", key: "type", attr: "data-anom-type", history: "Type",
