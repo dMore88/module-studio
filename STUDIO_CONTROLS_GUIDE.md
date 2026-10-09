@@ -327,9 +327,9 @@ Transforma el espacio plano en una experiencia volumétrica. Estado en `layer.st
 
 ## 5. Reglas de Interfaz
 
-* **Chips o dropdown.** Chips para 2 o 3 opciones de uso frecuente. Dropdown (`.ds-dropdown`) para 4 o más, o para lo que se toca poco. Los elementos del dropdown son los mismos botones con `data-*` que antes eran chips; el menú solo se abre y se cierra, y el botón muestra el activo. Los chips que se pueden mezclar son selección múltiple (cada uno se enciende y apaga solo).
+* **Selectores = dropdown en fila; chips solo para lo especial.** Todo selector de una opción (de 2 en adelante) es un **dropdown en fila** (`.ds-field--row`): la etiqueta a la izquierda y un dropdown de **132 px** a la derecha, una sola línea. El botón corta el valor con "…" si no cabe, pero el **menú se ensancha** (hasta 320 px, pegado al borde derecho del dropdown) para que cada opción se lea completa; si aun así no cabe, parte la línea. Los elementos del dropdown son botones con `data-*`; el menú solo se abre y se cierra y el botón muestra el activo. Una opción puede llevar un texto al pasar el mouse (cuarto elemento de la opción). **Chips** solo para: el selector principal Repetition / Radiation, Stroke / Fill (con icono), y las **selecciones múltiples** (*Deviates in*, *Field style*), donde cada chip se enciende y apaga solo. Los controles que aparecen desde otro (por ejemplo *Focal Intruder Shape*) usan el mismo dropdown en fila, justo debajo del que los activa.
 * **Lo esencial arriba, el resto en *Advanced*.** Cada panel muestra de entrada lo que define el resultado y deja lo secundario en una sección plegable *Advanced* (Module, Layout, Similarity, Gradation).
-* **Orden dentro de un panel:** selectores (chips, dropdowns, rejilla de formas), después sliders, después casillas. Excepción deliberada en *Layout*: *Columns* y *Rows* van justo debajo del selector de retícula.
+* **Orden dentro de un panel:** selectores (dropdowns, chips, rejilla de formas), después sliders, después casillas. Excepción deliberada en *Layout*: *Columns* y *Rows* van justo debajo del selector de retícula.
 * **Una columna.** Todos los controles del panel de 340 px van en una columna, con 24 px entre sliders. Los grupos de botones solo se usan para Stroke/Fill y Repetition/Radiation.
 * **Las líneas visibles son diseño** (color y grosor, se exportan); **las guías no** (un color global, no se exportan).
 * **Color de acento = encendido.** En Anomaly y Contrast no hay casilla "highlight": elegir un color enciende el acento y el **×** lo apaga.
@@ -389,7 +389,7 @@ Para incorporar estos conceptos dentro de [Abstract Studio](https://github.com/d
 4. **Arquetipos Radiales Avanzados:** expandir los generadores radiales con los esquemas de `Radiation`: `centrifugal`, `concentric`, `spiral` con torsión continua (`spiralTwist`), centros múltiples (`multi_center`) y anillos poligonales (`ringShape`).
 
 
-**Grupos con título.** Los controles de cada panel se agrupan por **tipo de propiedad**, con un título en mayúsculas y una línea divisoria entre grupos, como en la plantilla del diseño. Un panel lleva títulos de grupo solo si tiene dos o más grupos; con uno solo, solo lleva el título del panel. Cada grupo puede tener sus **controles secundarios** en su propio acordeón *Advanced controls*, al final del grupo y cerrado por defecto; un grupo cuyos controles son todos esenciales (por ejemplo *Rhythm*, *Lines*, *Association*) no lo lleva.
+**Grupos con título.** Los controles de cada panel se agrupan por **tipo de propiedad**, con un título en mayúsculas y una línea divisoria entre grupos, como en la plantilla del diseño. Un panel lleva títulos de grupo solo si tiene dos o más grupos; con uno solo, solo lleva el título del panel. Los grupos se ordenan **por intención**, lo principal primero, y el detalle de una opción elegida va junto a ella. Cada grupo puede tener sus **controles secundarios** en su propio acordeón *Advanced controls*, al final del grupo y cerrado por defecto; un grupo con **un solo** control secundario lo muestra a la vista, al final del grupo y sin acordeón (el acordeón es para dos o más); un grupo cuyos controles son todos esenciales (por ejemplo *Rhythm*, *Lines*, *Association*) no lo lleva.
 
 | Panel | Grupos (con sus *Advanced controls*) |
 |---|---|
@@ -399,8 +399,8 @@ Para incorporar estos conceptos dentro de [Abstract Studio](https://github.com/d
 Orden del Layout: primero lo que **dibuja la retícula** (Grid o Radiation con su Clip cell y Checkerboard, Lines, Rhythm, Composition container) y al final lo que es **del módulo** (Module). *Module size* reúne en **un solo control** tres opciones: *Base size* (por defecto), *Shrink with cell* y *Actual size* (antes eran dos controles, *Module size* y *Module scale*, que se confundían). El proyecto sigue guardando `sizeMode` y `moduleScale`. Lleva un (?) junto a su etiqueta (primer control suelto con ayuda; se pide con `help` en el control `tags`).
 | Similarity | Kinship, Association, Imperfection (jitter espacial) |
 | Gradation | Attribute, Path (sequence, Alternate rows, Reverse), Progression (speed) |
-| Anomaly | Anomaly, Zone |
-| Contrast | Minority, Proportion |
+| Anomaly | Anomaly (qué rompe: Type, Deviates in, forma del intruso), Zone (dónde y cuánto) |
+| Contrast | Minority (qué difiere: Dimension y su detalle), Proportion (cuánta: spread, dominance, accent) |
 | Concentration | Concentration, Strength |
 | Texture | Irregularity, Lines (opacidad), Wave (waves y dirección) |
 | Space | Space, Depth |

@@ -169,7 +169,7 @@ Todas las tarjetas: fondo blanco, radio `border/radius/3` (20), relleno `spacing
 
 ---
 
-**Orden dentro de un panel:** los controles de jerarquía alta, los que definen qué subcontroles se muestran (tipo, modo, esquema, camino, secuencia), van **arriba** y son **chips** (tags). Debajo van los sliders y, al final, las casillas. Si un subcontrol necesita elegir entre opciones, también son chips. El grupo de botones se reserva para el selector Repetition / Radiation; Stroke / Fill son dos tags con icono. Los subcontroles que solo existen con un modo van justo debajo del chip que los activa (por ejemplo *Becomes* bajo *Attribute*). `tests/smoke.html` comprueba que ningún selector aparezca después de un slider.
+**Orden dentro de un panel:** los controles de jerarquía alta, los que definen qué subcontroles se muestran (tipo, modo, esquema, camino, secuencia), van **arriba**. Todo selector es un **dropdown en fila** (etiqueta a la izquierda, dropdown de 132 px a la derecha, ver 5.20); los chips se reservan para el selector Repetition / Radiation, Stroke / Fill (dos tags con icono) y las selecciones múltiples. Debajo van los sliders y, al final, las casillas. Los subcontroles que solo existen con una opción van justo debajo del dropdown que los activa (por ejemplo *Becomes* bajo *Attribute*). `tests/smoke.html` comprueba que ningún selector aparezca después de un slider.
 
 **Regla:** los controles nuevos se arman con este catálogo, eligiendo el que mejor encaje. Solo si ninguno sirve se pide un diseño nuevo en Figma.
 
@@ -208,7 +208,7 @@ Separación entre tags `spacing/3` (8). Altura 24 (`sizing/6`), relleno horizont
 La librería define además un tag con icono y botón de cierre y estado deshabilitado (`neutral/interactive/disabled`, borde `neutral/border/muted`, texto `neutral/text/subtle`).
 
 ### 5.6 Control deslizante (`.ds-slider`) y caja de valor (`.ds-value`)
-Pista de 2 px, tirador de 16 px (`assets/slider-thumb.svg`). La etiqueta va encima de la pista y la **caja de valor (56×40) a la derecha, abarcando etiqueta y pista**, con separación `spacing/4` (12); radio 7, fuente monoespaciada 15 px. Los valores con unidad la muestran en la caja (`1.2px`, `50%`). La caja de valor y la pista están **dibujadas en Figma con colores sueltos**, no con variables (ver Pendientes); en el código viven como tokens locales `--ds-*`.
+Pista de 2 px, tirador de 16 px, área de clic de 24 px (`assets/slider-thumb.svg`). La etiqueta va encima de la pista y la **caja de valor (56×40) a la derecha, abarcando etiqueta y pista**, con separación `spacing/4` (12); radio 7, fuente monoespaciada 15 px. Los valores con unidad la muestran en la caja (`1.2px`, `50%`). La caja de valor y la pista están **dibujadas en Figma con colores sueltos**, no con variables (ver Pendientes); en el código viven como tokens locales `--ds-*`.
 
 ### 5.7 Campo con etiqueta (`.ds-field`, `.ds-row`, `.ds-label`)
 Etiqueta *Overline* en `neutral/text/soft`, separación `spacing/3` (8) entre etiqueta y control; dos campos en fila con separación 13 px.
@@ -508,3 +508,9 @@ El botón (?) mide 16 px (icono *question* regular, `neutral/text/soft`; `neutra
 
 ### 5.15 Estilo de la shape: Stroke / Fill y color (`.ds-style-row`, `.ds-tag--icon`) — nodo `5811:12625`
 Una sola fila, 24 de alto: a la izquierda dos **tags con icono** de 16 px (*Stroke* con `line-segment`, *Fill* con `paint-bucket`), con relleno horizontal `spacing/3`, separados 4 px; el activo va en `neutral/interactive/default` con texto invertido y el otro con borde de 1 px. A la derecha, alineados al final, la **muestra de color** de 24 px (borde `neutral/border/strong`, radio 4) y el hex en *Label* (10 px, peso 500, `neutral/text/soft`), a 10 px entre sí. Los dos tags anuncian su estado con `aria-pressed`.
+
+
+### 5.20 Dropdown en fila y estilo de los controles (`.ds-field--row`)
+- **Fila:** etiqueta a la izquierda (tono principal, `--neutral-text-main`) y dropdown de **132 px** a la derecha, de 32 px de alto. El valor del botón se corta con "…"; el menú (`position: fixed`) se ensancha hasta 320 px, alineado al borde derecho del dropdown, y parte la línea si hace falta. Una etiqueta larga puede ocupar dos líneas.
+- **Color:** las etiquetas de los controles van en el tono principal y **los títulos de grupo en el tono suave** (`--neutral-text-soft`). El borde del dropdown y de la caja de valor es oscuro (`--neutral-interactive-default`), como el de los chips.
+- **Slider:** pista de **2 px**, tirador de **16 px**; el área de clic mide 24 px de alto.

@@ -48,8 +48,14 @@ class UiHelpers {
         const want = Math.min(320, menu.scrollHeight);
         const up = below < want && above > below;
         const room = Math.max(120, up ? above : below);
-        menu.style.left = `${r.left}px`;
-        menu.style.width = `${r.width}px`;
+        if (sel.closest(".ds-field--row")) {
+          // Row dropdown (label beside a narrow trigger): the menu grows to the right edge of the trigger so every option reads in full
+          menu.style.width = "max-content"; menu.style.minWidth = `${r.width}px`; menu.style.maxWidth = `${Math.max(r.width, Math.min(320, r.right - 8))}px`;
+          menu.style.left = `${Math.max(8, r.right - menu.offsetWidth)}px`;
+        } else {
+          menu.style.left = `${r.left}px`;
+          menu.style.width = `${r.width}px`;
+        }
         menu.style.maxHeight = `${Math.min(320, room)}px`;
         const h = Math.min(want, room);
         menu.style.top = `${up ? r.top - gap - h : r.bottom + gap}px`;

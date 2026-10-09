@@ -36,7 +36,7 @@ const GRADATION_PANEL = {
     ] },
     { title: "Progression", help: {
         is: "The progression is how far and how fast the change advances from the first module to the last.",
-        does: "Range sets the total change; Cycles repeats the change along the path. Speed, in Advanced controls, makes it arrive early or late." }, advId: "grad-adv-prog", controls: [
+        does: "Range sets the total change; Cycles repeats the change along the path. Speed makes it arrive early or late." }, advId: "grad-adv-prog", controls: [
       { type: "slider", id: "grad-range", label: "Range", key: "range", min: 5, max: 360, step: 5, value: 180, suffix: "º", history: "Range" },
       { type: "slider", id: "grad-steps", label: "Cycles", key: "steps", min: 1, max: 10, step: 1, value: 1, suffix: "", history: "Cycles" },
       // Speed is shown the other way round from the stored easing: + reaches the full effect early, - late

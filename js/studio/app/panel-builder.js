@@ -21,8 +21,8 @@
  * `enable: (state, mod) => bool` with `why`, to stay in view but dimmed and without response when it does not apply (a function of the
  * panel that is not available now; `why` tells the reason, as a tooltip), and `blockId`, the id of its box;
  * `get(state, app)` and `set(state, value, app)` replace the plain `key` when a setting needs more than a number):
- *   { type: "tags",   label, key, attr, history, fallback, help?, options: [[value, text, title?], ...] }   one choice among several (help: a (?) beside the label)
- *   { type: "dropdown", label, key, attr, history, fallback, options: [[value, text, iconHtml?], ...] | "shapes" }   a list of choices ("shapes": every shape, with its icon)
+ *   { type: "tags",   label, key, attr, history, fallback, help?, options: [[value, text, title?], ...] }   chips: for the few things that switch the panel, with icons (selectors are dropdowns); help: a (?) beside the label
+ *   { type: "dropdown", label, key, attr, history, fallback, options: [[value, text, iconHtml?, title?], ...] | "shapes", row? }   a list of choices ("shapes": every shape, with its icon); label on the left and a 132 px dropdown on the right (row: false puts the label above)
  *   { type: "modes",  label, ariaLabel, attr, options: [[value, text, id], ...], get, onSelect(app, value) }   the two-button switch (a button group)
  *   { type: "chips",  label, ariaLabel, attr, options: [{ key, text, id?, show? }],            chips that switch on and off by themselves
  *       nested }  // optional { key, defaults, history }: the chips live in an object of the setting (Anomaly's attrs: on unless set to false)
@@ -35,7 +35,7 @@
  *       meta,      // (state) => { label, min, max, step, suffix, history }: the slider changes its name and range with the state (Layout's grid parameter)
  *       decimal,   // the value box asks for a decimal keyboard
  *       bind,      // false: drawn only (its controller lives elsewhere)
- *       advanced } // true: the control goes in the group's "Advanced controls" accordion (the group needs advId)
+ *       advanced } // true: the control goes in the group's "Advanced controls" accordion (the group needs advId; a group with only one such control shows it in view, without the accordion)
  *   { type: "toggle", id, label, key, history, labelId?, title?, show? }
  *   { type: "color",  prefix, label, key, fallback, history, get?, set? }   a colour row without an on/off (Gradation's end colour, a line colour)
  *   { type: "accent", prefix, colorKey, flagKey }   the accent colour row (swatch, hex, remove); picking a colour turns the accent on
@@ -81,13 +81,16 @@ class PanelBuilder {
         return head + drawControls(g.controls, g.advId);
       };
       // A list of controls; the ones marked `advanced` go in an accordion with the id advId
+      // A group with a single Advanced control does not get the accordion: that control stays in view, at the end of the group
       const drawControls = (controls, advId) => {
+        const single = controls.filter(c => c.advanced).length === 1;
         let out = "", adv = "", toggles = [];
         let target = "out";
         const add = (t) => { if (target === "adv") adv += t; else out += t; };
         const flush = () => { if (toggles.length) { add(`<div class="ds-toggles">\n${toggles.join("\n")}\n</div>\n`); toggles = []; } };
         for (const c of controls) {
-          if (!!c.advanced !== (target === "adv")) { flush(); target = c.advanced ? "adv" : "out"; }
+          const isAdv = !!c.advanced && !single;
+          if (isAdv !== (target === "adv")) { flush(); target = isAdv ? "adv" : "out"; }
           if (c.type === "toggle") {
             toggles.push(`<label${c.labelId ? ` id="${c.labelId}"` : ""} class="ds-toggle-item${hid(c) && c.labelId ? " hidden" : ""}"${c.title ? ` title="${c.title}"` : ""}>\n<span class="ds-toggle-label">${c.label}</span>\n<input type="checkbox" id="${c.id}" class="ds-checkbox">\n</label>`);
             continue;
@@ -103,7 +106,8 @@ class PanelBuilder {
             add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n${tagsLabel}\n<div class="ds-tags">\n${c.options.map(([v, t, title], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}"${title ? ` title="${title}"` : ""}>${t}</button>`).join("\n")}\n</div>\n</div>\n`);
           } else if (c.type === "dropdown") {
             const opts = c.options === "shapes" ? STUDIO_SHAPE_KEYS.map(k => [k, SHAPE_LABELS[k] || Shapes[k].name.replace(/\s*\([^)]*\)\s*/g, ""), shapeIconHtml(Shapes[k])]) : c.options;
-            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-dropdown" data-select>\n<button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current">${opts[0][2] || ""}<span>${opts[0][1]}</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>\n<div class="ds-dropdown-menu hidden" role="listbox">\n${opts.map(([v, t, icon]) => `<button type="button" class="ds-dropdown-item" role="option" ${c.attr}="${v}">${icon || ""}<span>${t}</span></button>`).join("\n")}\n</div>\n</div>\n</div>\n`);
+            const ddLabel = c.help ? `<div class="ds-title-row"><div class="ds-label">${c.label}</div>${this.helpButtonHtml(`${spec.id}:control:${c.attr}`, c.label, c.help)}</div>` : `<div class="ds-label">${c.label}</div>`;
+            add(`<div${idAttr(c)} class="ds-field${c.row === false ? "" : " ds-field--row"}${hid(c)}">\n${ddLabel}\n<div class="ds-dropdown" data-select>\n<button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current">${opts[0][2] || ""}<span>${opts[0][1]}</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>\n<div class="ds-dropdown-menu hidden" role="listbox">\n${opts.map(([v, t, icon, title]) => `<button type="button" class="ds-dropdown-item" role="option" ${c.attr}="${v}"${title ? ` title="${title}"` : ""}>${icon || ""}<span>${t}</span></button>`).join("\n")}\n</div>\n</div>\n</div>\n`);
           } else if (c.type === "modes") {
             add(`<div${idAttr(c)} class="ds-field">\n<div class="ds-label">${c.label}</div>\n<div class="ds-btn-group" role="group" aria-label="${c.ariaLabel || c.label}">\n${c.options.map(([v, t, id], k) => `<button type="button" id="${id}" class="ds-btn-group__button${k === 0 ? " active" : ""}" ${c.attr}="${v}">${t}</button>`).join("\n")}\n</div>\n</div>\n`);
           } else if (c.type === "color") {
