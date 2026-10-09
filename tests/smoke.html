@@ -1706,14 +1706,14 @@
       reset();
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="gradation"]').click(); await wait(60);
-      const gAdvPath = q("#grad-adv-path"), gAdvProg = q("#grad-adv-prog");
-      assert(gAdvPath && gAdvProg && gAdvProg.contains(q("#input-grad-easing")) && gAdvPath.contains(q("#toggle-grad-reverse")) && gAdvPath.contains(q('[data-grad-sequence="pingpong"]')), "Sequence and the checkboxes belong in Gradation > Path > Advanced controls, Speed in Progression");
-      assert(!gAdvProg.contains(q("#input-grad-range")) && !gAdvProg.contains(q("#input-grad-steps")) && !gAdvPath.contains(q("#input-grad-range")), "Range and Cycles stay up front");
+      const gAdvPath = q("#grad-adv-path");
+      assert(gAdvPath && gAdvPath.contains(q("#toggle-grad-reverse")) && gAdvPath.contains(q('[data-grad-sequence="pingpong"]')), "Sequence and the checkboxes belong in Gradation > Path > Advanced controls");
+      assert(!q("#grad-adv-prog") && !gAdvPath.contains(q("#input-grad-easing")), "Speed is the only Advanced control of Progression, so it stays in view without an accordion");
+      assert(!gAdvPath.contains(q("#input-grad-range")) && !gAdvPath.contains(q("#input-grad-steps")), "Range and Cycles stay up front");
       q('[data-grad-type="scale"]').click();
       assert(/Scale/.test(q('[data-grad-type="scale"]').closest(".ds-dropdown").querySelector(".ds-dropdown-current").textContent), "The Attribute dropdown should show the chosen attribute");
       q('[data-rail-tab="similarity"]').click(); await wait(60);
-      const sAdv = q("#sim-adv-imperf");
-      assert(sAdv && sAdv.contains(q("#input-sim-jitter")) && !sAdv.contains(q("#input-sim-intensity")) && !sAdv.contains(q('[data-sim-assoc="round"]')) && q('[data-sim-assoc="round"]').closest(".ds-field") && q("#input-sim-intensity"), "Association and Imperfection are groups in view; the jitter is in Imperfection > Advanced controls; Fluctuation stays up front");
+      assert(!q("#sim-adv-imperf") && q("#input-sim-jitter") && q('[data-sim-assoc="round"]').closest(".ds-field") && q("#input-sim-intensity"), "Association and Imperfection are groups in view; the jitter is alone in Advanced, so it stays in view without an accordion");
       q('[data-kinship-type="hybrid"]').click();
       assert(/Hybrid/.test(q('[data-kinship-type="hybrid"]').closest(".ds-dropdown").querySelector(".ds-dropdown-current").textContent), "The kinship dropdown should show the chosen type");
       reset();
@@ -2714,6 +2714,28 @@
       reset();
     });
 
+    await test("Selectors are row dropdowns (label on the left, 132 px dropdown on the right); chips stay only for multiple choices; a long option reads in full", async () => {
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel);
+      for (const tab of ["layout", "anomaly", "concentration", "contrast", "gradation", "similarity", "space", "texture"]) {
+        q(`[data-rail-tab="${tab}"]`).click(); await wait(60);
+      }
+      q('[data-rail-tab="anomaly"]').click(); await wait(80);
+      const rows = [...d.querySelectorAll(".ds-field--row")];
+      assert(rows.length >= 20 && rows.every(f => f.querySelector(".ds-dropdown")), `Row fields should all hold a dropdown (${rows.length})`);
+      const single = ["data-anom-type", "data-anom-dist", "data-conc-mode", "data-conc-method", "data-space-mode", "data-rep-size", "data-rep-place", "data-rep-mix", "data-rad-size", "data-fig-rel"];
+      for (const a of single) assert(q(`[${a}]`).classList.contains("ds-dropdown-item"), `${a} should be a dropdown item, not a chip`);
+      assert(q("[data-anom-attr]").classList.contains("ds-tag"), "Deviates in lets several be on at once, so it stays as chips");
+      // the menu of a row dropdown grows to show a long option in full
+      const f = q('[data-anom-type]').closest(".ds-field"), item = f.querySelector(".ds-dropdown-item span"), old = item.textContent;
+      assert(Math.round(f.querySelector(".ds-dropdown").getBoundingClientRect().width) === 132, "The dropdown is 132 px wide");
+      item.textContent = "An exaggeratedly long option name that goes on and on for many words";
+      const trigger = f.querySelector(".ds-dropdown-trigger"); trigger.click(); await wait(40);
+      const menu = f.querySelector(".ds-dropdown-menu"), mw = menu.getBoundingClientRect().width;
+      assert(mw > 132 && menu.scrollWidth <= Math.ceil(mw) + 1, `The menu should grow to read the option (${mw})`);
+      item.textContent = old; trigger.click(); await wait(20);
+      reset();
+    });
     await test("Letters and numbers are filled outlines with straight ends (copied from the design): they fill, combine and keep their overlapping parts", async () => {
       reset();
       const d = win.document, cv = d.getElementById("studio-canvas");

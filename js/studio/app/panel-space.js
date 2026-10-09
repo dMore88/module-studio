@@ -15,7 +15,7 @@ const SPACE_PANEL = {
     { title: "Space", help: {
         is: "Different ways of showing depth read differently: an isometric view keeps parallel lines, a tilt turns the form, and a paradox contradicts itself.",
         does: "Mode picks the kind of space: Isometric, 3D tilt, Fluctuating or Paradox." }, controls: [
-      { type: "tags", label: "Mode", key: "mode", attr: "data-space-mode", history: "Mode",
+      { type: "dropdown", label: "Mode", key: "mode", attr: "data-space-mode", history: "Mode",
         options: [["isometric", "Isometric"], ["foreshortening", "3D tilt"], ["fluctuating", "Fluctuating"], ["conflicting", "Paradox"]] },
     ] },
     { title: "Depth", help: {

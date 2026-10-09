@@ -18,11 +18,11 @@ const CONCENTRATION_PANEL = {
     { title: "Concentration", help: {
         is: "Elements can gather around a point, keep away from it, follow a line or form several spots, or thin out across the whole design.",
         does: "Structure picks how they gather; Method moves modules or removes them; Field style shapes how the density fades." }, controls: [
-      { type: "tags", label: "Structure", key: "mode", attr: "data-conc-mode", history: "Structure",
+      { type: "dropdown", label: "Structure", key: "mode", attr: "data-conc-mode", history: "Structure",
         options: [["point", "Point"], ["void", "Void"], ["line", "Line"], ["line_void", "Away from line"], ["free", "Hotspots"], ["dense", "Dense"], ["sparse", "Sparse"]] },
-      { type: "tags", label: "Method", key: "method", attr: "data-conc-method", history: "Method", fallback: "move", blockId: "conc-method-block", enable: (st) => !CONC_WHOLE(st), why: "Dense and Sparse work on the whole design",
+      { type: "dropdown", label: "Method", key: "method", attr: "data-conc-method", history: "Method", fallback: "move", blockId: "conc-method-block", enable: (st) => !CONC_WHOLE(st), why: "Dense and Sparse work on the whole design",
         options: [["move", "Move"], ["absence", "Absence"]] },
-      { type: "tags", label: "Line axis", key: "lineAxis", attr: "data-conc-axis", history: "Axis", blockId: "conc-axis-block", show: (st) => st.mode === "line" || st.mode === "line_void",
+      { type: "dropdown", label: "Line axis", key: "lineAxis", attr: "data-conc-axis", history: "Axis", blockId: "conc-axis-block", show: (st) => st.mode === "line" || st.mode === "line_void",
         options: [["horizontal", "Horizontal"], ["vertical", "Vertical"]] },
       { type: "chips", label: "Field style", attr: "data-conc-flag", options: [
         { key: "edgeFade", text: "Soft edge", id: "conc-fade-block", enable: (st) => CONC_WHOLE(st), why: "Only with Dense or Sparse" },

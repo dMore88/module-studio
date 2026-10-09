@@ -330,16 +330,22 @@ input[type="range"]:hover::-webkit-slider-thumb {
 
 /* Field + overline label */
 .ds-field { display: flex; flex-direction: column; gap: var(--spacing-3); min-width: 0; flex: 1; }
-.ds-label--overline { font-weight: var(--typography-weight-600); letter-spacing: 0.2px; text-transform: uppercase; } /* Overline style: the colour field */
+.ds-label--overline { font-weight: var(--typography-weight-600); letter-spacing: 0.2px; text-transform: uppercase; color: var(--neutral-text-soft); } /* Overline style: the colour field */
 .ds-field:has(> .ds-dropdown) { gap: var(--spacing-2); }
 .ds-field:has(> .ds-tags) { gap: var(--spacing-4); }
+/* Row field (Figma): the label on the left, a 132 px dropdown on the right */
+.ds-field--row { flex-direction: row; align-items: center; justify-content: space-between; gap: var(--spacing-4); }
+.ds-field--row > .ds-label, .ds-field--row > .ds-title-row { flex: 1; min-width: 0; }
+.ds-field--row > .ds-dropdown { flex: none; width: 132px; }
+.ds-field--row .ds-dropdown-trigger .ds-dropdown-current > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ds-field--row .ds-dropdown-item { white-space: normal; }
 /* Label style (Figma): 10 / 500, soft */
 .ds-label {
   font-size: var(--font-size-xs);
   font-weight: var(--typography-weight-500);
   line-height: var(--line-height-tight);
   letter-spacing: var(--letter-spacing-label);
-  color: var(--neutral-text-soft);
+  color: var(--neutral-text-main); /* control labels in the main tone; the group titles (overline) stay soft */
 }
 
 /* Tags (selector chips) */
@@ -381,27 +387,27 @@ input[type="range"]:hover::-webkit-slider-thumb {
   --fill: 0%;
   flex: 1;
   min-width: 0;
-  height: var(--sizing-5);
+  height: var(--sizing-6); /* the hit area is taller than the 2 px track and the 16 px knob */
   margin: 0;
   background: transparent;
   -webkit-appearance: none;
   appearance: none;
   cursor: pointer;
 }
-/* 4 px track: ink up to the value (the --fill share), muted after it */
+/* 2 px track: ink up to the value (the --fill share), muted after it */
 .ds-slider input[type="range"]::-webkit-slider-runnable-track {
-  height: var(--sizing-1);
+  height: 2px;
   border-radius: var(--border-radius-full);
   background: linear-gradient(to right, var(--neutral-interactive-default) var(--fill), var(--neutral-bg-muted) var(--fill));
 }
-.ds-slider input[type="range"]::-moz-range-track { height: var(--sizing-1); border-radius: var(--border-radius-full); background: var(--neutral-bg-muted); }
-.ds-slider input[type="range"]::-moz-range-progress { height: var(--sizing-1); border-radius: var(--border-radius-full); background: var(--neutral-interactive-default); }
+.ds-slider input[type="range"]::-moz-range-track { height: 2px; border-radius: var(--border-radius-full); background: var(--neutral-bg-muted); }
+.ds-slider input[type="range"]::-moz-range-progress { height: 2px; border-radius: var(--border-radius-full); background: var(--neutral-interactive-default); }
 .ds-slider input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   box-sizing: border-box;
-  width: var(--sizing-5);
-  height: var(--sizing-5);
-  margin-top: -8px;
+  width: var(--sizing-4);
+  height: var(--sizing-4);
+  margin-top: -7px;
   border: var(--border-weight-1) solid var(--neutral-border-strong);
   border-radius: var(--border-radius-full);
   background: var(--neutral-interactive-default);
@@ -409,8 +415,8 @@ input[type="range"]:hover::-webkit-slider-thumb {
 }
 .ds-slider input[type="range"]::-moz-range-thumb {
   box-sizing: border-box;
-  width: var(--sizing-5);
-  height: var(--sizing-5);
+  width: var(--sizing-4);
+  height: var(--sizing-4);
   border: var(--border-weight-1) solid var(--neutral-border-strong);
   border-radius: var(--border-radius-full);
   background: var(--neutral-interactive-default);
@@ -554,7 +560,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
   width: 100%; height: var(--sizing-7);
   padding: 0 var(--spacing-4);
   border-radius: var(--border-radius-1);
-  border: var(--border-weight-1) solid var(--neutral-border-strong);
+  border: var(--border-weight-1) solid var(--neutral-interactive-default);
   background: var(--neutral-interactive-default-inverted);
   color: var(--neutral-text-main);
   font-family: inherit; font-size: var(--font-size-sm);
@@ -1144,3 +1150,4 @@ body.is-editing-module .ds-select { opacity: 0.5; pointer-events: none; }
 .ds-tag--icon i { font-size: var(--sizing-4); flex: none; }
 .ds-style-row .ds-color-picker { gap: 10px; }
 .ds-style-row .ds-swatch { border-color: var(--neutral-border-strong); }
+
