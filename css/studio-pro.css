@@ -257,7 +257,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .ds-card {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-6);
+  gap: var(--spacing-5); /* 16 inside a group; the dividers add 8 on each side, so 24 around them (Figma) */
   font-family: var(--typography-family-body);
   color: var(--neutral-text-main);
 }
@@ -267,6 +267,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
+  margin-bottom: var(--spacing-3); /* 16 + 8 = the 24 of the design under the title */
 }
 .ds-card-title {
   flex: 1;
@@ -587,16 +588,15 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .ds-advanced > summary {
   display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-3);
   list-style: none; cursor: pointer;
-  padding: var(--spacing-3) var(--spacing-1);
-  border-bottom: var(--border-weight-1) solid var(--neutral-border-main);
-  font-size: var(--font-size-sm); font-weight: var(--typography-weight-400);
-  line-height: var(--line-height-small);
+  padding: var(--spacing-2) var(--spacing-1); /* 4 / 2, no line under it (Figma accordion item) */
+  font-size: var(--font-size-xs); font-weight: var(--typography-weight-500); letter-spacing: var(--letter-spacing-label);
+  line-height: var(--line-height-tight);
   color: var(--neutral-text-main);
 }
 .ds-advanced > summary::-webkit-details-marker { display: none; }
-.ds-advanced > summary i { order: 2; font-size: var(--sizing-6); transition: transform 0.15s ease; }
+.ds-advanced > summary i { order: 2; font-size: var(--sizing-4); transition: transform 0.15s ease; }
 .ds-advanced[open] > summary i { transform: rotate(180deg); }
-.ds-advanced > .ds-stack { padding-top: var(--spacing-3); }
+.ds-advanced > .ds-stack { padding-top: var(--spacing-5); }
 .ds-hint { margin: 0; font-size: var(--font-size-xs); line-height: var(--line-height-body); color: var(--neutral-text-subtle); }
 
 /* Visible notice when a draw fails (instead of a silent blank canvas) */
@@ -651,10 +651,12 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .ds-btn-group__button:focus-visible { outline: var(--border-weight-2) solid var(--neutral-interactive-default); outline-offset: calc(var(--spacing-1) * -1); }
 
 /* Vertical stack of fields inside a card (sub-panels) */
-.ds-stack { display: flex; flex-direction: column; gap: var(--spacing-6); }
+.ds-stack { display: flex; flex-direction: column; gap: var(--spacing-5); }
+/* two sliders in a row are 24 apart (the other controls, 16) */
+.ds-field:has(> .ds-slider) + .ds-field:has(> .ds-slider) { margin-top: var(--spacing-3); }
 .ds-stack.hidden { display: none !important; }
 /* a hint that belongs to the fields above it */
-.ds-stack > .ds-hint { margin-top: calc(var(--spacing-4) * -1); }
+.ds-stack > .ds-hint { margin-top: calc(var(--spacing-2) * -1); }
 
 /* Snackbar (Figma "snackbar", warning): dependency notice shown inside a card */
 .ds-snackbar {
@@ -687,7 +689,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
   height: 68px;
   padding: 0 var(--spacing-5);
   flex-shrink: 0;
-  z-index: 30;
+  z-index: 40; /* above the controls rail (35), so the Download menu opens over it */
   user-select: none;
 }
 .ds-brand { display: flex; align-items: center; gap: 14px; }
@@ -804,14 +806,15 @@ input[type="range"]:hover::-webkit-slider-thumb {
 
 /* Workspace: layers | canvas column | rail, with the controls panel floating over the right edge */
 .ds-workspace {
-  --flyout-right: 90px; /* 16 margin + 64 rail + 10 air */
+  --flyout-right: 62px; /* 16 margin + 36 rail (32 button + 2 + 2) + 10 air */
   position: relative;
   display: flex;
   flex: 1;
   gap: var(--spacing-6);
   min-height: 0;
   padding: 0 var(--spacing-5) var(--spacing-6);
-  overflow: hidden;
+  overflow: clip;
+  overflow-clip-margin: 6px; /* the ring and the shadows of the buttons at the edge are not cut */
 }
 .ds-canvas-column {
   display: flex;
@@ -903,6 +906,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .layer-card.is-hidden { opacity: 0.45; }
 .layer-card.is-dragging { opacity: 0.3; transform: scale(0.97); }
 .layer-card.drag-over { box-shadow: inset 0 0 0 var(--border-weight-2) var(--neutral-interactive-default); }
+.layer-preview-box .ph { font-size: var(--sizing-9); }
 .layer-preview-box {
   display: grid;
   place-items: center;
@@ -964,11 +968,9 @@ input[type="range"]:hover::-webkit-slider-thumb {
   align-self: stretch;
   gap: var(--spacing-4);
   box-sizing: border-box;
-  width: var(--sizing-12);
-  padding: var(--spacing-5);
+  width: 36px; /* 32 button + 2 px each side: the buttons sit flush with the workspace's 16 px margin */
+  padding: 0 var(--spacing-1);
   border-radius: var(--border-radius-1);
-  background: var(--neutral-bg-light);
-  box-shadow: var(--elevation-3x);
   z-index: 35;
 }
 .rail-btn {
@@ -1010,7 +1012,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
 /* The whole app blocks text selection (every element), so the log lines must opt in to be copied by hand */
 .ds-art-log .art-log__lines, .ds-art-log .art-log__lines * { user-select: text; -webkit-user-select: text; }
 .art-log__head { display: flex; align-items: center; justify-content: space-between; position: sticky; top: calc(var(--spacing-6) * -1); margin: calc(var(--spacing-6) * -1) calc(var(--spacing-6) * -1) 0; padding: var(--spacing-5) var(--spacing-6); background: var(--neutral-bg-strong); z-index: 1; }
-.art-log__copy { height: var(--sizing-6, 28px); padding: 0 var(--spacing-5); font-family: var(--typography-family-body); }
+.art-log__copy { width: var(--sizing-7); height: var(--sizing-7); padding: 0; justify-content: center; }
 .art-log__title { margin: 0; line-height: var(--line-height-body); color: var(--neutral-text-main); text-transform: uppercase; }
 .art-log__lines { color: var(--neutral-text-subtle); line-height: var(--line-height-body); overflow-wrap: anywhere; }
 .art-log__lines p { margin: 0; }
@@ -1045,3 +1047,64 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .text-\[16px\] { font-size: 16px; }
 .bg-\[\#eceef2\] { background-color: #eceef2; }
 .text-\[\#121317\] { color: #121317; }
+
+/* Smart module editor (proof of concept): the list of figures */
+.fig-list { display: flex; flex-direction: column; gap: var(--spacing-2); margin-bottom: var(--spacing-3); }
+.fig-list .ds-btn { justify-content: flex-start; width: 100%; }
+.fig-list .ds-btn.active { background: var(--neutral-bg-strong); font-weight: var(--typography-weight-700); }
+
+/* A neutral line between groups of controls (Figma catalog: divider) */
+.ds-divider { height: 1px; margin: var(--spacing-3) 0; background: var(--neutral-border-main); border: 0; }
+
+/* The rows of the shape list reuse the layer rows, a bit shorter */
+.fig-list .layer-card.fig-row { height: 48px; }
+.fig-list { gap: 0; }
+
+/* Which mode the app is in: the composition (the design) or the smart module editor (the module on its own) */
+.ds-mode-chip {
+  display: inline-flex; align-items: center; gap: var(--spacing-2); box-sizing: border-box; height: var(--sizing-6);
+  padding: 0 var(--spacing-3); border-radius: var(--border-radius-2); background: var(--neutral-bg-strong);
+  color: var(--neutral-text-main); font-size: var(--font-size-xs); font-weight: var(--typography-weight-500); white-space: nowrap;
+}
+.ds-mode-chip--smart { background: #cdeeed; color: #0b5e5c; }
+.ds-btn--dark { background: var(--neutral-interactive-default); color: var(--neutral-text-main-inverted); }
+.ds-btn--dark:hover { background: var(--neutral-interactive-hover); }
+.ds-btn--dark:active { background: var(--neutral-interactive-active); }
+.is-edit-only { display: none; }
+body.is-editing-module .is-edit-only { display: inline-flex; }
+/* in the editor the only ways out are Save and Cancel: the document buttons give way to them, and the rest of the app waits */
+body.is-editing-module .ds-export-actions > .ds-btn:not(.is-edit-only), body.is-editing-module .ds-export-actions > .ds-menu { display: none; }
+body.is-editing-module #controls-rail .rail-btn:not([data-rail-tab="module"]) { opacity: 0.4; pointer-events: none; }
+body.is-editing-module #inspector-flyout .close-flyout-btn { display: none; }
+/* the shapes take the place of the layers and the Art log on the left */
+.ds-shapes-panel { display: none; }
+body.is-editing-module .ds-shapes-panel { display: flex; }
+body.is-editing-module .ds-layers-panel:not(.ds-shapes-panel) { display: none; }
+/* a small cross marks the centre of the module canvas (a guide, never exported) */
+body.is-editing-module .ds-artboard { position: relative; }
+body.is-editing-module .ds-artboard::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: 13px; height: 13px; transform: translate(-50%, -50%); pointer-events: none;
+  background:
+    linear-gradient(#9aa0a6, #9aa0a6) center / 1px 100% no-repeat,
+    linear-gradient(#9aa0a6, #9aa0a6) center / 100% 1px no-repeat;
+}
+body.is-editing-module .ds-select { opacity: 0.5; pointer-events: none; }
+.ds-btn--dark i { color: var(--neutral-icon-inverted); }
+
+/* Download menu in the header: one button that opens JSON, SVG and Copy SVG */
+.ds-menu { position: relative; }
+.ds-menu__list {
+  position: absolute; right: 0; top: calc(100% + var(--spacing-2)); z-index: 50; min-width: 160px; padding: var(--spacing-2);
+  display: flex; flex-direction: column; gap: var(--spacing-1); border-radius: var(--border-radius-2);
+  background: var(--neutral-bg-light); box-shadow: var(--elevation-5x);
+}
+.ds-menu__list[hidden] { display: none; }
+.ds-menu__item {
+  display: flex; align-items: center; gap: var(--spacing-3); height: var(--sizing-6); padding: 0 var(--spacing-3); border: 0; border-radius: var(--border-radius-1);
+  background: transparent; color: var(--neutral-text-main); font: inherit; font-size: var(--font-size-xs); cursor: pointer; text-align: left;
+}
+.ds-menu__item:hover { background: var(--neutral-bg-strong); }
+
+/* A control that does not apply now stays in view, dimmed and without response; its reason is the tooltip (see panel-builder.js) */
+.is-disabled { opacity: 0.45; cursor: not-allowed; }
+.is-disabled button, .is-disabled input, .is-disabled label { cursor: not-allowed; }

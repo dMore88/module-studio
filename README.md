@@ -34,7 +34,7 @@ The application is built on a clean, zero-dependency stack with high-performance
 
 | Tool | Mode | Description |
 | :--- | :--- | :--- |
-| **Module** | Base Unit | 15 glyphs (Phosphor icons), width and height up to 2000 px, rotation, offset X/Y, stroke width (uniform even on stretched shapes), fill/stroke draw mode, per-layer shape color. *Advanced*: the module's **container** (width, height) with a *Show container* option. |
+| **Module** | Base Unit | The module is a piece of paper that is repeated: its own canvas, with a width and height (10 to 1000 px) and a rotation, that always cuts what is drawn past its edge. Up to 4 **shapes** (22 forms) are placed on it, each with its own width, height, position and rotation in px; stroke width (uniform even on stretched shapes), fill/stroke draw mode and a colour are shared. It is edited in its own canvas with Save / Cancel and a step-by-step undo. |
 | **Layout** | Spatial Matrix | **Repetition** (Grid, Curved, Brick, Diagonal, Zigzag, Triangular, Alternating, Hexagonal) with *Fit to canvas* or *Actual size*, module placement (centers, intersections, both) and cell mix (merged, divided). *Advanced*: reflection, direction, **rhythm A:B** and **gradation of structure** (columns and rows that grow step by step), clip, checkerboard inversion and **visible lines** (design: colour and width, exported). **Radiation** (Centrifugal, Centripetal, Concentric, Spiral, Multi-center with 2 to 8 foci) with circular or polygonal rings (triangle to octagon), open center and ring rotation. |
 | **Similarity** | Visual Kinship | Elastic, 3D tilt, Wobble, Scale and Hybrid kinship with fluctuation intensity. *Advanced*: association of shapes, imperfection (cut, broken) and spatial cell jitter. |
 | **Gradation** | Progressive Transition | Attribute (Rotate, Scale, Depth, Drift, Shape, Texture), pathway (diagonal, horizontal, vertical, concentric, zigzag), range and cycles. *Advanced*: sequence, acceleration, alternate rows and reverse. |
@@ -47,7 +47,7 @@ The application is built on a clean, zero-dependency stack with high-performance
 Every panel shows the essentials first and keeps the rest in a collapsible **Advanced** section. Number boxes respond to the up and down arrow keys (Shift = ×10, Alt = ×0.1). All on-screen **guides** (container frame, focal point, attractor, isometric grid) share one colour, chosen next to the canvas buttons, and are never exported.
 
 --- | :--- | :--- |
-| **Module** | Base Unit | 15 glyphs (Phosphor fill icons), scale, rotation, stroke width, offset X/Y, fill/stroke draw mode, per-layer shape color. |
+| **Module** | Base Unit | A piece of paper with up to 4 shapes (width, height, position and rotation each), module width and height, rotation, stroke width, fill/stroke draw mode, per-layer shape color. |
 | **Layout Structure** | Spatial Matrix | Dual-engine spatial layout: **Repetition** (Grid, Curved, Brick, Diagonal) and **Radiation** (Centrifugal, Concentric, Spiral, Dual-center). |
 | **Structure** | Formal Cadence | Formal rhythmic subdivision with dual alternating intervals ($A:B:A:B$) for columns and rows, and visible structural grid lines. |
 | **Similarity** | Visual Kinship | Genetic morphological variation across population: *Elastic* (distortion), *3D tilt* (foreshortening), *Wobble* (rotation wobble), *Scale* (scale kinship), and *Hybrid* (hybrid fusion). Includes fluctuation intensity and spatial cell jitter. |
@@ -68,7 +68,11 @@ Every feature and interaction in Module Studio strictly follows the design contr
 - [**`docs/DESIGN_SYSTEM_TOKENS.md`**](./docs/DESIGN_SYSTEM_TOKENS.md): Design system from Figma: tokens (`css/tokens.css`), components and open design decisions.
 - [**`docs/design-concepts-in-app.md`**](./docs/design-concepts-in-app.md): Map of every concept in Wong's book, the control that implements it, and its status.
 - [**`docs/BACKLOG.md`**](./docs/BACKLOG.md): Pending work derived from Wong's book, with priorities and decisions.
-- [**`docs/AUDITORIA_CONTROLES.md`**](./docs/AUDITORIA_CONTROLES.md): Usability audit of the controls (what is visible, what goes in *Advanced*).
+- [**`docs/LIMITES_Y_VALORES.md`**](./docs/LIMITES_Y_VALORES.md): Every limit and default value in the app.
+- [**`docs/IDEA_SMART_MODULE.md`**](./docs/IDEA_SMART_MODULE.md): The smart module (several shapes in a module): model, decisions and open points.
+- [`docs/archivo/`](./docs/archivo): Historical reports (the controls audit and the first code review), kept for reference and not maintained.
+
+**Where each kind of knowledge lives:** the *design system* (tokens, components, spacing) in `DESIGN_SYSTEM_TOKENS.md`; the *design concepts* (what each Wong concept is and which control implements it) in `design-concepts-in-app.md`; *how every control behaves* in `STUDIO_CONTROLS_GUIDE.md`; the *rules the app must respect* in `STUDIO_RULES.md`; *what is pending* in `BACKLOG.md`.
 
 ---
 
@@ -92,6 +96,12 @@ python3 -m http.server 5173
 open http://localhost:5173
 ```
 
+### Code structure
+- `js/studio/studio-engine.js` and `shapes.js`, `booleans.js`, `exporter.js`: the drawing engine (canvas, shapes, boolean operations, SVG export). They know nothing about the interface.
+- `js/studio/studio-pro-app.js`: the app's core (start, render, header actions, history, viewport).
+- `js/studio/app/*.js`: one file per area or panel (layers, Art log, rail, shared interface helpers, the panels, the smart module editor). Their methods are added to the app class when it starts.
+- `js/studio/app/panel-builder.js`: panels described as **data** (a list of groups and controls) are drawn, shown and listened to by one shared piece of code. **Every control panel works this way** (Layout, Similarity, Gradation, Anomaly, Contrast, Concentration, Texture, Space): the builder handles tags, chips, dropdowns (also with the shape list), sliders, switches, colour rows, controls that appear only in some cases, regions (Layout's two modes), floating groups, a dependency banner and a per-group *Advanced controls*. A new panel is written as a list in its own file; changing a control's name, range, unit or group is a change in one place. The header of each card (title, switch, close) stays in `index.html`.
+
 ### Building the Standalone Bundle
 ```bash
 python3 build-pro.py
@@ -104,12 +114,12 @@ git config core.hooksPath .githooks
 ```
 
 ### Save, open and export
-- **Config** saves the project as `.json`; **Open** loads it back. Damaged files are cleaned up (missing values fall back to defaults) or refused with a message.
-- **Download SVG** and **Copy SVG** produce a real vector SVG (paths, not an embedded image), drawn by the same engine as the canvas. Guides are left out; visible lines, being part of the design, are included.
+- **Download** is a menu: **JSON** saves the project as `.json` (**Open** loads it back) and **SVG** downloads the vector file; **Copy SVG** is its own button. Damaged files are cleaned up (missing values fall back to defaults) or refused with a message.
+- **SVG** and **Copy SVG** produce a real vector SVG (paths, not an embedded image), drawn by the same engine as the canvas. Guides are left out; visible lines, being part of the design, are included.
 
 ### Tests
 ```bash
 python3 -m http.server 5173
 # open http://localhost:5173/tests/smoke.html
 ```
-The smoke page draws all 22 shapes, runs 400 random combinations of every control, and checks determinism, undo/redo, layers, the vector SVG against the canvas, project save/open and the on-screen error notice. It must end in **All tests passed** (currently 47 checks).
+The smoke page draws all 22 shapes, runs 150 random combinations of every control (400 when the page is opened as `smoke.html?full`), and checks determinism, undo/redo, layers, the vector SVG against the canvas, project save/open and the on-screen error notice. It must end in **All tests passed** (currently 84 checks).

@@ -30,17 +30,23 @@ def strip_es6_modules(content):
     content = re.sub(r'^\s*export\s*\{[\s\S]*?\}\s*;?', '', content, flags=re.MULTILINE)
     return content
 
+# The areas of the app (js/studio/app/*.js): classes whose methods studio-pro-app.js adds to StudioProApp. They go in the bundle before it.
+APP_PARTS = tuple((name, 'studio/app/' + name + '.js') for name in (
+    'ui-helpers', 'panel-builder', 'layers-panel', 'art-log', 'controls-rail', 'panel-layout', 'panel-similarity', 'accessibility', 'panel-gradation', 'panel-anomaly',
+    'panel-contrast', 'panel-concentration', 'panel-space', 'panel-texture', 'module-editor'))
+
 def read_sources():
     js_dir = os.path.join(BASE_DIR, 'js')
     parts = {}
-    for key, rel in (('utils', 'canvas-utils.js'), ('shapes', 'studio/shapes.js'), ('engine', 'studio/studio-engine.js'),
-                     ('exporter', 'studio/exporter.js'), ('app', 'studio/studio-pro-app.js')):
+    for key, rel in (('utils', 'canvas-utils.js'), ('shapes', 'studio/shapes.js'), ('booleans', 'studio/booleans.js'), ('engine', 'studio/studio-engine.js'),
+                     ('exporter', 'studio/exporter.js'), *APP_PARTS, ('app', 'studio/studio-pro-app.js')):
         with open(os.path.join(js_dir, rel)) as f:
             parts[key] = strip_es6_modules(f.read())
     return parts
 
 def make_bundle():
     p = read_sources()
+    APP_PARTS_JS = '\n\n  '.join(p[name] for name, _ in APP_PARTS)
     return f"""// Standalone self-contained script for Module Studio
 // Runs on both http:// (web server) and file:/// (local direct open)
 (function() {{
@@ -50,9 +56,13 @@ def make_bundle():
 
   {p['shapes']}
 
+  {p['booleans']}
+
   {p['engine']}
 
   {p['exporter']}
+
+  {APP_PARTS_JS}
 
   {p['app']}
 
@@ -61,6 +71,9 @@ def make_bundle():
     window.StudioProApp = StudioProApp;
     window.CanvasUtils = CanvasUtils;
     window.Shapes = Shapes;
+    window.regionBoolean = regionBoolean;
+    window.regionArea = regionArea;
+    window.inRegion = inRegion;
     window.StudioExporter = StudioExporter;
   }}
 }})();

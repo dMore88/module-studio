@@ -2,8 +2,9 @@
 
 export const CanvasUtils = {
   // Setup crisp HiDPI canvas with deterministic logical coordinates
-  setupCanvas(canvas, logicalW = 600, logicalH = 600) {
-    const dpr = window.devicePixelRatio || 1;
+  // `scale` makes the drawing denser than the screen needs (the smart module editor shows a small module big and sharp)
+  setupCanvas(canvas, logicalW = 600, logicalH = 600, scale = 1) {
+    const dpr = (window.devicePixelRatio || 1) * scale;
     const targetW = logicalW;
     const targetH = logicalH;
 

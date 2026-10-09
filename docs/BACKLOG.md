@@ -22,14 +22,26 @@ Sale de las filas ⏳ del mapa de conceptos, más las mejoras de filas 🟡 que 
 
 | — | **Posición individual de cada foco** (Concentration › Hotspots) | Hoy X / Y y el puntero mueven solo el foco 1; los demás son copias suyas giradas alrededor del centro (2 focos = espejo). Propuesta: una fila de chips 1, 2, 3… para elegir el foco que mueven los sliders y el puntero (cada foco guarda su posición), y un interruptor **Regular / Free** que mantiene la figura regular actual o activa posiciones libres. Con *Regular* nada cambia y los proyectos viejos se ven igual |
 
-| — | **Block, clic para mover** (fases 1 y 2 hechas el 7 oct 2026: el bloque con tamaño y desfase en px, y su marco punteado mientras el panel Layout está abierto) | **Clic en el lienzo para mover el bloque** con el panel Layout abierto (como el foco de Anomaly y el atractor de Concentration): el clic fijaría el desfase del centro del bloque |
+| — | **Composition container (antes Block), clic para mover** (hechas el 7 oct 2026: tamaño y desfase en px, marco punteado mientras el panel Layout está abierto, y el corte de lo que sobresale, también en Actual size) | **Clic en el lienzo para mover el bloque** con el panel Layout abierto (como el foco de Anomaly y el atractor de Concentration): el clic fijaría el desfase del centro del bloque |
 
-| — | **Art log como JSON y editor interno** (idea del 7 oct 2026, pendiente de definir cómo se usaría) | Hoy el Art log es una receta de texto (con *Copy*). Idea: darle **dos pestañas**, *Recipe* (la actual, en las unidades de la interfaz) y *JSON* (el proyecto compacto, con todas las capas y solo lo activo, en los valores internos exactos). Como la app rellena con valores por defecto lo que falta, un JSON compacto ya es un proyecto válido. Luego, un **editor en tiempo real** (fase 2): editar el JSON dentro de la app con un botón *Apply* que valide y cargue con la misma lógica que *Open* (que ya limpia valores dañados) y deje un paso de deshacer. Es una evolución de la app: definir antes el flujo (pegar recetas entre proyectos, pasárselas a un asistente, editar a mano). Ojo con las unidades: el JSON usa valores internos (jitter en px, Speed con el signo contrario, el Block en %, *Col B size* como factor) que no coinciden con los de los sliders |
+| — | **Art log como JSON y editor interno** (idea del 7 oct 2026, pendiente de definir cómo se usaría) | Hoy el Art log es una receta de texto (con *Copy*). Idea: darle **dos pestañas**, *Recipe* (la actual, en las unidades de la interfaz) y *JSON* (el proyecto compacto, con todas las capas y solo lo activo, en los valores internos exactos). Como la app rellena con valores por defecto lo que falta, un JSON compacto ya es un proyecto válido. Luego, un **editor en tiempo real** (fase 2): editar el JSON dentro de la app con un botón *Apply* que valide y cargue con la misma lógica que *Open* (que ya limpia valores dañados) y deje un paso de deshacer. Es una evolución de la app: definir antes el flujo (pegar recetas entre proyectos, pasárselas a un asistente, editar a mano). Ojo con las unidades: el JSON usa valores internos (jitter en px, Speed con el signo contrario, el composition container (`block`) en %, *Col B size* como factor) que no coinciden con los de los sliders |
 
 ### Ideas de diseño para una rama aparte (no tocan `main` hasta validarlas)
 | ID | Concepto | Notas |
 | :-- | :-- | :-- |
-| — | **Módulo "smart"** (como los smart objects de Photoshop): un módulo compuesto de varias figuras con interrelaciones, que se edita en su propio ambiente y sustituye al módulo actual | Diseño y decisiones en [`IDEA_SMART_MODULE.md`](./IDEA_SMART_MODULE.md). Se probaría en la rama `smart-module`; fase 1 sin booleanas |
+| — | **Módulo "smart"** (como los smart objects de Photoshop): el módulo es una pieza de papel con su propio canvas y hasta 4 shapes, editada en su propio ambiente; sustituye al módulo actual | **Prueba de concepto funcionando en la rama `smart-module`** (aún no en `main`). Modelo, glosario y pendientes en [`IDEA_SMART_MODULE.md`](./IDEA_SMART_MODULE.md) |
+
+### Pendientes de la rama `smart-module` (el 8 oct 2026 la rama está completa y subida; falta integrarla con `main`)
+| ID | Concepto | Notas |
+| :-- | :-- | :-- |
+| — | **Integrar la rama con `main`** | Punto de retorno guardado: la etiqueta `checkpoint-main-before-smart-module` (el `main` de antes). Comprobado el 8 oct 2026: los proyectos antiguos se abren con el mismo dibujo (diferencias solo de un 1 % por suavizado, más lo esperado: las letras y números nuevos, el desfase del módulo y el *Show container*, que se quitaron, y el recorte del container) |
+| — | **Formas abiertas dentro de Combine** (línea, onda, espiral) | Hoy no tienen área: se dibujan encima y en *Fill* no se ven. Posible: darles un grosor y tratarlas como siluetas |
+| — | **Selección de shapes con clic o arrastre en el canvas del editor** (y mover o escalar con el puntero) | Hoy se elige en la lista y se mueve con los sliders |
+| — | **Ver los contornos de las shapes cuando están combinadas** (guía de pantalla) | Con *Combine* solo se ve el resultado |
+| — | **Opciones de trazo por shape** (extremos, uniones, discontinuo) | Hoy cada shape tiene grosor y color, no más |
+| — | **Tamaño conjunto de las shapes** del módulo y **editar el módulo viendo a sus vecinos** | Ver [`IDEA_SMART_MODULE.md`](./IDEA_SMART_MODULE.md), apartado *Pendiente* |
+| — | **Distancia exacta entre shapes cóncavas** en las relaciones | Hoy se usa el contorno convexo para saber cuándo se tocan |
+| — | **Iconos y fuente en local** (hoy se cargan de internet: Phosphor desde unpkg y las fuentes de Google) | La app necesita conexión para verse bien |
 
 ### P3 — por evaluar con el filtro de juego
 | ID | Concepto | Notas |
@@ -55,6 +67,7 @@ Medido el 6 oct 2026 (círculo en trazo, Fit to canvas, 600 px): 100 módulos 2 
 ### Al final de todo
 | ID | Concepto | Notas |
 | :-- | :-- | :-- |
+| — | **Publicar una versión de prueba** (una URL) | Por ejemplo con GitHub Pages; antes, los iconos y la fuente en local (ver arriba) |
 | INT2, INT5 a INT9 | Interrelaciones entre capas: toque, unión, sustracción, intersección, coincidencia y sus efectos espaciales | Se resuelven con composición (`destination-out`, `destination-in`) y posición. Abren decisiones de interfaz que conviene diseñar antes en Figma |
 | RP7 | Módulos mayores que su celda, con unión o penetración entre vecinos | Depende de las interrelaciones |
 | RP8, RP9, RP10, E29, R26 | **Supermódulos** (y submódulos): un grupo de módulos que se repite como unidad | La app trabaja un módulo por capa; hay que decidir cómo (por ejemplo, grupos de capas que comparten retícula) |
@@ -76,13 +89,16 @@ Medido el 6 oct 2026 (círculo en trazo, Fit to canvas, 600 px): 100 módulos 2 
 
 | ID | Ítem | Estado |
 | :-- | :-- | :-- |
-| Q1 | Revisión de código | ✅ Informe histórico en [REVISION_CODIGO.md](./REVISION_CODIGO.md); sus arreglos (F1 a F9) están hechos |
+| Q1 | Revisión de código | ✅ Informe histórico en [REVISION_CODIGO.md](./archivo/REVISION_CODIGO.md); sus arreglos (F1 a F9) están hechos |
 | Q2 | Auditoría de lo propuesto frente a lo que la app ya hace | ✅ Hecha en cada ítem; el mapa de conceptos la formaliza |
 | Q3 | Design system desde Figma | ✅ [DESIGN_SYSTEM_TOKENS.md](./DESIGN_SYSTEM_TOKENS.md) y `css/tokens.css` |
 | Q3b, Q3d | Migrar paneles, barra superior, tarjetas de capas y riel al diseño de Figma | ✅ |
+| Q5 | Código en un archivo por panel y paneles descritos como datos (`js/studio/app/`, ver el README) | ✅ 8 oct 2026: los ocho paneles de controles; el panel Module (editor) y la cabecera de cada tarjeta siguen a mano |
+| Q6 | Pruebas más rápidas | ✅ 8 oct 2026: 150 combinaciones al azar por defecto (400 con `smoke.html?full`); la columna *Time* muestra lo que tarda cada una. Suite completa ~75 s, antes ~96 s |
+| Q7 | Regla de la interfaz: lo que es detalle de una opción elegida se oculta; lo que es una función del panel que ahora no aplica se queda a la vista, atenuado y con su motivo | ✅ 8 oct 2026, ver `STUDIO_CONTROLS_GUIDE.md` |
 | Q3c | Decisiones de diseño pendientes: tokens para la caja de valor y la pista del slider, fuente monoespaciada (DM Mono o Roboto Mono), unificar interruptor y checkbox entre librería y diseño | ⏳ **En espera**: Diego revisará el diseño en Figma (por ejemplo, reducir el alto de los campos para un estilo más de software) y lo pasará |
 | Q4 | Revisión de salud del código (7 oct 2026) | ✅ Sin errores de JavaScript ni ids duplicados. Los tres pendientes menores también se hicieron: se borraron los manejadores del panel *Structure* antiguo, se quitó Tailwind (sus 18 clases de utilidad y el reset base viven en `css/studio-pro.css`; se comprobó elemento por elemento que ningún estilo cambió en los nueve paneles, el encabezado y la lista de capas) y el Art log lista los valores en uso de cada modificador. Queda de la revisión #9: empaquetar iconos y fuentes en el repositorio para que la app funcione sin conexión |
-| U1 | Reorganizar los controles: lo esencial visible, lo demás en *Advanced*, dropdowns, guías con color global | ✅ Ver [AUDITORIA_CONTROLES.md](./AUDITORIA_CONTROLES.md) |
+| U1 | Reorganizar los controles: lo esencial visible, lo demás en *Advanced*, dropdowns, guías con color global | ✅ Ver [AUDITORIA_CONTROLES.md](./archivo/AUDITORIA_CONTROLES.md) |
 
 ## 4. Otros
 | ID | Ítem | Estado |

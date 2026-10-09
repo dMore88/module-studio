@@ -22,7 +22,7 @@
   <p>Open this page through a web server (<code>python3 -m http.server</code>, then <code>/tests/smoke.html</code>). Run it after every change, together with <code>python3 build-pro.py</code>.</p>
   <button id="run" type="button">Run again</button>
   <div id="summary">Running…</div>
-  <table><thead><tr><th>Test</th><th>Result</th><th>Detail</th></tr></thead><tbody id="results"></tbody></table>
+  <table><thead><tr><th>Test</th><th>Result</th><th>Detail</th><th>Time</th></tr></thead><tbody id="results"></tbody></table>
   <iframe id="app" title="Module Studio" src="../index.html"></iframe>
 
 <script>
@@ -111,17 +111,18 @@
     const app = win.studioProApp;
     const initial = JSON.stringify(app.state);
     // Older tests were written when Repetition modules shrank with their cell; the Base size default has its own test (reset(true))
-    const reset = (keepDefaults = false) => { app.state = JSON.parse(initial); if (!keepDefaults) app.state.layers.forEach(l => { l.structure.repetition.moduleScale = "cell"; }); app.activeLayerId = app.state.layers[0].id; app.engine.state = app.state; };
+    const reset = (keepDefaults = false) => { app.state = JSON.parse(initial); if (!keepDefaults) app.state.layers.forEach(l => { l.structure.repetition.moduleScale = "cell"; }); app.activeLayerId = app.state.layers[0].id; app.engine.state = app.state; app.figEdit = null; app.engine.viewState = null; if (app._editorCanvasKey) { app._editorCanvasKey = ""; app.engine.renderScale = 1; app.fitArtboard(); app.render(); } app.syncEditShell(); if (app.isFlyoutOpen) { app.isFlyoutOpen = false; app.updateRailUI(); } };
     const results = [];
-    const record = (name, ok, detail = "") => {
+    const record = (name, ok, detail = "", ms) => {
       results.push({ name, ok, detail });
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${name}</td><td class="${ok ? "pass" : "fail"}">${ok ? "PASS" : "FAIL"}</td><td>${detail}</td>`;
+      tr.innerHTML = `<td>${name}</td><td class="${ok ? "pass" : "fail"}">${ok ? "PASS" : "FAIL"}</td><td>${detail}</td><td class="ms">${ms === undefined ? "" : Math.round(ms) + " ms"}</td>`;
       tbody.appendChild(tr);
     };
     const test = async (name, fn) => {
-      try { const detail = await fn(); record(name, true, detail || ""); }
-      catch (e) { record(name, false, e && e.message ? e.message : String(e)); }
+      const t0 = performance.now();
+      try { const detail = await fn(); record(name, true, detail || "", performance.now() - t0); }
+      catch (e) { record(name, false, e && e.message ? e.message : String(e), performance.now() - t0); }
       finally { reset(); }
     };
     const assert = (cond, msg) => { if (!cond) throw new Error(msg); };
@@ -160,11 +161,13 @@
       return "44 combinations";
     });
 
-    await test("400 random combinations: no exception, balanced canvas state", () => {
+    // The random combinations are a third of the whole run: 150 by default, 400 when the page is opened with ?full
+    const RANDOM_RUNS = new URLSearchParams(location.search).has("full") ? 400 : 150;
+    await test(`${RANDOM_RUNS} random combinations: no exception, balanced canvas state`, () => {
       reset();
       const r = makeRng(12345);
       let failures = [], unbalanced = 0, maxMs = 0, total = 0;
-      for (let n = 0; n < 400; n++) {
+      for (let n = 0; n < RANDOM_RUNS; n++) {
         randomizeState(app, r);
         saves = restores = 0;
         const t0 = performance.now();
@@ -174,7 +177,7 @@
       }
       assert(failures.length === 0, `${failures.length} exceptions, first: ${failures[0]}`);
       assert(unbalanced === 0, `${unbalanced} renders left an unbalanced save/restore`);
-      return `avg ${Math.round(total / 400)} ms, worst ${Math.round(maxMs)} ms`;
+      return `avg ${Math.round(total / RANDOM_RUNS)} ms, worst ${Math.round(maxMs)} ms`;
     });
 
     await test("Texture is deterministic (same settings, same picture)", () => {
@@ -253,20 +256,6 @@
       assert(app.state.layers[0].structure.repetition.moduleScale === "cell", "The same for Repetition");
     });
 
-    await test("Show container draws its frame even with the coordinate grid off, and never in an export", () => {
-      reset();
-      const cv = win.document.getElementById("studio-canvas");
-      const L = app.state.layers[0]; Object.assign(L, { containerW: 300, containerH: 300, showContainer: true });
-      app.state.showSafeBounds = false;
-      const guide = () => { drawRaw(app); const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 200 && d[i + 1] < 120 && d[i + 2] < 90) n++; return n; };
-      assert(guide() > 500, "The container frame is missing with the grid off");
-      L.showContainer = false;
-      assert(guide() === 0, "Show container off should hide the frame");
-      L.showContainer = true; app.engine.exporting = true;
-      assert(guide() === 0, "The frame must never reach an export");
-      app.engine.exporting = false;
-    });
-
     await test("Random lines also grow on filled shapes, in the figure colour", () => {
       reset();
       const cv = win.document.getElementById("studio-canvas");
@@ -317,9 +306,9 @@
       const same = inkInside(80);
       assert(same > shrink * 3, `Base size should leave far more ink near the centre (${shrink} -> ${same})`);
       d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
-      assert(!d.getElementById("rad-modscale-block").classList.contains("hidden"), "Fit offers Module scale");
+      assert(!d.getElementById("rad-modscale-block").classList.contains("is-disabled"), "Fit offers Module scale");
       st.radiation.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("rad-modscale-block").classList.contains("hidden"), "Actual size hides Module scale");
+      assert(d.getElementById("rad-modscale-block").classList.contains("is-disabled"), "Actual size hides Module scale");
       reset();
     });
 
@@ -345,7 +334,7 @@
       st.radiation.sizeMode = "fit"; st.radiation.rings = 3; st.radiation.rays = 8;
       assert(changes(120) === 8, "Fit to canvas keeps the Angular rays");
       d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
-      assert(!d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("hidden"), "Fit shows Angular rays");
+      assert(!d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("is-disabled"), "Fit shows Angular rays");
       // Switching to Actual size keeps the container as it is (100 x 100, the module's size), in both layouts
       L.containerW = 100; L.containerH = 100; st.radiation.sizeMode = "fit"; st.repetition.sizeMode = "fit"; st.mode = "radiation"; app.syncAllInspectorsWithActiveLayer();
       d.querySelector('[data-rad-size="actual"]').click(); await wait(40);
@@ -355,14 +344,14 @@
       assert(L.containerW === 100 && L.containerH === 100, `Grid Actual size should keep the container (${L.containerW} x ${L.containerH})`);
       st.mode = "radiation"; st.radiation.sizeMode = "actual"; st.repetition.sizeMode = "fit";
       st.radiation.sizeMode = "actual"; st.radiation.raysByContainer = false; app.syncAllInspectorsWithActiveLayer();
-      assert(!d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("hidden"), "Actual size keeps Angular rays unless the rays follow the container");
-      assert(!d.getElementById("rad-raysbycont-item").classList.contains("hidden"), "Actual size offers Rays follow container");
+      assert(!d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("is-disabled"), "Actual size keeps Angular rays unless the rays follow the container");
+      assert(!d.getElementById("rad-raysbycont-item").classList.contains("is-disabled"), "Actual size offers Rays follow container");
       d.getElementById("chk-rad-raysbycont").click(); await wait(40);
-      assert(st.radiation.raysByContainer === true && d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("hidden"), "With Rays follow container the Angular rays slider is hidden");
+      assert(st.radiation.raysByContainer === true && d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("is-disabled"), "With Rays follow container the Angular rays slider is hidden");
       st.radiation.scheme = "centripetal"; app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("rad-raysbycont-item").classList.contains("hidden") && !d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("hidden"), "Centripetal keeps its rays (the chevrons of a wedge must nest)");
+      assert(d.getElementById("rad-raysbycont-item").classList.contains("is-disabled") && !d.getElementById("input-layout-rays").closest(".ds-field").classList.contains("is-disabled"), "Centripetal keeps its rays (the chevrons of a wedge must nest)");
       st.radiation.scheme = "concentric"; st.radiation.sizeMode = "fit"; app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("rad-raysbycont-item").classList.contains("hidden"), "Fit to canvas has no Rays follow container");
+      assert(d.getElementById("rad-raysbycont-item").classList.contains("is-disabled"), "Fit to canvas has no Rays follow container");
     });
 
     await test("Clip cell in a Centripetal layout cuts the module to its chevron band, in every shape", () => {
@@ -387,14 +376,14 @@
       const L2 = app.getActiveModule(); L2.name = "Second"; L2.visible = true; L2.structure.repetition.showGridLines = false; L2.structure.repetition.activeClipping = false; L2.structure.repetition.checkerInvert = false;
       app.render();
       const t = log();
-      assert(/Layer 1/.test(t) && /Second \(active\)/.test(t), "Every layer has its heading, the active one marked: " + t);
-      assert((t.match(/Module: Square \/ Fill \/ #2244CC/g) || []).length === 2, "Both layers list their module: " + t);
-      assert(/Size: 120 x 80px \/ rotation 15º \/ offset 10, -5px/.test(t) && /Container: 100 x 100px \/ shown \/ clip/.test(t), "Size and container are listed: " + t);
+      assert(/Composition 1/.test(t) && /Second \(active\)/.test(t), "Every layer has its heading, the active one marked: " + t);
+      assert((t.match(/Style: Fill \/ #2244CC/g) || []).length === 2 && (t.match(/Shape: Square 120 x 80px/g) || []).length === 2, "Both layers list their shape and style: " + t);
+      assert(/Module: 100 x 100px \/ rotation 15º \/ offset 10, -5px/.test(t), "The module's size and placement are listed: " + t);
       assert(/Reflection Both/.test(t) && /Row offset 50%/.test(t), "The structure lists all its values: " + t);
       assert(/Visible lines: on \/ stroke 2px \/ #112233 \/ Both \/ all lines/.test(t) && /Clip cell: on/.test(t) && /Checkerboard: on/.test(t), "Checks that are on are listed with their values: " + t);
       assert((t.match(/Visible lines/g) || []).length === 1 && (t.match(/Clip cell/g) || []).length === 1, "Checks that are off do not appear: " + t);
       const text = app.artLogText();
-      assert(/^Canvas: /.test(text) && /\nLayer 1\nModule: /.test(text) && !/<|&lt;/.test(text), "Copy gives plain text: " + text.slice(0, 200));
+      assert(/^Canvas: /.test(text) && /\nComposition 1\nModule: /.test(text) && !/<|&lt;/.test(text), "Copy gives plain text: " + text.slice(0, 200));
       assert(d.getElementById("btn-art-log-copy") && getComputedStyle(d.getElementById("art-log-lines")).userSelect !== "none", "The log has a Copy button and its text can be selected");
       reset();
     });
@@ -484,14 +473,17 @@
       st.block = { x: 25, y: 25, w: 50, h: 50 };
       const fit = bounds();
       assert(fit.x1 <= 301 && fit.y1 <= 301 && fit.x0 < 60 && fit.y0 < 60 && fit.x1 > 240 && fit.y1 > 240, `Fit: the grid should fill the top-left quarter (${JSON.stringify(fit)}), plain was ${JSON.stringify(plain)}`);
-      // Actual size: the block size does not count, only its centre: the grid block moves, the canvas is not cropped
+      // Actual size: the cells keep their size and the grid is centred in the composition container, which cuts what is past its edge
       Object.assign(st.repetition, { sizeMode: "actual", cols: 2, rows: 2 }); L.containerW = 100; L.containerH = 100;
       st.block = { x: 50, y: 50, w: 100, h: 100 };
       const mid = bounds();
-      st.block = { x: 80, y: 20, w: 30, h: 30 };
+      st.block = { x: 80, y: 20, w: 40, h: 40 };
       const act = bounds();
       assert(Math.abs((act.x0 + act.x1) / 2 - 480) < 6 && Math.abs((act.y0 + act.y1) / 2 - 120) < 6, `Actual size should be centred at 80 % / 20 % (${JSON.stringify(act)})`);
-      assert(Math.abs((act.x1 - act.x0) - (mid.x1 - mid.x0)) < 4, "Actual size keeps the size of its cells, whatever the block size");
+      assert(Math.abs((act.x1 - act.x0) - (mid.x1 - mid.x0)) < 4, "Actual size keeps the size of its cells when the container is big enough");
+      st.block = { x: 80, y: 20, w: 20, h: 20 };
+      const cutAct = bounds();
+      assert(Math.abs((cutAct.x1 - cutAct.x0) - 120) < 6 && Math.abs((cutAct.y1 - cutAct.y0) - 120) < 6, `A smaller composition container cuts the grid at its edge (${JSON.stringify(cutAct)})`);
       // Radiation: the rings are centred on the block and its smaller side is their reach
       st.mode = "radiation"; Object.assign(st.radiation, { sizeMode: "fit", scheme: "concentric", rays: 12, rings: 4, centerOpen: 0, showRings: true, lineWidth: 3, lineColor: "" });
       st.block = { x: 25, y: 50, w: 40, h: 40 };
@@ -505,15 +497,15 @@
       // The inspector: four sliders, the size ones hidden in Actual size, and the art log says it
       d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
       assert(d.getElementById("num-block-x").value === "-150px" && d.getElementById("num-block-w").value === "300px", `The block sliders should show pixels of the canvas (${d.getElementById("num-block-x").value} / ${d.getElementById("num-block-w").value})`);
-      assert(d.getElementById("layout-block").nextElementSibling === d.getElementById("rep-advanced"), "The Block should sit right before the Repetition Advanced section");
+      assert(d.getElementById("layout-block").previousElementSibling === d.getElementById("rep-adv-module"), "The Composition container should be its own group, right after the Repetition Module group");
       assert(!d.getElementById("block-size-fields").classList.contains("hidden"), "Fit shows the block size");
       st.repetition.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer(); app.render();
-      assert(d.getElementById("block-size-fields").classList.contains("hidden"), "Actual size hides the block size");
-      assert(/Block: offset -150, -150px/.test(d.getElementById("art-log-lines").textContent), "The log should mention the block: " + d.getElementById("art-log-lines").textContent);
+      assert(!d.getElementById("block-size-fields").classList.contains("hidden"), "Actual size also shows the composition container's size (it cuts the grid)");
+      assert(/Composition container: 300 x 300px \/ offset -150, -150px/.test(d.getElementById("art-log-lines").textContent), "The log should mention the composition container: " + d.getElementById("art-log-lines").textContent);
       fire0(d.getElementById("input-block-x"), 60);
       assert(Math.abs(st.block.x - 60) < 1e-9, `A 60 px offset should store 60 % of the canvas away from the middle... (${st.block.x})`);
       st.mode = "radiation"; app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("layout-block").nextElementSibling === d.getElementById("rad-advanced"), "In Radiation the Block should move before the Radiation Advanced section");
+      assert(d.getElementById("layout-block").previousElementSibling === d.getElementById("rad-adv-module"), "In Radiation the Composition container should move after the Radiation Module group");
     });
 
     await test("Block frame: a dashed guide of the block while the Layout panel is open, never when it is the whole canvas or in an export", async () => {
@@ -534,14 +526,14 @@
       st.block = { x: 30, y: 30, w: 40, h: 40 }; app.engine.exporting = true;
       assert(guide() === 0, "The frame must never reach an export");
       app.engine.exporting = false;
-      // Actual size: the frame wraps the cells (3 x 3 of 100 px), moved by the offset
+      // Actual size: the frame is the composition container (here the size of the canvas), moved by the offset
       Object.assign(st.repetition, { sizeMode: "actual" }); L.containerW = 100; L.containerH = 100;
       st.block = { x: 70, y: 50, w: 100, h: 100 };
       app.render();
       const px = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; const dpr = cv.width / 600;
       const at = (x, y) => { const i = (Math.round(y * dpr) * cv.width + Math.round(x * dpr)) * 4; return px[i] > 200 && px[i + 1] < 120 && px[i + 2] < 90; };
-      let left = false; for (let x = 266; x <= 274; x++) for (let y = 160; y < 440; y++) if (at(x, y)) left = true;
-      assert(left, "In Actual size the frame should wrap the cells: its left edge is at 270 px (centre 420 px minus 150 px)");
+      let left = false; for (let x = 116; x <= 124; x++) for (let y = 160; y < 440; y++) if (at(x, y)) left = true;
+      assert(left, "In Actual size the frame is the composition container: its left edge is at 120 px (centre 420 px minus 300 px)");
       app.activeRailTab = "module"; app.isFlyoutOpen = true;
     });
 
@@ -599,7 +591,7 @@
       reset();
       const d = win.document, q = (sel) => d.querySelector(sel);
       const fire = (el, v) => { el.value = v; el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
-      const tab = async (t) => { q(`[data-rail-tab="${t}"]`).click(); await wait(80); };
+      const tab = async (t) => { if (app.figEdit) app.closeFigureEditor(true); q(`[data-rail-tab="${t}"]`).click(); await wait(80); };
       const st = () => app.getActiveLayerStructure();
 
       await tab("layout");
@@ -628,11 +620,11 @@
       assert(q("#num-sim-intensity").value === "80%", "Similarity value box format wrong");
 
       await tab("module");
-      q('[data-shape="hexagon"]').click();
-      fire(q("#input-active-width"), 120);
+      q('[data-fig-shape="hexagon"]').click();
+      fire(q("#input-fig-w"), 120);
       q("#btn-mode-fill").click();
       const L = app.getActiveModule();
-      assert(L.shape === "hexagon" && L.width === 120 && L.wireframe === false, "Module controls did not apply");
+      assert(L.figures[0].shape === "hexagon" && L.figures[0].width === 120 && L.figures[0].wireframe === false, "Shape controls did not apply (Fill goes to the shape being edited)");
       assert(q("#btn-mode-fill").classList.contains("active") && !q("#btn-mode-stroke").classList.contains("active"), "Fill / Stroke group active state wrong");
     });
 
@@ -778,12 +770,12 @@
       }
       assert(/Canvas: \d+ × \d+ PX/.test(d.getElementById("art-log-lines").textContent), "The Art log does not show the canvas size");
       for (const btn of d.querySelectorAll("#controls-rail .rail-btn")) {
-        btn.click(); await wait(30);
+        btn.click(); await wait(400);
         const tab = d.querySelector(`.flyout-tab-content[data-flyout-tab="${btn.dataset.railTab}"]`);
         assert(flyout.scrollWidth <= flyout.clientWidth + 1, `${btn.dataset.railTab}: the panel overflows horizontally`);
         const tops = Array.from(tab.querySelectorAll(".ds-slider .ds-value")).filter(v => v.offsetParent).map(v => Math.round(v.getBoundingClientRect().top));
         assert(new Set(tops).size === tops.length, `${btn.dataset.railTab}: two sliders share a row`);
-        assert(flyout.getBoundingClientRect().width === 300, `${btn.dataset.railTab}: the panel is not 300 px wide`);
+        assert(flyout.getBoundingClientRect().width === 300, `${btn.dataset.railTab}: the panel is not 300 px wide (${flyout.getBoundingClientRect().width})`);
         for (const sw of Array.from(tab.querySelectorAll(".ds-swatch")).filter(e => e.offsetParent)) assert(Math.round(sw.getBoundingClientRect().width) === 24, `${btn.dataset.railTab}: a color swatch is not 24 px`);
         const fields = Array.from(tab.querySelectorAll(".ds-field")).filter(e => e.offsetParent && e.querySelector(":scope > .ds-slider")).sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
         for (let i = 1; i < fields.length; i++) {
@@ -865,9 +857,9 @@
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="gradation"]').click();
       q('[data-grad-pathway="zigzag"]').click();
-      assert(q("#toggle-grad-alternate").closest("label").style.display === "none", "Alternate rows should be hidden on the zigzag path");
+      assert(q("#toggle-grad-alternate").closest("label").classList.contains("is-disabled"), "Alternate rows should be hidden on the zigzag path");
       q('[data-grad-pathway="diagonal"]').click();
-      assert(q("#toggle-grad-alternate").closest("label").style.display === "", "Alternate rows should be back on the other paths");
+      assert(!q("#toggle-grad-alternate").closest("label").classList.contains("is-disabled"), "Alternate rows should be back on the other paths");
     });
 
     await test("Gradation attribute Color moves the module colour toward the end colour", () => {
@@ -941,6 +933,8 @@
       assert(g().sequence === "pingpong" && q('[data-grad-sequence="pingpong"]').classList.contains("active"), "Ping-pong did not apply");
       fire(q("#input-grad-easing"), 40);
       assert(g().easing === -40 && q("#num-grad-easing").value === "+40", `Speed value box shows ${q("#num-grad-easing").value}`);
+      assert(q("#toggle-grad-alternate").disabled, "Alternate rows is disabled on the zigzag path");
+      q('[data-grad-pathway="horizontal"]').click();
       q("#toggle-grad-alternate").click();
       assert(g().alternate === true, "Alternate rows did not apply");
       // each layer keeps its own settings
@@ -1168,10 +1162,10 @@
     await test("Icons match the Figma design (rail, shape grids, header)", () => {
       const d = win.document;
       const iconOf = (el) => { const i = el.querySelector("i"); return i ? Array.from(i.classList).find((c) => c.startsWith("ph-") && c !== "ph-fill") : null; };
-      const rail = { module: "shapes", layout: "circles-four", similarity: "copy-simple", gradation: "angle", anomaly: "circles-three-plus", contrast: "circle-half", concentration: "radio-button", texture: "drop-half-bottom", space: "cube-transparent" };
+      const rail = { module: "shapes", layout: "circles-four", similarity: "copy-simple", gradation: "angle", anomaly: "circles-three-plus", contrast: "circle-half", concentration: "radio-button", texture: "leaf", space: "cube-transparent" };
       for (const [tab, icon] of Object.entries(rail)) assert(iconOf(d.querySelector(`[data-rail-tab="${tab}"]`)) === "ph-" + icon, `Rail icon for ${tab} is ${iconOf(d.querySelector(`[data-rail-tab="${tab}"]`))}, expected ${icon}`);
-      const expected = { circle: "circle", square: "square", triangle: "triangle", line: "minus", cross: "plus", ring: null, semicircle: "circle-half", quarter: "chart-pie-slice", crescent: "subset-proper-of", wave: "tilde", spiral: "spiral", arrow: "arrow-fat-up", pentagon: "pentagon", hexagon: "hexagon", octagon: "octagon", star: "star", letterA: null, letterS: null, letterR: null, digit1: "number-one", digit5: "number-five", digit9: "number-nine" };
-      for (const attr of ["data-shape", "data-anom-shape", "data-contrast-shape", "data-grad-target"]) {
+      const expected = { circle: "circle", square: "square", triangle: "triangle", line: "minus", cross: "plus", ring: null, semicircle: "circle-half", quarter: "chart-pie-slice", crescent: "moon", wave: "tilde", spiral: "spiral", arrow: "arrow-fat-up", pentagon: "pentagon", hexagon: "hexagon", octagon: "octagon", star: "star", letterA: null, letterS: null, letterR: null, digit1: "number-one", digit5: "number-five", digit9: "number-nine" };
+      for (const attr of ["data-fig-shape", "data-anom-shape", "data-contrast-shape", "data-grad-target"]) {
         for (const [shape, icon] of Object.entries(expected)) {
           const btn = d.querySelector(`[${attr}="${shape}"]`);
           if (icon) {
@@ -1182,7 +1176,7 @@
           }
         }
       }
-      assert(iconOf(d.querySelector("#btn-open-config")) === "ph-gear-six" && iconOf(d.querySelector("#btn-toggle-grid")) === "ph-grid-nine" && iconOf(d.querySelector(".ds-brand-icon").parentElement) === "ph-gradient", "Header or toolbar icons differ from Figma");
+      assert(iconOf(d.querySelector("#btn-download")) === "ph-caret-down" && iconOf(d.querySelector("#btn-copy-svg-code")) === "ph-file-svg" && iconOf(d.querySelector("#btn-toggle-grid")) === "ph-hash" && iconOf(d.querySelector("#btn-toggle-invert")) === "ph-palette" && iconOf(d.querySelector(".ds-brand-icon").parentElement) === "ph-gradient", "Header or toolbar icons differ from Figma");
     });
 
     await test("Anomaly: scattered epicenters and the attributes it deviates in", async () => {
@@ -1227,7 +1221,7 @@
       q('[data-anom-attr="shape"]').click();
       assert(an().attrs.shape === false && q("#anom-shape-block").classList.contains("hidden") && !q('[data-anom-attr="shape"]').classList.contains("active"), "Switching Shape off should hide the intruder shape");
       q('[data-anom-type="swell"]').click();
-      assert(q('[data-anom-attr="shape"]').classList.contains("hidden") && !q('[data-anom-attr="position"]').classList.contains("hidden"), "Swell should offer position and scale, not shape");
+      assert(q('[data-anom-attr="shape"]').classList.contains("is-disabled") && !q('[data-anom-attr="position"]').classList.contains("is-disabled"), "Swell should offer position and scale, not shape");
     });
 
     await test("Actual size repeats the module's container as it is, centred; Fit to canvas stays proportional", async () => {
@@ -1241,7 +1235,7 @@
         L.structure.enabled = true; L.structure.mode = mode;
         Object.assign(L.structure.repetition, { cols: 3, rows: 3, gridType: "basic", sizeMode: "actual", activeClipping: false }, rep);
         Object.assign(L.structure.radiation, { rays: 12, rings: 4, scheme: "centrifugal", sizeMode: "fit" }, rad);
-        app.state = st; drawRaw(app);
+        st.figureEdit = guides; app.state = st; drawRaw(app);
         return cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
       };
       const dpr = cv.width / 600;
@@ -1269,10 +1263,6 @@
       const f1 = fit2({ containerW: 0, containerH: 0 }), f2 = fit2({ containerW: 100, containerH: 100 });
       assert(f1.length === 2 && f1.every(([a, b]) => near(b - a + 1, 50)), `Fit 2 x 2 should halve a 100 module (${JSON.stringify(f1)})`);
       assert(JSON.stringify(f1) === JSON.stringify(f2), "Fit to canvas should not depend on the container size");
-      // The container is drawn as a guide, centred, when the guides are on
-      const g = render({ sizeMode: "fit", cols: 1, rows: 1 }, { containerW: 300, containerH: 200 }, "repetition", {}, true);
-      let edge = 0; for (let y = 200; y <= 400; y++) if (px(g, 150, y) < 215) edge++;
-      assert(edge > 20, "The container frame is not drawn on its left edge");
       // Radial: each ring is as thick as the container's height
       const inkFar = (d) => { let n = 0; for (let y = 0; y < 600; y += 2) for (let x = 0; x < 600; x += 2) if (Math.hypot(x - 300, y - 300) > 330 && px(d, x, y) < 128) n++; return n; };
       assert(inkFar(render({}, {}, "radiation")) === 0, "Fit radial should stay within the canvas");
@@ -1293,7 +1283,7 @@
       assert(q('[data-rep-size="fit"]').textContent.trim() === "Fit to canvas" && q('[data-rep-size="actual"]').textContent.trim() === "Actual size", "The chips should read Fit to canvas and Actual size");
       q('[data-rep-size="actual"]').click(); await wait(40);
       assert(rep().sizeMode === "actual" && app.getActiveModule().containerW === Math.round(600 / rep().cols), "Actual size should start with a container as big as a Fit cell");
-      assert(!q("#input-layout-cols").closest(".ds-field").classList.contains("hidden"), "Actual size should keep the Columns and Rows controls");
+      assert(!q("#input-layout-cols").closest(".ds-field").classList.contains("is-disabled"), "Actual size should keep the Columns and Rows controls");
       q("#btn-layout-radiation").click(); await wait(60);
       q('[data-rad-size="actual"]').click(); await wait(40);
       assert(app.getActiveLayerStructure().radiation.sizeMode === "actual" && q('[data-rad-size="actual"]').classList.contains("active"), "Radial Actual size did not apply");
@@ -1317,25 +1307,25 @@
       }
     });
 
-    await test("Width and Height reach 2000 px for every shape; the line has no Height", async () => {
+    await test("A figure's Width and Height reach 2000 px for every shape; the line has no Height", async () => {
       reset();
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="module"]').click(); await wait(60);
       const fire = (el, v) => { el.value = v; el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
-      assert(q("#input-active-width").max === "2000" && q("#input-active-height").max === "2000", "Width and Height should go up to 2000");
+      assert(q("#input-fig-w").max === "2000" && q("#input-fig-h").max === "2000", "Width and Height should go up to 2000");
       for (const shape of ["circle", "square", "triangle", "wave", "ring", "semicircle", "quarter", "crescent", "spiral", "arrow", "pentagon", "hexagon", "octagon", "star", "cross", "letterA", "letterS", "letterR", "digit1", "digit5", "digit9"]) {
-        q(`[data-shape="${shape}"]`).click();
-        assert(!q("#input-active-height").closest(".ds-field").classList.contains("hidden"), `${shape}: Height should be available`);
+        q(`[data-fig-shape="${shape}"]`).click();
+        assert(!q("#input-fig-h").closest(".ds-field").classList.contains("is-disabled"), `${shape}: Height should be available`);
       }
-      q('[data-shape="circle"]').click();
-      fire(q("#input-active-width"), 1800); fire(q("#input-active-height"), 1800);
+      q('[data-fig-shape="circle"]').click();
+      fire(q("#input-fig-w"), 1800); fire(q("#input-fig-h"), 1800);
       const m = app.getActiveModule();
-      assert(m.width === 1800 && m.height === 1800 && q("#num-active-width").value === "1800px", "A 1800 module did not apply");
-      drawRaw(app); // a giant module must draw without errors
-      q('[data-shape="line"]').click();
-      assert(q("#input-active-height").closest(".ds-field").classList.contains("hidden"), "The line should not show Height");
-      q('[data-shape="square"]').click();
-      assert(!q("#input-active-height").closest(".ds-field").classList.contains("hidden"), "Height should come back for other shapes");
+      assert(m.figures[0].width === 1800 && m.figures[0].height === 1800 && q("#num-fig-w").value === "1800px", "A 1800 figure did not apply");
+      drawRaw(app); // a giant figure must draw without errors
+      q('[data-fig-shape="line"]').click();
+      assert(q("#input-fig-h").closest(".ds-field").classList.contains("hidden"), "The line should not show Height");
+      q('[data-fig-shape="square"]').click();
+      assert(!q("#input-fig-h").closest(".ds-field").classList.contains("is-disabled"), "Height should come back for other shapes");
     });
 
     await test("Similarity: association of shapes and imperfection (cut, broken)", async () => {
@@ -1442,13 +1432,13 @@
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="concentration"]').click(); await wait(80);
       const cs = () => app.getActiveLayerStructure().concentration;
-      assert(!q("#conc-method-block").classList.contains("hidden") && q("#conc-fade-block").classList.contains("hidden"), "Point should offer the method and no fade");
+      assert(!q("#conc-method-block").classList.contains("is-disabled") && q("#conc-fade-block").classList.contains("is-disabled"), "Point should offer the method and no fade");
       q('[data-conc-method="absence"]').click();
       assert(cs().method === "absence" && q('[data-conc-method="absence"]').classList.contains("active"), "Absence chip did not apply");
       q('[data-conc-mode="line_void"]').click();
       assert(cs().mode === "line_void" && !q("#conc-axis-block").classList.contains("hidden"), "Away from line should offer the axis");
       q('[data-conc-mode="dense"]').click();
-      assert(q("#conc-method-block").classList.contains("hidden") && q("#conc-radius-field").classList.contains("hidden") && !q("#conc-fade-block").classList.contains("hidden"), "Dense should hide method and radius and offer the edge fade");
+      assert(q("#conc-method-block").classList.contains("is-disabled") && q("#conc-radius-field").classList.contains("is-disabled") && !q("#conc-fade-block").classList.contains("is-disabled"), "Dense should hide method and radius and offer the edge fade");
       q('[data-conc-flag="edgeFade"]').click();
       assert(cs().edgeFade === true && q('[data-conc-flag="edgeFade"]').classList.contains("active"), "Edge fade chip did not apply");
       // The style chips can be mixed
@@ -1659,35 +1649,6 @@
       reset();
     });
 
-    await test("Container: lives in Module > Advanced, can be hidden, and neither it nor the canvas guides are exported", async () => {
-      reset();
-      const d = win.document, q = (sel) => d.querySelector(sel);
-      const cv = q("#studio-canvas");
-      assert(q("#module-advanced").contains(q("#input-active-container-w")) && q("#module-advanced").contains(q("#chk-active-show-container")), "The container controls should sit in Module > Advanced");
-      const setup = (show, guides) => {
-        const st = JSON.parse(JSON.stringify(app.state));
-        st.layers = [st.layers[0]]; st.layerOrder = [st.layers[0].id]; st.showSafeBounds = guides; st.guideColor = "#222222"; st.aspectRatio = "1:1";
-        Object.assign(st.layers[0], { shape: "circle", width: 20, height: 20, containerW: 300, containerH: 300, showContainer: show });
-        st.layers[0].structure.enabled = false;
-        app.state = st; app.engine.state = st; drawRaw(app);
-      };
-      const dpr = cv.width / 600;
-      const px = (x, y) => cv.getContext("2d").getImageData(Math.round(x * dpr), Math.round(y * dpr), 1, 1).data[0];
-      setup(true, true);
-      assert(px(150, 300) < 200, "The container frame should show on the canvas");
-      setup(false, true);
-      assert(px(150, 300) > 200, "Show container off should hide the frame");
-      const svg = () => win.StudioExporter.buildSVG(app.engine, cv, app.getActivePalette());
-      setup(true, true); const withGuides = svg().length;
-      setup(true, false); const without = svg().length;
-      assert(withGuides === without, "Canvas guides and the container frame must not be exported");
-      // Control reaches the state
-      reset(); q('[data-rail-tab="module"]').click(); await wait(60);
-      const chk = q("#chk-active-show-container"); chk.click();
-      assert(app.getActiveModule().showContainer === false, "The checkbox did not reach the layer");
-      reset();
-    });
-
     await test("Guide colour: one colour for every on-screen guide, saved with the project, never exported", async () => {
       reset();
       const d = win.document, q = (sel) => d.querySelector(sel);
@@ -1702,9 +1663,9 @@
         st.layers[0].structure.anomaly.enabled = true; st.layers[0].structure.anomaly.showReticle = true;
         st.layers[0].structure.concentration.enabled = true; st.layers[0].structure.concentration.showAttractor = true;
         st.layers[0].structure.space.enabled = true; st.layers[0].structure.space.showIsoGuides = true;
-        app.state = st; app.engine.state = st; drawRaw(app); };
+        st.figureEdit = true; st.figureBox = { layerId: st.layers[0].id, width: 100, height: 100, x: 0, y: 0, rotation: 0 }; app.state = st; app.engine.state = st; drawRaw(app); };
       draw();
-      assert(greens(cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data) > 200, "Container, reticle, attractor and isometric guides should use the guide colour");
+      { const g = greens(cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data); assert(g > 40, "The figure frame, reticle, attractor and isometric guides should use the guide colour (" + g + " green pixels)"); }
       const svg = win.StudioExporter.buildSVG(app.engine, cv, app.getActivePalette());
       assert(!/#00aa00/i.test(svg), "Guides must not be exported");
       // saved and reopened
@@ -1733,18 +1694,18 @@
       reset();
     });
 
-    await test("Gradation and Similarity: essentials up front, the rest in Advanced, dropdowns follow the state", async () => {
+    await test("Gradation and Similarity: essentials up front, the rest in each group's Advanced controls, dropdowns follow the state", async () => {
       reset();
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="gradation"]').click(); await wait(60);
-      const gAdv = q("#grad-advanced");
-      assert(gAdv && gAdv.contains(q("#input-grad-easing")) && gAdv.contains(q("#toggle-grad-reverse")) && gAdv.contains(q('[data-grad-sequence="pingpong"]')), "Sequence, Acceleration and the checkboxes belong in Gradation > Advanced");
-      assert(!gAdv.contains(q("#input-grad-range")) && !gAdv.contains(q("#input-grad-steps")), "Range and Cycles stay up front");
+      const gAdvPath = q("#grad-adv-path"), gAdvProg = q("#grad-adv-prog");
+      assert(gAdvPath && gAdvProg && gAdvProg.contains(q("#input-grad-easing")) && gAdvPath.contains(q("#toggle-grad-reverse")) && gAdvPath.contains(q('[data-grad-sequence="pingpong"]')), "Sequence and the checkboxes belong in Gradation > Path > Advanced controls, Speed in Progression");
+      assert(!gAdvProg.contains(q("#input-grad-range")) && !gAdvProg.contains(q("#input-grad-steps")) && !gAdvPath.contains(q("#input-grad-range")), "Range and Cycles stay up front");
       q('[data-grad-type="scale"]').click();
       assert(/Scale/.test(q('[data-grad-type="scale"]').closest(".ds-dropdown").querySelector(".ds-dropdown-current").textContent), "The Attribute dropdown should show the chosen attribute");
       q('[data-rail-tab="similarity"]').click(); await wait(60);
-      const sAdv = q("#sim-advanced");
-      assert(sAdv && sAdv.contains(q('[data-sim-assoc="round"]')) && sAdv.contains(q("#input-sim-jitter")) && !sAdv.contains(q("#input-sim-intensity")), "Association, Imperfection and jitter belong in Similarity > Advanced; Fluctuation stays up front");
+      const sAdv = q("#sim-adv-imperf");
+      assert(sAdv && sAdv.contains(q("#input-sim-jitter")) && !sAdv.contains(q("#input-sim-intensity")) && !sAdv.contains(q('[data-sim-assoc="round"]')) && q('[data-sim-assoc="round"]').closest(".ds-field") && q("#input-sim-intensity"), "Association and Imperfection are groups in view; the jitter is in Imperfection > Advanced controls; Fluctuation stays up front");
       q('[data-kinship-type="hybrid"]').click();
       assert(/Hybrid/.test(q('[data-kinship-type="hybrid"]').closest(".ds-dropdown").querySelector(".ds-dropdown-current").textContent), "The kinship dropdown should show the chosen type");
       reset();
@@ -1788,10 +1749,11 @@
       // Inspector
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="layout"]').click(); await wait(80); q("#toggle-layout-structure").click(); q("#btn-layout-radiation").click(); await wait(60);
+      q('[data-rad-scheme="centrifugal"]').click();
       q('[data-rad-shape="hexagon"]').click();
       assert(app.getActiveLayerStructure().radiation.ringShape === "hexagon" && /Hexagon/.test(q("#rad-ringshape-block .ds-dropdown-current").textContent), "The Ring shape dropdown did not apply");
       q('[data-rad-scheme="spiral"]').click(); await wait(40);
-      assert(q("#rad-ringshape-block").classList.contains("hidden"), "Ring shape does not apply to spirals");
+      assert(q("#rad-ringshape-block").classList.contains("is-disabled"), "Ring shape does not apply to spirals");
       reset();
     });
 
@@ -1839,19 +1801,20 @@
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="module"]').click(); await wait(60); app.syncAllInspectorsWithActiveLayer();
       const key = (el, k, extra = {}) => el.dispatchEvent(new win.KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...extra }));
-      const box = q("#num-active-width");
-      const before = app.getActiveModule().width;
+      const box = q("#num-fig-w");
+      const fw = () => app.getActiveModule().figures[0].width;
+      const before = fw();
       key(box, "ArrowUp");
-      assert(app.getActiveModule().width === before + 1 && box.value === (before + 1) + "px", `ArrowUp should add 1 (${before} -> ${app.getActiveModule().width})`);
+      assert(fw() === before + 1 && box.value === (before + 1) + "px", `ArrowUp should add 1 (${before} -> ${fw()})`);
       key(box, "ArrowDown", { shiftKey: true });
-      assert(app.getActiveModule().width === before + 1 - 10, "Shift + ArrowDown should take off 10");
+      assert(fw() === before + 1 - 10, "Shift + ArrowDown should take off 10");
       // with a suffix and a decimal step: stroke width 1.2px, step 0.1
       const sb = q("#num-active-stroke"); sb.value = "1.2px";
       key(sb, "ArrowUp");
-      assert(app.getActiveModule().strokeWidth === 1.3 && sb.value === "1.3px", `Stroke width: ${app.getActiveModule().strokeWidth} / ${sb.value}`);
+      assert(app.getActiveModule().figures[0].strokeWidth === 1.3 && sb.value === "1.3px", `Stroke width (of the shape): ${app.getActiveModule().figures[0].strokeWidth} / ${sb.value}`);
       // limits: width cannot go under the slider's minimum
-      const wb = q("#num-active-width"); wb.value = "5"; key(wb, "ArrowDown", { shiftKey: true });
-      assert(app.getActiveModule().width === 1, "The value should stop at the slider's minimum");
+      const wb = q("#num-fig-w"); wb.value = "5"; key(wb, "ArrowDown", { shiftKey: true });
+      assert(fw() === 1, "The value should stop at the slider's minimum");
       reset();
     });
 
@@ -2016,89 +1979,30 @@
       assert(Math.abs(e.gridShift({ gridType: "curved", curveIntensity: 20 }, 100) - 20) < 1e-9, "A project saved in pixels keeps its pixels");
     });
 
-    await test("Clip cell cuts at the cell and Clip container at the container, as two separate things", () => {
+    await test("A module always cuts at its edge (its container) and Clip cell cuts at the cell, as two separate things", () => {
       reset();
       const cv = win.document.getElementById("studio-canvas");
       const ink = () => { drawRaw(app); const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] < 100) n++; return n; };
       const L = app.state.layers[0];
-      Object.assign(L, { shape: "square", wireframe: false, width: 900, height: 900, containerW: 100, containerH: 100, showContainer: false });
-      app.state.showSafeBounds = false;
+      Object.assign(L, { wireframe: false, containerW: 100, containerH: 100 }); app.state.showSafeBounds = false;
+      L.figures = [{ shape: "square", width: 900, height: 900, x: 0, y: 0, rotation: 0 }];
       L.structure.enabled = true; L.structure.mode = "repetition";
-      Object.assign(L.structure.repetition, { cols: 3, rows: 3, gridType: "basic", sizeMode: "fit", activeClipping: false });
-      L.clipContainer = false;
-      const none = ink();
-      L.structure.repetition.activeClipping = true; const cell = ink();
-      L.structure.repetition.activeClipping = false; L.clipContainer = true; const container = ink();
-      L.structure.repetition.activeClipping = true; const both = ink();
-      assert(cell > container * 2, `Clip cell should cut at the cell, not at the small container (cell ${cell}, container ${container})`);
-      assert(container < none * 0.6, `Clip container should cut the module at its container (container ${container}, none ${none})`);
-      assert(Math.abs(both - container) < container * 0.02 + 50, `With both on, the smaller one rules (both ${both}, container ${container})`);
-      // A single module (no layout) is cut at its container too
-      L.structure.enabled = false; L.structure.repetition.activeClipping = false;
-      L.clipContainer = false; const alone = ink(); L.clipContainer = true; const aloneClipped = ink();
-      assert(aloneClipped < alone * 0.2, `A single module should be cut at its container (${aloneClipped} vs ${alone})`);
-      // The checkbox lives in Module > Advanced, under Show container
-      const d = win.document, adv = d.getElementById("module-advanced");
-      const chk = d.getElementById("chk-active-clip-container");
-      assert(adv && adv.contains(chk) && adv.contains(d.getElementById("chk-active-show-container")), "Clip container belongs in Module > Advanced next to Show container");
-      reset();
-    });
-
-    await test("Clip container keeps the container's proportions and shrinks with the module in a rhythm grid", () => {
-      reset();
-      const cv = win.document.getElementById("studio-canvas");
-      const L = app.state.layers[0];
-      Object.assign(L, { shape: "square", wireframe: false, width: 900, height: 900, containerW: 100, containerH: 100, showContainer: false, clipContainer: true });
-      app.state.showSafeBounds = false;
-      L.structure.enabled = true; L.structure.mode = "repetition";
-      Object.assign(L.structure.repetition, { cols: 2, rows: 1, gridType: "basic", sizeMode: "fit", activeClipping: false });
-      L.structure.formalStructure = { enabled: true, colRatio: 3, rowRatio: 1, colGrade: 0, rowGrade: 0, showGridLines: false };
-      drawRaw(app);
-      const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
-      const y = Math.floor(cv.height / 2), runs = []; let start = -1;
-      for (let x = 0; x <= cv.width; x++) {
-        const dark = x < cv.width && d[(y * cv.width + x) * 4] < 100;
-        if (dark && start < 0) start = x; else if (!dark && start >= 0) { runs.push(x - start); start = -1; }
-      }
-      assert(runs.length === 2, "There should be one cut module per cell, got " + JSON.stringify(runs));
-      const unit = cv.width / 600;
-      assert(Math.abs(runs[0] / runs[1] - 3) < 0.25, `The container should shrink with its cell (3:1), got ${runs[0]}:${runs[1]}`);
-      assert(Math.abs(runs[0] - 75 * unit) < 6 * unit, `The wide cell's container should be 75 px (got ${runs[0] / unit})`);
-      reset();
-    });
-
-    await test("Hide modifiers: the active layer is drawn without its modifiers only while the Module panel is open, and never in an export", async () => {
-      reset();
-      const d = win.document, cv = d.getElementById("studio-canvas");
-      const st = app.getActiveLayerStructure();
-      st.enabled = true; st.mode = "repetition"; Object.assign(st.repetition, { cols: 4, rows: 4, gridType: "basic" });
-      Object.assign(st.contrast, { enabled: true, dimension: "scale", dominanceRatio: 50, scaleFactor: 2.5 });
-      app.state.layers[0].wireframe = false;
-      const pic = () => { app.render(); return cv.toDataURL(); };
-      const svg = () => win.StudioExporter.buildSVG(app.engine, cv, app.getActivePalette());
-      app.activeRailTab = "module"; app.isFlyoutOpen = true;
-      app.hideModifiers = false; const withMods = pic(), svgWith = svg();
-      app.hideModifiers = true; const hidden = pic();
-      assert(hidden !== withMods, "Hide modifiers should change the drawing while the Module panel is open");
-      assert(st.enabled === true, "Hiding must not turn the layout off in the project");
-      assert(svg() === svgWith, "An export must always include the modifiers");
-      st.enabled = false; app.hideModifiers = false; const aloneRef = pic(); st.enabled = true; app.hideModifiers = true; app.render();
-      assert(pic() === aloneRef, "Hidden should look exactly like the module alone (layout off)");
-      assert(/Modifiers: hidden/.test(d.getElementById("art-log-lines").textContent), "The log should say the modifiers are hidden");
-      app.activeRailTab = "contrast"; app.isFlyoutOpen = true;
-      assert(pic() === withMods, "Outside the Module panel the modifiers should be back");
-      app.activeRailTab = "module"; app.isFlyoutOpen = false;
-      assert(pic() === withMods, "With the panel closed the modifiers should be back");
-      // Rhythm (Layout > Advanced) also keeps a structure alive on its own: hiding must remove it too
-      st.formalStructure = { enabled: true, colRatio: 1.5, rowRatio: 1.5, colGrade: 30, rowGrade: 30, showGridLines: false };
-      st.enabled = false; app.hideModifiers = false; const rhythmRef = pic();
-      app.hideModifiers = true; app.activeRailTab = "module"; app.isFlyoutOpen = true; st.gradation.enabled = true;
-      const hiddenRhythm = pic();
-      st.formalStructure.enabled = false; st.gradation.enabled = false; app.hideModifiers = false; const alone2 = pic();
-      assert(hiddenRhythm === alone2 && hiddenRhythm !== rhythmRef, "With Rhythm on, Hide modifiers should still show the module alone");
-      st.formalStructure.enabled = false; st.enabled = true;
-      app.hideModifiers = false; app.activeRailTab = "module"; app.isFlyoutOpen = true;
-      assert(st.contrast.enabled === true, "Hiding must not turn the modifier off in the project");
+      Object.assign(L.structure.repetition, { cols: 3, rows: 3, gridType: "basic", sizeMode: "fit", moduleScale: "uniform", activeClipping: false });
+      const perimeter = ink();
+      assert(perimeter < 3 * 3 * 100 * 100 * 4 * 1.05 && perimeter > 3 * 3 * 100 * 100 * 4 * 0.9, `A 900 px shape is cut at its 100 px module (${perimeter})`);
+      // Clip cell: a module bigger than its cell is cut at the cell (outlines of a 500 px module in 200 px cells all lie outside their cell)
+      Object.assign(L, { wireframe: true, containerW: 500, containerH: 500, strokeWidth: 2 });
+      L.figures = [{ shape: "square", width: 500, height: 500, x: 0, y: 0, rotation: 0 }];
+      L.structure.repetition.activeClipping = false; const bigNoCell = ink();
+      L.structure.repetition.activeClipping = true; const big = ink();
+      assert(bigNoCell > 1000 && big < bigNoCell * 0.2, `Clip cell cuts the module at the cell when the module is bigger than the cell (${big} vs ${bigNoCell})`);
+      L.structure.repetition.activeClipping = false;
+      Object.assign(L, { wireframe: false, containerW: 100, containerH: 100 });
+      L.figures = [{ shape: "square", width: 900, height: 900, x: 0, y: 0, rotation: 0 }];
+      // a single module (no layout) is cut at its edge too
+      L.structure.enabled = false; L.containerW = 100; L.containerH = 100;
+      const alone = ink();
+      assert(alone > 100 * 100 * 4 * 0.9 && alone < 100 * 100 * 4 * 1.1, `A single module is cut at its edge (${alone})`);
       reset();
     });
 
@@ -2115,7 +2019,7 @@
       st.gradation.enabled = false; app.render();
       assert(!/Gradation/.test(log()), "A control that is turned off should leave the log");
       app.getActiveModule().shape = "cross"; app.render();
-      assert(/Module: Greek Cross/.test(log()) && !/\(\+\)/.test(log()), "The log should say Greek Cross, without the symbol in parentheses: " + log());
+      assert(/Shape: Greek Cross/.test(log()) && !/\(\+\)/.test(log()), "The log should say Greek Cross, without the symbol in parentheses: " + log());
       reset();
     });
 
@@ -2146,7 +2050,7 @@
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="concentration"]').click(); await wait(60);
       q('[data-conc-mode="point"]').click(); await wait(40);
-      assert(q("#conc-foci-block").classList.contains("hidden"), "Foci should be hidden outside Hotspots");
+      assert(q("#conc-foci-block").classList.contains("hidden"), "The hotspots count should be hidden outside Hotspots");
       q('[data-conc-mode="free"]').click(); await wait(40);
       assert(!q("#conc-foci-block").classList.contains("hidden"), "Foci should show with Hotspots");
       const inp = q("#input-conc-foci"); inp.value = 4; inp.dispatchEvent(new win.Event("input", { bubbles: true }));
@@ -2185,7 +2089,7 @@
       q('[data-rail-tab="layout"]').click(); await wait(80); q("#toggle-layout-structure").click();
       q('[data-grid-var="free"]').click(); await wait(40);
       assert(!q("#rep-param-block").classList.contains("hidden") && q("#rep-param-label").textContent === "Seed", "Free should offer the Seed slider");
-      assert(q("#rep-placement-block").classList.contains("hidden"), "Module placement does not apply to the free distribution");
+      assert(q("#rep-placement-block").classList.contains("is-disabled"), "Module placement does not apply to the free distribution");
       reset();
     });
 
@@ -2221,7 +2125,7 @@
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="anomaly"]').click(); await wait(60);
       q('[data-anom-type="regrid"]').click(); await wait(40);
-      assert(!q("#anom-zonegrid-block").classList.contains("hidden") && q("#anom-attrs-block").classList.contains("hidden") && q("#anom-severity-block").classList.contains("hidden"), "Another grid shows its grid dropdown and hides Deviates in and Severity");
+      assert(!q("#anom-zonegrid-block").classList.contains("hidden") && q("#anom-attrs-block").classList.contains("is-disabled") && q("#anom-severity-block").classList.contains("is-disabled"), "Another grid shows its grid dropdown and hides Deviates in and Severity");
       q('[data-anom-zonegrid="zigzag"]').click();
       assert(app.getActiveLayerStructure().anomaly.zoneGrid === "zigzag" && /Zigzag/.test(q("#anom-zonegrid-block .ds-dropdown-current").textContent), "The zone grid did not apply");
       q('[data-anom-type="focal"]').click(); await wait(40);
@@ -2267,13 +2171,482 @@
       const shrunk = ink();
       assert(base > shrunk * 2, `Base size should leave far more ink than Shrink with cell (${shrunk} -> ${base})`);
       d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
-      assert(!d.getElementById("rep-modscale-block").classList.contains("hidden"), "Fit offers Module scale in Repetition");
+      assert(!d.getElementById("rep-modscale-block").classList.contains("is-disabled"), "Fit offers Module scale in Repetition");
       st.repetition.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("rep-modscale-block").classList.contains("hidden"), "Actual size hides Module scale in Repetition");
+      assert(d.getElementById("rep-modscale-block").classList.contains("is-disabled"), "Actual size hides Module scale in Repetition");
       reset();
     });
 
 
+
+    await test("Smart module: several shapes draw as ONE shape, also under Texture, in a grid, cut at the module's edge", async () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const dpr = cv.width / 600;
+      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: true, containerW: 100, containerH: 100, strokeWidth: 3 }); app.state.showSafeBounds = false;
+      L.figures = [{ shape: "circle", width: 60, height: 60, x: -15, y: 0, rotation: 0 }, { shape: "square", width: 40, height: 40, x: 25, y: 0, rotation: 0 }];
+      const dark = (x, y) => { const d = cv.getContext("2d").getImageData(Math.round(x * dpr), Math.round(y * dpr), 1, 1).data; return d[0] < 120; };
+      const ink = () => { const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] < 128) n++; return n; };
+      drawRaw(app);
+      // circle of 60 px centred 15 px left of the middle: its left edge is at 300 - 15 - 30 = 255; the square (40 px) is centred 25 px right: its right edge at 345
+      assert(dark(255, 300) && dark(345, 300), "Both shapes should be drawn");
+      assert(!dark(300 - 15, 300), "A wireframe shape is hollow in the middle");
+      const one = ink();
+      L.figures = [{ shape: "circle", width: 60, height: 60, x: -15, y: 0, rotation: 0 }];
+      drawRaw(app); const single = ink();
+      assert(one > single * 1.2, `Two shapes should leave more ink than one (${single} -> ${one})`);
+      // a shape of its own width and height (an ellipse), turned
+      L.figures = [{ shape: "circle", width: 80, height: 30, x: 0, y: 0, rotation: 90 }];
+      drawRaw(app);
+      assert(dark(300, 260) && !dark(260, 300), "A shape keeps its own width and height, and turns");
+      // Texture sees one shape with several outlines
+      L.figures = [{ shape: "circle", width: 60, height: 60, x: -15, y: 0, rotation: 0 }, { shape: "square", width: 40, height: 40, x: 25, y: 0, rotation: 45 }];
+      L.structure.texture = { enabled: true, jitter: 5, skipChance: 0, crossing: 0, undulation: 12, waves: 2, waveAngle: 0 };
+      drawRaw(app);
+      assert(ink() > 200, "The textured composite should still draw");
+      // In a grid every cell gets the whole composite
+      L.structure.texture = { enabled: false };
+      L.structure.enabled = true; L.structure.mode = "repetition"; Object.assign(L.structure.repetition, { cols: 3, rows: 3, sizeMode: "fit", moduleScale: "cell" });
+      drawRaw(app);
+      assert(ink() > single * 5, "A 3 x 3 grid should repeat the composite in every cell");
+      // the module's edge cuts what is drawn beyond it
+      L.structure.enabled = false; L.figures = [{ shape: "circle", width: 60, height: 60, x: 45, y: 0, rotation: 0 }];
+      drawRaw(app);
+      assert(dark(319, 315) && !dark(375, 300), "What goes past the module's edge (50 px from the centre) is cut");
+    });
+
+    await test("Smart module: the figures are saved with the project, bad ones are cleaned on open, and the SVG export draws the composite", async () => {
+      reset();
+      const L = app.state.layers[0];
+      L.figures = [{ shape: "circle", size: 60, x: -25, y: 0, rotation: 0 }, { shape: "square", size: 40, x: 25, y: 0, rotation: 45 }];
+      const saved = JSON.parse(JSON.stringify(app.state));
+      app.loadProjectText(JSON.stringify(saved));
+      const f = app.state.layers[0].figures;
+      assert(f.length === 2 && f[1].shape === "square" && f[1].rotation === 45 && f[0].x === -25, `Figures should survive saving and opening (${JSON.stringify(f)})`);
+      saved.layers[0].figures = [{ shape: "nope", size: 50 }, { shape: "triangle", size: "big", x: 900, y: NaN, rotation: 10 }, null, 5, { shape: "circle" }, { shape: "circle" }, { shape: "circle" }, { shape: "circle" }];
+      app.loadProjectText(JSON.stringify(saved));
+      const g = app.state.layers[0].figures;
+      assert(g.length === 4 && g[0].shape === "triangle" && g[0].width === 100 && g[0].height === 100 && g[0].x === 100 && g[0].y === 0, `Bad figures should be cleaned and given in px (${JSON.stringify(g)})`);
+      app.loadProjectText(JSON.stringify({ ...saved, layers: [{ ...saved.layers[0], figures: undefined }] }));
+      assert(Array.isArray(app.state.layers[0].figures) && app.state.layers[0].figures.length === 0, "A project without figures opens with none");
+      // SVG: the composite is drawn with both outlines (circle + square), also under texture
+      const L2 = app.state.layers[0]; Object.assign(L2, { wireframe: true, width: 100, height: 100, showContainer: false }); app.state.showSafeBounds = false;
+      L2.figures = [{ shape: "circle", size: 60, x: -25, y: 0, rotation: 0 }, { shape: "square", size: 40, x: 25, y: 0, rotation: 0 }];
+      drawRaw(app);
+      const cv = win.document.getElementById("studio-canvas");
+      const svg = win.StudioExporter ? win.StudioExporter.buildSVG(app.engine, cv, app.getActivePalette()) : null;
+      assert(svg && /<path/.test(svg) && (svg.match(/ M /g) || svg.match(/M/g)).length >= 2, "The SVG should contain the composite's outlines");
+    });
+
+    await test("Smart module editor (the Module panel): opening it shows the module alone; figures can be added, changed and reordered; Cancel goes back, Save keeps one undo step", async () => {
+      reset();
+      const d = win.document, q = (s) => d.querySelector(s), cv = d.getElementById("studio-canvas");
+      const fire = (el, v) => { el.value = String(v); el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
+      const labels0 = app.historyLabels.length; // what other tests left in the history does not count
+      const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: true, width: 100, height: 100, showContainer: true, strokeWidth: 3 }); app.state.showSafeBounds = false;
+      L.structure.enabled = true; L.structure.mode = "repetition"; Object.assign(L.structure.repetition, { cols: 3, rows: 3, sizeMode: "fit" });
+      app.isFlyoutOpen = false; app.updateRailUI(); // earlier tests leave a panel open
+      assert(!app.figEdit, "With the panels closed there is no editing session");
+      assert(!q("#btn-edit-figures") && !q("#card-figures") && !q("#chk-hide-modifiers") && !q("[data-shape]"), "The Module panel is the only editor: no entry button, no second card, no Hide modifiers, no old shape grid");
+      q('[data-rail-tab="module"]').click(); await wait(60);
+      assert(app.figEdit && !q("#active-layer-inspector").classList.contains("hidden"), "Opening the Module panel starts the editor");
+      assert(L.figures.length === 1 && L.figures[0].shape === "square", "Entering makes the module's own shape the first figure");
+      // the canvas shows only the module, big (no 3 x 3 grid), and the module controls are in the same panel
+      assert(q("#input-fig-w") && q("#input-active-rotation") && !q("#input-active-offset-x") && !q("#chk-active-clip-container") && !q("#chk-active-show-container") && q("#input-active-container-w") && q("#btn-mode-fill") && q("#color-active-shape") && !q("#input-active-width"), "Every module control lives in the editor; the module has no width of its own (it is its container)");
+      // the editor is a canvas of its own at the design's scale (1:1): the module is drawn at its real size
+      const view = () => app.stateForFigureEdit().layers[0];
+      assert(view().containerW === L.containerW && view().offsetX === L.offsetX && view().width === L.width, "The editor shows the module as it is, with no scaling");
+      // the editor draws on a canvas of its own: the module (its width and height), whatever the design's aspect ratio
+      assert(view().containerW === L.containerW && app.stateForFigureEdit().canvasOverride.w === L.containerW && app.stateForFigureEdit().canvasOverride.h === L.containerH, "The editor's canvas is the module");
+      fire(q("#input-active-container-w"), 200); fire(q("#input-active-container-h"), 50);
+      assert(app.stateForFigureEdit().canvasOverride.w === 200 && app.stateForFigureEdit().canvasOverride.h === 50 && Math.abs(cv.width / cv.height - 4) < 0.05, `The editor canvas follows the module's size (${cv.width} x ${cv.height})`);
+      fire(q("#input-active-container-w"), 100); fire(q("#input-active-container-h"), 100);
+      // the first figure is the module's own shape, at the size it had
+      assert(L.figures[0].width === 100 && L.figures[0].height === 100 && !q("#fig-transform-stack").classList.contains("hidden"), "The first figure has its own width, height, position and rotation");
+      q("#btn-fig-add").click(); await wait(30);
+      assert(L.figures.length === 2 && app.figEdit.index === 1, "Add figure adds the second one and selects it");
+      assert(L.figures[1].width === 50 && L.figures[1].height === 50, "A new figure is half the container");
+      fire(q("#input-fig-x"), 30); fire(q("#input-fig-w"), 70); fire(q("#input-fig-rot"), 40);
+      assert(L.figures[1].x === 30 && L.figures[1].width === 70 && L.figures[1].rotation === 40 && q("#num-fig-rot").value === "40º" && q("#num-fig-x").value === "30px", "The figure sliders should edit the selected figure, in px");
+      q('#fig-shape-grid [data-fig-shape="triangle"]').click(); await wait(30);
+      assert(L.figures[1].shape === "triangle", "The editor's shape grid changes the selected figure");
+      // drag to reorder: the dragged shape takes the place of the one it is dropped on
+      const row = (i) => q(`#fig-list [data-fig-index="${i}"]`);
+      const drag = (from, to) => { const dt = new win.DataTransfer(); const ev = (n, el) => el.dispatchEvent(new win.DragEvent(n, { bubbles: true, cancelable: true, dataTransfer: dt })); ev("dragstart", row(from)); ev("dragover", row(to)); ev("drop", row(to)); ev("dragend", row(from)); };
+      drag(1, 0);
+      assert(L.figures[0].shape === "triangle" && app.figEdit.index === 0, "Dragging the front shape onto the back one swaps them");
+      drag(0, 1);
+      assert(L.figures[1].shape === "triangle" && app.figEdit.index === 1, "Dragging it back puts it in front again");
+      assert(q("#fig-list").firstElementChild.dataset.figIndex === String(L.figures.length - 1), "The list shows the shape in front on top, like the layers");
+      // hide, show and duplicate
+      row(1).querySelector(".btn-fig-eye").click(); await wait(30);
+      assert(L.figures[1].visible === false && row(1).classList.contains("is-hidden") && /Triangle \(hidden\)/.test(d.getElementById("art-log-lines").textContent), "The eye hides the shape (it is greyed out and the Art log says so)");
+      drawRaw(app);
+      const cvx = d.getElementById("studio-canvas"), ink2 = () => { const dd = cvx.getContext("2d").getImageData(0, 0, cvx.width, cvx.height).data; let n = 0; for (let i = 0; i < dd.length; i += 4) if (dd[i] < 128) n++; return n; };
+      const hiddenInk = ink2();
+      row(1).querySelector(".btn-fig-eye").click(); await wait(30);
+      drawRaw(app);
+      assert(L.figures[1].visible === true && ink2() > hiddenInk, "Showing it again draws it again");
+      q("#btn-fig-duplicate").click(); await wait(30);
+      assert(L.figures.length === 3 && L.figures[2].shape === "triangle" && L.figures[2].x === L.figures[1].x && L.figures[2].width === L.figures[1].width && app.figEdit.index === 2, "Duplicate puts an exact copy right above the selected shape and selects it");
+      row(2).querySelector(".btn-fig-trash").click(); await wait(30);
+      assert(L.figures.length === 2 && app.figEdit.index === 1, "The bin of a row deletes that shape");
+      for (let i = 0; i < 5; i++) q("#btn-fig-add").click();
+      assert(L.figures.length === 4 && q("#btn-fig-add").hasAttribute("disabled") && q("#btn-fig-duplicate").hasAttribute("disabled"), "Four figures at most");
+      // module controls edit the module and Cancel undoes them too
+      fire(q("#input-active-container-w"), 150); q("#btn-mode-fill").click();
+      assert(L.containerW === 150 && L.figures[app.figEdit.index].wireframe === false && L.wireframe === true, "The module width applies and Fill goes to the shape being edited");
+      const histBefore = app.history.length;
+      q("#btn-fig-cancel").click(); await wait(60);
+      assert(!app.figEdit && !app.isFlyoutOpen && L.figures.length === 0 && L.shape === "square" && L.containerW === 100 && L.wireframe === true, "Cancel goes back to the module as it was (figures and module controls) and closes the panel");
+      assert(app.history.length === histBefore, "Editing leaves no history entries until it is saved");
+      // Save keeps it, with one undo step
+      q('[data-rail-tab="module"]').click(); await wait(60);
+      q("#btn-fig-add").click(); await wait(30);
+      fire(q("#input-fig-x"), -25); fire(q("#input-active-container-w"), 130);
+      q("#btn-fig-save").click(); await wait(60);
+      assert(L.figures.length === 2 && L.figures[1].x === -25 && L.containerW === 130 && !app.figEdit && !app.isFlyoutOpen, "Save keeps the figures and the module controls");
+      assert(app.historyLabels[app.historyLabels.length - 1].includes("Module saved") && !app.historyLabels.slice(labels0).some(l => l.includes("Figure ") || l.includes("Module Width")), `Save makes one undo step and the editing none (${JSON.stringify(app.historyLabels.slice(-3))})`);
+      assert(/Shapes: Square 100 x 100px \(0, 0\) 0º Stroke #18181F 3px \+ Circle 50 x 50px \(-25, 0\) 0º Stroke #18181F 3px/.test(win.document.querySelector(".ds-art-log").innerText), "The Art log should list the figures");
+      // The editor changes the look of the app, and its only ways out are Save and Cancel
+      q('[data-rail-tab="module"]').click(); await wait(60);
+      assert(d.body.classList.contains("is-editing-module") && d.getElementById("mode-chip-text").textContent === "Smart module mode" && d.getElementById("mode-chip").classList.contains("ds-mode-chip--smart"), "The chip says Smart module mode");
+      assert(getComputedStyle(q(".ds-shapes-panel")).display !== "none" && getComputedStyle(q(".ds-layers-panel:not(.ds-shapes-panel)")).display === "none" && q("#fig-list").closest(".ds-shapes-panel") && q("#shapes-count-badge").textContent === String(app.state.layers.find(l => l.id === app.figEdit.layerId).figures.length), "The shapes list takes the place of the layers and the Art log on the left");
+      assert(d.getElementById("canvas-aspect-ratio").disabled && [...d.querySelectorAll("#controls-rail .rail-btn")].every(b => (b.dataset.railTab === "module") === !b.disabled), "The aspect ratio and every panel but Module are disabled");
+      assert(d.querySelector(".ds-export-actions").contains(q("#btn-fig-save")) && d.querySelector(".ds-export-actions").contains(q("#btn-fig-cancel")) && getComputedStyle(q("#btn-fig-save")).display !== "none" && getComputedStyle(q("#download-menu")).display === "none" && getComputedStyle(q("#btn-open-project")).display === "none", "Save module and Cancel edition replace the document buttons in the header");
+      assert(getComputedStyle(q("#active-layer-inspector .close-flyout-btn")).display === "none", "The panel has no close button");
+      q('[data-rail-tab="layout"]').click(); await wait(60);
+      q("#active-layer-inspector .close-flyout-btn").click(); await wait(30);
+      assert(app.figEdit && app.activeRailTab === "module" && app.isFlyoutOpen, "Another panel and the close button do nothing while editing");
+      q('#fig-list [data-fig-index="1"] .btn-fig-trash').click(); await wait(30);
+      q("#btn-fig-save").click(); await wait(60);
+      assert(!app.figEdit && !d.body.classList.contains("is-editing-module") && d.getElementById("mode-chip-text").textContent === "Composition mode" && !d.getElementById("canvas-aspect-ratio").disabled && [...d.querySelectorAll("#controls-rail .rail-btn")].every(b => !b.disabled) && getComputedStyle(q("#download-menu")).display !== "none", "Saving gives the composition its look back");
+      assert(L.figures.length === 1 && L.figures[0].shape === "square" && L.shape === "square", "A module with one figure keeps it");
+    });
+
+    await test("Smart module: no stray line joins one figure to the next (arcs start their own outline)", async () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const dpr = cv.width / 600;
+      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: true, width: 100, height: 100, showContainer: false, strokeWidth: 2 }); app.state.showSafeBounds = false;
+      L.figures = [{ shape: "circle", size: 30, x: -30, y: 0, rotation: 0 }, { shape: "circle", size: 30, x: 30, y: 0, rotation: 0 }, { shape: "semicircle", size: 30, x: 0, y: 30, rotation: 0 }];
+      drawRaw(app);
+      const dark = (x, y) => cv.getContext("2d").getImageData(Math.round(x * dpr), Math.round(y * dpr), 1, 1).data[0] < 160;
+      // the two circles are 30 px wide, centred at 270 and 330; between them (x 295 to 305) there is nothing, unless a line joins them
+      assert(!dark(300, 300) && !dark(296, 300) && !dark(304, 300), "A line joins the two circles");
+      assert(dark(255, 300) && dark(345, 300), "The circles themselves are drawn");
+    });
+
+    await test("The module's edge cuts the shapes, not their effects: Space extrudes the cut shape and Texture bends it past the edge", async () => {
+      reset();
+      const cv = win.document.getElementById("studio-canvas");
+      const dpr = cv.width / 600;
+      const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: false, containerW: 60, containerH: 60 }); app.state.showSafeBounds = false;
+      L.figures = [{ shape: "square", width: 100, height: 100, x: 0, y: 0, rotation: 0 }];
+      const px = (x, y) => cv.getContext("2d").getImageData(Math.round(x * dpr), Math.round(y * dpr), 1, 1).data[0];
+      L.structure.space = { enabled: true, mode: "isometric", depthPct: 50, angle: 90, shading: 0 };
+      drawRaw(app);
+      assert(px(290, 310) < 100, "The front face is drawn inside the module");
+      assert(px(300, 245) < 200, "The depth reaches beyond the module's edge (up, 50 px) as the extrusion of the cut shape");
+      assert(px(300, 340) > 230 && px(260, 300) > 230 && px(340, 300) > 230, "The shape itself is cut at the module's edge");
+      L.structure.space.enabled = false; drawRaw(app);
+      assert(px(300, 245) > 230 && px(290, 310) < 100, "Without Space the edge cuts as it does");
+      // Texture: a wave bends the cut square past the module's edge
+      L.structure.texture = { enabled: true, jitter: 0, skipChance: 0, crossing: 0, undulation: 30, waves: 1, waveAngle: 0 };
+      drawRaw(app);
+      const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      let outside = 0, inside = 0; for (let y = 0; y < cv.height; y++) for (let x = 0; x < cv.width; x++) { if (d[(y * cv.width + x) * 4] >= 128) continue; if (Math.abs(x / dpr - 300) > 34 || Math.abs(y / dpr - 300) > 34) outside++; else inside++; }
+      assert(outside > 100 && inside > 2000, `The wave should bend the cut shape past the module's edge (${outside} outside, ${inside} inside)`);
+      // a stroked circle half outside the module: only its arc inside is drawn, with no line along the cut
+      Object.assign(L, { wireframe: true, strokeWidth: 2 }); L.structure.texture = { enabled: false }; L.structure.space.enabled = false;
+      L.figures = [{ shape: "circle", width: 70, height: 70, x: 0, y: 0, rotation: 0 }];
+      drawRaw(app);
+      assert(px(330, 300) > 230 && px(300, 330) > 230 && px(300, 300) > 230, "A stroked outline cut by the module has no line along the cut");
+      assert(px(335, 300) > 230 && px(300, 335) > 230, "The parts of the circle outside the module are not drawn");
+      assert(px(300 + 24.7, 300 + 24.7) < 160 || px(300 + 24, 300 + 25) < 160, "The arcs inside the module are drawn");
+    });
+
+    await test("Smart module editor: the selected figure has a frame on the canvas (never exported) and undo / redo go step by step inside the editor", async () => {
+      reset();
+      const d = win.document, q = (s) => d.querySelector(s), cv = d.getElementById("studio-canvas");
+      const fire = (el, v) => { el.value = String(v); el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
+      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: true, width: 100, height: 100, showContainer: false }); app.state.showSafeBounds = false;
+      app.isFlyoutOpen = false; app.updateRailUI();
+      q('[data-rail-tab="module"]').click(); await wait(60);
+      q("#btn-fig-add").click(); await wait(30);
+      fire(q("#input-fig-x"), 30); fire(q("#input-fig-rot"), 40);
+      const guide = () => { drawRaw(app); const dd = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < dd.length; i += 4) if (dd[i] > 200 && dd[i + 1] < 120 && dd[i + 2] < 90) n++; return n; };
+      assert(guide() > 30, "The selected figure should have a frame");
+      app.engine.exporting = true; assert(guide() === 0, "The frame is never exported"); app.engine.exporting = false;
+      // the frame follows the selected figure
+      const frameAt = () => { drawRaw(app); const dd = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let sx = 0, n = 0; for (let i = 0, p = 0; i < dd.length; i += 4, p++) if (dd[i] > 200 && dd[i + 1] < 120 && dd[i + 2] < 90) { sx += p % cv.width; n++; } return n ? sx / n : -1; };
+      const x2 = frameAt(); q('#fig-list [data-fig-index="0"]').click(); const x1 = frameAt();
+      assert(x2 > x1 + 20, `The frame should move to the selected figure (${x1} -> ${x2})`);
+      // step by step undo / redo
+      app.undo(); // back to figure 2 at x 30, not yet turned
+      assert(L.figures[1].rotation === 0 && L.figures[1].x === 30, `Undo goes back one step (rotation ${L.figures[1].rotation}, x ${L.figures[1].x})`);
+      app.undo();
+      assert(L.figures[1].x === 0 && L.figures.length === 2, "Another undo reverts the position");
+      app.undo();
+      assert(L.figures.length === 1, "Another undo removes the added figure");
+      app.redo(); app.redo(); app.redo();
+      assert(L.figures.length === 2 && L.figures[1].x === 30 && L.figures[1].rotation === 40, "Redo brings the steps back");
+      // Cancel still goes all the way back, and the project history was not touched
+      const hist = app.history.length;
+      q("#btn-fig-cancel").click(); await wait(60);
+      assert(L.figures.length === 0 && app.history.length === hist, "Cancel goes back to the start of the session");
+    });
+
+
+    await test("Shape relations (phase 1): a shape can be coincident with the previous one or placed in a direction, touching, apart or overlapping", async () => {
+      reset();
+      const d = win.document, q = (s) => d.querySelector(s);
+      const fire = (el, v) => { el.value = String(v); el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
+      app.isFlyoutOpen = false; app.updateRailUI();
+      q('[data-rail-tab="module"]').click(); await wait(60);
+      assert(q("#fig-relation-block").classList.contains("is-disabled"), "The first shape has no relation");
+      fire(q("#input-fig-w"), 50); fire(q("#input-fig-h"), 50);
+      q("#btn-fig-add").click(); await wait(30);
+      assert(!q("#fig-relation-block").classList.contains("is-disabled") && q('[data-fig-rel="free"]').classList.contains("active"), "The second shape offers the relation, free by default");
+      const box = () => app.stateForFigureEdit().figureBox;
+      q('[data-fig-rel="coincident"]').click(); await wait(30);
+      assert(box().x === 0 && box().y === 0 && q("#fig-pos-x-field").classList.contains("hidden"), "Coincident puts the shape on the previous one and hides its position");
+      q('[data-fig-rel="distance"]').click(); await wait(30);
+      assert(!q("#fig-relation-stack").classList.contains("hidden"), "Distance shows its direction and gap");
+      assert(Math.abs(box().x - 50) < 0.6 && Math.abs(box().y) < 0.6, `Two 50 px circles touch 50 px apart (x ${box().x}, y ${box().y})`);
+      fire(q("#input-fig-gap"), -10);
+      assert(Math.abs(box().x - 40) < 0.6, `A gap of -10 overlaps them (x ${box().x})`);
+      fire(q("#input-fig-gap"), 10);
+      assert(Math.abs(box().x - 60) < 0.6, `A gap of 10 separates them (x ${box().x})`);
+      fire(q("#input-fig-angle"), 90);
+      assert(Math.abs(box().x) < 0.6 && Math.abs(box().y - 60) < 0.6, `Direction 90º places it below (x ${box().x}, y ${box().y})`);
+      fire(q("#input-fig-gap"), 0); fire(q("#input-fig-angle"), 0);
+      // a turned square touches by its corner: 25 + half the diagonal (35.36)
+      q('#fig-shape-grid [data-fig-shape="square"]').click(); fire(q("#input-fig-rot"), 45);
+      assert(Math.abs(box().x - (25 + 25 * Math.SQRT2)) < 0.8, `A turned square touches by its corner (x ${box().x})`);
+      assert(/touching at 0º/.test(d.getElementById("art-log-lines").textContent), "The Art log lists the relation");
+      // leaving the relation keeps the shape where it is
+      fire(q("#input-fig-gap"), 20);
+      const where = box().x;
+      q('[data-fig-rel="free"]').click(); await wait(30);
+      assert(Math.abs(box().x - where) < 1 && !q("#fig-pos-x-field").classList.contains("hidden") && Math.abs(Number(q("#input-fig-x").value) - Math.round(where)) < 1.5, "Free keeps the shape where the relation had put it");
+      // it follows the previous shape when that one changes
+      q('[data-fig-rel="distance"]').click(); fire(q("#input-fig-gap"), 0);
+      q('#fig-list [data-fig-index="0"]').click(); fire(q("#input-fig-w"), 100); fire(q("#input-fig-h"), 100);
+      q('#fig-list [data-fig-index="1"]').click();
+      assert(Math.abs(box().x - (50 + 25 * Math.SQRT2)) < 0.8, `The related shape follows the previous one when it grows (x ${box().x})`);
+      // saved with the project
+      q("#btn-fig-save").click(); await wait(60);
+      const L = app.state.layers[0];
+      app.loadProjectText(JSON.stringify(JSON.parse(JSON.stringify(app.state))));
+      assert(app.state.layers[0].figures[1].relation === "distance" && app.state.layers[0].figures[1].gap === 0, "The relation is saved and opened with the project");
+      reset();
+    });
+
+    await test("Boolean operations (prototype): union, subtract, intersect and exclude give the right areas, merge shapes that share an edge, keep holes and fill right", async () => {
+      const B = win.regionBoolean, area = win.regionArea;
+      const circle = (cx, cy, r, n = 360) => Array.from({ length: n }, (_, i) => ({ x: cx + r * Math.cos((i / n) * Math.PI * 2), y: cy + r * Math.sin((i / n) * Math.PI * 2) }));
+      const rect = (x0, y0, x1, y1) => [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }];
+      const near = (a, b, tol = 0.01) => Math.abs(a - b) <= tol * b;
+      // two circles of radius 50, 50 apart: the lens between them is 3070.9
+      const A = [circle(0, 0, 50)], C = [circle(50, 0, 50)];
+      const lens = 3070.9, one = Math.PI * 2500;
+      assert(near(area(B("intersect", A, C)), lens), `Intersect: the lens (${area(B("intersect", A, C))})`);
+      assert(near(area(B("union", A, C)), 2 * one - lens), `Union (${area(B("union", A, C))})`);
+      assert(near(area(B("subtract", A, C)), one - lens), `Subtract (${area(B("subtract", A, C))})`);
+      assert(near(area(B("xor", A, C)), 2 * one - 2 * lens), `Exclude (${area(B("xor", A, C))})`);
+      assert(B("union", A, C).length === 1 && B("subtract", A, C).length === 1 && B("xor", A, C).length === 2, "Union and subtract are one piece; exclude is the two crescents");
+      // the same square twice (every edge shared)
+      const S = [rect(0, 0, 100, 100)];
+      assert(near(area(B("union", S, S)), 10000) && near(area(B("intersect", S, S)), 10000) && B("subtract", S, S).length === 0 && B("xor", S, S).length === 0, "The same square twice: union and intersection are the square, subtract and exclude leave nothing");
+      // two squares sharing an edge merge into one rectangle
+      const U = B("union", S, [rect(100, 0, 200, 100)]);
+      assert(U.length === 1 && near(area(U), 20000), `Squares that share an edge merge (${U.length} contour, ${area(U)})`);
+      // one square touching a corner only
+      { const K = B("union", S, [rect(100, 100, 200, 200)]); assert(K.length >= 1 && K.length <= 2 && near(area(K), 20000), `Squares that touch at a corner keep both (${K.length} contours, ${area(K)})`); }
+      // a region with a hole: a square of 100 with a hole of 40; its right half
+      const frame = [rect(-50, -50, 50, 50), rect(-20, -20, 20, 20)];
+      assert(near(area(B("union", frame, [])), 8400), "A region with a hole keeps it");
+      const half = B("intersect", frame, [rect(0, -100, 100, 100)]);
+      assert(near(area(half), 4200), `Half of a framed square (${area(half)})`);
+      // a hole made by subtracting a circle from a bigger one fills as a hole with the nonzero rule
+      const ring = B("subtract", [circle(0, 0, 50)], [circle(0, 0, 20)]);
+      assert(ring.length === 2 && near(area(ring), Math.PI * (2500 - 400)), `A circle minus a smaller one is a ring (${ring.length} contours, ${area(ring)})`);
+      const c2 = win.document.createElement("canvas"); c2.width = 120; c2.height = 120;
+      const g = c2.getContext("2d"); g.translate(60, 60); g.beginPath();
+      for (const c of ring) { c.forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y))); g.closePath(); }
+      g.fill();
+      const at = (x, y) => g.getImageData(60 + x, 60 + y, 1, 1).data[3];
+      assert(at(0, 0) === 0 && at(35, 0) > 200, "The ring is filled and its hole is empty (nonzero fill)");
+      // a circle against an overlapping square, all four operations
+      const SQ = [rect(-30, -30, 70, 70)];
+      const total = area(B("union", A, SQ)), inter = area(B("intersect", A, SQ));
+      assert(near(area(B("subtract", A, SQ)), one - inter, 0.02) && near(area(B("xor", A, SQ)), total - inter, 0.02) && near(total + inter, one + 10000, 0.02), "Circle and square: the four operations add up");
+      // many points: it has to be fast
+      const t0 = performance.now();
+      B("union", [circle(0, 0, 300, 1500)], [circle(200, 0, 300, 1500)]);
+      const ms = performance.now() - t0;
+      assert(ms < 400, `Two circles of 1500 points should take under 400 ms (${Math.round(ms)} ms)`);
+    });
+
+    await test("Combine (union, subtract, intersect, exclude) turns the shapes into one, in stroke and in fill, and works with Texture, Space and the SVG", async () => {
+      reset();
+      const d = win.document, q = (s) => d.querySelector(s), cv = d.getElementById("studio-canvas");
+      const dpr = cv.width / 600;
+      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: false, containerW: 200, containerH: 200, strokeWidth: 2 }); app.state.showSafeBounds = false;
+      L.figures = [{ shape: "circle", width: 100, height: 100, x: -25, y: 0, rotation: 0 }, { shape: "circle", width: 100, height: 100, x: 25, y: 0, rotation: 0 }];
+      const dark = (x, y) => { const p = cv.getContext("2d").getImageData(Math.round(x * dpr), Math.round(y * dpr), 1, 1).data; return p[0] < 120; };
+      const draw = (mode) => { L.combine = mode; drawRaw(app); };
+      const ink = () => { const dd = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < dd.length; i += 4) if (dd[i] < 128) n++; return n; };
+      // FILL: two circles of 100 px, centres at 275 and 325 (canvas), overlapping in the middle
+      draw("none");
+      assert(dark(240, 300) && dark(300, 312) && dark(360, 300), "Stacked: every part is filled");
+      draw("union");
+      assert(dark(240, 300) && dark(300, 312) && dark(360, 300) && !dark(300, 230), "Union: both circles and their overlap, as one");
+      draw("subtract");
+      assert(dark(240, 300) && !dark(300, 312) && !dark(360, 300), "Subtract: the first circle minus the second");
+      draw("intersect");
+      assert(!dark(240, 300) && dark(300, 312) && !dark(360, 300), "Intersect: only the overlap");
+      draw("xor");
+      assert(dark(240, 300) && !dark(300, 312) && dark(360, 300), "Exclude: everything but the overlap");
+      // STROKE: the arc of the first circle that lies inside the second (at 325, 300) is drawn when stacked, not in a union
+      L.wireframe = true;
+      draw("none");
+      assert(dark(325, 300) && dark(275, 250), "Stroke, stacked: both circles are drawn whole");
+      draw("union");
+      const unionInk = ink(); draw("none"); const stackedInk = ink();
+      assert(unionInk < stackedInk * 0.85, `Stroke, union: only the outer outline (${unionInk} vs ${stackedInk})`);
+      draw("union");
+      assert(!dark(325, 300) && !dark(275, 300) && dark(225, 300) && dark(375, 300), "Stroke, union: the inner arcs are gone, the outer ones stay");
+      draw("subtract");
+      assert(dark(225, 300) && dark(275, 300) && !dark(325, 300), "Stroke, subtract: the crescent's outline (the second circle's arc inside the first stays, the first's inside the second goes)");
+      draw("intersect");
+      assert(dark(275, 300) && dark(325, 300) && !dark(225, 300) && !dark(375, 300), "Stroke, intersect: the outline of the lens only");
+      // Texture and Space work on the combined shape (fill)
+      L.wireframe = false; L.combine = "union";
+      L.structure.texture = { enabled: true, jitter: 0, skipChance: 0, crossing: 0, undulation: 20, waves: 1, waveAngle: 0 }; drawRaw(app);
+      assert(ink() > 3000, "Texture bends the combined shape");
+      L.structure.texture = { enabled: false };
+      L.structure.space = { enabled: true, mode: "isometric", depthPct: 30, angle: 90, shading: 0 }; drawRaw(app);
+      assert(dark(300, 215) || dark(300, 225), "Space gives the combined shape depth");
+      L.structure.space = { enabled: false };
+      // The SVG draws one outline for the combined shape
+      draw("union");
+      const svg = win.StudioExporter.buildSVG(app.engine, cv, app.getActivePalette());
+      assert(/<path/.test(svg), "The SVG has the combined outline");
+      // A line stays a line, a combined shape is not made of it
+      L.figures = [{ shape: "circle", width: 80, height: 80, x: 0, y: 0, rotation: 0 }, { shape: "line", width: 150, height: 10, x: 0, y: 0, rotation: 0 }];
+      L.wireframe = true; L.strokeWidth = 6; draw("subtract");
+      assert(dark(300, 260) && dark(240, 300) && dark(360, 300), "A line (no area) is drawn as it is, the circle is kept whole (stroke)");
+      // THE EDITOR
+      L.combine = "none"; L.figures = [{ shape: "circle", width: 100, height: 100, x: 0, y: 0, rotation: 0 }];
+      app.isFlyoutOpen = false; app.updateRailUI();
+      q('[data-rail-tab="module"]').click(); await wait(60);
+      assert(q("#fig-combine-block").classList.contains("is-disabled"), "With one shape there is nothing to combine");
+      q("#btn-fig-add").click(); await wait(30);
+      assert(!q("#fig-combine-block").classList.contains("is-disabled") && !q("#fig-list").ownerDocument.querySelector("[data-fig-combine].active"), "With two shapes Combine appears, on None (no operation on)");
+      q('[data-fig-combine="union"]').click(); await wait(30);
+      assert(L.combine === "union" && q('[data-fig-combine="union"]').classList.contains("active"), "The chip sets the operation");
+      assert(/Combine: Union/.test(d.getElementById("art-log-lines").textContent), "The Art log lists it");
+      app.undo();
+      assert(L.combine === "none", "Undo takes the combination back one step");
+      app.redo(); assert(L.combine === "union", "Redo brings it back");
+      q("#btn-fig-cancel").click(); await wait(60);
+      assert(L.combine === "none" && L.figures.length === 1, "Cancel goes back to how it was");
+      q('[data-rail-tab="module"]').click(); await wait(60);
+      q("#btn-fig-add").click(); q('[data-fig-combine="xor"]').click(); await wait(30);
+      q("#btn-fig-save").click(); await wait(60);
+      app.loadProjectText(JSON.stringify(JSON.parse(JSON.stringify(app.state))));
+      assert(app.state.layers[0].combine === "xor", "The combination is saved and opened with the project");
+      reset();
+    });
+
+    await test("Style per shape: Stroke or Fill, colour and stroke width belong to each shape; a new shape copies the selected one; Combine uses the base shape; modifiers change every shape's colour", async () => {
+      reset();
+      const d = win.document, q = (s) => d.querySelector(s), cv = d.getElementById("studio-canvas");
+      const fire = (el, v) => { el.value = String(v); el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
+      // the editor draws on a canvas the size of the module (200 px): x and y are measured from the middle of the module
+      const rgb = (x, y) => { const k = cv.width / 200; return Array.from(cv.getContext("2d").getImageData(Math.round((100 + x) * k), Math.round((100 + y) * k), 1, 1).data.slice(0, 3)); };
+      const is = (c, r, g, b) => Math.abs(c[0] - r) < 40 && Math.abs(c[1] - g) < 40 && Math.abs(c[2] - b) < 40;
+      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: true, color: "#0000ff", strokeWidth: 4, containerW: 200, containerH: 200 }); app.state.showSafeBounds = false;
+      app.isFlyoutOpen = false; app.updateRailUI();
+      q('[data-rail-tab="module"]').click(); await wait(60);
+      fire(q("#input-fig-w"), 100); fire(q("#input-fig-h"), 100);
+      // the first shape shows the module's look
+      assert(q("#btn-mode-stroke").classList.contains("active") && q("#text-color-hex").textContent === "#0000FF" && q("#num-active-stroke").value === "4px", "The shape shows its look (the module's, until it has its own)");
+      q("#btn-fig-add").click(); await wait(30);
+      const second = () => L.figures[1];
+      assert(second().wireframe === true && second().color === "#0000ff" && second().strokeWidth === 4, "A new shape copies the look of the selected one");
+      // the second shape: Fill, red, in front of the first
+      fire(q("#input-fig-w"), 60); fire(q("#input-fig-h"), 60); fire(q("#input-fig-x"), 50);
+      q("#btn-mode-fill").click(); fire(q("#color-active-shape"), "#ff0000");
+      assert(second().wireframe === false && second().color.toLowerCase() === "#ff0000" && L.figures[0].wireframe !== false && (L.figures[0].color || "").toLowerCase() !== "#ff0000", "The style went to the second shape only");
+      drawRaw(app);
+      // canvas: the module is 200 px, centred at 300; the first circle (100 px, stroke blue, centre 300), the second (60 px, fill red, centre 350)
+      assert(is(rgb(50, 0), 255, 0, 0), `The second shape is filled red (${rgb(50, 0)})`);
+      assert(is(rgb(0, -50), 0, 0, 255) || is(rgb(0, -49), 0, 0, 255) || is(rgb(0, -48), 0, 0, 255), `The first shape is a blue outline (${rgb(0, -50)})`);
+      assert(rgb(-20, 10)[0] > 200 && rgb(-20, 10)[2] > 200, "The first shape is hollow in the middle");
+      // selecting the first shape shows its own look
+      q('#fig-list [data-fig-index="0"]').click(); await wait(30);
+      assert(q("#btn-mode-stroke").classList.contains("active") && q("#text-color-hex").textContent === "#0000FF", "Selecting a shape shows its look");
+      // Combine: one figure with the look of the base shape (the first): an outline, not a fill
+      q('#fig-list [data-fig-index="1"]').click(); L.combine = "none"; q('[data-fig-combine="union"]').click(); await wait(30);
+      drawRaw(app);
+      assert(!is(rgb(50, 0), 255, 0, 0) && rgb(30, 0)[0] > 200, `A combined module takes the look of its base shape (${rgb(50, 0)} at the second shape)`);
+      q('[data-fig-combine="union"]').click(); await wait(30); assert(L.combine === "none", "Pressing the operation that is on goes back to none");
+      // a modifier's colour change reaches every shape: a mix towards green at 100 %
+      L.figures[1].color = "#ff0000"; L.figures[1].wireframe = false;
+      const ctx = cv.getContext("2d");
+      drawRaw(app);
+      app.engine.cellColorOps = [{ to: "#00ff00", t: 1 }];
+      ctx.save(); ctx.setTransform(cv.width / 200, 0, 0, cv.height / 200, 0, 0); ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 200, 200);
+      ctx.translate(100, 100);
+      const mod = JSON.parse(JSON.stringify(L)); mod.figures = L.figures; app.engine.state = app.state;
+      app.engine.drawSingleLayerShape(ctx, mod, 1, "#18181f", "#ffffff", null, null, false, null);
+      ctx.restore();
+      assert(is(rgb(50, 0), 0, 255, 0), `The modifier's colour change reached the red shape (${rgb(50, 0)})`);
+      // saved: the module takes the base look, and it is kept with the project
+      q("#btn-fig-save").click(); await wait(60);
+      assert(L.color === "#0000ff" && L.wireframe === true && L.strokeWidth === 4, "The module takes the look of its base shape");
+      app.loadProjectText(JSON.stringify(JSON.parse(JSON.stringify(app.state))));
+      const f2 = app.state.layers[0].figures[1];
+      assert(f2.wireframe === false && f2.color.toLowerCase() === "#ff0000", "The look of each shape is saved and opened with the project");
+      reset();
+    });
+
+    await test("Letters and numbers are filled outlines with straight ends (copied from the design): they fill, combine and keep their overlapping parts", async () => {
+      reset();
+      const d = win.document, cv = d.getElementById("studio-canvas");
+      const dpr = cv.width / 600;
+      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: false, containerW: 200, containerH: 200 }); app.state.showSafeBounds = false;
+      const dark = (x, y) => cv.getContext("2d").getImageData(Math.round(x * dpr), Math.round(y * dpr), 1, 1).data[0] < 120;
+      const ink = () => { const dd = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 0; i < dd.length; i += 4) if (dd[i] < 128) n++; return n; };
+      for (const s of ["letterA", "letterS", "letterR", "digit1", "digit5", "digit9"]) {
+        assert(!win.Shapes[s].skeleton && win.Shapes[s].draw && win.Shapes[s].svgPath, `${s} is a shape with an area`);
+        L.figures = [{ shape: s, width: 200, height: 200, x: 0, y: 0, rotation: 0 }];
+        drawRaw(app);
+        assert(ink() > 3000, `${s} fills (${ink()} px of ink)`);
+      }
+      // the A: a leg, the bar and the place where the bar meets a leg (glyph x 22, y 67 of 89 x 100), with the middle between the legs empty
+      L.figures = [{ shape: "letterA", width: 200, height: 200, x: 0, y: 0, rotation: 0 }];
+      drawRaw(app);
+      const gx = (x) => 300 + (x - 44.5) * 2, gy = (y) => 300 + (y - 50) * 2;
+      assert(dark(gx(22), gy(67)) && dark(gx(44), gy(67)) && !dark(gx(44), gy(90)) && dark(gx(44), gy(5)), "The A has its legs, its bar and the opening under it");
+      // two of them united are still an A (the bar overlaps the legs and must not cancel out there)
+      L.figures = [{ shape: "letterA", width: 200, height: 200, x: 0, y: 0, rotation: 0 }, { shape: "letterA", width: 200, height: 200, x: 0, y: 0, rotation: 0 }];
+      L.combine = "union"; drawRaw(app);
+      assert(dark(gx(22), gy(67)) && dark(gx(44), gy(67)) && !dark(gx(44), gy(90)), "United with itself it is still the same A (nothing cancels where the bar meets the legs)");
+      L.combine = "subtract"; drawRaw(app);
+      assert(ink() < 200, `An A minus itself leaves nothing (${ink()})`);
+      // the R keeps its bowl open: the counter of the R is empty, its stem and leg are filled
+      L.combine = "none"; L.figures = [{ shape: "letterR", width: 200, height: 200, x: 0, y: 0, rotation: 0 }];
+      drawRaw(app);
+      const rx = (x) => 300 + (x - 37) * 2;
+      assert(dark(rx(5), gy(50)) && dark(rx(60), gy(90)) && !dark(rx(30), gy(31)), "The R has its stem and leg, and an empty counter");
+      L.combine = "union"; L.figures.push({ shape: "circle", width: 40, height: 40, x: -60, y: 70, rotation: 0 }); drawRaw(app);
+      assert(dark(rx(5), gy(50)) && !dark(rx(30), gy(31)), "The R keeps its counter when it is combined with another shape");
+      reset();
+    });
 
     const failed = results.filter(r => !r.ok).length;
     summary.textContent = failed === 0 ? `All ${results.length} tests passed` : `${failed} of ${results.length} tests FAILED`;

@@ -1,5 +1,5 @@
 // Studio Composition Engine: Unified Grammar Pipeline for Wucius Wong 2D Design
-import { Shapes, texturedShape, morphedShape } from './shapes.js';
+import { Shapes, texturedShape, morphedShape, compositeShape, clippedShape, resolveFigures } from './shapes.js';
 import { CanvasUtils } from '../canvas-utils.js';
 
 export const createDefaultLayerStructure = () => ({
@@ -166,13 +166,13 @@ export const createDefaultLayer = (id = "layer-1", name = "Layer 1", shape = "ci
   rotation,
   offsetX,
   offsetY,
-  containerW: 100, // width of the module's container in px (0 = the whole canvas); starts as big as the module
-  containerH: 100, // height of the module's container in px (0 = the whole canvas)
-  showContainer: true, // draw the container as a dashed frame on the canvas (an on-screen guide, never exported)
-  clipContainer: false, // cut the module at the edge of its container (Clip cell, in Layout, cuts at the cell instead)
+  containerW: 100, // the module's width in px: its container, the piece of paper the shapes are placed on (it always cuts at its edge); 10 to 1000
+  containerH: 100, // the module's height in px; 10 to 1000
   wireframe: true,
   strokeWidth: 1,
   color: "#18181f",
+  combine: "none", // how the shapes of the module are put together: "none" (stacked), "union", "subtract", "intersect" or "xor" (exclude)
+  figures: [], // smart module: the figures it is made of ({ shape, size, x, y, rotation }, as a % of the module); empty = a plain one-shape module
   structure: createDefaultLayerStructure()
 });
 
@@ -214,8 +214,10 @@ export class StudioEngine {
   }
 
   // Draw a single shape: texture deformation, then flat or illusory 3D space.
-  drawShape(ctx, shapeId, size, fgColor, strokeOnly = false, lineWidth = 2, bgColor = null, isAlternating = false, skipSpace = false, spaceConfig = null, textureConfig = null, seed = 0) {
+  drawShape(ctx, shapeId, size, fgColor, strokeOnly = false, lineWidth = 2, bgColor = null, isAlternating = false, skipSpace = false, spaceConfig = null, textureConfig = null, seed = 0, clipLocal = null) {
     let shapeDef = Shapes[shapeId] || Shapes.circle;
+    // The module's own edge (its perimeter, as four corners in the frame the shape is drawn in): it always cuts what is drawn
+    const pendingClip = clipLocal || null;
     const space = spaceConfig;
     let texture = textureConfig;
 
@@ -238,6 +240,15 @@ export class StudioEngine {
       };
     }
 
+    // The module cuts at its perimeter. When texture or space follow, the cut is made on the geometry itself, so they treat the cut module as the shape
+    let hardClip = pendingClip;
+    const willTexture = !!(texture && texture.enabled);
+    const willSpace = !!(space && space.enabled && !skipSpace && !shapeDef.skeleton && (space.mode || "isometric") !== "foreshortening");
+    if (pendingClip && (willTexture || willSpace)) {
+      shapeDef = clippedShape(shapeDef, pendingClip, size, strokeOnly);
+      hardClip = null;
+    }
+
     // Texture deforms the geometry itself, so it applies before any space mode.
     if (texture && texture.enabled) {
       // Random lines also show on filled shapes, but not under a Space volume (it draws the shape many times)
@@ -246,12 +257,17 @@ export class StudioEngine {
     }
 
     // Open-path shapes (lines, digits...) are strokes: they stay flat.
+    // No texture and no space (or a tilt): the perimeter cuts the drawing the usual way
+    if (hardClip) {
+      ctx.save();
+      ctx.beginPath(); hardClip.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); ctx.clip();
+    }
     if (!space || !space.enabled || skipSpace || shapeDef.skeleton) {
       this.drawFlatShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor);
-      return;
+    } else {
+      this.drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space);
     }
-
-    this.drawSpatialShape(ctx, shapeDef, size, fgColor, strokeOnly, lineWidth, bgColor, isAlternating, space);
+    if (hardClip) ctx.restore();
   }
 
   // Draw flat shape. Open-path shapes are strokes: thin in stroke mode, thick in fill mode.
@@ -483,12 +499,65 @@ export class StudioEngine {
     }
   }
 
-  // Draw a single shape module for an individual layer
+  // A shape's own look (Stroke or Fill, colour, stroke width); what it does not set it takes from the module
+  figureStyle(f, mod) {
+    return { wire: f.wireframe !== undefined ? f.wireframe !== false : mod.wireframe !== false, color: f.color || mod.color, sw: f.strokeWidth || mod.strokeWidth, explicit: !!f.color };
+  }
+
+  // Records a colour change a modifier makes to a module (a mix towards a colour; 1 replaces it), so a module whose shapes have
+  // their own colours can change each of them the same way
+  colorOp(cell, to, t) {
+    (cell.colorOps || (cell.colorOps = [])).push({ to, t });
+  }
+
+  // Draw a single shape module for an individual layer. A smart module whose shapes look different is drawn in runs of shapes that
+  // look the same, in the order of the list (a combined module is one run, with the look of its base shape)
   drawSingleLayerShape(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false, colorOverride = null, widthMultiplier = null, stretch = null) {
+    const ops = this.cellColorOps;
+    this.cellColorOps = null;
+    if (!mod || shapeOverride || !(mod.figures && mod.figures.length)) {
+      return this.drawSingleLayerShapeRun(targetCtx, mod, sizeMultiplier, fgColor, bgColor, wireframeOverride, shapeOverride, isCutout, colorOverride, widthMultiplier, stretch);
+    }
+    let figs = resolveFigures(mod.figures).map(f => ({ ...f, relation: "free" })); // placed already: a run is not related to what is in another
+    // A hidden shape is not drawn (and is not part of a combination); the others keep the places they were given
+    const shown = figs.filter(f => f.visible !== false);
+    if (!shown.length) return;
+    if (shown.length !== figs.length) { figs = shown; mod = { ...mod, figures: shown }; }
+    const combined = mod.combine && mod.combine !== "none" && figs.length > 1;
+    const runs = [];
+    for (const f of figs) {
+      const st = this.figureStyle(f, mod);
+      const last = runs[runs.length - 1];
+      if (combined && last) last.figs.push(f);
+      else if (last && last.st.wire === st.wire && last.st.color === st.color && last.st.sw === st.sw) last.figs.push(f);
+      else runs.push({ figs: [f], st });
+    }
+    const plain = runs.length === 1 && !runs[0].st.explicit && runs[0].st.wire === (mod.wireframe !== false) && runs[0].st.sw === mod.strokeWidth;
+    if (plain) return this.drawSingleLayerShapeRun(targetCtx, mod, sizeMultiplier, fgColor, bgColor, wireframeOverride, shapeOverride, isCutout, colorOverride, widthMultiplier, stretch);
+    const imp = this.cellImperf, morph = this.cellMorph, tex = this.cellTexScale;
+    for (const run of runs) {
+      this.cellImperf = imp; this.cellMorph = morph; this.cellTexScale = tex;
+      const mod2 = { ...mod, figures: run.figs, wireframe: run.st.wire, color: run.st.color, strokeWidth: run.st.sw };
+      let ov = colorOverride;
+      if (run.st.explicit) {
+        if (ops && ops.length) { let c = run.st.color; for (const op of ops) c = this.mixHex(c, op.to, op.t); ov = c; }
+        else ov = colorOverride || null;
+      }
+      this.drawSingleLayerShapeRun(targetCtx, mod2, sizeMultiplier, fgColor, bgColor, wireframeOverride, null, isCutout, ov, widthMultiplier, stretch);
+    }
+  }
+
+  // One run of the above: a plain shape or one composite
+  drawSingleLayerShapeRun(targetCtx, mod, sizeMultiplier = 1, fgColor = "#111111", bgColor = "#FAFAFA", wireframeOverride = null, shapeOverride = null, isCutout = false, colorOverride = null, widthMultiplier = null, stretch = null) {
     if (!mod) return;
-    const shape = shapeOverride || mod.shape || "circle";
-    const baseW = mod.width !== undefined ? mod.width : (mod.scale || 50);
-    const baseH = mod.height !== undefined ? mod.height : (mod.scale || 50);
+    // A smart module (several figures) is one composite shape for everything that follows
+    // Its size is its container's (the piece of paper the figures are placed on): the larger side
+    const smart = !!(mod.figures && mod.figures.length);
+    const cont = this.containerSize(mod, this.logicalW || 600, this.logicalH || 600);
+    const ref = Math.max(cont.w, cont.h);
+    const shape = shapeOverride || (smart ? compositeShape(mod.figures, ref, mod.combine).id : mod.shape) || "circle";
+    const baseW = smart ? ref : (mod.width !== undefined ? mod.width : (mod.scale || 50));
+    const baseH = smart ? ref : (mod.height !== undefined ? mod.height : (mod.scale || 50));
     // A line spans its cell width (widthMultiplier) instead of shrinking to the cell's short side.
     const kx = stretch ? stretch.x : 1, ky = stretch ? stretch.y : 1;
     const w = baseW * (widthMultiplier ?? sizeMultiplier * kx);
@@ -504,9 +573,19 @@ export class StudioEngine {
     const wire = wireframeOverride !== null ? wireframeOverride : (mod.wireframe !== false);
     const strokeW = mod.strokeWidth || 1.2;
 
+    // The module's perimeter (its container: the piece of paper) in the frame the shape is drawn in. It is as big as the module
+    // is scaled, and it turns with the module; half the stroke is let in so a shape that fills the module is not shaved
+    const theta = ((mod.rotation || 0) * Math.PI) / 180, cs = Math.cos(theta), sn = Math.sin(theta);
+    const hw = (cont.w * sizeMultiplier * kx) / 2 + (wire ? strokeW / 2 : 0), hh = (cont.h * sizeMultiplier * ky) / 2 + (wire ? strokeW / 2 : 0);
+    // (a module not yet opened in the editor, with one plain shape, is drawn as it always was: it does not cut)
+    const clipLocal = !smart ? null : [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]].map(([px, py]) => {
+      const qx = px - ox, qy = py - oy;
+      return { x: (qx * cs + qy * sn) / sx, y: (-qx * sn + qy * cs) / sy };
+    });
+
     targetCtx.save();
     targetCtx.translate(ox, oy);
-    targetCtx.rotate(((mod.rotation || 0) * Math.PI) / 180);
+    targetCtx.rotate(theta);
     targetCtx.scale(sx, sy);
     // A stretched shape keeps a uniform stroke: the outline is stretched, but the pen is not
     const stretched = Math.abs(sx - sy) > 1e-6;
@@ -524,7 +603,7 @@ export class StudioEngine {
     const seed = (this.cellSeed || 0) * 7.13 + layerNum * 53.7;
     const imp = this.cellImperf;
     this.cellImperf = null;
-    const drawIt = () => this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, !!this.cellAlt, isCutout, mod.structure?.space || null, mod.structure?.texture || null, seed);
+    const drawIt = () => this.drawShape(targetCtx, shape, r, layerColor, wire, strokeW, bgColor, !!this.cellAlt, isCutout, mod.structure?.space || null, mod.structure?.texture || null, seed, clipLocal);
     try {
       if (imp) this.drawImperfect(targetCtx, r, imp, drawIt); else drawIt();
     } finally {
@@ -542,12 +621,6 @@ export class StudioEngine {
     ctx.translate(width / 2, height / 2);
     this.cellSeed = 0;
     this.cellAlt = false;
-    if (mod.clipContainer) {
-      const cs = this.containerSize(mod, width, height);
-      ctx.beginPath();
-      ctx.rect(-cs.w / 2, -cs.h / 2, cs.w, cs.h);
-      ctx.clip();
-    }
     this.drawSingleLayerShape(ctx, mod, MODULE_UNIT, palette.fg, palette.bg);
     ctx.restore();
   }
@@ -804,6 +877,7 @@ export class StudioEngine {
     if (mix === null || mix === undefined || !grad.enabled || cell.fgLocked) return;
     const start = cell.fg === palette.fg ? (cell.base || cell.fg) : cell.fg;
     cell.fg = this.mixHex(start, grad.endColor || "#f43f5e", mix);
+    this.colorOp(cell, grad.endColor || "#f43f5e", mix);
   }
 
   // Gradation: applies the attribute for position t along the pathway.
@@ -920,12 +994,14 @@ export class StudioEngine {
     const cx = (bx / 100) * width, cy = (by / 100) * height;
     const mode = struct.mode === "radiation" ? struct.radiation : struct.repetition;
     const actual = !!mode && (mode.sizeMode === "actual" || mode.sizeMode === "fixed");
-    if (actual) {
-      const tx = cx - width / 2, ty = cy - height / 2;
-      return { w: width, h: height, tx, ty, clip: [-tx, -ty, width, height], isDefault: false };
-    }
     const w = Math.max(10, (bw / 100) * width), h = Math.max(10, (bh / 100) * height);
-    return { w, h, tx: cx - w / 2, ty: cy - h / 2, clip: null, isDefault: false };
+    // The composition container is a sheet of paper: whatever the layout draws past its edge is cut
+    if (actual) {
+      // Actual size draws the layout on the real canvas' scale, centred in the sheet; the sheet cuts it
+      const tx = cx - width / 2, ty = cy - height / 2;
+      return { w: width, h: height, tx, ty, clip: [width / 2 - w / 2, height / 2 - h / 2, w, h], isDefault: false, rect: [cx - w / 2, cy - h / 2, w, h] };
+    }
+    return { w, h, tx: cx - w / 2, ty: cy - h / 2, clip: null, isDefault: false, rect: [cx - w / 2, cy - h / 2, w, h] };
   }
 
   // The rectangle a layout is cut to: its own small canvas, or (Actual size) the real canvas seen from inside the block
@@ -1013,11 +1089,11 @@ export class StudioEngine {
         }
         if (on("rotation")) ctx.rotate((Math.PI / 4) * severity * factor);
         if (on("scale")) cell.scaleMul *= (1 + 0.35 * severity);
-        if (anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
+        if (anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; this.colorOp(cell, accent, 1); }
       }
     } else if (anom.type === "regrid") {
       // The change of grid is made by the layout itself; the zone can still be tinted
-      if (inZone && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
+      if (inZone && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; this.colorOp(cell, accent, 1); }
     } else if (anom.type === "fracture") {
       const corridor = anom.radius * 0.45;
       if (inZone && Math.abs(ex - epiX) < corridor) {
@@ -1026,7 +1102,7 @@ export class StudioEngine {
         const shearX = (ex > epiX ? 1 : -1) * (10 * severity);
         if (on("position")) ctx.translate(shearX, shearY);
         if (on("rotation")) ctx.rotate((factor * severity * Math.PI) / 3.2);
-        if (factor > 0.4 && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
+        if (factor > 0.4 && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; this.colorOp(cell, accent, 1); }
       }
     } else if (anom.type === "swell") {
       if (inZone) {
@@ -1035,7 +1111,7 @@ export class StudioEngine {
         if (on("position")) ctx.translate(Math.cos(angle) * push, Math.sin(angle) * push);
         const sFactor = 1 + factor * 0.55 * severity;
         if (on("scale")) ctx.scale(sFactor, sFactor);
-        if (factor > 0.65 && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; }
+        if (factor > 0.65 && anom.highlightColor) { cell.fg = accent; cell.fgLocked = true; this.colorOp(cell, accent, 1); }
       }
     } else if (anom.type === "tear") {
       if (factor > 0.6) {
@@ -1046,7 +1122,7 @@ export class StudioEngine {
         if (on("rotation")) ctx.rotate(pRand(53) * Math.PI * severity);
         const shrink = Math.max(0.15, 1 - factor * 0.85);
         if (on("scale")) ctx.scale(shrink, shrink);
-        if (anom.highlightColor && factor > 0.3) { cell.fg = accent; cell.fgLocked = true; }
+        if (anom.highlightColor && factor > 0.3) { cell.fg = accent; cell.fgLocked = true; this.colorOp(cell, accent, 1); }
       }
     }
     return true;
@@ -1097,12 +1173,13 @@ export class StudioEngine {
       ctx.translate(Math.cos(a) * d, Math.sin(a) * d);
     } else if (contrast.dimension === "tone") {
       // A different tone of the module's own colour (lighter, toward the ground): works for fill and for stroke
-      if (!cell.fgLocked && cell.fg === palette.fg) cell.fg = this.mixHex(cell.base || cell.fg, palette.bg, (contrast.toneAmount ?? 50) / 100);
+      if (!cell.fgLocked && cell.fg === palette.fg) { cell.fg = this.mixHex(cell.base || cell.fg, palette.bg, (contrast.toneAmount ?? 50) / 100); this.colorOp(cell, palette.bg, (contrast.toneAmount ?? 50) / 100); }
     } else if (contrast.dimension === "texture") {
       cell.texScale = 1; // only the minority is textured
     }
     if (contrast.highlightContrast && !cell.fgLocked) {
       cell.fg = contrast.accentColor || palette.accent;
+      this.colorOp(cell, cell.fg, 1);
     }
   }
 
@@ -1403,18 +1480,6 @@ export class StudioEngine {
             this.buildCellPath(ctx, r, c, rows, cols, cellCx, cellCy, cW, cH, repCell, cellStartX);
             ctx.clip();
           }
-          // Clip container: cut it at the edge of its container (in Fit to canvas the container shrinks with the cell;
-          // in Actual size it is the cell). Both clips can be on: the module is cut by the two
-          if (targetMod.clipContainer && !extra) {
-            // The container keeps its own proportions and shrinks with the same scale as the module (Figma frame inside a frame)
-            const rk = rhythmOn ? Math.min(MAX_SCALE_MUL, Math.min(cW / refW, rowHeights[r] / refH)) : 1;
-            const sBase = isFixed || uniform ? rk : (rhythmOn ? Math.min(refW / usableW, refH / usableH) * rk : Math.min(cW / usableW, cH / usableH));
-            const bw = cont.w * sBase, bh = cont.h * sBase;
-            ctx.beginPath();
-            ctx.rect(cellCx - bw / 2, cellCy - bh / 2, bw, bh);
-            ctx.clip();
-          }
-
           ctx.translate(cellCx, cellCy);
 
         // Concentration directional flow
@@ -1473,6 +1538,7 @@ export class StudioEngine {
         if ((refl === "columns" || refl === "both") && c % 2 === 1) ctx.scale(-1, 1);
         if ((refl === "rows" || refl === "both") && r % 2 === 1) ctx.scale(1, -1);
         const lineWidthMul = !isFixed && !uniform && (cellShapeA || targetMod.shape) === "line" ? scaleUnit * (cW / usableW) * Math.min(MAX_SCALE_MUL, cellScaleMul * concScaleMul) * k : null;
+        this.cellColorOps = cell.colorOps || null;
         this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== fgColor || flipped ? cellFg : null, lineWidthMul, stretch);
         ctx.restore();
       };
@@ -1911,17 +1977,6 @@ export class StudioEngine {
             ctx.rotate(this.cellDirection(i + centerIdx * 100, j));
           }
 
-          // Clip container: the container turns with the module's place in the ring and shrinks with its sector
-          if (targetMod.clipContainer) {
-            const cs = this.containerSize(targetMod, width, height);
-            const rt = span / rings, aw = (ringRadius * 2 * Math.PI) / raysI;
-            const sector = Math.min(rt, Math.max(rt * 0.5, aw));
-            const base = isFixed ? 1 : uniform ? uniformK : (sector / usableW) * (0.75 + (i / rings) * 0.45) * (isMultiCenter ? 0.7 : 1);
-            ctx.beginPath();
-            ctx.rect((-cs.w * base) / 2, (-cs.h * base) / 2, cs.w * base, cs.h * base);
-            ctx.clip();
-          }
-
           // Gradation on polar radiation (drift slides along the module's local x axis, up to ~one ring)
           if (grad.enabled) {
             this.applyGradation(ctx, grad, this.gradationPathRadial(grad, i, j, rings, raysI), (span / rings) * 0.9);
@@ -1962,6 +2017,7 @@ export class StudioEngine {
           if (cell.texScale) this.cellTexScale = Math.max(this.cellTexScale || 0, cell.texScale);
           this.cellSeed = i * raysI + j + 1;
           this.cellAlt = (i + j) % 2 === 1;
+          this.cellColorOps = cell.colorOps || null;
           this.drawSingleLayerShape(ctx, targetMod, normScale, cellFg, cellBg, cellWireframe, cellShapeA, false, cellFg !== palette.fg ? cellFg : null);
           ctx.restore();
         }
@@ -2119,8 +2175,10 @@ export class StudioEngine {
       "3:4": { w: 600, h: 800 },
       "16:9": { w: 800, h: 450 }
     };
-    const cfg = ratioMap[this.state.aspectRatio || "1:1"] || { w: 600, h: 600 };
-    const { ctx, width, height } = CanvasUtils.setupCanvas(this.canvas, cfg.w, cfg.h);
+    // The smart module editor draws on a canvas of its own: the module (its width and height), whatever the aspect ratio
+    const cfg = this.state.canvasOverride || ratioMap[this.state.aspectRatio || "1:1"] || { w: 600, h: 600 };
+    const { ctx, width, height } = CanvasUtils.setupCanvas(this.canvas, cfg.w, cfg.h, this.renderScale || 1);
+    this.logicalW = width; this.logicalH = height; // the canvas, for the containers that are the whole canvas
 
     // 1. Clear background using current effective palette background
     ctx.save();
@@ -2168,21 +2226,6 @@ export class StudioEngine {
       ctx.restore();
     }
 
-    // The container of each module that has one: a frame centred on the canvas. It has its own switch
-    // (Show container), so it does not depend on the coordinate grid button; it is never exported
-    if (!this.exporting) {
-      ctx.save();
-      ctx.strokeStyle = this.guideColor();
-      ctx.setLineDash([4, 4]);
-      ctx.lineWidth = 1.2;
-      for (const l of this.getLayers()) {
-        if (l.visible === false || l.showContainer === false || !(l.containerW > 0 || l.containerH > 0)) continue;
-        const cs = this.containerSize(l, width, height);
-        ctx.strokeRect(width / 2 - cs.w / 2, height / 2 - cs.h / 2, cs.w, cs.h);
-      }
-      ctx.restore();
-    }
-
     // 2.5 Isometric Drafting Guides (Space): drawn once if any visible layer asks for them
     const showIsoGuides = this.getLayers().some(l => l.visible !== false && l.structure?.space?.enabled && l.structure.space.showIsoGuides);
     if (showIsoGuides && !this.exporting) {
@@ -2225,11 +2268,8 @@ export class StudioEngine {
         }
         this.layoutClip = null;
         ctx.restore();
-        // Block guide: the rectangle the layout really occupies (an on-screen aid for the layer being edited)
-        if (!this.exporting && !bf.isDefault && this.blockGuideLayerId === mod.id) {
-          const e = this.layoutExtent || { x: 0, y: 0, w: bf.w, h: bf.h };
-          blockGuides.push([bf.tx + e.x, bf.ty + e.y, e.w, e.h]);
-        }
+        // Composition container guide: the sheet the layout is cut to (an on-screen aid for the layer being edited)
+        if (!this.exporting && !bf.isDefault && this.blockGuideLayerId === mod.id) blockGuides.push(bf.rect);
       } else {
         // Layer rendered as a single element centered on the canvas
         this.renderSingleLayerModule(ctx, mod, width, height, palette);
@@ -2243,6 +2283,24 @@ export class StudioEngine {
       ctx.setLineDash([8, 4]);
       for (const g of blockGuides) ctx.strokeRect(g[0], g[1], g[2], g[3]);
       ctx.restore();
+    }
+
+    // The figure being edited in the smart module editor: a thin frame around it (an on-screen guide, never exported)
+    if (this.state.figureBox && !this.exporting) {
+      const fb = this.state.figureBox;
+      const mod = this.getLayers().find(l => l.id === fb.layerId);
+      if (mod) {
+        ctx.save();
+        ctx.translate(width / 2 + (mod.offsetX || 0), height / 2 + (mod.offsetY || 0));
+        ctx.rotate(((mod.rotation || 0) * Math.PI) / 180);
+        ctx.translate(fb.x || 0, fb.y || 0);
+        ctx.rotate(((fb.rotation || 0) * Math.PI) / 180);
+        ctx.strokeStyle = this.guideColor();
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([4, 3]);
+        ctx.strokeRect(-fb.width / 2, -(fb.height ?? fb.width) / 2, fb.width, fb.height ?? fb.width);
+        ctx.restore();
+      }
     }
 
     ctx.restore(); // end master artboard clip

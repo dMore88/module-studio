@@ -23,6 +23,7 @@
 
     <!-- Canvas controls (moved from the canvas toolbar so they do not compete with the canvas size) -->
     <div class="ds-canvas-controls">
+      <span id="mode-chip" class="ds-mode-chip" role="status"><i class="ph ph-grid-four" aria-hidden="true"></i><span id="mode-chip-text">Composition mode</span></span>
       <div class="ds-select">
         <select id="canvas-aspect-ratio" aria-label="Canvas aspect ratio">
           <option value="1:1" selected>1 : 1</option>
@@ -34,10 +35,10 @@
         <span class="ds-select__button" aria-hidden="true"><i class="ph ph-caret-down"></i></span>
       </div>
       <button type="button" id="btn-toggle-grid" class="ds-icon-btn active" title="Toggle Grid Guides" aria-label="Toggle grid guides">
-        <i class="ph ph-grid-nine" aria-hidden="true"></i>
+        <i class="ph ph-hash" aria-hidden="true"></i>
       </button>
       <button type="button" id="btn-toggle-invert" class="ds-icon-btn" title="Toggle Figure / Ground Tone" aria-label="Toggle figure and ground tone">
-        <i class="ph ph-circle-half" aria-hidden="true"></i>
+        <i class="ph ph-palette" aria-hidden="true"></i>
       </button>
       <span class="ds-icon-btn ds-guide-btn" id="btn-guide-color" title="Guide color">
         <i class="ph ph-ruler" aria-hidden="true"></i>
@@ -46,23 +47,33 @@
     </div>
 
     <div class="ds-export-actions">
+      <button type="button" id="btn-fig-cancel" class="ds-btn is-edit-only" title="Discard the changes made since the editor opened and go back to the composition">
+        <span>Cancel edition</span>
+        <i class="ph ph-x-circle" aria-hidden="true"></i>
+      </button>
+      <button type="button" id="btn-fig-save" class="ds-btn ds-btn--dark is-edit-only" title="Keep the changes and go back to the composition">
+        <span>Save module</span>
+        <i class="ph ph-check-circle" aria-hidden="true"></i>
+      </button>
+      <button type="button" id="btn-copy-svg-code" class="ds-btn" title="Copy Vector SVG to Clipboard">
+        <span>Copy SVG</span>
+        <i class="ph ph-file-svg" aria-hidden="true"></i>
+      </button>
       <button type="button" id="btn-open-project" class="ds-btn" title="Open a saved project (.json)">
         <span>Open</span>
         <i class="ph ph-folder-open" aria-hidden="true"></i>
       </button>
       <input type="file" id="file-open-project" accept=".json,application/json" aria-label="Project file to open" hidden>
-      <button type="button" id="btn-open-config" class="ds-btn" title="Save the project (.json)">
-        <span>Config</span>
-        <i class="ph ph-gear-six" aria-hidden="true"></i>
-      </button>
-      <button type="button" id="btn-copy-svg-code" class="ds-btn" title="Copy Vector SVG to Clipboard">
-        <span>Copy SVG</span>
-        <i class="ph ph-copy" aria-hidden="true"></i>
-      </button>
-      <button type="button" id="btn-download-svg" class="ds-btn" title="Download SVG File">
-        <span>Download SVG</span>
-        <i class="ph ph-download-simple" aria-hidden="true"></i>
-      </button>
+      <div class="ds-menu" id="download-menu">
+        <button type="button" id="btn-download" class="ds-btn" aria-haspopup="menu" aria-expanded="false" title="Download the design or the project">
+          <span>Download</span>
+          <i class="ph ph-caret-down" aria-hidden="true"></i>
+        </button>
+        <div class="ds-menu__list" role="menu" hidden>
+          <button type="button" id="btn-open-config" class="ds-menu__item" role="menuitem" title="Save the project (.json)"><i class="ph ph-file-code" aria-hidden="true"></i><span>JSON</span></button>
+          <button type="button" id="btn-download-svg" class="ds-menu__item" role="menuitem" title="Download SVG File"><i class="ph ph-file-svg" aria-hidden="true"></i><span>SVG</span></button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -82,8 +93,8 @@
             <i class="ph ph-copy" aria-hidden="true"></i>
           </button>
           <button type="button" id="btn-add-pattern" class="ds-btn" title="Add a layer (5 maximum)">
-            <span>Add module</span>
-            <i class="ph ph-plus-circle" aria-hidden="true"></i>
+            <span>Add</span>
+            <i class="ph ph-stack-plus" aria-hidden="true"></i>
           </button>
         </div>
       </div>
@@ -96,12 +107,26 @@
         <div class="art-log__head">
           <p id="art-log-title" class="art-log__title">Art log</p>
           <button type="button" id="btn-art-log-copy" class="ds-btn art-log__copy" title="Copy the whole log as text">
-            <span>Copy</span>
             <i class="ph ph-copy" aria-hidden="true"></i>
           </button>
         </div>
         <div id="art-log-lines" class="art-log__lines"></div>
       </section>
+    </div>
+
+    <!-- SHAPES PANEL: takes the place of the layers and the Art log while the smart module is edited -->
+    <div class="ds-layers-panel ds-shapes-panel">
+      <div class="ds-layers-toolbar">
+        <div class="ds-layers-count">
+          <span class="ds-layers-title">SHAPES</span>
+          <span id="shapes-count-badge" class="ds-badge">1</span>
+        </div>
+        <div class="ds-layers-actions">
+          <button type="button" id="btn-fig-duplicate" class="ds-btn" title="Duplicate the selected shape (4 maximum)"><span>Duplicate</span><i class="ph ph-copy" aria-hidden="true"></i></button>
+          <button type="button" id="btn-fig-add" class="ds-btn" title="Add a shape (4 maximum)"><span>Add shape</span><i class="ph ph-plus-circle" aria-hidden="true"></i></button>
+        </div>
+      </div>
+      <div id="fig-list" class="ds-layers-list fig-list"></div>
     </div>
 
     <!-- CANVAS COLUMN (Figma: canvas, node 5787:482). The artboard is sized by fitArtboard() from the free height -->
@@ -138,7 +163,7 @@
         <i class="ph ph-radio-button text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="texture" title="Texture">
-        <i class="ph ph-drop-half-bottom text-[16px]"></i>
+        <i class="ph ph-leaf text-[16px]"></i>
       </button>
       <button type="button" class="rail-btn" data-rail-tab="space" title="Space & Depth">
         <i class="ph ph-cube-transparent text-[16px]"></i>
@@ -163,31 +188,76 @@
 
         <div class="ds-field">
           <div class="ds-label">Shape</div>
-          <div class="shape-grid">
-            <button type="button" class="shape-circle-btn active" data-shape="circle" title="Circle"><i class="ph ph-circle" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="square" title="Square"><i class="ph ph-square" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="triangle" title="Triangle"><i class="ph ph-triangle" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="line" title="Line"><i class="ph ph-minus" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="cross" title="Greek Cross"><i class="ph ph-plus" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="ring" title="Ring"><svg class="ph-svg" viewBox="0 0 256 256" aria-hidden="true"><circle cx="128" cy="128" r="104" fill="none" stroke="currentColor" stroke-width="16"/><circle cx="128" cy="128" r="52" fill="none" stroke="currentColor" stroke-width="16"/></svg></button>
-            <button type="button" class="shape-circle-btn row-start" data-shape="semicircle" title="Semicircle"><i class="ph ph-circle-half" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="quarter" title="Quarter Circle"><i class="ph ph-chart-pie-slice" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="crescent" title="Crescent"><i class="ph ph-subset-proper-of" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="wave" title="Sine Wave"><i class="ph ph-tilde" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="spiral" title="Spiral"><i class="ph ph-spiral" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="arrow" title="Arrow"><i class="ph ph-arrow-fat-up" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn row-start" data-shape="pentagon" title="Pentagon"><i class="ph ph-pentagon" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="hexagon" title="Hexagon"><i class="ph ph-hexagon" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="octagon" title="Octagon"><i class="ph ph-octagon" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="star" title="Star"><i class="ph ph-star" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn row-start" data-shape="letterA" title="Letter A"><span class="ph-glyph" aria-hidden="true">A</span></button>
-            <button type="button" class="shape-circle-btn" data-shape="letterS" title="Letter S"><span class="ph-glyph" aria-hidden="true">S</span></button>
-            <button type="button" class="shape-circle-btn" data-shape="letterR" title="Letter R"><span class="ph-glyph" aria-hidden="true">R</span></button>
-            <button type="button" class="shape-circle-btn" data-shape="digit1" title="Number 1"><i class="ph ph-number-one" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="digit5" title="Number 5"><i class="ph ph-number-five" aria-hidden="true"></i></button>
-            <button type="button" class="shape-circle-btn" data-shape="digit9" title="Number 9"><i class="ph ph-number-nine" aria-hidden="true"></i></button>
+          <div id="fig-shape-grid" class="shape-grid">
+            <button type="button" class="shape-circle-btn active" data-fig-shape="circle" title="Circle"><i class="ph ph-circle" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="square" title="Square"><i class="ph ph-square" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="triangle" title="Triangle"><i class="ph ph-triangle" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="line" title="Line"><i class="ph ph-minus" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="cross" title="Greek Cross"><i class="ph ph-plus" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="ring" title="Ring"><svg class="ph-svg" viewBox="0 0 256 256" aria-hidden="true"><circle cx="128" cy="128" r="104" fill="none" stroke="currentColor" stroke-width="16"/><circle cx="128" cy="128" r="52" fill="none" stroke="currentColor" stroke-width="16"/></svg></button>
+            <button type="button" class="shape-circle-btn row-start" data-fig-shape="semicircle" title="Semicircle"><i class="ph ph-circle-half" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="quarter" title="Quarter Circle"><i class="ph ph-chart-pie-slice" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="crescent" title="Crescent"><i class="ph ph-moon" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="wave" title="Sine Wave"><i class="ph ph-tilde" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="spiral" title="Spiral"><i class="ph ph-spiral" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="arrow" title="Arrow"><i class="ph ph-arrow-fat-up" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn row-start" data-fig-shape="pentagon" title="Pentagon"><i class="ph ph-pentagon" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="hexagon" title="Hexagon"><i class="ph ph-hexagon" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="octagon" title="Octagon"><i class="ph ph-octagon" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="star" title="Star"><i class="ph ph-star" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn row-start" data-fig-shape="letterA" title="Letter A"><span class="ph-glyph" aria-hidden="true">A</span></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="letterS" title="Letter S"><span class="ph-glyph" aria-hidden="true">S</span></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="letterR" title="Letter R"><span class="ph-glyph" aria-hidden="true">R</span></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="digit1" title="Number 1"><i class="ph ph-number-one" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="digit5" title="Number 5"><i class="ph ph-number-five" aria-hidden="true"></i></button>
+            <button type="button" class="shape-circle-btn" data-fig-shape="digit9" title="Number 9"><i class="ph ph-number-nine" aria-hidden="true"></i></button>
           </div>
         </div>
+
+
+        <div class="ds-divider" role="separator"></div>
+
+        <div class="ds-label ds-label--overline">Shape interelation</div>
+
+        <div id="fig-combine-block" class="ds-field">
+          <div class="ds-label">Combine the shapes</div>
+          <div class="shape-grid">
+            <button type="button" class="shape-circle-btn" data-fig-combine="union" title="Union: merge all the shapes into one" aria-label="Union"><svg class="ph-svg" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.9144 5.08562C10.7481 4.19007 10.3403 3.35695 9.73513 2.67623C9.12992 1.9955 8.35026 1.49302 7.48033 1.22306C6.6104 0.953089 5.68324 0.925887 4.79898 1.14439C3.91472 1.36289 3.10694 1.81879 2.46286 2.46286C1.81879 3.10694 1.36289 3.91472 1.14439 4.79898C0.925887 5.68324 0.953089 6.6104 1.22306 7.48033C1.49302 8.35026 1.9955 9.12992 2.67623 9.73513C3.35695 10.3403 4.19007 10.7481 5.08562 10.9144C5.25191 11.8099 5.65966 12.643 6.26487 13.3238C6.87008 14.0045 7.64974 14.507 8.51967 14.7769C9.3896 15.0469 10.3168 15.0741 11.201 14.8556C12.0853 14.6371 12.8931 14.1812 13.5371 13.5371C14.1812 12.8931 14.6371 12.0853 14.8556 11.201C15.0741 10.3168 15.0469 9.3896 14.7769 8.51967C14.507 7.64974 14.0045 6.87008 13.3238 6.26487C12.643 5.65966 11.8099 5.25191 10.9144 5.08562ZM14 10C14 10.095 13.9956 10.1875 13.9887 10.2819L10.8637 7.15687C10.9449 6.81859 10.9906 6.47276 11 6.125C11.8584 6.34785 12.6186 6.84917 13.1615 7.5504C13.7043 8.25164 13.9993 9.11317 14 10ZM2.84187 3.54937L6.13062 6.8375C5.88763 7.13445 5.6794 7.45822 5.51 7.8025L2.26875 4.5625C2.40937 4.19865 2.60246 3.85733 2.84187 3.54937ZM4.5625 2.26875L7.80375 5.51C7.45947 5.6794 7.1357 5.88763 6.83875 6.13062L3.54937 2.84187C3.85733 2.60246 4.19865 2.40937 4.5625 2.26875ZM8.40375 9.19562L6.80562 7.5975C7.03184 7.29754 7.29879 7.03059 7.59875 6.80437L9.19687 8.4025C8.97027 8.70255 8.7029 8.9695 8.4025 9.19562H8.40375ZM9.70687 7.5L8.5 6.29312C8.97628 6.09912 9.48573 5.99957 10 6C10.0004 6.51427 9.90088 7.02372 9.70687 7.5ZM6.29312 8.5L7.5 9.70687C7.02372 9.90088 6.51427 10.0004 6 10C5.99957 9.48573 6.09912 8.97628 6.29312 8.5ZM9.1625 9.86937L12.4506 13.1581C12.1427 13.3975 11.8013 13.5906 11.4375 13.7312L8.19625 10.49C8.54096 10.3207 8.86516 10.1125 9.1625 9.86937ZM9.86937 9.1625C10.1124 8.86555 10.3206 8.54178 10.49 8.1975L13.7312 11.4375C13.5905 11.8009 13.3974 12.1418 13.1581 12.4494L9.86937 9.1625ZM9.875 5.00312C9.52777 5.01158 9.18236 5.0562 8.84437 5.13625L5.71937 2.01125C5.8125 2.00437 5.905 2 6 2C6.88724 2.00091 7.74909 2.29628 8.45038 2.83978C9.15167 3.38328 9.65274 4.14417 9.875 5.00312ZM2 6C2 5.905 2.00437 5.8125 2.01125 5.71812L5.13625 8.84312C5.05611 9.18152 5.0115 9.52735 5.00312 9.875C4.14417 9.65274 3.38328 9.15167 2.83978 8.45038C2.29628 7.74909 2.00091 6.88724 2 6ZM6.125 11C6.47223 10.9915 6.81764 10.9469 7.15562 10.8669L10.2806 13.9919C10.1875 13.9987 10.0931 14.0031 9.99875 14.0031C9.11172 14.0019 8.25016 13.7064 7.54912 13.163C6.84809 12.6195 6.34721 11.8587 6.125 11Z" fill="currentColor"/></svg></button>
+            <button type="button" class="shape-circle-btn" data-fig-combine="subtract" title="Subtract: the first shape minus all the others" aria-label="Subtract"><svg class="ph-svg" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.9144 5.08437C10.7478 4.189 10.3399 3.35612 9.73464 2.67564C9.12936 1.99515 8.34972 1.4929 7.47987 1.22311C6.61002 0.953318 5.683 0.926229 4.79889 1.14477C3.91477 1.3633 3.10713 1.81917 2.46315 2.46315C1.81917 3.10713 1.3633 3.91477 1.14477 4.79889C0.926229 5.683 0.953318 6.61002 1.22311 7.47987C1.4929 8.34972 1.99515 9.12936 2.67564 9.73464C3.35612 10.3399 4.189 10.7478 5.08437 10.9144C5.25091 11.8097 5.65884 12.6426 6.26411 13.3231C6.86939 14.0036 7.64903 14.5058 8.51888 14.7756C9.38873 15.0454 10.3157 15.0725 11.1999 14.854C12.084 14.6354 12.8916 14.1796 13.5356 13.5356C14.1796 12.8916 14.6354 12.084 14.854 11.1999C15.0725 10.3157 15.0454 9.38873 14.7756 8.51888C14.5058 7.64903 14.0036 6.86939 13.3231 6.26411C12.6426 5.65884 11.8097 5.25091 10.9144 5.08437ZM14 10C14 10.095 13.9956 10.1875 13.9887 10.2819L10.8638 7.15687C10.9449 6.81858 10.9905 6.47276 11 6.125C11.86 6.34493 12.622 6.84547 13.1654 7.54735C13.7088 8.24924 14.0025 9.11235 14 10ZM9.1625 9.86937L12.4506 13.1581C12.1427 13.3975 11.8013 13.5906 11.4375 13.7312L8.19625 10.49C8.54096 10.3207 8.86516 10.1125 9.1625 9.86937ZM9.86937 9.1625C10.1124 8.86555 10.3206 8.54178 10.49 8.1975L13.7312 11.4375C13.5905 11.8009 13.3974 12.1418 13.1581 12.4494L9.86937 9.1625ZM2 6C2 5.20887 2.2346 4.43552 2.67412 3.77772C3.11365 3.11992 3.73836 2.60723 4.46927 2.30448C5.20017 2.00173 6.00444 1.92252 6.78036 2.07686C7.55628 2.2312 8.26902 2.61216 8.82843 3.17157C9.38784 3.73098 9.7688 4.44371 9.92314 5.21964C10.0775 5.99556 9.99827 6.79983 9.69552 7.53073C9.39277 8.26164 8.88008 8.88635 8.22228 9.32588C7.56448 9.7654 6.79113 10 6 10C4.93949 9.99884 3.92275 9.57704 3.17285 8.82715C2.42296 8.07725 2.00116 7.06051 2 6ZM6.125 11C6.47244 10.9915 6.81805 10.9469 7.15625 10.8669L10.2812 13.9919C10.1881 13.9987 10.0937 14.0031 9.99937 14.0031C9.11142 14.0053 8.24813 13.7111 7.54632 13.1671C6.8445 12.6231 6.34431 11.8605 6.125 11Z" fill="currentColor"/></svg></button>
+            <button type="button" class="shape-circle-btn" data-fig-combine="intersect" title="Intersect: only what all the shapes share" aria-label="Intersect"><svg class="ph-svg" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.9144 5.08562C10.7481 4.19007 10.3403 3.35695 9.73513 2.67623C9.12992 1.9955 8.35026 1.49302 7.48033 1.22306C6.6104 0.953089 5.68324 0.925887 4.79898 1.14439C3.91472 1.36289 3.10694 1.81879 2.46286 2.46286C1.81879 3.10694 1.36289 3.91472 1.14439 4.79898C0.925887 5.68324 0.953089 6.6104 1.22306 7.48033C1.49302 8.35026 1.9955 9.12992 2.67623 9.73513C3.35695 10.3403 4.19007 10.7481 5.08562 10.9144C5.25191 11.8099 5.65966 12.643 6.26487 13.3238C6.87008 14.0045 7.64974 14.507 8.51967 14.7769C9.3896 15.0469 10.3168 15.0741 11.201 14.8556C12.0853 14.6371 12.8931 14.1812 13.5371 13.5371C14.1812 12.8931 14.6371 12.0853 14.8556 11.201C15.0741 10.3168 15.0469 9.3896 14.7769 8.51967C14.507 7.64974 14.0045 6.87008 13.3238 6.26487C12.643 5.65966 11.8099 5.25191 10.9144 5.08562ZM6.29312 8.5L7.5 9.70687C7.02372 9.90088 6.51427 10.0004 6 10C5.99957 9.48573 6.09912 8.97628 6.29312 8.5ZM8.4025 9.19562L6.80437 7.5975C7.03059 7.29754 7.29754 7.03059 7.5975 6.80437L9.19562 8.4025C8.96941 8.70246 8.70246 8.96941 8.4025 9.19562ZM9.70687 7.5L8.5 6.29312C8.97628 6.09912 9.48573 5.99957 10 6C10.0004 6.51427 9.90088 7.02372 9.70687 7.5ZM2 6C1.99808 5.02505 2.3523 4.08296 2.99609 3.3508C3.63989 2.61864 4.52892 2.14681 5.4961 2.02399C6.46329 1.90117 7.44203 2.13583 8.24838 2.68384C9.05474 3.23186 9.63318 4.05551 9.875 5C8.59299 5.03369 7.37282 5.55821 6.46628 6.46534C5.55973 7.37246 5.03599 8.59297 5.00312 9.875C4.14417 9.65274 3.38328 9.15167 2.83978 8.45038C2.29628 7.74909 2.00091 6.88724 2 6ZM10 14C9.11317 13.9993 8.25164 13.7043 7.5504 13.1615C6.84917 12.6186 6.34785 11.8584 6.125 11C7.40756 10.9671 8.62851 10.4429 9.53571 9.53571C10.4429 8.62851 10.9671 7.40756 11 6.125C11.9445 6.36682 12.7681 6.94526 13.3162 7.75162C13.8642 8.55797 14.0988 9.53671 13.976 10.5039C13.8532 11.4711 13.3814 12.3601 12.6492 13.0039C11.917 13.6477 10.9749 14.0019 10 14Z" fill="currentColor"/></svg></button>
+            <button type="button" class="shape-circle-btn" data-fig-combine="xor" title="Exclude: everything except where shapes overlap" aria-label="Exclude"><svg class="ph-svg" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.9144 5.08562C10.7481 4.19007 10.3403 3.35695 9.73513 2.67623C9.12992 1.9955 8.35026 1.49302 7.48033 1.22306C6.6104 0.953089 5.68324 0.925887 4.79898 1.14439C3.91472 1.36289 3.10694 1.81879 2.46286 2.46286C1.81879 3.10694 1.36289 3.91472 1.14439 4.79898C0.925887 5.68324 0.953089 6.6104 1.22306 7.48033C1.49302 8.35026 1.9955 9.12992 2.67623 9.73513C3.35695 10.3403 4.19007 10.7481 5.08562 10.9144C5.25191 11.8099 5.65966 12.643 6.26487 13.3238C6.87008 14.0045 7.64974 14.507 8.51967 14.7769C9.3896 15.0469 10.3168 15.0741 11.201 14.8556C12.0853 14.6371 12.8931 14.1812 13.5371 13.5371C14.1812 12.8931 14.6371 12.0853 14.8556 11.201C15.0741 10.3168 15.0469 9.3896 14.7769 8.51967C14.507 7.64974 14.0045 6.87008 13.3238 6.26487C12.643 5.65966 11.8099 5.25191 10.9144 5.08562ZM14 10C14 10.095 13.9956 10.1875 13.9887 10.2819L10.8637 7.15687C10.9449 6.81859 10.9906 6.47276 11 6.125C11.8584 6.34785 12.6186 6.84917 13.1615 7.5504C13.7043 8.25164 13.9993 9.11317 14 10ZM13.1581 12.4506L9.86937 9.1625C10.1124 8.86555 10.3206 8.54178 10.49 8.1975L13.7312 11.4375C13.5906 11.8013 13.3975 12.1427 13.1581 12.4506ZM11.4375 13.7312L8.19625 10.49C8.54053 10.3206 8.8643 10.1124 9.16125 9.86937L12.4494 13.1581C12.1418 13.3974 11.8009 13.5905 11.4375 13.7312ZM2.84187 3.54937L6.13062 6.8375C5.88763 7.13445 5.6794 7.45822 5.51 7.8025L2.26875 4.5625C2.40937 4.19865 2.60246 3.85733 2.84187 3.54937ZM4.5625 2.26875L7.80375 5.51C7.45947 5.6794 7.1357 5.88763 6.83875 6.13062L3.54937 2.84187C3.85733 2.60246 4.19865 2.40937 4.5625 2.26875ZM10 6C9.99884 7.06051 9.57704 8.07725 8.82715 8.82715C8.07725 9.57704 7.06051 9.99884 6 10C6.00116 8.93949 6.42296 7.92275 7.17285 7.17285C7.92275 6.42296 8.93949 6.00116 10 6ZM9.875 5C9.52777 5.00846 9.18236 5.05307 8.84437 5.13312L5.71937 2.00813C5.8125 2.00438 5.905 2 6 2C6.88724 2.00091 7.74909 2.29628 8.45038 2.83978C9.15167 3.38328 9.65274 4.14417 9.875 5.00312V5ZM2 6C2 5.905 2.00437 5.8125 2.01125 5.71812L5.13625 8.84312C5.05611 9.18152 5.0115 9.52735 5.00312 9.875C4.14417 9.65274 3.38328 9.15167 2.83978 8.45038C2.29628 7.74909 2.00091 6.88724 2 6ZM6.125 11C6.47223 10.9915 6.81764 10.9469 7.15562 10.8669L10.2806 13.9919C10.1875 13.9987 10.0931 14.0031 9.99875 14.0031C9.11172 14.0019 8.25016 13.7064 7.54912 13.163C6.84809 12.6195 6.34721 11.8587 6.125 11Z" fill="currentColor"/></svg></button>
+          </div>
+        </div>
+
+        <div id="fig-relation-block" class="ds-field">
+          <div class="ds-label">Relation to the previous shape</div>
+          <div class="ds-tags">
+            <button type="button" class="ds-tag active" data-fig-rel="free" title="Place it by its position">Free</button>
+            <button type="button" class="ds-tag" data-fig-rel="coincident" title="Same centre as the previous shape">Coincident</button>
+            <button type="button" class="ds-tag" data-fig-rel="distance" title="Next to the previous shape: touching, apart or overlapping">Distance</button>
+          </div>
+        </div>
+
+        <div id="fig-relation-stack" class="ds-stack hidden">
+          <div class="ds-field">
+            <div class="ds-label">Direction</div>
+            <div class="ds-slider">
+              <input type="range" id="input-fig-angle" min="0" max="360" step="1" value="0">
+              <input type="text" id="num-fig-angle" class="ds-value" value="0º" inputmode="decimal">
+            </div>
+          </div>
+          <div class="ds-field">
+            <div class="ds-label">Gap (0 = touching, below 0 = overlapping)</div>
+            <div class="ds-slider">
+              <input type="range" id="input-fig-gap" min="-500" max="500" step="1" value="0">
+              <input type="text" id="num-fig-gap" class="ds-value" value="0px" inputmode="decimal">
+            </div>
+          </div>
+        </div>
+
+        <div class="ds-divider" role="separator"></div>
+
+        <div class="ds-label ds-label--overline">Shape style</div>
 
         <div class="ds-field">
           <div class="ds-btn-group" role="group" aria-label="Fill or stroke">
@@ -207,7 +277,7 @@
           </div>
         </div>
 
-        <div class="ds-stack">
+        <div id="fig-transform-stack" class="ds-stack">
           <div class="ds-field">
             <div class="ds-label">Stroke width</div>
             <div class="ds-slider">
@@ -216,76 +286,63 @@
             </div>
           </div>
           <div class="ds-field">
-            <div class="ds-label">Width</div>
+            <div class="ds-label">Shape width</div>
             <div class="ds-slider">
-              <input type="range" id="input-active-width" min="1" max="2000" step="1" value="100">
-              <input type="text" id="num-active-width" class="ds-value" value="100px" inputmode="decimal">
+              <input type="range" id="input-fig-w" min="1" max="2000" step="1" value="100">
+              <input type="text" id="num-fig-w" class="ds-value" value="100px" inputmode="decimal">
             </div>
           </div>
           <div class="ds-field">
-            <div class="ds-label">Height</div>
+            <div class="ds-label">Shape height</div>
             <div class="ds-slider">
-              <input type="range" id="input-active-height" min="1" max="2000" step="1" value="100">
-              <input type="text" id="num-active-height" class="ds-value" value="100px" inputmode="decimal">
+              <input type="range" id="input-fig-h" min="1" max="2000" step="1" value="100">
+              <input type="text" id="num-fig-h" class="ds-value" value="100px" inputmode="decimal">
+            </div>
+          </div>
+          <div id="fig-pos-x-field" class="ds-field">
+            <div class="ds-label">Shape position X</div>
+            <div class="ds-slider">
+              <input type="range" id="input-fig-x" min="-1000" max="1000" step="1" value="0">
+              <input type="text" id="num-fig-x" class="ds-value" value="0px" inputmode="decimal">
+            </div>
+          </div>
+          <div id="fig-pos-y-field" class="ds-field">
+            <div class="ds-label">Shape position Y</div>
+            <div class="ds-slider">
+              <input type="range" id="input-fig-y" min="-1000" max="1000" step="1" value="0">
+              <input type="text" id="num-fig-y" class="ds-value" value="0px" inputmode="decimal">
             </div>
           </div>
           <div class="ds-field">
-            <div class="ds-label">Rotation (°)</div>
+            <div class="ds-label">Shape rotation</div>
             <div class="ds-slider">
-              <input type="range" id="input-active-rotation" min="0" max="360" step="0.5" value="0">
-              <input type="text" id="num-active-rotation" class="ds-value" value="0º" inputmode="decimal">
+              <input type="range" id="input-fig-rot" min="-180" max="180" step="1" value="0">
+              <input type="text" id="num-fig-rot" class="ds-value" value="0º" inputmode="decimal">
             </div>
           </div>
-          <div class="ds-field">
-            <div class="ds-label">Offset X</div>
-            <div class="ds-slider">
-              <input type="range" id="input-active-offset-x" min="-1000" max="1000" step="1" value="0">
-              <input type="text" id="num-active-offset-x" class="ds-value" value="0px" inputmode="decimal">
-            </div>
-          </div>
-          <div class="ds-field">
-            <div class="ds-label">Offset Y</div>
-            <div class="ds-slider">
-              <input type="range" id="input-active-offset-y" min="-1000" max="1000" step="1" value="0">
-              <input type="text" id="num-active-offset-y" class="ds-value" value="0px" inputmode="decimal">
-            </div>
-          </div>
+        </div>
 
-          <details id="module-advanced" class="ds-advanced">
-            <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced</span></summary>
-            <div class="ds-stack">
+        <div class="ds-divider" role="separator"></div>
+
+        <div class="ds-label ds-label--overline">Module</div>
+
+        <div class="ds-stack">
           <div class="ds-field">
-            <div class="ds-label">Container width</div>
+            <div class="ds-label">Module width</div>
             <div class="ds-slider">
-              <input type="range" id="input-active-container-w" min="10" max="2000" step="1" value="100">
+              <input type="range" id="input-active-container-w" min="10" max="1000" step="1" value="100">
               <input type="text" id="num-active-container-w" class="ds-value" value="100px" inputmode="decimal">
             </div>
           </div>
           <div class="ds-field">
-            <div class="ds-label">Container height</div>
+            <div class="ds-label">Module height</div>
             <div class="ds-slider">
-              <input type="range" id="input-active-container-h" min="10" max="2000" step="1" value="100">
+              <input type="range" id="input-active-container-h" min="10" max="1000" step="1" value="100">
               <input type="text" id="num-active-container-h" class="ds-value" value="100px" inputmode="decimal">
             </div>
           </div>
-          <div class="ds-toggles">
-            <label class="ds-toggle-item">
-              <span class="ds-toggle-label">Show container</span>
-              <input type="checkbox" id="chk-active-show-container" class="ds-checkbox" checked>
-            </label>
-            <label class="ds-toggle-item">
-              <span class="ds-toggle-label">Clip container</span>
-              <input type="checkbox" id="chk-active-clip-container" class="ds-checkbox">
-            </label>
-            <label class="ds-toggle-item">
-              <span class="ds-toggle-label">Hide modifiers</span>
-              <input type="checkbox" id="chk-hide-modifiers" class="ds-checkbox" autocomplete="off">
-            </label>
-          </div>
-          <p class="ds-hint">Hide modifiers: while this panel is open, the module is shown alone, without Layout structure or modifiers. The export always includes them.</p>
-            </div>
-          </details>
         </div>
+
       </div>
 
       <!-- ===================================================================
@@ -307,423 +364,6 @@
           </button>
         </div>
 
-        <div class="ds-field">
-          <div class="ds-label">Structure mode</div>
-          <div class="ds-btn-group" role="group" aria-label="Structure mode">
-            <button type="button" id="btn-layout-repetition" class="ds-btn-group__button active" data-layout-mode="repetition">Repetition</button>
-            <button type="button" id="btn-layout-radiation" class="ds-btn-group__button" data-layout-mode="radiation">Radiation</button>
-          </div>
-        </div>
-
-        <!-- SUB-PANEL A: REPETITION MODE -->
-        <div id="subpanel-repetition" class="ds-stack">
-
-        <div class="ds-field">
-          <div class="ds-label">Grid structure variation</div>
-          <div class="ds-dropdown" data-select>
-            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><svg class="ds-icon-grid" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><rect x="2" y="2" width="18" height="18"/><path d="M8 2v18M14 2v18M2 8h18M2 14h18"/></svg><span>Grid</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-            <div class="ds-dropdown-menu hidden" role="listbox">
-              <button type="button" class="ds-dropdown-item active" role="option" data-grid-var="basic"><svg class="ds-icon-grid" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><rect x="2" y="2" width="18" height="18"/><path d="M8 2v18M14 2v18M2 8h18M2 14h18"/></svg><span>Grid</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grid-var="curved"><svg class="ds-icon-grid" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M2 5q4.5-3 9 0t9 0M2 11q4.5-3 9 0t9 0M2 17q4.5-3 9 0t9 0"/></svg><span>Curved</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grid-var="sliding"><svg class="ds-icon-grid" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><rect x="2" y="2" width="18" height="18"/><path d="M2 8h18M2 14h18M8 2v6M14 8v6M8 14v6"/></svg><span>Brick</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grid-var="sheared"><svg class="ds-icon-grid" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><rect x="2" y="2" width="18" height="18"/><path d="M2 10L10 2M2 18L18 2M6 20L20 6M14 20l6-6"/></svg><span>Diagonal</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grid-var="zigzag"><svg class="ds-icon-grid" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M2 5l4.5 3 4.5-3 4.5 3 4.5-3M2 11l4.5 3 4.5-3 4.5 3 4.5-3M2 17l4.5 3 4.5-3 4.5 3 4.5-3"/></svg><span>Zigzag</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grid-var="triangular"><svg class="ds-icon-grid" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M11 3l8 14H3zM7 10h8"/></svg><span>Triangular</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grid-var="alternating"><svg class="ds-icon-grid" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><rect x="2" y="2" width="18" height="18"/><path d="M11 2v18M2 11h18"/><path d="M2 2h9v9H2zM11 11h9v9h-9z" fill="currentColor" stroke="none"/></svg><span>Alternating</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grid-var="hexagonal"><svg class="ds-icon-grid" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M11 2l7.5 4.3v8.6L11 19.2 3.5 14.9V6.3z"/></svg><span>Hexagonal</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-grid-var="free"><svg class="ds-icon-grid" viewBox="0 0 22 22" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="5" cy="6" r="1.8"/><circle cx="14" cy="4" r="1.8"/><circle cx="9" cy="12" r="1.8"/><circle cx="18" cy="11" r="1.8"/><circle cx="4" cy="18" r="1.8"/><circle cx="14" cy="18" r="1.8"/></svg><span>Free</span></button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Parameter of the chosen variation: Brick = row offset, Diagonal = shear angle, Curved / Zigzag = wave amount -->
-        <div id="rep-param-block" class="ds-field hidden">
-          <div id="rep-param-label" class="ds-label">Row offset</div>
-          <div class="ds-slider">
-            <input type="range" id="input-layout-param" min="0" max="100" step="1" value="50">
-            <input type="text" id="num-layout-param" class="ds-value" value="50%" inputmode="decimal">
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Columns</div>
-          <div class="ds-slider">
-            <input type="range" id="input-layout-cols" min="1" max="100" step="1" value="4">
-            <input type="text" id="num-layout-cols" class="ds-value" value="4" inputmode="decimal">
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Rows</div>
-          <div class="ds-slider">
-            <input type="range" id="input-layout-rows" min="1" max="100" step="1" value="4">
-            <input type="text" id="num-layout-rows" class="ds-value" value="4" inputmode="decimal">
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Module size</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-rep-size="fit">Fit to canvas</button>
-            <button type="button" class="ds-tag" data-rep-size="actual">Actual size</button>
-          </div>
-        </div>
-
-        <div class="ds-field" id="rep-placement-block">
-          <div class="ds-label">Module placement</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-rep-place="centers">Centers</button>
-            <button type="button" class="ds-tag" data-rep-place="intersections">Intersections</button>
-            <button type="button" class="ds-tag" data-rep-place="both">Both</button>
-          </div>
-        </div>
-
-        <div class="ds-field" id="rep-mix-block">
-          <div class="ds-label">Cell mix</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-rep-mix="none">None</button>
-            <button type="button" class="ds-tag" data-rep-mix="merge">Merged</button>
-            <button type="button" class="ds-tag" data-rep-mix="divide">Divided</button>
-          </div>
-        </div>
-
-        <div id="rep-inter-block" class="ds-field hidden">
-          <div class="ds-label">Intersection size</div>
-          <div class="ds-slider">
-            <input type="range" id="input-layout-inter" min="10" max="100" step="5" value="50">
-            <input type="text" id="num-layout-inter" class="ds-value" value="50%" inputmode="decimal">
-          </div>
-        </div>
-
-        <!-- Block: where the layout lives on the canvas (shared by both modes; the script moves it before the active mode's Advanced) -->
-        <div id="layout-block" class="ds-stack">
-          <div id="block-size-fields" class="ds-stack">
-            <div class="ds-field">
-              <div class="ds-label">Block width</div>
-              <div class="ds-slider">
-                <input type="range" id="input-block-w" min="10" max="2000" step="1" value="600">
-                <input type="text" id="num-block-w" class="ds-value" value="600px" inputmode="decimal">
-              </div>
-            </div>
-            <div class="ds-field">
-              <div class="ds-label">Block height</div>
-              <div class="ds-slider">
-                <input type="range" id="input-block-h" min="10" max="2000" step="1" value="600">
-                <input type="text" id="num-block-h" class="ds-value" value="600px" inputmode="decimal">
-              </div>
-            </div>
-          </div>
-          <div class="ds-field">
-            <div class="ds-label">Block offset X</div>
-            <div class="ds-slider">
-              <input type="range" id="input-block-x" min="-1000" max="1000" step="1" value="0">
-              <input type="text" id="num-block-x" class="ds-value" value="0px" inputmode="decimal">
-            </div>
-          </div>
-          <div class="ds-field">
-            <div class="ds-label">Block offset Y</div>
-            <div class="ds-slider">
-              <input type="range" id="input-block-y" min="-1000" max="1000" step="1" value="0">
-              <input type="text" id="num-block-y" class="ds-value" value="0px" inputmode="decimal">
-            </div>
-          </div>
-        </div>
-
-        <details id="rep-advanced" class="ds-advanced">
-          <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced</span></summary>
-          <div class="ds-stack">
-
-        <div id="rep-modscale-block" class="ds-field">
-          <div class="ds-label">Module scale</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-rep-modscale="uniform" title="Every module keeps its own size, proportional to the whole canvas">Base size</button>
-            <button type="button" class="ds-tag" data-rep-modscale="cell" title="The module shrinks with its cell">Shrink with cell</button>
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Reflection</div>
-          <div class="ds-dropdown" data-select>
-            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>None</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-            <div class="ds-dropdown-menu hidden" role="listbox">
-              <button type="button" class="ds-dropdown-item active" role="option" data-rep-reflect="none"><span>None</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rep-reflect="columns"><span>Columns</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rep-reflect="rows"><span>Rows</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rep-reflect="both"><span>Both</span></button>
-            </div>
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Direction</div>
-          <div class="ds-dropdown" data-select>
-            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Repeated</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-            <div class="ds-dropdown-menu hidden" role="listbox">
-              <button type="button" class="ds-dropdown-item active" role="option" data-rep-dir="repeated"><span>Repeated</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rep-dir="alternated"><span>Alternated</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rep-dir="undefined"><span>Undefined</span></button>
-            </div>
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label ds-label-clip">Col B size [% of A]</div>
-          <div class="ds-slider">
-            <input type="range" id="input-struct-col-ratio" min="10" max="100" step="5" value="100">
-            <input type="text" id="num-struct-col-ratio" class="ds-value" value="100%" inputmode="decimal">
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label ds-label-clip">Row B size [% of A]</div>
-          <div class="ds-slider">
-            <input type="range" id="input-struct-row-ratio" min="10" max="100" step="5" value="100">
-            <input type="text" id="num-struct-row-ratio" class="ds-value" value="100%" inputmode="decimal">
-          </div>
-        </div>
-        <div class="ds-field">
-          <div class="ds-label ds-label-clip">Col gradation</div>
-          <div class="ds-slider">
-            <input type="range" id="input-struct-col-grade" min="-30" max="30" step="1" value="0">
-            <input type="text" id="num-struct-col-grade" class="ds-value" value="0%" inputmode="decimal">
-          </div>
-        </div>
-        <div class="ds-field">
-          <div class="ds-label ds-label-clip">Row gradation</div>
-          <div class="ds-slider">
-            <input type="range" id="input-struct-row-grade" min="-30" max="30" step="1" value="0">
-            <input type="text" id="num-struct-row-grade" class="ds-value" value="0%" inputmode="decimal">
-          </div>
-        </div>
-        <div class="ds-toggles">
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Clip cell</span>
-            <input type="checkbox" id="chk-rep-clip" class="ds-checkbox">
-          </label>
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Checkerboard inversion</span>
-            <input type="checkbox" id="chk-rep-checker" class="ds-checkbox">
-          </label>
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Visible lines</span>
-            <input type="checkbox" id="chk-rep-gridlines" class="ds-checkbox">
-          </label>
-        </div>
-
-        <!-- Visible lines are part of the design: they have colour and width and are exported -->
-        <div id="rep-lines-block" class="ds-stack hidden">
-          <p class="ds-hint">Lines are part of the design and are exported.</p>
-
-        <div class="ds-field">
-          <div class="ds-label">Line direction</div>
-          <div class="ds-dropdown" data-select>
-            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Both</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-            <div class="ds-dropdown-menu hidden" role="listbox">
-              <button type="button" class="ds-dropdown-item active" role="option" data-rep-linedir="both"><span>Both</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rep-linedir="horizontal"><span>Horizontal</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rep-linedir="vertical"><span>Vertical</span></button>
-            </div>
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Line spacing</div>
-          <div class="ds-dropdown" data-select>
-            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>All lines</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-            <div class="ds-dropdown-menu hidden" role="listbox">
-              <button type="button" class="ds-dropdown-item active" role="option" data-rep-linespace="all"><span>All lines</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rep-linespace="alternate"><span>Every other</span></button>
-            </div>
-          </div>
-        </div>
-
-        <div id="rep-linewidth-block" class="ds-field">
-          <div class="ds-label">Line width</div>
-          <div class="ds-slider">
-            <input type="range" id="input-layout-linewidth" min="0.5" max="10" step="0.5" value="1.5">
-            <input type="text" id="num-layout-linewidth" class="ds-value" value="1.5px" inputmode="decimal">
-          </div>
-        </div>
-
-          <div class="ds-color-row" id="repline-accent-row">
-            <span class="ds-color-label">Line color</span>
-            <span class="ds-color-hex" id="repline-accent-hex">#18181F</span>
-            <span class="ds-swatch">
-              <input type="color" id="repline-accent-color" value="#18181f">
-              <span class="ds-swatch-fill" id="repline-accent-swatch"></span>
-            </span>
-          </div>
-        </div>
-          </div>
-        </details>
-        </div>
-
-        <!-- SUB-PANEL B: RADIATION MODE -->
-        <div id="subpanel-radiation" class="ds-stack hidden">
-
-        <div class="ds-field">
-          <div class="ds-label">Radiation scheme</div>
-          <div class="ds-dropdown" data-select>
-            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Centrifugal</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-            <div class="ds-dropdown-menu hidden" role="listbox">
-              <button type="button" class="ds-dropdown-item active" role="option" data-rad-scheme="centrifugal"><span>Centrifugal</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rad-scheme="centripetal"><span>Centripetal</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rad-scheme="concentric"><span>Concentric</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rad-scheme="spiral"><span>Spiral</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rad-scheme="multi_center"><span>Multi-center</span></button>
-            </div>
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Angular rays</div>
-          <div class="ds-slider">
-            <input type="range" id="input-layout-rays" min="3" max="60" step="1" value="12">
-            <input type="text" id="num-layout-rays" class="ds-value" value="12" inputmode="decimal">
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Concentric rings</div>
-          <div class="ds-slider">
-            <input type="range" id="input-layout-rings" min="2" max="20" step="1" value="6">
-            <input type="text" id="num-layout-rings" class="ds-value" value="6" inputmode="decimal">
-          </div>
-        </div>
-        <div id="rad-centers-block" class="ds-field hidden">
-          <div class="ds-label">Centers</div>
-          <div class="ds-slider">
-            <input type="range" id="input-layout-centers" min="2" max="8" step="1" value="2">
-            <input type="text" id="num-layout-centers" class="ds-value" value="2" inputmode="decimal">
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Spiral twist</div>
-          <div class="ds-slider">
-            <input type="range" id="input-layout-twist" min="-180" max="180" step="1" value="45">
-            <input type="text" id="num-layout-twist" class="ds-value" value="45" inputmode="decimal">
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Module size</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-rad-size="fit">Fit to canvas</button>
-            <button type="button" class="ds-tag" data-rad-size="actual">Actual size</button>
-          </div>
-        </div>
-
-        <details id="rad-advanced" class="ds-advanced">
-          <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced</span></summary>
-          <div class="ds-stack">
-
-        <div id="rad-modscale-block" class="ds-field">
-          <div class="ds-label">Module scale</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-rad-modscale="uniform" title="Every module keeps its own size, proportional to the whole structure">Base size</button>
-            <button type="button" class="ds-tag" data-rad-modscale="cell" title="The module shrinks with its cell">Shrink with cell</button>
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Module orientation</div>
-          <div class="ds-dropdown" data-select>
-            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Auto</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-            <div class="ds-dropdown-menu hidden" role="listbox">
-              <button type="button" class="ds-dropdown-item active" role="option" data-rad-orient="auto"><span>Auto</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rad-orient="outward"><span>Outward</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rad-orient="inward"><span>Inward</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rad-orient="tangent"><span>Tangent</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rad-orient="fixed"><span>Fixed</span></button>
-            </div>
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Direction</div>
-          <div class="ds-dropdown" data-select>
-            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Repeated</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-            <div class="ds-dropdown-menu hidden" role="listbox">
-              <button type="button" class="ds-dropdown-item active" role="option" data-rad-dir="repeated"><span>Repeated</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rad-dir="alternated"><span>Alternated</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-rad-dir="undefined"><span>Undefined</span></button>
-            </div>
-          </div>
-        </div>
-
-        <div id="rad-ringshape-block" class="ds-field">
-          <div class="ds-label">Ring shape</div>
-          <div class="ds-dropdown" data-select>
-          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Circle</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-          <div class="ds-dropdown-menu hidden" role="listbox">
-            <button type="button" class="ds-dropdown-item active" role="option" data-rad-shape="circle"><span>Circle</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-rad-shape="triangle"><span>Triangle</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-rad-shape="square"><span>Square</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-rad-shape="pentagon"><span>Pentagon</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-rad-shape="hexagon"><span>Hexagon</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-rad-shape="octagon"><span>Octagon</span></button>
-          </div>
-        </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Open center</div>
-          <div class="ds-slider">
-            <input type="range" id="input-layout-open" min="0" max="90" step="1" value="0">
-            <input type="text" id="num-layout-open" class="ds-value" value="0%" inputmode="decimal">
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Ring rotation</div>
-          <div class="ds-slider">
-            <input type="range" id="input-layout-ringrot" min="-90" max="90" step="1" value="0">
-            <input type="text" id="num-layout-ringrot" class="ds-value" value="0º" inputmode="decimal">
-          </div>
-        </div>
-        <div class="ds-toggles">
-          <label id="rad-raysbycont-item" class="ds-toggle-item hidden" title="Actual size: every ring gets as many rays as fit the container's width, so the cells are as big as the container">
-            <span class="ds-toggle-label">Rays follow container</span>
-            <input type="checkbox" id="chk-rad-raysbycont" class="ds-checkbox">
-          </label>
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Clip cell</span>
-            <input type="checkbox" id="chk-rad-clip" class="ds-checkbox">
-          </label>
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Checkerboard inversion</span>
-            <input type="checkbox" id="chk-rad-checker" class="ds-checkbox">
-          </label>
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Visible lines</span>
-            <input type="checkbox" id="chk-rad-gridlines" class="ds-checkbox">
-          </label>
-        </div>
-
-        <div id="rad-lines-block" class="ds-stack hidden">
-          <p class="ds-hint">Lines are part of the design and are exported.</p>
-
-        <div id="rad-linewidth-block" class="ds-field">
-          <div class="ds-label">Line width</div>
-          <div class="ds-slider">
-            <input type="range" id="input-layout-radline" min="0.5" max="10" step="0.5" value="1">
-            <input type="text" id="num-layout-radline" class="ds-value" value="1px" inputmode="decimal">
-          </div>
-        </div>
-
-          <div class="ds-color-row" id="radline-accent-row">
-            <span class="ds-color-label">Line color</span>
-            <span class="ds-color-hex" id="radline-accent-hex">#18181F</span>
-            <span class="ds-swatch">
-              <input type="color" id="radline-accent-color" value="#18181f">
-              <span class="ds-swatch-fill" id="radline-accent-swatch"></span>
-            </span>
-          </div>
-        </div>
-          </div>
-        </details>
-        </div>
       </div>
 
       <!-- ===================================================================
@@ -746,86 +386,6 @@
           </button>
         </div>
 
-        <div id="warning-similarity-grid" class="ds-snackbar hidden" role="status">
-          <i class="ph-fill ph-warning"></i>
-          <p>Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.</p>
-        </div>
-
-        <div id="similarity-controls-group" class="ds-stack">
-        <div class="ds-field">
-          <div class="ds-label">Visual kinship type</div>
-          <div class="ds-dropdown" data-select>
-          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Elastic</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-          <div class="ds-dropdown-menu hidden" role="listbox">
-            <button type="button" class="ds-dropdown-item active" role="option" data-kinship-type="distortion"><span>Elastic</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-kinship-type="foreshortening"><span>3D tilt</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-kinship-type="rotation_wobble"><span>Wobble</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-kinship-type="scale_kinship"><span>Scale</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-kinship-type="hybrid"><span>Hybrid</span></button>
-          </div>
-        </div>
-        </div>
-
-          <div class="ds-field">
-            <div class="ds-label ds-label-clip">Fluctuation intensity</div>
-            <div class="ds-slider">
-              <input type="range" id="input-sim-intensity" min="0" max="100" step="1" value="50">
-              <input type="text" id="num-sim-intensity" class="ds-value" value="50%" inputmode="decimal">
-            </div>
-          </div>
-        <details id="sim-advanced" class="ds-advanced">
-          <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced</span></summary>
-          <div class="ds-stack">
-        <div class="ds-field">
-          <div class="ds-label">Association (family of shapes)</div>
-          <div class="ds-dropdown" data-select>
-          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>None</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-          <div class="ds-dropdown-menu hidden" role="listbox">
-            <button type="button" class="ds-dropdown-item active" role="option" data-sim-assoc="none"><span>None</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-sim-assoc="round"><span>Round</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-sim-assoc="angular"><span>Angular</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-sim-assoc="lines"><span>Lines</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-sim-assoc="characters"><span>Characters</span></button>
-          </div>
-        </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Imperfection</div>
-          <div class="ds-dropdown" data-select>
-          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>None</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-          <div class="ds-dropdown-menu hidden" role="listbox">
-            <button type="button" class="ds-dropdown-item active" role="option" data-sim-imperf="none"><span>None</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-sim-imperf="cut"><span>Cut</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-sim-imperf="broken"><span>Broken</span></button>
-          </div>
-        </div>
-        </div>
-
-          <div class="ds-field">
-            <div class="ds-label ds-label-clip">Spatial cell jitter</div>
-            <div class="ds-slider">
-              <input type="range" id="input-sim-jitter" min="0" max="90" step="1" value="0">
-              <input type="text" id="num-sim-jitter" class="ds-value" value="0%" inputmode="decimal">
-            </div>
-          </div>
-          <div id="sim-assoc-block" class="ds-field hidden">
-            <div class="ds-label ds-label-clip">Association mix</div>
-            <div class="ds-slider">
-              <input type="range" id="input-sim-assoc-mix" min="0" max="100" step="1" value="50">
-              <input type="text" id="num-sim-assoc-mix" class="ds-value" value="50%" inputmode="decimal">
-            </div>
-          </div>
-          <div id="sim-imperf-block" class="ds-field hidden">
-            <div class="ds-label ds-label-clip">Imperfect modules</div>
-            <div class="ds-slider">
-              <input type="range" id="input-sim-imperf-amount" min="0" max="100" step="1" value="30">
-              <input type="text" id="num-sim-imperf-amount" class="ds-value" value="30%" inputmode="decimal">
-            </div>
-          </div>
-          </div>
-        </details>
-        </div>
       </div>
 
       <!-- ===================================================================
@@ -847,138 +407,6 @@
           </button>
         </div>
 
-        <!-- Dependency banner: Gradation ON but no Repetition / Radiation in this layer -->
-        <div id="warning-gradation-grid" class="ds-snackbar hidden" role="status">
-          <i class="ph-fill ph-warning"></i>
-          <p>Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.</p>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Attribute</div>
-          <div class="ds-dropdown" data-select>
-          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Rotate</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-          <div class="ds-dropdown-menu hidden" role="listbox">
-            <button type="button" class="ds-dropdown-item active" role="option" data-grad-type="rotation"><span>Rotate</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-grad-type="scale"><span>Scale</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-grad-type="depth"><span>Depth</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-grad-type="drift"><span>Drift</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-grad-type="shape"><span>Shape</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-grad-type="texture"><span>Texture</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-grad-type="color"><span>Color</span></button>
-          </div>
-        </div>
-        </div>
-
-        <div id="grad-color-block" class="ds-field hidden">
-          <div class="ds-color-row" id="grad-accent-row">
-            <span class="ds-color-label">End color</span>
-            <span class="ds-color-hex" id="grad-accent-hex">#F43F5E</span>
-            <span class="ds-swatch">
-              <input type="color" id="grad-accent-color" value="#f43f5e">
-              <span class="ds-swatch-fill" id="grad-accent-swatch"></span>
-            </span>
-          </div>
-        </div>
-
-        <div id="grad-target-block" class="ds-field hidden">
-          <div class="ds-label">Becomes</div>
-                    <div class="ds-dropdown" data-select>
-            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><i class="ph ph-triangle" aria-hidden="true"></i><span>Triangle</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-            <div class="ds-dropdown-menu hidden" role="listbox">
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="circle"><i class="ph ph-circle" aria-hidden="true"></i><span>Circle</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="square"><i class="ph ph-square" aria-hidden="true"></i><span>Square</span></button>
-              <button type="button" class="ds-dropdown-item active" role="option" data-grad-target="triangle"><i class="ph ph-triangle" aria-hidden="true"></i><span>Triangle</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="line"><i class="ph ph-minus" aria-hidden="true"></i><span>Line</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="cross"><i class="ph ph-plus" aria-hidden="true"></i><span>Greek Cross</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="ring"><svg class="ph-svg" viewBox="0 0 256 256" aria-hidden="true"><circle cx="128" cy="128" r="104" fill="none" stroke="currentColor" stroke-width="16"/><circle cx="128" cy="128" r="52" fill="none" stroke="currentColor" stroke-width="16"/></svg><span>Ring</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="semicircle"><i class="ph ph-circle-half" aria-hidden="true"></i><span>Semicircle</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="quarter"><i class="ph ph-chart-pie-slice" aria-hidden="true"></i><span>Quarter Circle</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="crescent"><i class="ph ph-subset-proper-of" aria-hidden="true"></i><span>Crescent</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="wave"><i class="ph ph-tilde" aria-hidden="true"></i><span>Sine Wave</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="spiral"><i class="ph ph-spiral" aria-hidden="true"></i><span>Spiral</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="arrow"><i class="ph ph-arrow-fat-up" aria-hidden="true"></i><span>Arrow</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="pentagon"><i class="ph ph-pentagon" aria-hidden="true"></i><span>Pentagon</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="hexagon"><i class="ph ph-hexagon" aria-hidden="true"></i><span>Hexagon</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="octagon"><i class="ph ph-octagon" aria-hidden="true"></i><span>Octagon</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="star"><i class="ph ph-star" aria-hidden="true"></i><span>Star</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="letterA"><span class="ph-glyph" aria-hidden="true">A</span><span>Letter A</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="letterS"><span class="ph-glyph" aria-hidden="true">S</span><span>Letter S</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="letterR"><span class="ph-glyph" aria-hidden="true">R</span><span>Letter R</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="digit1"><i class="ph ph-number-one" aria-hidden="true"></i><span>Number 1</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="digit5"><i class="ph ph-number-five" aria-hidden="true"></i><span>Number 5</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-grad-target="digit9"><i class="ph ph-number-nine" aria-hidden="true"></i><span>Number 9</span></button>
-            </div>
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Pathway direction</div>
-          <div class="ds-dropdown" data-select>
-          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Diagonal</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-          <div class="ds-dropdown-menu hidden" role="listbox">
-            <button type="button" class="ds-dropdown-item active" role="option" data-grad-pathway="diagonal"><span>Diagonal</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-grad-pathway="horizontal"><span>Horizontal</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-grad-pathway="vertical"><span>Vertical</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-grad-pathway="concentric"><span>Concentric</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-grad-pathway="zigzag"><span>Zigzag</span></button>
-          </div>
-        </div>
-        </div>
-
-          <div class="ds-field">
-            <div class="ds-label">Range</div>
-            <div class="ds-slider">
-              <input type="range" id="input-grad-range" min="5" max="360" step="5" value="180">
-              <input type="text" id="num-grad-range" class="ds-value" value="180º" inputmode="numeric">
-            </div>
-          </div>
-          <div class="ds-field">
-            <div class="ds-label">Cycles</div>
-            <div class="ds-slider">
-              <input type="range" id="input-grad-steps" min="1" max="10" step="1" value="1">
-              <input type="text" id="num-grad-steps" class="ds-value" value="1" inputmode="numeric">
-            </div>
-          </div>
-        <details id="grad-advanced" class="ds-advanced">
-          <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced</span></summary>
-          <div class="ds-stack">
-        <div class="ds-field">
-          <div class="ds-label">Sequence</div>
-          <div class="ds-dropdown" data-select>
-          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Restart</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-          <div class="ds-dropdown-menu hidden" role="listbox">
-            <button type="button" class="ds-dropdown-item active" role="option" data-grad-sequence="restart"><span>Restart</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-grad-sequence="pingpong"><span>Ping-pong</span></button>
-          </div>
-        </div>
-        </div>
-
-
-
-          <div class="ds-field">
-            <div class="ds-label">Speed</div>
-            <div class="ds-slider">
-              <input type="range" id="input-grad-easing" min="-100" max="100" step="5" value="0">
-              <input type="text" id="num-grad-easing" class="ds-value" value="0" inputmode="numeric">
-            </div>
-          </div>
-
-
-
-
-        <div class="ds-toggles">
-        <label class="ds-toggle-item">
-          <span class="ds-toggle-label">Alternate rows</span>
-          <input type="checkbox" id="toggle-grad-alternate" class="ds-checkbox">
-        </label>
-
-        <label class="ds-toggle-item">
-          <span class="ds-toggle-label">Reverse Gradient Direction</span>
-          <input type="checkbox" id="toggle-grad-reverse" class="ds-checkbox">
-        </label>
-        </div>
-          </div>
-        </details>
       </div>
 
       <!-- ===================================================================
@@ -1000,138 +428,6 @@
           </button>
         </div>
 
-        <!-- Dependency banner: Anomaly ON but no Repetition / Radiation in this layer -->
-        <div id="warning-anomaly-grid" class="ds-snackbar hidden" role="status">
-          <i class="ph-fill ph-warning"></i>
-          <p>Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.</p>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Type</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-anom-type="focal">Focal</button>
-            <button type="button" class="ds-tag" data-anom-type="fracture">Rupture</button>
-            <button type="button" class="ds-tag" data-anom-type="swell">Swell</button>
-            <button type="button" class="ds-tag" data-anom-type="tear">Void</button>
-            <button type="button" class="ds-tag" data-anom-type="regrid">Another grid</button>
-          </div>
-        </div>
-
-        <div id="anom-zonegrid-block" class="ds-field hidden">
-          <div class="ds-label">Grid inside the zone</div>
-          <div class="ds-dropdown" data-select>
-          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Brick</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-          <div class="ds-dropdown-menu hidden" role="listbox">
-            <button type="button" class="ds-dropdown-item active" role="option" data-anom-zonegrid="sliding"><span>Brick</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-anom-zonegrid="sheared"><span>Diagonal</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-anom-zonegrid="curved"><span>Curved</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-anom-zonegrid="zigzag"><span>Zigzag</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-anom-zonegrid="triangular"><span>Triangular</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-anom-zonegrid="alternating"><span>Alternating</span></button>
-          </div>
-        </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Distribution</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-anom-dist="single">Single</button>
-            <button type="button" class="ds-tag" data-anom-dist="regular">Scattered regular</button>
-            <button type="button" class="ds-tag" data-anom-dist="random">Scattered random</button>
-          </div>
-        </div>
-
-        <div id="anom-attrs-block" class="ds-field">
-          <div class="ds-label">Deviates in</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-anom-attr="shape">Shape</button>
-            <button type="button" class="ds-tag active" data-anom-attr="scale">Scale</button>
-            <button type="button" class="ds-tag active" data-anom-attr="rotation">Rotation</button>
-            <button type="button" class="ds-tag active" data-anom-attr="position">Position</button>
-          </div>
-        </div>
-
-        <div id="anom-shape-block" class="ds-field">
-          <div class="ds-label">Focal Intruder Shape</div>
-                    <div class="ds-dropdown" data-select>
-            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><i class="ph ph-triangle" aria-hidden="true"></i><span>Triangle</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-            <div class="ds-dropdown-menu hidden" role="listbox">
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="circle"><i class="ph ph-circle" aria-hidden="true"></i><span>Circle</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="square"><i class="ph ph-square" aria-hidden="true"></i><span>Square</span></button>
-              <button type="button" class="ds-dropdown-item active" role="option" data-anom-shape="triangle"><i class="ph ph-triangle" aria-hidden="true"></i><span>Triangle</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="line"><i class="ph ph-minus" aria-hidden="true"></i><span>Line</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="cross"><i class="ph ph-plus" aria-hidden="true"></i><span>Greek Cross</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="ring"><svg class="ph-svg" viewBox="0 0 256 256" aria-hidden="true"><circle cx="128" cy="128" r="104" fill="none" stroke="currentColor" stroke-width="16"/><circle cx="128" cy="128" r="52" fill="none" stroke="currentColor" stroke-width="16"/></svg><span>Ring</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="semicircle"><i class="ph ph-circle-half" aria-hidden="true"></i><span>Semicircle</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="quarter"><i class="ph ph-chart-pie-slice" aria-hidden="true"></i><span>Quarter Circle</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="crescent"><i class="ph ph-subset-proper-of" aria-hidden="true"></i><span>Crescent</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="wave"><i class="ph ph-tilde" aria-hidden="true"></i><span>Sine Wave</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="spiral"><i class="ph ph-spiral" aria-hidden="true"></i><span>Spiral</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="arrow"><i class="ph ph-arrow-fat-up" aria-hidden="true"></i><span>Arrow</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="pentagon"><i class="ph ph-pentagon" aria-hidden="true"></i><span>Pentagon</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="hexagon"><i class="ph ph-hexagon" aria-hidden="true"></i><span>Hexagon</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="octagon"><i class="ph ph-octagon" aria-hidden="true"></i><span>Octagon</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="star"><i class="ph ph-star" aria-hidden="true"></i><span>Star</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="letterA"><span class="ph-glyph" aria-hidden="true">A</span><span>Letter A</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="letterS"><span class="ph-glyph" aria-hidden="true">S</span><span>Letter S</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="letterR"><span class="ph-glyph" aria-hidden="true">R</span><span>Letter R</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="digit1"><i class="ph ph-number-one" aria-hidden="true"></i><span>Number 1</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="digit5"><i class="ph ph-number-five" aria-hidden="true"></i><span>Number 5</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-anom-shape="digit9"><i class="ph ph-number-nine" aria-hidden="true"></i><span>Number 9</span></button>
-            </div>
-          </div>
-        </div>
-
-        <div id="anom-position-block" class="ds-stack">
-          <p class="ds-hint">Click anywhere on the canvas to set focal point</p>
-        </div>
-
-          <div id="anom-count-block" class="ds-field hidden">
-            <div class="ds-label">Count</div>
-            <div class="ds-slider">
-              <input type="range" id="input-anom-count" min="1" max="10" step="1" value="5">
-              <input type="text" id="num-anom-count" class="ds-value" value="5" inputmode="numeric">
-            </div>
-          </div>
-
-          <div id="anom-seed-block" class="ds-field hidden">
-            <div class="ds-label">Seed</div>
-            <div class="ds-slider">
-              <input type="range" id="input-anom-seed" min="1" max="99" step="1" value="7">
-              <input type="text" id="num-anom-seed" class="ds-value" value="7" inputmode="numeric">
-            </div>
-          </div>
-
-          <div class="ds-field">
-            <div class="ds-label">Radius</div>
-            <div class="ds-slider">
-              <input type="range" id="input-anom-radius" min="10" max="350" step="5" value="150">
-              <input type="text" id="num-anom-radius" class="ds-value" value="150px" inputmode="numeric">
-            </div>
-          </div>
-          <div id="anom-severity-block" class="ds-field">
-            <div class="ds-label">Severity</div>
-            <div class="ds-slider">
-              <input type="range" id="input-anom-intensity" min="5" max="100" step="1" value="60">
-              <input type="text" id="num-anom-intensity" class="ds-value" value="60%" inputmode="numeric">
-            </div>
-          </div>
-
-        <div class="ds-toggles">
-          <div class="ds-color-row" id="anom-accent-row">
-            <span class="ds-color-label">Accent color</span>
-            <span class="ds-color-hex" id="anom-accent-hex">#F43F5E</span>
-            <span class="ds-swatch">
-              <input type="color" id="anom-accent-color" value="#f43f5e">
-              <span class="ds-swatch-fill" id="anom-accent-swatch"></span>
-            </span>
-            <button type="button" class="ds-color-clear" id="anom-accent-clear" aria-label="Remove accent color" title="Remove accent color"><i class="ph ph-x" aria-hidden="true"></i></button>
-          </div>
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Show focal point</span>
-            <input type="checkbox" id="toggle-anom-reticle" class="ds-checkbox">
-          </label>
-        </div>
       </div>
 
       <!-- ===================================================================
@@ -1153,126 +449,6 @@
           </button>
         </div>
 
-        <!-- Dependency banner: Contrast ON but no Repetition / Radiation in this layer -->
-        <div id="warning-contrast-grid" class="ds-snackbar hidden" role="status">
-          <i class="ph-fill ph-warning"></i>
-          <p>Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.</p>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Dimension</div>
-          <div class="ds-dropdown" data-select>
-          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Scale</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-          <div class="ds-dropdown-menu hidden" role="listbox">
-            <button type="button" class="ds-dropdown-item active" role="option" data-contrast-dimension="scale"><span>Scale</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-contrast-dimension="shape"><span>Shape</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-contrast-dimension="direction"><span>Angle</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-contrast-dimension="position"><span>Position</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-contrast-dimension="tone"><span>Tone</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-contrast-dimension="texture"><span>Texture</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-contrast-dimension="space"><span>Space</span></button>
-          </div>
-        </div>
-        </div>
-
-        <div class="ds-field" id="contrast-shape-block">
-          <div class="ds-label">Minority Shape</div>
-                    <div class="ds-dropdown" data-select>
-            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><i class="ph ph-plus" aria-hidden="true"></i><span>Greek Cross</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-            <div class="ds-dropdown-menu hidden" role="listbox">
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="circle"><i class="ph ph-circle" aria-hidden="true"></i><span>Circle</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="square"><i class="ph ph-square" aria-hidden="true"></i><span>Square</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="triangle"><i class="ph ph-triangle" aria-hidden="true"></i><span>Triangle</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="line"><i class="ph ph-minus" aria-hidden="true"></i><span>Line</span></button>
-              <button type="button" class="ds-dropdown-item active" role="option" data-contrast-shape="cross"><i class="ph ph-plus" aria-hidden="true"></i><span>Greek Cross</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="ring"><svg class="ph-svg" viewBox="0 0 256 256" aria-hidden="true"><circle cx="128" cy="128" r="104" fill="none" stroke="currentColor" stroke-width="16"/><circle cx="128" cy="128" r="52" fill="none" stroke="currentColor" stroke-width="16"/></svg><span>Ring</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="semicircle"><i class="ph ph-circle-half" aria-hidden="true"></i><span>Semicircle</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="quarter"><i class="ph ph-chart-pie-slice" aria-hidden="true"></i><span>Quarter Circle</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="crescent"><i class="ph ph-subset-proper-of" aria-hidden="true"></i><span>Crescent</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="wave"><i class="ph ph-tilde" aria-hidden="true"></i><span>Sine Wave</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="spiral"><i class="ph ph-spiral" aria-hidden="true"></i><span>Spiral</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="arrow"><i class="ph ph-arrow-fat-up" aria-hidden="true"></i><span>Arrow</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="pentagon"><i class="ph ph-pentagon" aria-hidden="true"></i><span>Pentagon</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="hexagon"><i class="ph ph-hexagon" aria-hidden="true"></i><span>Hexagon</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="octagon"><i class="ph ph-octagon" aria-hidden="true"></i><span>Octagon</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="star"><i class="ph ph-star" aria-hidden="true"></i><span>Star</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="letterA"><span class="ph-glyph" aria-hidden="true">A</span><span>Letter A</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="letterS"><span class="ph-glyph" aria-hidden="true">S</span><span>Letter S</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="letterR"><span class="ph-glyph" aria-hidden="true">R</span><span>Letter R</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="digit1"><i class="ph ph-number-one" aria-hidden="true"></i><span>Number 1</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="digit5"><i class="ph ph-number-five" aria-hidden="true"></i><span>Number 5</span></button>
-              <button type="button" class="ds-dropdown-item" role="option" data-contrast-shape="digit9"><i class="ph ph-number-nine" aria-hidden="true"></i><span>Number 9</span></button>
-            </div>
-          </div>
-        </div>
-
-        <div class="ds-field" id="contrast-spread-block">
-          <div class="ds-label">Minority spread</div>
-          <div class="ds-dropdown" data-select>
-          <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Scattered</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
-          <div class="ds-dropdown-menu hidden" role="listbox">
-            <button type="button" class="ds-dropdown-item active" role="option" data-contrast-spread="scattered"><span>Scattered</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-contrast-spread="balanced"><span>Balanced</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-contrast-spread="edge"><span>Toward the edges</span></button>
-            <button type="button" class="ds-dropdown-item" role="option" data-contrast-spread="center"><span>Toward the center</span></button>
-          </div>
-        </div>
-        </div>
-
-          <div id="contrast-dominance-block" class="ds-field">
-            <div class="ds-label ds-label-clip">Dominance ratio</div>
-            <div class="ds-slider">
-              <input type="range" id="input-contrast-dominance" min="50" max="95" step="1" value="80">
-              <input type="text" id="num-contrast-dominance" class="ds-value" value="80%" inputmode="decimal">
-            </div>
-          </div>
-          <div id="contrast-scale-block" class="ds-field">
-            <div class="ds-label ds-label-clip">Contrast Scale Multiplier</div>
-            <div class="ds-slider">
-              <input type="range" id="input-contrast-scale" min="0.2" max="5" step="0.1" value="2">
-              <input type="text" id="num-contrast-scale" class="ds-value" value="2x" inputmode="decimal">
-            </div>
-          </div>
-          <div id="contrast-tone-block" class="ds-field hidden">
-            <div class="ds-label ds-label-clip">Tone</div>
-            <div class="ds-slider">
-              <input type="range" id="input-contrast-tone" min="0" max="100" step="5" value="50">
-              <input type="text" id="num-contrast-tone" class="ds-value" value="50%" inputmode="decimal">
-            </div>
-          </div>
-          <div id="contrast-shift-block" class="ds-field hidden">
-            <div class="ds-label ds-label-clip">Shift</div>
-            <div class="ds-slider">
-              <input type="range" id="input-contrast-shift" min="0" max="50" step="1" value="25">
-              <input type="text" id="num-contrast-shift" class="ds-value" value="25%" inputmode="decimal">
-            </div>
-          </div>
-          <div id="contrast-shiftangle-block" class="ds-field hidden">
-            <div class="ds-label ds-label-clip">Shift direction</div>
-            <div class="ds-slider">
-              <input type="range" id="input-contrast-shiftangle" min="0" max="360" step="5" value="45">
-              <input type="text" id="num-contrast-shiftangle" class="ds-value" value="45º" inputmode="decimal">
-            </div>
-          </div>
-          <div id="contrast-angle-block" class="ds-field hidden">
-            <div class="ds-label ds-label-clip">Clash Angle</div>
-            <div class="ds-slider">
-              <input type="range" id="input-contrast-angle" min="5" max="90" step="5" value="45">
-              <input type="text" id="num-contrast-angle" class="ds-value" value="45º" inputmode="decimal">
-            </div>
-          </div>
-
-        <div class="ds-toggles">
-          <div class="ds-color-row" id="contrast-accent-row">
-            <span class="ds-color-label">Accent color</span>
-            <span class="ds-color-hex" id="contrast-accent-hex">#F43F5E</span>
-            <span class="ds-swatch">
-              <input type="color" id="contrast-accent-color" value="#f43f5e">
-              <span class="ds-swatch-fill" id="contrast-accent-swatch"></span>
-            </span>
-            <button type="button" class="ds-color-clear" id="contrast-accent-clear" aria-label="Remove accent color" title="Remove accent color"><i class="ph ph-x" aria-hidden="true"></i></button>
-          </div>
-        </div>
       </div>
 
       <!-- ===================================================================
@@ -1294,96 +470,6 @@
           </button>
         </div>
 
-        <!-- Dependency banner: Concentration ON but no Repetition / Radiation in this layer -->
-        <div id="warning-concentration-grid" class="ds-snackbar hidden" role="status">
-          <i class="ph-fill ph-warning"></i>
-          <p>Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.</p>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Structure</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-conc-mode="point">Point</button>
-            <button type="button" class="ds-tag" data-conc-mode="void">Void</button>
-            <button type="button" class="ds-tag" data-conc-mode="line">Line</button>
-            <button type="button" class="ds-tag" data-conc-mode="line_void">Away from line</button>
-            <button type="button" class="ds-tag" data-conc-mode="free">Hotspots</button>
-            <button type="button" class="ds-tag" data-conc-mode="dense">Dense</button>
-            <button type="button" class="ds-tag" data-conc-mode="sparse">Sparse</button>
-          </div>
-        </div>
-
-        <div id="conc-method-block" class="ds-field">
-          <div class="ds-label">Method</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-conc-method="move">Move</button>
-            <button type="button" class="ds-tag" data-conc-method="absence">Absence</button>
-          </div>
-        </div>
-
-        <div id="conc-axis-block" class="ds-field hidden">
-          <div class="ds-label">Line axis</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-conc-axis="horizontal">Horizontal</button>
-            <button type="button" class="ds-tag" data-conc-axis="vertical">Vertical</button>
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label">Field style</div>
-          <div class="ds-tags" role="group" aria-label="Field style">
-            <button type="button" id="conc-fade-block" class="ds-tag hidden" data-conc-flag="edgeFade" aria-pressed="false">Soft edge</button>
-            <button type="button" class="ds-tag" data-conc-flag="alignToField" aria-pressed="false">Flowing</button>
-            <button type="button" class="ds-tag" data-conc-flag="densityScale" aria-pressed="false">Dynamic density</button>
-          </div>
-        </div>
-
-        <div class="ds-stack">
-        <div id="conc-foci-block" class="ds-field hidden">
-          <div class="ds-label">Foci</div>
-          <div class="ds-slider">
-            <input type="range" id="input-conc-foci" min="2" max="8" step="1" value="2">
-            <input type="text" id="num-conc-foci" class="ds-value" value="2" inputmode="decimal">
-          </div>
-        </div>
-          <div class="ds-field">
-            <div class="ds-label ds-label-clip">X position</div>
-            <div class="ds-slider">
-              <input type="range" id="input-conc-x" min="0" max="100" step="1" value="50">
-              <input type="text" id="num-conc-x" class="ds-value" value="50%" inputmode="numeric">
-            </div>
-          </div>
-          <div class="ds-field">
-            <div class="ds-label ds-label-clip">Y position</div>
-            <div class="ds-slider">
-              <input type="range" id="input-conc-y" min="0" max="100" step="1" value="50">
-              <input type="text" id="num-conc-y" class="ds-value" value="50%" inputmode="numeric">
-            </div>
-          </div>
-          <p class="ds-hint">Click anywhere on the canvas to reposition the attractor</p>
-        </div>
-
-          <div class="ds-field">
-            <div class="ds-label ds-label-clip">Gathering pull</div>
-            <div class="ds-slider">
-              <input type="range" id="input-conc-power" min="10" max="100" step="1" value="50">
-              <input type="text" id="num-conc-power" class="ds-value" value="50%" inputmode="numeric">
-            </div>
-          </div>
-          <div id="conc-radius-field" class="ds-field">
-            <div class="ds-label ds-label-clip">Field radius</div>
-            <div class="ds-slider">
-              <input type="range" id="input-conc-radius" min="10" max="500" step="5" value="250">
-              <input type="text" id="num-conc-radius" class="ds-value" value="250px" inputmode="numeric">
-            </div>
-          </div>
-
-        <div class="ds-toggles">
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Display Attractor Guide</span>
-            <input type="checkbox" id="toggle-conc-guide" class="ds-checkbox">
-          </label>
-        </div>
       </div>
 
       <!-- ===================================================================
@@ -1406,60 +492,6 @@
           </button>
         </div>
 
-        <div class="ds-field">
-          <div class="ds-label">Jitter</div>
-          <div class="ds-slider">
-            <input type="range" id="input-texture-jitter" min="0" max="100" step="1" value="10">
-            <input type="text" id="num-texture-jitter" class="ds-value" value="10%" inputmode="numeric">
-          </div>
-        </div>
-        <div class="ds-field">
-          <div class="ds-label">Line skipping</div>
-          <div class="ds-slider">
-            <input type="range" id="input-texture-skip" min="0" max="90" step="1" value="10">
-            <input type="text" id="num-texture-skip" class="ds-value" value="10%" inputmode="numeric">
-          </div>
-        </div>
-        <div class="ds-field">
-          <div class="ds-label">Random lines</div>
-          <div class="ds-slider">
-            <input type="range" id="input-texture-crossing" min="0" max="100" step="1" value="10">
-            <input type="text" id="num-texture-crossing" class="ds-value" value="10%" inputmode="numeric">
-          </div>
-        </div>
-        <div class="ds-field">
-          <div class="ds-label">Plane wave</div>
-          <div class="ds-slider">
-            <input type="range" id="input-texture-undulation" min="0" max="100" step="1" value="30">
-            <input type="text" id="num-texture-undulation" class="ds-value" value="30%" inputmode="numeric">
-          </div>
-        </div>
-        <details id="texture-advanced" class="ds-advanced">
-          <summary><i class="ph ph-caret-down" aria-hidden="true"></i><span>Advanced</span></summary>
-          <div class="ds-stack">
-        <div class="ds-field">
-          <div class="ds-label">Random lines opacity</div>
-          <div class="ds-slider">
-            <input type="range" id="input-texture-hairopacity" min="10" max="100" step="1" value="85">
-            <input type="text" id="num-texture-hairopacity" class="ds-value" value="85%" inputmode="numeric">
-          </div>
-        </div>
-        <div class="ds-field">
-          <div class="ds-label">Waves</div>
-          <div class="ds-slider">
-            <input type="range" id="input-texture-waves" min="1" max="6" step="1" value="2">
-            <input type="text" id="num-texture-waves" class="ds-value" value="2" inputmode="numeric">
-          </div>
-        </div>
-        <div class="ds-field">
-          <div class="ds-label">Wave direction</div>
-          <div class="ds-slider">
-            <input type="range" id="input-texture-waveangle" min="0" max="360" step="5" value="0">
-            <input type="text" id="num-texture-waveangle" class="ds-value" value="0º" inputmode="numeric">
-          </div>
-        </div>
-          </div>
-        </details>
       </div>
 
       <!-- ===================================================================
@@ -1482,45 +514,6 @@
           </button>
         </div>
 
-        <div class="ds-field">
-          <div class="ds-label">Mode</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-space-mode="isometric">Isometric</button>
-            <button type="button" class="ds-tag" data-space-mode="foreshortening">3D tilt</button>
-            <button type="button" class="ds-tag" data-space-mode="fluctuating">Fluctuating</button>
-            <button type="button" class="ds-tag" data-space-mode="conflicting">Paradox</button>
-          </div>
-        </div>
-
-          <div class="ds-field">
-            <div class="ds-label ds-label-clip">Extrusion depth</div>
-            <div class="ds-slider">
-              <input type="range" id="input-space-depth" min="5" max="100" step="1" value="20">
-              <input type="text" id="num-space-depth" class="ds-value" value="20%" inputmode="numeric">
-            </div>
-          </div>
-          <div class="ds-field">
-            <div class="ds-label ds-label-clip">Projection angle</div>
-            <div class="ds-slider">
-              <input type="range" id="input-space-angle" min="-180" max="180" step="1" value="30">
-              <input type="text" id="num-space-angle" class="ds-value" value="30º" inputmode="numeric">
-            </div>
-          </div>
-
-          <div class="ds-field">
-            <div class="ds-label ds-label-clip">Facet shading contrast</div>
-            <div class="ds-slider">
-              <input type="range" id="input-space-shading" min="5" max="100" step="1" value="50">
-              <input type="text" id="num-space-shading" class="ds-value" value="50%" inputmode="numeric">
-            </div>
-          </div>
-
-        <div class="ds-toggles">
-          <label class="ds-toggle-item">
-            <span class="ds-toggle-label">Display 30º Isometric Grid Lines</span>
-            <input type="checkbox" id="toggle-space-guides" class="ds-checkbox">
-          </label>
-        </div>
       </div>
 
     </div>
@@ -1529,7 +522,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=6f1dd2ce"></script>
+  <script src="js/bundle-pro.js?v=430a1d3b"></script>
 
 </body>
 </html>

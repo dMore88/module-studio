@@ -20,22 +20,21 @@ Estado a 7 oct 2026, leído del código (`index.html`, `js/studio/studio-engine.
 - **En pantalla** el lienzo se ajusta al alto libre de la ventana (marco blanco de 20 px alrededor) y su ancho sale de la proporción; el ancho tiene un tope para no pasar bajo el panel de controles (300 px + 24 de aire). El lienzo nunca baja de 120 px de alto interior (160 de ancho exterior). Pantalla y dibujo son lo mismo, a otra escala.
 - **No hay margen de seguridad:** el margen del lienzo vale 0, y todo lo que queda fuera del borde se corta.
 
-### 1.2 Fit to canvas: hasta dónde llega el módulo
+### 1.2 Fit to canvas: el módulo y su celda
 
-En Fit, columnas y filas dividen el lienzo y el módulo **se escala con su celda**:
+**Vocabulario:** el **módulo** es la pieza de papel que se repite (*Module width / height*, con sus shapes dibujadas encima y cortadas en su borde); la **celda** es el espacio de la retícula que lo recibe; el **composition container** es la hoja donde se reparten las celdas.
 
-> tamaño dibujado = Width × (celda ÷ lienzo)
+En Fit, columnas y filas dividen el composition container (por defecto, todo el lienzo). Hay dos formas de tratar el módulo (*Module scale*, en *Advanced*):
 
-Por eso un módulo con **Width igual al lado del lienzo (600 en 1:1) llena exactamente su celda**. Con la retícula de 4 × 4 (celdas de 150 px) un Width de 100 se dibuja de 25 px, el 16,7 % de su celda. Dicho de otra forma, **el Width es el tamaño que tendría el módulo si la celda fuera todo el lienzo**.
+- **Base size** (por defecto): el módulo **conserva su tamaño en px**. Un módulo de 100 px en celdas de 150 px se ve de 100 px; si es mayor que la celda, se solapa con los vecinos o, con *Clip cell*, se corta en la celda.
+- **Shrink with cell:** el módulo **se escala con su celda**: tamaño dibujado = ancho del módulo × (celda ÷ lienzo). Con 4 × 4 celdas de 150 px, un módulo de 100 se dibuja de 25 px. Es lo que hacía la app antes de *Base size*; los proyectos antiguos se abren así.
 
-| Qué | Valor | Equivale a (1:1) |
+| Qué | Valor | Nota |
 | :-- | :-- | :-- |
-| Width / Height mínimo | 1 px | 0,17 % de la celda (un punto) |
-| Width / Height que llena la celda | = lado del lienzo (600) | 100 % de la celda |
-| Width / Height máximo | 2000 px | 333 % de la celda (el módulo se sale de ella y de sus vecinos) |
+| Módulo (ancho y alto) | 10 a 1000 px | 100 × 100 por defecto; 10 evita celdas degeneradas |
 | Módulos máximos | 100 columnas × 100 filas | 10 000 |
 | Radial | 3 a 60 rayos × 2 a 20 anillos | de 6 a 1 200 módulos |
-| **Alcance del radial en Fit** | el último anillo termina al **50 % del lado menor** del lienzo (un círculo inscrito que toca el borde); en *Multi-center* al **37 %**, para que los focos (a 35 % del radio) queden dentro | Es una constante del código (`refR`), no un límite de los sliders. Cambió el 6 oct 2026: antes era 42 % y 32 %, con un margen de 8 % por lado. La retícula siempre llena el lienzo porque sus celdas lo cubren por completo |
+| **Alcance del radial en Fit** | el último anillo termina al **50 % del lado menor** del composition container (un círculo inscrito que toca el borde); en *Multi-center* al **37 %**, para que los focos (a 35 % del radio) queden dentro | Es una constante del código (`refR`), no un límite de los sliders |
 
 **Topes internos, en porcentaje.** El "5 %" que aparece en varios sitios es un piso del código, no del slider:
 - Cada columna o fila, con *Col ratio* y *Col gradation*, no puede ser menor que el **5 %** de su tamaño base ni mayor que **20 veces** (`0,05 a 20`).
@@ -46,15 +45,14 @@ Por eso un módulo con **Width igual al lado del lienzo (600 en 1:1) llena exact
 
 ### 1.3 Actual size: hasta dónde puede llegar
 
-En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda es el contenedor**, repetida columnas × filas veces en un bloque centrado en el lienzo.
+En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda es el módulo**, repetida columnas × filas veces en una cuadrícula centrada en el composition container, que **corta** lo que sobresale de su borde.
 
 | Qué | Valor | Nota |
 | :-- | :-- | :-- |
-| Módulo | 1 a 2000 px | 1:1, sin escalar |
-| Contenedor (= celda) | 10 a 2000 px | Por defecto 100 × 100: al pasar a Actual size **conserva su tamaño** (así los módulos del mismo tamaño no se solapan). Solo un proyecto antiguo con el contenedor en 0 ("todo el lienzo") empieza del tamaño de una celda de Fit |
-| Celda mínima al dibujar | 10 px | coincide con el mínimo del contenedor |
-| Bloque máximo | 100 × 2000 = **200 000 px** de ancho y de alto | solo se ve lo que cae en el lienzo |
-| Lo que se ve | el centro del bloque, recortado al borde del lienzo | con 9 columnas de 200 px solo caben unas 3 |
+| Módulo (= celda) | 10 a 1000 px | 100 × 100 por defecto: al pasar a Actual size **conserva su tamaño** (así los módulos del mismo tamaño no se solapan) |
+| Celda mínima al dibujar | 10 px | coincide con el mínimo del módulo |
+| Cuadrícula máxima | 100 × 1000 = **100 000 px** de ancho y de alto | solo se ve lo que cae dentro del composition container y del lienzo |
+| Lo que se ve | el centro de la cuadrícula, recortado al borde del composition container (y del lienzo) | con 9 columnas de 200 px solo caben unas 3 |
 
 ### 1.4 Otras medidas relevantes
 
@@ -63,8 +61,9 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 | Capas | 1 a 5 |
 | Deshacer | 60 pasos |
 | Trazo | 0,2 a 10 px |
-| Desplazamiento del módulo (Offset X/Y) | −1000 a 1000 px |
-| Rotación | 0º a 360º (pasos de 0,5º) |
+| Rotación del módulo | 0º a 360º (pasos de 0,5º) |
+| Rotación de una shape | −180º a 180º (pasos de 1º) |
+| Shapes por módulo | 1 a 4 |
 | Líneas visibles | 0,5 a 10 px |
 | Rendimiento (dibujo completo, medido) | 900 módulos 9 ms · 3 600 → 32 ms · 10 000 → 213 ms · con Texture 3 600 → 147 ms |
 
@@ -74,23 +73,34 @@ En Actual el módulo se dibuja a su tamaño real (1 px por unidad) y la **celda 
 
 El **valor por defecto** es el que tiene el control al abrir la app o al encender su panel. Las unidades (px, %, º, ×) son las que muestra la caja de valor.
 
-### Module
+### Module (el editor: shapes y módulo)
+**Shapes** (de 1 a 4; ancho, alto y posición en px, desde el centro del módulo):
 | Control | Mín. | Máx. | Paso | Por defecto | Razón |
 | :-- | :-- | :-- | :-- | :-- | :-- |
-| Stroke width | 0,2 px | 10 px | 0,1 px | 1 px | Del hilo casi invisible al trazo grueso, sin que el trazo se coma el módulo. |
-| Width | 1 px | 2000 px | 1 px | 100 px | 1 permite el punto (concepto de punto de Wong); 2000 permite módulos tres veces mayores que el lienzo (fondos, recortes). |
-| Height | 1 px | 2000 px | 1 px | 100 px | Igual que Width; la línea no usa Height. |
-| Rotation | 0º | 360º | 0,5º | 0º | Vuelta completa; el medio grado afina la alineación. |
-| Offset X / Y | −1000 px | 1000 px | 1 px | 0 px | Cubre el lienzo de un lado al otro con holgura (el lienzo mide 450 a 800 px) y permite sacar el módulo del lienzo. |
-| Container width / height | 10 px | 2000 px | 1 px | 100 px | Marco en el que se compone el módulo; 10 px evita celdas degeneradas. Por defecto del tamaño del módulo, para verlo de un vistazo. |
+| Stroke width (de la shape) | 0,2 px | 10 px | 0,1 px | 1 px (el del módulo) | Del hilo casi invisible al trazo grueso, sin que el trazo se coma la shape. Cada shape tiene el suyo; *Stroke / Fill* y el color también son de cada shape. |
+| Shape width | 1 px | 2000 px | 1 px | 100 px (la primera); la mitad del módulo (las nuevas) | 1 permite el punto (concepto de punto de Wong); 2000 permite una shape mucho mayor que el módulo, que el borde corta. |
+| Shape height | 1 px | 2000 px | 1 px | 100 px (la primera); la mitad del módulo (las nuevas) | Igual que Width; la línea no usa Height. |
+| Shape position X / Y | −1000 px | 1000 px | 1 px | 0 px | Desde el centro del módulo; permite sacar la shape del módulo para que el borde la corte (módulo excéntrico y recortado). |
+| Shape rotation | −180º | 180º | 1º | 0º | Gira la shape sobre su centro. |
+| Relation › Direction | 0º | 360º | 1º | 0º | Hacia dónde se coloca la shape respecto a la anterior (0º derecha, 90º abajo). Solo con la relación *Distance*. |
+| Relation › Gap | −500 px | 500 px | 1 px | 0 px (se tocan) | Separación entre los contornos: negativa solapa (penetración), positiva separa. Cubre de una shape bien dentro de la otra a bien lejos. |
 
-### Layout › Block
-Vale para Repetition y Radiation; es el rectángulo del lienzo donde vive el layout de la capa, justo debajo del diseño del modo activo. Se muestra en px del lienzo (600 × 600 en 1:1) y por dentro se guarda en %. En Actual size solo cuenta el desfase.
+**Módulo** (la pieza de papel):
+| Control | Mín. | Máx. | Paso | Por defecto | Razón |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| Module width / height | 10 px | 1000 px | 1 px | 100 px | El tamaño de la pieza que se repite; 10 evita celdas degeneradas y 1000 supera cualquier canvas (máximo 800 px). |
+
+### Layout › Module rotation y Composition container
+| Control | Mín. | Máx. | Paso | Por defecto | Razón |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| Module rotation | 0º | 360º | 0,5º | 0º | Gira la pieza entera dentro de su celda; el medio grado afina la alineación. Vive en Layout porque es cómo se coloca la pieza, no parte de su canvas. |
+
+Vale para Repetition y Radiation; es la hoja de papel del canvas donde vive el layout de la capa, justo debajo del diseño del modo activo, y **corta** lo que sobresale de su borde (también en Actual size). Se muestra en px del lienzo (600 × 600 en 1:1) y por dentro se guarda en %.
 
 | Control | Mín. | Máx. | Paso | Por defecto | Razón |
 | :-- | :-- | :-- | :-- | :-- | :-- |
-| Block width / height | 10 px | 2000 px | 1 px | tamaño del lienzo (600 px en 1:1) | Tamaño del bloque en Fit y Radiation; más grande que el lienzo da fondos sangrados. |
-| Block offset X / Y | −1000 px | 1000 px | 1 px | 0 px | Desfase del centro del bloque respecto al centro del lienzo, como el Offset de Module. |
+| Composition container width / height | 10 px | 2000 px | 1 px | tamaño del lienzo (600 px en 1:1) | Tamaño de la hoja; más grande que el lienzo da fondos sangrados. |
+| Composition container offset X / Y | −1000 px | 1000 px | 1 px | 0 px | Desfase del centro de la hoja respecto al centro del lienzo. |
 
 ### Layout › Repetition
 | Control | Mín. | Máx. | Paso | Por defecto | Razón |
@@ -154,7 +164,7 @@ Vale para Repetition y Radiation; es el rectángulo del lienzo donde vive el lay
 ### Concentration
 | Control | Mín. | Máx. | Paso | Por defecto | Razón |
 | :-- | :-- | :-- | :-- | :-- | :-- |
-| Foci (Hotspots) | 2 | 8 | 1 | 2 | Focos de Hotspots; con 1 es el modo Point. |
+| Number of hotspots | 2 | 8 | 1 | 2 | Focos de Hotspots; con 1 es el modo Point. |
 | X / Y position | 0 % | 100 % | 1 % | 50 % / 50 % | El atractor puede ir hasta el borde o la esquina del lienzo. Con varios focos, estos mueven solo el primero. |
 | Gathering pull | 10 % | 100 % | 1 % | 50 % | Fuerza de atracción; 10 % deja una atracción muy sutil. |
 | Field radius | 10 px | 500 px | 5 px | 250 px | Alcance del campo; 10 px sirve para composiciones de módulos pequeños. |
@@ -184,7 +194,7 @@ Jitter y Plane wave se muestran de 0 % a 100 %; por dentro se guardan en px para
 ## 3. Valores por defecto
 
 ### Al abrir la app
-Una sola capa (**Layer 1**): círculo, trazo (no relleno), color `#18181f`, trazo 1 px, **Width 100 × Height 100**, rotación 0°, desplazamientos 0, **contenedor 100 × 100** (del tamaño del módulo, para verlo de un vistazo), *Show container* encendido, *Clip container* apagado. Layout y los siete modificadores, apagados. Proporción 1:1, guías de cuadrícula encendidas, color de guías `#f24822`.
+Una sola capa (**Layer 1**): un módulo de **100 × 100 px** con un círculo, trazo (no relleno), color `#18181f`, trazo 1 px, rotación 0°. El módulo no corta hasta que se abre y se guarda en el editor (ver STUDIO_CONTROLS_GUIDE, 3.1). Layout y los siete modificadores, apagados. Proporción 1:1, guías de cuadrícula encendidas, color de guías `#f24822`.
 
 ### Cuando se enciende cada control
 
@@ -201,4 +211,4 @@ Una sola capa (**Layer 1**): círculo, trazo (no relleno), color `#18181f`, traz
 | **Concentration** | Point, Move, atractor en el centro (50 %, 50 %), Gathering pull 50 %, Field radius 250, 2 focos, eje horizontal, flujo y densidad apagados, guía del atractor apagada |
 | **Texture** | Jitter 10 %, Line skipping 10 %, Random lines 10 %, Plane wave 30 % (2 ondas, 0º) |
 | **Space** | Isometric, Extrusion depth 20 %, Projection angle 30º, Shading 50 %, guías isométricas apagadas |
-| **Hide modifiers** | apagado; solo actúa con el panel Module abierto |
+| **Module scale** (Layout, Fit) | Base size (los proyectos antiguos se abren con Shrink with cell) |

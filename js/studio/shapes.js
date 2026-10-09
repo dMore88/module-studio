@@ -1,3 +1,4 @@
+import { regionBoolean, contourArea } from './booleans.js';
 // The shapes available in the studio, in the order of the shape grid (6 per row).
 // `phIcon` is the Phosphor icon name, rendered with the regular weight (`ph ph-<name>`); the ring has no Phosphor icon
 // and the letters show their own glyph (see `glyph`).
@@ -57,6 +58,45 @@ function pathShape(opsFor) {
       return `<path d="${d}" />`;
     }
   };
+}
+
+// ---- Letters and numbers as filled outlines ----
+// Copied from the design (Figma, "Module studio" shapes), not drawn as strokes: they have an area, so they fill, combine with
+// other shapes and take Space and Texture like any other shape. Each glyph is `w` x `h` (the height is 100), absolute SVG path
+// commands (M L H V C Z); it is drawn with its height equal to the shape's size and centred.
+const GLYPHS = {
+  "A": { w: 89, h: 100, d: "M15.9432 100H0L35.8236 0H53.1764L89 100H73.0568L44.9132 18.1641H44.1354L15.9432 100ZM18.6166 60.8398H70.3348V73.5352H18.6166V60.8398Z" },
+  "S": { w: 72, h: 100, d: "M56.5984 26.8246C56.0945 22.3381 54.0157 18.8626 50.3622 16.3981C46.7087 13.9021 42.1102 12.654 36.5669 12.654C32.5984 12.654 29.1654 13.2859 26.2677 14.5498C23.3701 15.782 21.1181 17.4882 19.5118 19.6682C17.937 21.8167 17.1496 24.2654 17.1496 27.0142C17.1496 29.3207 17.685 31.3112 18.7559 32.9858C19.8583 34.6603 21.2913 36.0663 23.0551 37.2038C24.8504 38.3096 26.7717 39.2417 28.8189 40C30.8661 40.7267 32.8346 41.327 34.7244 41.8009L44.1732 44.2654C47.2598 45.0237 50.4252 46.0506 53.6693 47.346C56.9134 48.6414 59.9213 50.3475 62.6929 52.4645C65.4646 54.5814 67.7008 57.2038 69.4016 60.3318C71.1339 63.4597 72 67.2038 72 71.564C72 77.0616 70.5827 81.9431 67.748 86.2085C64.9449 90.4739 60.8661 93.8389 55.5118 96.3033C50.189 98.7678 43.748 100 36.189 100C28.9449 100 22.6772 98.8468 17.3858 96.5403C12.0945 94.2338 7.95276 90.9637 4.96063 86.7299C1.9685 82.4645 0.31496 77.4092 0 71.564H14.6457C14.9291 75.0711 16.063 77.9937 18.0472 80.3318C20.063 82.6382 22.6299 84.3602 25.748 85.4976C28.8976 86.6035 32.3465 87.1564 36.0945 87.1564C40.2205 87.1564 43.8898 86.5087 47.1024 85.2133C50.3465 83.8863 52.8976 82.0537 54.7559 79.7156C56.6142 77.346 57.5433 74.5814 57.5433 71.4218C57.5433 68.5466 56.7244 66.1927 55.0866 64.3602C53.4803 62.5276 51.2913 61.0111 48.5197 59.8104C45.7795 58.6098 42.6772 57.5513 39.2126 56.6351L27.7795 53.5071C20.0315 51.3902 13.8898 48.278 9.35433 44.1706C4.85039 40.0632 2.59843 34.6288 2.59843 27.8673C2.59843 22.2749 4.11024 17.3934 7.13386 13.2227C10.1575 9.05213 14.252 5.81359 19.4173 3.50711C24.5827 1.16904 30.4094 0 36.8976 0C43.4488 0 49.2283 1.15324 54.2362 3.45972C59.2756 5.7662 63.2441 8.94155 66.1417 12.9858C69.0394 16.9984 70.5512 21.6114 70.6772 26.8246H56.5984Z" },
+  "R": { w: 74, h: 100, d: "M0 100V0H35.6098C43.3496 0 49.7724 1.33464 54.878 4.00391C60.0163 6.67318 63.8537 10.3678 66.3902 15.0879C68.9268 19.7754 70.1951 25.1953 70.1951 31.3477C70.1951 37.4674 68.9106 42.8548 66.3415 47.5098C63.8049 52.1322 59.9675 55.7292 54.8293 58.3008C49.7236 60.8724 43.3008 62.1582 35.561 62.1582H8.58537V49.1699H34.1951C39.0732 49.1699 43.0406 48.4701 46.0976 47.0703C49.187 45.6706 51.4471 43.6361 52.878 40.9668C54.3089 38.2975 55.0244 35.0911 55.0244 31.3477C55.0244 27.5716 54.2927 24.3001 52.8293 21.5332C51.3984 18.7663 49.1382 16.6504 46.0488 15.1856C42.9919 13.6882 38.9756 12.9395 34 12.9395H15.0732V100H0ZM49.3171 54.8828L74 100H56.8293L32.6341 54.8828H49.3171Z" },
+  "1": { w: 40, h: 100, d: "M40 0V100H24.7291V15.1367H24.1379L0 30.7617V16.3086L25.1724 0H40Z" },
+  "5": { w: 66, h: 100, d: "M32.1843 100C26.1727 100 20.7687 98.8439 15.9722 96.5318C11.2078 94.1875 7.40256 90.9762 4.55665 86.8979C1.71074 82.8195 0.191859 78.1631 0 72.9287H14.3894C14.7412 77.1676 16.6118 80.6519 20.0013 83.3815C23.3908 86.1111 27.4518 87.4759 32.1843 87.4759C35.9575 87.4759 39.2991 86.6089 42.2089 84.8748C45.1508 83.1085 47.4531 80.684 49.1159 77.6012C50.8106 74.5183 51.658 71.0019 51.658 67.052C51.658 63.0379 50.7946 59.4573 49.0679 56.3102C47.3412 53.1631 44.9589 50.6904 41.9212 48.8921C38.9154 47.0938 35.4619 46.1785 31.5608 46.1464C28.587 46.1464 25.5972 46.6602 22.5914 47.6879C19.5856 48.7155 17.1554 50.0642 15.3007 51.7341L1.72673 49.711L7.24267 0H61.2509V12.7649H19.5696L16.4519 40.3661H17.0275C18.9461 38.5035 21.4882 36.9461 24.6539 35.6936C27.8515 34.4412 31.273 33.815 34.9183 33.815C40.8979 33.815 46.222 35.2441 50.8906 38.1021C55.5911 40.9602 59.2844 44.8619 61.9704 49.8073C64.6884 54.7206 66.0314 60.3725 65.9994 66.763C66.0314 73.1535 64.5925 78.8536 61.6826 83.8632C58.8047 88.8728 54.8077 92.8227 49.6914 95.7129C44.6072 98.571 38.7715 100 32.1843 100Z" },
+  "9": { w: 69, h: 100, d: "M33.6251 0.00200128C37.9445 0.0336873 42.2008 0.825814 46.3941 2.37838C50.5874 3.93095 54.3708 6.46575 57.7443 9.98279C61.1494 13.4998 63.8609 18.2526 65.8787 24.2411C67.928 30.1978 68.9685 37.6122 69 46.484C69 55.0072 68.1487 62.5958 66.4462 69.2497C64.7437 75.8718 62.3002 81.4642 59.1158 86.0269C55.963 90.5895 52.1323 94.0591 47.6237 96.4354C43.1151 98.8118 38.0391 100 32.3955 100C26.6258 100 21.5024 98.8593 17.0254 96.578C12.5483 94.2967 8.90678 91.144 6.10075 87.12C3.29472 83.0643 1.54489 78.4066 0.851268 73.1469H15.2755C16.2214 77.3293 18.1446 80.7197 21.0452 83.3178C23.9774 85.8843 27.7608 87.1676 32.3955 87.1676C39.4894 87.1676 45.0226 84.0624 48.9952 77.8522C52.9678 71.6102 54.9698 62.8968 55.0014 51.712H54.2447C52.6052 54.4369 50.5559 56.7816 48.0966 58.7461C45.669 60.7105 42.9417 62.2314 39.915 63.3087C36.8883 64.386 33.6566 64.9247 30.22 64.9247C24.6395 64.9247 19.5634 63.5464 14.9918 60.7898C10.4202 58.0332 6.77861 54.2468 4.06717 49.4307C1.35572 44.6145 0 39.1172 0 32.9386C0 26.7917 1.38725 21.2151 4.16175 16.2089C6.96779 11.2027 10.8773 7.24204 15.8903 4.32701C20.9349 1.3803 26.8465 -0.0613707 33.6251 0.00200128ZM33.6724 12.3592C29.9836 12.3592 26.6573 13.278 23.6936 15.1158C20.7615 16.9218 18.4441 19.3774 16.7416 22.4825C15.0391 25.556 14.1878 28.978 14.1878 32.7485C14.1878 36.519 15.0075 39.941 16.647 43.0144C18.318 46.0562 20.5881 48.4801 23.4572 50.2862C26.3578 52.0605 29.6683 52.9477 33.3886 52.9477C36.1631 52.9477 38.7485 52.4091 41.1446 51.3318C43.5408 50.2545 45.6374 48.7653 47.4345 46.8642C49.2317 44.9314 50.6347 42.7451 51.6436 40.3054C52.6525 37.8656 53.157 35.2991 53.157 32.6059C53.157 29.0255 52.3057 25.6986 50.6032 22.6251C48.9321 19.5517 46.6306 17.0802 43.6984 15.2108C40.7663 13.3097 37.4243 12.3592 33.6724 12.3592Z" }
+};
+
+const glyphCache = {};
+function glyphOps(key) {
+  if (glyphCache[key]) return glyphCache[key];
+  const g = GLYPHS[key];
+  const tokens = g.d.match(/[MLHVCZ]|-?\d*\.?\d+(?:e-?\d+)?/g);
+  const nx = (x) => (x - g.w / 2) / g.h, ny = (y) => (y - g.h / 2) / g.h; // the height becomes 1, centred on the middle
+  const ops = [];
+  let i = 0, cx = 0, cy = 0, cmd = "";
+  const num = () => parseFloat(tokens[i++]);
+  while (i < tokens.length) {
+    if (/[MLHVCZ]/.test(tokens[i])) cmd = tokens[i++];
+    if (cmd === "Z") { ops.push(["Z"]); continue; }
+    if (cmd === "M" || cmd === "L") { cx = num(); cy = num(); ops.push([cmd, nx(cx), ny(cy)]); if (cmd === "M") cmd = "L"; }
+    else if (cmd === "H") { cx = num(); ops.push(["L", nx(cx), ny(cy)]); }
+    else if (cmd === "V") { cy = num(); ops.push(["L", nx(cx), ny(cy)]); }
+    else if (cmd === "C") { const a = num(), b = num(), c = num(), d = num(); cx = num(); cy = num(); ops.push(["C", nx(a), ny(b), nx(c), ny(d), nx(cx), ny(cy)]); }
+  }
+  glyphCache[key] = ops;
+  return ops;
+}
+
+function glyphShape(key) {
+  const scaled = (size) => glyphOps(key).map(([op, ...a]) => [op, ...a.map(v => v * size)]);
+  return pathShape(scaled);
 }
 
 export const Shapes = {
@@ -199,7 +239,7 @@ export const Shapes = {
       const r = size * 0.45;
       return `<path d="M 0 ${r} A ${r} ${r} 0 0 1 0 ${-r} C ${r*0.4} ${-r*0.8} ${r*0.4} ${r*0.8} 0 ${r} Z" />`;
     },
-    phIcon: "subset-proper-of"
+    phIcon: "moon"
   },
 
 
@@ -235,60 +275,25 @@ export const Shapes = {
 
   digit1: {
     id: "digit1",
-    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Digit 1",
     category: "symbolic",
-    draw(ctx, size) {
-      const s = size;
-      ctx.beginPath();
-      ctx.moveTo(-0.17 * s, -0.2 * s);
-      ctx.lineTo(0.03 * s, -0.4 * s);
-      ctx.lineTo(0.03 * s, 0.4 * s);
-    },
-    svgPath(size) {
-      const s = size;
-      return `<path d="M ${-0.17*s} ${-0.2*s} L ${0.03*s} ${-0.4*s} L ${0.03*s} ${0.4*s}" fill="none" stroke="currentColor" stroke-width="${s*0.14}" stroke-linecap="round" stroke-linejoin="round" />`;
-    },
+    ...glyphShape("1"),
     phIcon: "number-one"
   },
 
   digit5: {
     id: "digit5",
-    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Digit 5",
     category: "symbolic",
-    draw(ctx, size) {
-      const s = size;
-      ctx.beginPath();
-      ctx.moveTo(0.2 * s, -0.4 * s);
-      ctx.lineTo(-0.17 * s, -0.4 * s);
-      ctx.lineTo(-0.21 * s, -0.02 * s);
-      ctx.bezierCurveTo(0.0 * s, -0.14 * s, 0.3 * s, -0.04 * s, 0.3 * s, 0.17 * s);
-      ctx.bezierCurveTo(0.3 * s, 0.4 * s, 0.0 * s, 0.46 * s, -0.24 * s, 0.3 * s);
-    },
-    svgPath(size) {
-      const s = size;
-      return `<path d="M ${0.2*s} ${-0.4*s} L ${-0.17*s} ${-0.4*s} L ${-0.21*s} ${-0.02*s} C ${0} ${-0.14*s} ${0.3*s} ${-0.04*s} ${0.3*s} ${0.17*s} C ${0.3*s} ${0.4*s} ${0} ${0.46*s} ${-0.24*s} ${0.3*s}" fill="none" stroke="currentColor" stroke-width="${s*0.14}" stroke-linecap="round" stroke-linejoin="round" />`;
-    },
+    ...glyphShape("5"),
     phIcon: "number-five"
   },
 
   digit9: {
     id: "digit9",
-    skeleton: true, // open path: drawn as a stroke (thick stroke in fill mode)
     name: "Digit 9",
     category: "symbolic",
-    draw(ctx, size) {
-      const s = size;
-      ctx.beginPath();
-      ctx.arc(0, -0.15 * s, 0.22 * s, 0, Math.PI * 2);
-      ctx.moveTo(0.22 * s, -0.15 * s);
-      ctx.bezierCurveTo(0.22 * s, 0.2 * s, 0.1 * s, 0.4 * s, -0.2 * s, 0.4 * s);
-    },
-    svgPath(size) {
-      const s = size;
-      return `<path d="M ${0.22*s} ${-0.15*s} A ${0.22*s} ${0.22*s} 0 1 1 ${-0.22*s} ${-0.15*s} A ${0.22*s} ${0.22*s} 0 1 1 ${0.22*s} ${-0.15*s} M ${0.22*s} ${-0.15*s} C ${0.22*s} ${0.2*s} ${0.1*s} ${0.4*s} ${-0.2*s} ${0.4*s}" fill="none" stroke="currentColor" stroke-width="${s*0.14}" stroke-linecap="round" stroke-linejoin="round" />`;
-    },
+    ...glyphShape("9"),
     phIcon: "number-nine"
   },
 
@@ -377,28 +382,25 @@ export const Shapes = {
 
   letterA: {
     id: "letterA",
-    skeleton: true, // letters are drawn as strokes, like the numbers
     name: "Letter A",
     category: "symbolic",
-    ...pathShape((s) => [["M", -0.28 * s, 0.4 * s], ["L", 0, -0.4 * s], ["L", 0.28 * s, 0.4 * s], ["M", -0.17 * s, 0.12 * s], ["L", 0.17 * s, 0.12 * s]]),
+    ...glyphShape("A"),
     glyph: "A"
   },
 
   letterS: {
     id: "letterS",
-    skeleton: true,
     name: "Letter S",
     category: "symbolic",
-    ...pathShape((s) => [["M", 0.24 * s, -0.26 * s], ["C", 0.12 * s, -0.43 * s, -0.26 * s, -0.43 * s, -0.26 * s, -0.19 * s], ["C", -0.26 * s, 0.03 * s, 0.26 * s, -0.03 * s, 0.26 * s, 0.2 * s], ["C", 0.26 * s, 0.44 * s, -0.12 * s, 0.44 * s, -0.25 * s, 0.26 * s]]),
+    ...glyphShape("S"),
     glyph: "S"
   },
 
   letterR: {
     id: "letterR",
-    skeleton: true,
     name: "Letter R",
     category: "symbolic",
-    ...pathShape((s) => [["M", -0.2 * s, 0.4 * s], ["L", -0.2 * s, -0.4 * s], ["L", 0.05 * s, -0.4 * s], ["C", 0.3 * s, -0.4 * s, 0.3 * s, 0.02 * s, 0.05 * s, 0.02 * s], ["L", -0.2 * s, 0.02 * s], ["M", 0.03 * s, 0.02 * s], ["L", 0.26 * s, 0.4 * s]]),
+    ...glyphShape("R"),
     glyph: "R"
   }
 };
@@ -416,8 +418,10 @@ const FLAT_SPACING = 1.5; // dense sampling step at the reference size
 const flatCache = {};
 
 // Records a shape's draw() commands into dense polylines at the reference size.
-export function flattenShape(shapeDef) {
-  if (!shapeDef.noCache && flatCache[shapeDef.id]) return flatCache[shapeDef.id];
+// `refSize` and `spacing` are for outlines that need a different density (the boolean operations sample at the real size)
+export function flattenShape(shapeDef, refSize = FLAT_REF_SIZE, spacing = FLAT_SPACING) {
+  const standard = refSize === FLAT_REF_SIZE && spacing === FLAT_SPACING;
+  if (standard && !shapeDef.noCache && flatCache[shapeDef.id]) return flatCache[shapeDef.id];
 
   const subpaths = [];
   let cur = null;
@@ -434,7 +438,7 @@ export function flattenShape(shapeDef) {
     if (!cur) { startSub(x, y); return; }
     const dx = x - last.x, dy = y - last.y;
     const len = Math.hypot(dx, dy);
-    const n = Math.max(1, Math.ceil(len / FLAT_SPACING));
+    const n = Math.max(1, Math.ceil(len / spacing));
     for (let i = 1; i <= n; i++) {
       const t = i / n;
       cur.pts.push({ x: last.x + dx * t, y: last.y + dy * t, c: i === n });
@@ -444,7 +448,8 @@ export function flattenShape(shapeDef) {
   const bezier = (c1x, c1y, c2x, c2y, x, y) => {
     if (!cur) startSub(c1x, c1y);
     const x0 = last.x, y0 = last.y;
-    const steps = 28;
+    // the usual density keeps 28 steps; a finer outline (for the boolean operations) follows the length of the curve
+    const steps = standard ? 28 : Math.max(12, Math.min(240, Math.ceil((Math.hypot(c1x - x0, c1y - y0) + Math.hypot(c2x - c1x, c2y - c1y) + Math.hypot(x - c2x, y - c2y)) / spacing)));
     for (let i = 1; i <= steps; i++) {
       const t = i / steps, m = 1 - t;
       cur.pts.push({
@@ -456,39 +461,59 @@ export function flattenShape(shapeDef) {
     last = { x, y };
   };
 
+  // The recorder keeps its own transform (translate / rotate / scale / save / restore), so a composite shape can place its
+  // figures; every point is mapped through it before it is stored
+  let M = [1, 0, 0, 1, 0, 0];
+  const stack = [];
+  const T = (x, y) => ({ x: M[0] * x + M[2] * y + M[4], y: M[1] * x + M[3] * y + M[5] });
   const rec = {
     beginPath() { cur = null; },
-    moveTo(x, y) { startSub(x, y); },
-    lineTo,
+    save() { stack.push(M.slice()); },
+    restore() { if (stack.length) M = stack.pop(); },
+    translate(tx, ty) { M = [M[0], M[1], M[2], M[3], M[0] * tx + M[2] * ty + M[4], M[1] * tx + M[3] * ty + M[5]]; },
+    rotate(a) {
+      const c = Math.cos(a), s = Math.sin(a);
+      M = [M[0] * c + M[2] * s, M[1] * c + M[3] * s, -M[0] * s + M[2] * c, -M[1] * s + M[3] * c, M[4], M[5]];
+    },
+    scale(sx, sy) { M = [M[0] * sx, M[1] * sx, M[2] * sy, M[3] * sy, M[4], M[5]]; },
+    moveTo(x, y) { const p = T(x, y); startSub(p.x, p.y); },
+    lineTo(x, y) { const p = T(x, y); lineTo(p.x, p.y); },
     closePath() { if (cur) { cur.closed = true; last = { x: first.x, y: first.y }; cur = null; } },
-    bezierCurveTo: bezier,
+    bezierCurveTo(c1x, c1y, c2x, c2y, x, y) {
+      const a = T(c1x, c1y), b = T(c2x, c2y), p = T(x, y);
+      bezier(a.x, a.y, b.x, b.y, p.x, p.y);
+    },
     quadraticCurveTo(cx, cy, x, y) {
-      const x0 = last ? last.x : cx, y0 = last ? last.y : cy;
-      bezier(x0 + (2 / 3) * (cx - x0), y0 + (2 / 3) * (cy - y0), x + (2 / 3) * (cx - x), y + (2 / 3) * (cy - y), x, y);
+      const c = T(cx, cy), p = T(x, y);
+      const x0 = last ? last.x : c.x, y0 = last ? last.y : c.y;
+      bezier(x0 + (2 / 3) * (c.x - x0), y0 + (2 / 3) * (c.y - y0), p.x + (2 / 3) * (c.x - p.x), p.y + (2 / 3) * (c.y - p.y), p.x, p.y);
     },
     arc(cx, cy, r, a0, a1, ccw = false) {
       let sweep = a1 - a0;
       if (!ccw && sweep < 0) sweep += Math.PI * 2 * Math.ceil(-sweep / (Math.PI * 2));
       if (ccw && sweep > 0) sweep -= Math.PI * 2 * Math.ceil(sweep / (Math.PI * 2));
       if (Math.abs(sweep) > Math.PI * 2) sweep = Math.sign(sweep) * Math.PI * 2;
-      const sx = cx + Math.cos(a0) * r, sy = cy + Math.sin(a0) * r;
-      if (cur) lineTo(sx, sy); else startSub(sx, sy);
-      const steps = Math.max(8, Math.ceil((Math.abs(sweep) * r) / FLAT_SPACING));
+      const s0 = T(cx + Math.cos(a0) * r, cy + Math.sin(a0) * r);
+      if (cur) lineTo(s0.x, s0.y); else startSub(s0.x, s0.y);
+      const steps = Math.max(8, Math.ceil((Math.abs(sweep) * r) / spacing));
       for (let i = 1; i <= steps; i++) {
         const a = a0 + (sweep * i) / steps;
-        cur.pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r, c: i === steps });
+        const q = T(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+        cur.pts.push({ x: q.x, y: q.y, c: i === steps });
       }
-      last = { x: cx + Math.cos(a0 + sweep) * r, y: cy + Math.sin(a0 + sweep) * r };
+      const e = T(cx + Math.cos(a0 + sweep) * r, cy + Math.sin(a0 + sweep) * r);
+      last = { x: e.x, y: e.y };
     },
     rect(x, y, w, h) {
-      startSub(x, y);
-      lineTo(x + w, y); lineTo(x + w, y + h); lineTo(x, y + h);
+      const a = T(x, y), b = T(x + w, y), c = T(x + w, y + h), d = T(x, y + h);
+      startSub(a.x, a.y);
+      lineTo(b.x, b.y); lineTo(c.x, c.y); lineTo(d.x, d.y);
       cur.closed = true;
       cur = null;
     }
   };
 
-  shapeDef.draw(rec, FLAT_REF_SIZE);
+  shapeDef.draw(rec, refSize);
 
   // Normalise: arc-length parameter u (0..1) per subpath, drop a duplicated closing point
   for (const sp of subpaths) {
@@ -511,8 +536,274 @@ export function flattenShape(shapeDef) {
     for (const pt of pts) pt.u /= len;
   }
 
-  if (!shapeDef.noCache) flatCache[shapeDef.id] = subpaths;
+  if (standard && !shapeDef.noCache) flatCache[shapeDef.id] = subpaths;
   return subpaths;
+}
+
+// ---- Container clip as geometry (Clip container) ----
+// The shape cut by the container, as a new shape: its outline is clipped to the container's rectangle BEFORE texture and space
+// work on it, so those effects are not cut themselves (they treat the cut module as the shape). A stroked outline keeps only its
+// arcs inside (no line along the cut); a filled one becomes a polygon closed along the container's edge.
+// `corners`: the four corners of the container, in the frame the shape is drawn in, as a share of `size0` (the size it is drawn at).
+export function clippedShape(shapeDef, corners, size0, strokeOnly) {
+  const r0 = size0 || 1;
+  const nc = corners.map(c => ({ x: c.x / r0, y: c.y / r0 }));
+  const key = `clip:${shapeDef.id}:${strokeOnly ? "s" : "f"}:${nc.map(c => `${Math.round(c.x * 1000)},${Math.round(c.y * 1000)}`).join(";")}`;
+  return {
+    id: key,
+    name: shapeDef.name,
+    noCache: true,
+    skeleton: shapeDef.skeleton,
+    textureRef: shapeDef.textureRef,
+    draw(ctx, size) {
+      const f = size / FLAT_REF_SIZE;
+      let q = nc.map(c => ({ x: c.x * size, y: c.y * size }));
+      let area = 0;
+      for (let i = 0; i < 4; i++) { const a = q[i], b = q[(i + 1) % 4]; area += a.x * b.y - b.x * a.y; }
+      if (area < 0) q = q.reverse(); // one orientation, so "inside" is the same side of every edge
+      const side = (a, b, p) => (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+      const edges = [0, 1, 2, 3].map(i => [q[i], q[(i + 1) % 4]]);
+      ctx.beginPath();
+      for (const sp of flattenShape(shapeDef)) {
+        const pts = sp.pts.map(p => ({ x: p.x * f, y: p.y * f }));
+        if (pts.length < 2) continue;
+        if (sp.closed && !strokeOnly && !shapeDef.skeleton) {
+          // Sutherland-Hodgman against the four edges
+          let poly = pts;
+          for (const [a, b] of edges) {
+            const out = [];
+            for (let i = 0; i < poly.length; i++) {
+              const p = poly[i], n = poly[(i + 1) % poly.length];
+              const sp1 = side(a, b, p), sn = side(a, b, n);
+              if (sp1 >= 0) out.push(p);
+              if ((sp1 >= 0) !== (sn >= 0)) { const k = sp1 / (sp1 - sn); out.push({ x: p.x + (n.x - p.x) * k, y: p.y + (n.y - p.y) * k }); }
+            }
+            poly = out;
+            if (poly.length === 0) break;
+          }
+          if (poly.length >= 3) { poly.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); }
+          continue;
+        }
+        // Outlines and open paths: keep the parts inside (Cyrus-Beck on every segment)
+        const line = sp.closed ? pts.concat([pts[0]]) : pts;
+        const runs = [];
+        let run = null, firstAtStart = false, lastOpen = false;
+        for (let i = 0; i < line.length - 1; i++) {
+          const p0 = line[i], p1 = line[i + 1];
+          let t0 = 0, t1 = 1, ok = true;
+          for (const [a, b] of edges) {
+            const f0 = side(a, b, p0), f1 = side(a, b, p1);
+            if (f0 < 0 && f1 < 0) { ok = false; break; }
+            if (f0 < 0) t0 = Math.max(t0, f0 / (f0 - f1));
+            else if (f1 < 0) t1 = Math.min(t1, f0 / (f0 - f1));
+          }
+          if (!ok || t0 > t1) { if (run) { runs.push(run); run = null; } lastOpen = false; continue; }
+          const at = (t) => ({ x: p0.x + (p1.x - p0.x) * t, y: p0.y + (p1.y - p0.y) * t });
+          if (i === 0 && t0 === 0) firstAtStart = true;
+          if (!run || t0 > 0) { if (run) runs.push(run); run = [at(t0)]; }
+          run.push(at(t1));
+          if (t1 < 1) { runs.push(run); run = null; lastOpen = false; } else lastOpen = true;
+        }
+        if (run) runs.push(run);
+        let closedWhole = false;
+        if (sp.closed && runs.length >= 1 && firstAtStart && lastOpen) {
+          if (runs.length === 1) closedWhole = true; // all of it is inside
+          else { const last = runs.pop(); runs[0] = last.concat(runs[0].slice(1)); } // the run that crosses the start of the outline
+        }
+        for (const r of runs) {
+          if (r.length < 2) continue;
+          r.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+          if (closedWhole) ctx.closePath();
+        }
+      }
+    }
+  };
+}
+
+// ---- Smart module (composite shape) ----
+// A module made of several figures, drawn as ONE shape: every modifier (texture, space, morph...) sees a single shape with
+// several outlines. A figure is { shape, width, height, x, y, rotation } in px, from the centre of the module's container
+// (the piece of paper); `ref` is the container's larger side, so the figures keep their proportions when the module is
+// scaled (by its cell, for example). Older figures were { shape, size, x, y, rotation } as a % of the module.
+const compositeCache = {};
+
+// Shapes related to the previous one (Wong's interrelation of forms, the placements): `relation` is "free" (the shape's own
+// x, y), "coincident" (same centre as the previous shape) or "distance" (placed in the direction `angle`, with `gap` px between
+// the two: 0 touching, positive apart, negative overlapping). The touching distance is measured on the outlines (the supports of
+// the two shapes along the direction), so it is exact for convex shapes and follows the convex hull of the others.
+function figureSupport(f, ux, uy) {
+  const def = Shapes[f.shape];
+  const w = f.width, h = f.height ?? f.width;
+  const m = f.shape === "line" ? w : Math.max(w, h);
+  if (!def || !(m > 0)) return 0;
+  const k = m / FLAT_REF_SIZE;
+  const flat = !!def.skeleton;
+  const sx = flat ? 1 : w / m, sy = flat ? 1 : h / m;
+  const a = ((f.rotation || 0) * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a);
+  let best = -Infinity;
+  for (const sp of flattenShape(def)) {
+    for (const p of sp.pts) {
+      const qx = p.x * k * sx, qy = p.y * k * sy;
+      const v = (qx * c - qy * s) * ux + (qx * s + qy * c) * uy;
+      if (v > best) best = v;
+    }
+  }
+  return best === -Infinity ? 0 : best;
+}
+
+const resolveCache = {};
+export function resolveFigures(figures) {
+  const key = JSON.stringify(figures);
+  if (resolveCache[key]) return resolveCache[key];
+  const out = [];
+  (figures || []).forEach((f0, i) => {
+    const f = { ...f0 };
+    const prev = out[i - 1];
+    if (i > 0 && prev && f.width !== undefined && f.relation === "coincident") {
+      f.x = prev.x; f.y = prev.y;
+    } else if (i > 0 && prev && f.width !== undefined && f.relation === "distance") {
+      const a = (((f.angle ?? 0) % 360) * Math.PI) / 180, ux = Math.cos(a), uy = Math.sin(a);
+      const d = figureSupport(prev, ux, uy) + figureSupport(f, -ux, -uy) + (f.gap || 0);
+      f.x = (prev.x || 0) + ux * d; f.y = (prev.y || 0) + uy * d;
+    }
+    out.push(f);
+  });
+  if (Object.keys(resolveCache).length > 200) for (const k of Object.keys(resolveCache)) delete resolveCache[k];
+  resolveCache[key] = out;
+  return out;
+}
+
+// A shape's outline as a region in module px: sampled at its real size, with its own width, height, turn and place
+function shapeRegion(f, def) {
+  const w = f.width, h = f.height ?? f.width;
+  const m = f.shape === "line" ? w : Math.max(w, h);
+  if (!(m > 0)) return [];
+  const sx = w / m, sy = h / m;
+  const a = ((f.rotation || 0) * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a);
+  const out = [];
+  for (const sp of flattenShape(def, m, Math.max(0.5, Math.min(3, m / 100)))) {
+    if (!sp.closed || sp.pts.length < 3) continue;
+    out.push(sp.pts.map(p => { const qx = p.x * sx, qy = p.y * sy; return { x: (f.x || 0) + qx * c - qy * s, y: (f.y || 0) + qx * s + qy * c }; }));
+  }
+  if (out.length < 2) return out;
+  // The outlines of one shape fill by the nonzero rule (as they are drawn): those that turn the way of the biggest one are solid,
+  // the others are holes. Solid ones can overlap (the bar of an A over its legs), so they are united first.
+  const areas = out.map(contourArea);
+  const big = areas.reduce((m, v) => (Math.abs(v) > Math.abs(m) ? v : m), 0);
+  const solids = out.filter((c, i) => areas[i] * big > 0), holes = out.filter((c, i) => areas[i] * big < 0);
+  let region = [solids[0]];
+  for (let i = 1; i < solids.length; i++) region = regionBoolean("union", region, [solids[i]]);
+  if (holes.length) {
+    let h = [holes[0]];
+    for (let i = 1; i < holes.length; i++) h = regionBoolean("union", h, [holes[i]]);
+    region = regionBoolean("subtract", region, h);
+  }
+  return region;
+}
+
+export function compositeShape(figures, ref = 100, combine = "none") {
+  const R = ref > 0 ? ref : 100;
+  const list = resolveFigures((figures || []).filter(f => f && Shapes[f.shape]).map(f => (f.width !== undefined ? f : {
+    shape: f.shape, width: ((f.size ?? 100) / 100) * R, height: ((f.size ?? 100) / 100) * R, x: ((f.x || 0) / 100) * R, y: ((f.y || 0) / 100) * R, rotation: f.rotation || 0
+  })));
+  const op = ["union", "subtract", "intersect", "xor"].includes(combine) ? combine : "none";
+  const key = "smart:" + op + ":" + Math.round(R * 1000) + ":" + JSON.stringify(list.map(f => [f.shape, f.width, f.height ?? f.width, f.x || 0, f.y || 0, f.rotation || 0]));
+  if (compositeCache[key]) return compositeCache[key];
+  // Where a figure goes when the module is drawn at `size`; a figure keeps its own proportions (like a shape in a module)
+  const place = (f, size) => {
+    const k = size / R;
+    const w = f.width * k, h = (f.height ?? f.width) * k;
+    const def = Shapes[f.shape];
+    const m = f.shape === "line" ? w : Math.max(w, h);
+    const flat = !!def.skeleton || m <= 0;
+    return { x: (f.x || 0) * k, y: (f.y || 0) * k, a: ((f.rotation || 0) * Math.PI) / 180, m, sx: flat ? 1 : w / m, sy: flat ? 1 : h / m };
+  };
+  // With a combine operation the shapes that have an area become ONE outline (union, subtract, intersect or exclude, in the order
+  // of the list: subtract takes the rest away from the first); shapes that are only a line stay as they are. Computed once.
+  let combined = null;
+  const buildCombined = () => {
+    if (combined) return combined;
+    const regions = [], rest = [];
+    for (const f of list) {
+      const def0 = Shapes[f.shape];
+      const region = def0.skeleton ? [] : shapeRegion(f, def0);
+      if (region.length) regions.push(region); else rest.push(f);
+    }
+    let result = regions[0] || [];
+    for (let i = 1; i < regions.length; i++) result = regionBoolean(op, result, regions[i]);
+    combined = { contours: result, rest };
+    return combined;
+  };
+  const def = {
+    id: key,
+    name: "Smart module",
+    category: "smart",
+    skeleton: list.length > 0 && list.every(f => !!Shapes[f.shape].skeleton),
+    draw(ctx, size) {
+      // One path for all the figures: a figure's own beginPath must not wipe the ones already added
+      // An arc that starts a figure must not be joined by a line to the end of the previous figure: when no outline is
+      // open, it starts at its own first point
+      let first = true, open = false;
+      const wrap = new Proxy(ctx, {
+        get(target, prop) {
+          if (prop === "beginPath") return () => { open = false; if (first) { target.beginPath(); first = false; } };
+          if (prop === "closePath") return () => { open = false; target.closePath(); };
+          if (prop === "moveTo" || prop === "lineTo" || prop === "bezierCurveTo" || prop === "quadraticCurveTo") {
+            return (...a) => { open = true; return target[prop](...a); };
+          }
+          if (prop === "arc") {
+            return (cx, cy, r, a0, a1, ccw) => {
+              if (!open) target.moveTo(cx + Math.cos(a0) * r, cy + Math.sin(a0) * r);
+              open = true;
+              return target.arc(cx, cy, r, a0, a1, ccw);
+            };
+          }
+          const v = target[prop];
+          return typeof v === "function" ? v.bind(target) : v;
+        },
+        set(target, prop, v) { target[prop] = v; return true; }
+      });
+      let drawn = list;
+      if (op === "none") {
+        wrap.beginPath();
+      } else {
+        const cmb = buildCombined(), k = size / R;
+        ctx.beginPath();
+        first = false;
+        for (const c of cmb.contours) {
+          c.forEach((p, i) => (i ? ctx.lineTo(p.x * k, p.y * k) : ctx.moveTo(p.x * k, p.y * k)));
+          ctx.closePath();
+        }
+        drawn = cmb.rest;
+      }
+      for (const f of drawn) {
+        const p = place(f, size);
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.a);
+        ctx.scale(p.sx, p.sy);
+        open = false;
+        Shapes[f.shape].draw(wrap, p.m);
+        ctx.restore();
+      }
+    },
+    svgPath(size) {
+      const r = (v) => Math.round(v * 1000) / 1000;
+      let drawn = list, outline = "";
+      if (op !== "none") {
+        const cmb = buildCombined(), k = size / R;
+        outline = cmb.contours.length ? `<path d="${cmb.contours.map(c => "M " + c.map(p => `${r(p.x * k)} ${r(p.y * k)}`).join(" L ") + " Z").join(" ")}" />` : "";
+        drawn = cmb.rest;
+      }
+      return outline + drawn.map((f) => {
+        const p = place(f, size);
+        return `<g transform="translate(${r(p.x)} ${r(p.y)}) rotate(${r(f.rotation || 0)}) scale(${r(p.sx)} ${r(p.sy)})">${Shapes[f.shape].svgPath(p.m)}</g>`;
+      }).join("");
+    }
+  };
+  compositeCache[key] = def;
+  Shapes[key] = def; // registered by id, so everything that looks a shape up by name finds it
+  return def;
 }
 
 // ---- Shape morphing (Gradation > Shape) ----
