@@ -1751,6 +1751,10 @@
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="layout"]').click(); await wait(80); q("#toggle-layout-structure").click(); q("#btn-layout-radiation").click(); await wait(60);
       q('[data-rad-scheme="centrifugal"]').click();
+      assert(q("#rad-twist-block").classList.contains("hidden"), "Spiral twist only appears with the Spiral scheme");
+      q('[data-rad-scheme="spiral"]').click();
+      assert(!q("#rad-twist-block").classList.contains("hidden"), "Spiral twist appears with Spiral");
+      q('[data-rad-scheme="centrifugal"]').click();
       q('[data-rad-shape="hexagon"]').click();
       assert(app.getActiveLayerStructure().radiation.ringShape === "hexagon" && /Hexagon/.test(q("#rad-ringshape-block .ds-dropdown-current").textContent), "The Ring shape dropdown did not apply");
       q('[data-rad-scheme="spiral"]').click(); await wait(40);

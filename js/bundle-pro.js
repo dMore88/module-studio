@@ -5485,7 +5485,7 @@ const LAYOUT_PANEL = {
       { type: "slider", id: "layout-rings", label: "Concentric rings", min: 2, max: 20, step: 1, value: 6, suffix: "", decimal: true, history: "Concentric Rings", get: (st) => st.radiation.rings || 6, set: radSet("rings") },
       { type: "slider", id: "layout-centers", label: "Centers", blockId: "rad-centers-block", min: 2, max: 8, step: 1, value: 2, suffix: "", decimal: true, history: "Centers", show: (st) => st.radiation.scheme === "multi_center",
         get: (st) => st.radiation.centerCount || 2, set: (st, v) => { st.radiation.centerCount = layoutClamp(Math.round(v), 2, 8); st.mode = "radiation"; } },
-      { type: "slider", id: "layout-twist", label: "Spiral twist", min: -180, max: 180, step: 1, value: 45, suffix: "", decimal: true, history: "Spiral Twist",
+      { type: "slider", id: "layout-twist", label: "Spiral twist", blockId: "rad-twist-block", show: (st) => st.radiation.scheme === "spiral", min: -180, max: 180, step: 1, value: 45, suffix: "", decimal: true, history: "Spiral Twist",
         get: (st) => (st.radiation.spiralTwist !== undefined ? st.radiation.spiralTwist : 45), set: radSet("spiralTwist") },
       { type: "dropdown", label: "Direction", attr: "data-rad-dir", history: "Radiation Direction", advanced: true, options: [["repeated", "Repeated"], ["alternated", "Alternated"], ["undefined", "Undefined"]],
         get: (st) => st.radiation.direction || "repeated", set: radSet("direction") },
