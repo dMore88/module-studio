@@ -5028,7 +5028,7 @@ class ArtLog {
           const r = s.radiation || {};
           const actual = r.sizeMode === "actual" || r.sizeMode === "fixed";
           const byCont = actual && !!r.raysByContainer && r.scheme !== "centripetal";
-          const parts = ["Radiation", pick(SCHEMES, r.scheme), byCont ? `${r.rings} rings` : `${r.rays} rays - ${r.rings} rings`, actual ? "Actual size" : r.moduleScale === "cell" ? "Fit to canvas (modules shrink with the cell)" : "Fit to canvas",
+          const parts = ["Radiation", pick(SCHEMES, r.scheme), byCont ? `${r.rings} rings` : `${r.rays} rays - ${r.rings} rings`, actual ? "Actual size" : r.moduleScale === "cell" ? "Shrink with cell" : "Base size",
             `Orientation ${pick(ORIENT, r.orientation || "auto")}`, `Direction ${pick(DIRS, r.direction || "repeated")}`];
           if (r.scheme !== "spiral" && r.scheme !== "centripetal") parts.push(`Ring shape ${title(r.ringShape || "circle")}`);
           parts.push(`Open center ${r.centerOpen || 0}%`, `Ring rotation ${r.ringRotation || 0}º`);
@@ -5042,7 +5042,7 @@ class ArtLog {
         } else {
           const r = s.repetition || {};
           const actual = r.sizeMode === "actual" || r.sizeMode === "fixed";
-          const parts = ["Repetition", pick(GRIDS, r.gridType), `C${r.cols} - R${r.rows}`, actual ? "Actual size" : r.moduleScale === "cell" ? "Fit to canvas (modules shrink with the cell)" : "Fit to canvas", pick(PLACE, r.placement || "centers"), pick(MIX, r.cellMix || "none"),
+          const parts = ["Repetition", pick(GRIDS, r.gridType), `C${r.cols} - R${r.rows}`, actual ? "Actual size" : r.moduleScale === "cell" ? "Shrink with cell" : "Base size", pick(PLACE, r.placement || "centers"), pick(MIX, r.cellMix || "none"),
             `Direction ${pick(DIRS, r.direction || "repeated")}`, `Reflection ${title(r.reflection || "none")}`];
           if (r.gridType === "sliding") parts.push(`Row offset ${Math.round((r.slideOffset ?? 0.5) * 100)}%`);
           if (r.gridType === "sheared") parts.push(`Shear angle ${r.shearAngle ?? 15}º`);
@@ -5352,6 +5352,15 @@ const blockSet = (key) => (st, v, app) => {
 };
 const blockGet = (key) => (st, app) => app.blockPixels(st)[key];
 
+// Module size: one choice that joins sizeMode (fit / actual) and moduleScale (uniform / cell); the saved project keeps both fields
+const SIZE_OPTIONS = (whole) => [
+  ["uniform", "Base size", `Every module keeps its own size, proportional to ${whole}`],
+  ["cell", "Shrink with cell", "The module shrinks with its cell"],
+  ["actual", "Actual size", "The module keeps its real size and the grid adapts to it"],
+];
+const sizeChoice = (r) => (r.sizeMode === "actual" ? "actual" : r.moduleScale || "uniform");
+const applySizeChoice = (r, v) => { if (v === "actual") r.sizeMode = "actual"; else { r.sizeMode = "fit"; r.moduleScale = v; } };
+
 const LAYOUT_PANEL = {
   id: "layout", cardId: "card-layout-structure", name: "Layout",
   state: (app) => app.getActiveLayerStructure(),
@@ -5460,10 +5469,10 @@ const LAYOUT_PANEL = {
     ] },
     { region: "subpanel-repetition", title: "Module", help: {
         is: "The module is the unit that repeats. Its size, its place in the cell and how it turns decide how the structure reads.",
-        does: "Sets how the module fills the canvas (Fit or Actual size), where it sits in the cell and how it turns. Advanced controls scale it, clip it to its cell or invert alternate cells." }, advId: "rep-adv-module", controls: [
-      { type: "tags", label: "Module size", attr: "data-rep-size", history: "Module Size", options: [["fit", "Fit to canvas"], ["actual", "Actual size"]],
-        get: (st) => st.repetition.sizeMode || "fit",
-        set: (st, v, app) => { st.repetition.sizeMode = v; if (v === "actual") app.startContainerFromCell(st.repetition.cols, st.repetition.rows); st.mode = "repetition"; } },
+        does: "Size sets how big the module is in its cell (its own size, shrunk with the cell, or its real size); placement sets where it sits and Module rotation how it turns." }, advId: "rep-adv-module", controls: [
+      { type: "tags", label: "Module size", attr: "data-rep-size", history: "Module Size", options: SIZE_OPTIONS("the whole canvas"),
+        get: (st) => sizeChoice(st.repetition),
+        set: (st, v, app) => { applySizeChoice(st.repetition, v); if (v === "actual") app.startContainerFromCell(st.repetition.cols, st.repetition.rows); st.mode = "repetition"; } },
       // Placement does not apply to the honeycomb; mixed sizes only to the plain and alternating grids
       { type: "tags", label: "Module placement", attr: "data-rep-place", history: "Module Placement", blockId: "rep-placement-block", enable: (st) => !["hexagonal", "free"].includes(st.repetition.gridType), why: "Does not apply to the hexagonal grid or to Free",
         options: [["centers", "Centers"], ["intersections", "Intersections"], ["both", "Both"]], get: (st) => st.repetition.placement || "centers", set: repSet("placement") },
@@ -5472,9 +5481,6 @@ const LAYOUT_PANEL = {
       { type: "slider", id: "layout-inter", label: "Intersection size", blockId: "rep-inter-block", min: 10, max: 100, step: 5, value: 50, suffix: "%", decimal: true, history: "Intersection Size",
         show: (st) => !["hexagonal", "free"].includes(st.repetition.gridType) && (st.repetition.placement || "centers") !== "centers",
         get: (st) => st.repetition.interScale ?? 50, set: repSet("interScale", (v) => layoutClamp(v, 10, 100)) },
-      { type: "tags", label: "Module scale", attr: "data-rep-modscale", history: "Module Scale", advanced: true, blockId: "rep-modscale-block", enable: (st) => !LAYOUT_ACTUAL(st.repetition), why: "In Actual size every module keeps its own size",
-        options: [["uniform", "Base size", "Every module keeps its own size, proportional to the whole canvas"], ["cell", "Shrink with cell", "The module shrinks with its cell"]],
-        get: (st) => st.repetition.moduleScale || "uniform", set: repSet("moduleScale") },
     ] },
     // ---- Radiation ----
     { region: "subpanel-radiation", title: "Radiation", help: {
@@ -5521,11 +5527,11 @@ const LAYOUT_PANEL = {
     ] },
     { region: "subpanel-radiation", title: "Module", help: {
         is: "The module is the unit that repeats. In a radiation its size and turn decide how it follows the rays and rings.",
-        does: "Fit or Actual size sets how big each module is. Advanced controls scale it, orient it along the rays, clip it to its cell or invert alternate cells." }, advId: "rad-adv-module", controls: [
-      { type: "tags", label: "Module size", attr: "data-rad-size", history: "Radiation Module Size", options: [["fit", "Fit to canvas"], ["actual", "Actual size"]],
-        get: (st) => st.radiation.sizeMode || "fit",
+        does: "Size sets how big each module is (its own size, shrunk with the cell, or its real size). Advanced controls orient it along the rays." }, advId: "rad-adv-module", controls: [
+      { type: "tags", label: "Module size", attr: "data-rad-size", history: "Radiation Module Size", options: SIZE_OPTIONS("the whole structure"),
+        get: (st) => sizeChoice(st.radiation),
         set: (st, v, app) => {
-          st.radiation.sizeMode = v;
+          applySizeChoice(st.radiation, v);
           if (v === "actual") {
             // each ring starts as thick as a Fit ring
             const mod = app.getActiveModule();
@@ -5536,9 +5542,6 @@ const LAYOUT_PANEL = {
           }
           st.mode = "radiation";
         } },
-      { type: "tags", label: "Module scale", attr: "data-rad-modscale", history: "Module scale", advanced: true, blockId: "rad-modscale-block", enable: (st) => !LAYOUT_ACTUAL(st.radiation), why: "In Actual size every module keeps its own size",
-        options: [["uniform", "Base size", "Every module keeps its own size, proportional to the whole structure"], ["cell", "Shrink with cell", "The module shrinks with its cell"]],
-        get: (st) => st.radiation.moduleScale || "uniform", set: radSet("moduleScale") },
       { type: "dropdown", label: "Module orientation", attr: "data-rad-orient", history: "Module Orientation", advanced: true,
         options: [["auto", "Auto"], ["outward", "Outward"], ["inward", "Inward"], ["tangent", "Tangent"], ["fixed", "Fixed"]], get: (st) => st.radiation.orientation || "auto", set: radSet("orientation") },
     ] },

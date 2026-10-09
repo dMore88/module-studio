@@ -292,7 +292,7 @@
       assert(Math.abs(t[0] - t[1]) > 150 && Math.abs(t[0] - t[2]) < 40 && Math.abs(t[1] - t[3]) < 40, `Alternate sectors should swap figure and ground (${t})`);
     });
 
-    await test("Radial Fit: Module scale 'Base size' (default) keeps every module at one size taken from the whole structure, 'Shrink with cell' shrinks it with the cell", async () => {
+    await test("Radial Fit: Module size 'Base size' (default) keeps every module at one size taken from the whole structure, 'Shrink with cell' shrinks it with the cell", async () => {
       reset();
       const d = win.document, cv = d.getElementById("studio-canvas");
       const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: false, width: 60, height: 60, showContainer: false }); app.state.showSafeBounds = false;
@@ -306,9 +306,14 @@
       const same = inkInside(80);
       assert(same > shrink * 3, `Base size should leave far more ink near the centre (${shrink} -> ${same})`);
       d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
-      assert(!d.getElementById("rad-modscale-block").classList.contains("is-disabled"), "Fit offers Module scale");
+      const radOn = () => d.querySelector('[data-rad-size].active')?.getAttribute("data-rad-size");
+      assert(radOn() === "uniform", `Module size shows Base size (${radOn()})`);
+      st.radiation.moduleScale = "cell"; app.syncAllInspectorsWithActiveLayer();
+      assert(radOn() === "cell", "Module size shows Shrink with cell");
       st.radiation.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("rad-modscale-block").classList.contains("is-disabled"), "Actual size hides Module scale");
+      assert(radOn() === "actual", "Module size shows Actual size");
+      d.querySelector('[data-rad-size="uniform"]').click(); await wait(40);
+      assert(st.radiation.sizeMode === "fit" && st.radiation.moduleScale === "uniform", "Choosing Base size sets Fit and Base size");
       reset();
     });
 
@@ -1283,7 +1288,7 @@
       q('[data-rail-tab="layout"]').click(); await wait(80);
       q("#toggle-layout-structure").click();
       const rep = () => app.getActiveLayerStructure().repetition;
-      assert(q('[data-rep-size="fit"]').textContent.trim() === "Fit to canvas" && q('[data-rep-size="actual"]').textContent.trim() === "Actual size", "The chips should read Fit to canvas and Actual size");
+      assert(q('[data-rep-size="uniform"]').textContent.trim() === "Base size" && q('[data-rep-size="cell"]').textContent.trim() === "Shrink with cell" && q('[data-rep-size="actual"]').textContent.trim() === "Actual size", "The chips should read Base size, Shrink with cell and Actual size");
       q('[data-rep-size="actual"]').click(); await wait(40);
       assert(rep().sizeMode === "actual" && app.getActiveModule().containerW === Math.round(600 / rep().cols), "Actual size should start with a container as big as a Fit cell");
       assert(!q("#input-layout-cols").closest(".ds-field").classList.contains("is-disabled"), "Actual size should keep the Columns and Rows controls");
@@ -2166,7 +2171,7 @@
       reset();
     });
 
-    await test("Repetition Fit: Module scale 'Base size' (default) keeps the module at its own size in every cell, 'Shrink with cell' shrinks it", async () => {
+    await test("Repetition Fit: Module size 'Base size' (default) keeps the module at its own size in every cell, 'Shrink with cell' shrinks it", async () => {
       reset(true);
       const d = win.document, cv = d.getElementById("studio-canvas");
       const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: false, width: 60, height: 60, showContainer: false }); app.state.showSafeBounds = false;
@@ -2178,9 +2183,15 @@
       const shrunk = ink();
       assert(base > shrunk * 2, `Base size should leave far more ink than Shrink with cell (${shrunk} -> ${base})`);
       d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
-      assert(!d.getElementById("rep-modscale-block").classList.contains("is-disabled"), "Fit offers Module scale in Repetition");
+      st.repetition.moduleScale = "uniform"; app.syncAllInspectorsWithActiveLayer();
+      const repOn = () => d.querySelector('[data-rep-size].active')?.getAttribute("data-rep-size");
+      assert(repOn() === "uniform", `Module size shows Base size in Repetition (${repOn()})`);
+      st.repetition.moduleScale = "cell"; app.syncAllInspectorsWithActiveLayer();
+      assert(repOn() === "cell", "Module size shows Shrink with cell in Repetition");
       st.repetition.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("rep-modscale-block").classList.contains("is-disabled"), "Actual size hides Module scale in Repetition");
+      assert(repOn() === "actual", "Module size shows Actual size in Repetition");
+      d.querySelector('[data-rep-size="cell"]').click(); await wait(40);
+      assert(st.repetition.sizeMode === "fit" && st.repetition.moduleScale === "cell", "Choosing Shrink with cell sets Fit and Shrink with cell");
       reset();
     });
 
