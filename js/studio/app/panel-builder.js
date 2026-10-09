@@ -21,7 +21,7 @@
  * `enable: (state, mod) => bool` with `why`, to stay in view but dimmed and without response when it does not apply (a function of the
  * panel that is not available now; `why` tells the reason, as a tooltip), and `blockId`, the id of its box;
  * `get(state, app)` and `set(state, value, app)` replace the plain `key` when a setting needs more than a number):
- *   { type: "tags",   label, key, attr, history, fallback, options: [[value, text, title?], ...] }   one choice among several
+ *   { type: "tags",   label, key, attr, history, fallback, help?, options: [[value, text, title?], ...] }   one choice among several (help: a (?) beside the label)
  *   { type: "dropdown", label, key, attr, history, fallback, options: [[value, text, iconHtml?], ...] | "shapes" }   a list of choices ("shapes": every shape, with its icon)
  *   { type: "modes",  label, ariaLabel, attr, options: [[value, text, id], ...], get, onSelect(app, value) }   the two-button switch (a button group)
  *   { type: "chips",  label, ariaLabel, attr, options: [{ key, text, id?, show? }],            chips that switch on and off by themselves
@@ -76,7 +76,7 @@ class PanelBuilder {
 
       // One group: its title and divider (when the panel has several), its controls and its Advanced controls
       const drawGroup = (g, i, titled) => {
-        const title = g.help ? `<div class="ds-title-row"><div class="ds-label ds-label--overline">${g.title}</div>${this.helpButtonHtml(`${spec.id}:${g.title}`, g.title, g.help)}</div>\n` : `<div class="ds-label ds-label--overline">${g.title}</div>\n`;
+        const title = g.help ? `<div class="ds-title-row"><div class="ds-label ds-label--overline">${g.title}</div>${this.helpButtonHtml(`${spec.id}:${g.region || ""}:${g.title}`, g.title, g.help)}</div>\n` : `<div class="ds-label ds-label--overline">${g.title}</div>\n`;
         const head = titled ? `${i > 0 ? '<div class="ds-divider" role="separator"></div>\n' : ""}${title}` : "";
         return head + drawControls(g.controls, g.advId);
       };
@@ -99,7 +99,8 @@ class PanelBuilder {
           }
           flush();
           if (c.type === "tags") {
-            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags">\n${c.options.map(([v, t, title], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}"${title ? ` title="${title}"` : ""}>${t}</button>`).join("\n")}\n</div>\n</div>\n`);
+            const tagsLabel = c.help ? `<div class="ds-title-row"><div class="ds-label">${c.label}</div>${this.helpButtonHtml(`${spec.id}:control:${c.attr}`, c.label, c.help)}</div>` : `<div class="ds-label">${c.label}</div>`;
+            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n${tagsLabel}\n<div class="ds-tags">\n${c.options.map(([v, t, title], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}"${title ? ` title="${title}"` : ""}>${t}</button>`).join("\n")}\n</div>\n</div>\n`);
           } else if (c.type === "dropdown") {
             const opts = c.options === "shapes" ? STUDIO_SHAPE_KEYS.map(k => [k, SHAPE_LABELS[k] || Shapes[k].name.replace(/\s*\([^)]*\)\s*/g, ""), shapeIconHtml(Shapes[k])]) : c.options;
             add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-dropdown" data-select>\n<button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current">${opts[0][2] || ""}<span>${opts[0][1]}</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>\n<div class="ds-dropdown-menu hidden" role="listbox">\n${opts.map(([v, t, icon]) => `<button type="button" class="ds-dropdown-item" role="option" ${c.attr}="${v}">${icon || ""}<span>${t}</span></button>`).join("\n")}\n</div>\n</div>\n</div>\n`);

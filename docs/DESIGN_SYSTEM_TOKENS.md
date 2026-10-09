@@ -169,7 +169,7 @@ Todas las tarjetas: fondo blanco, radio `border/radius/3` (20), relleno `spacing
 
 ---
 
-**Orden dentro de un panel:** los controles de jerarquía alta, los que definen qué subcontroles se muestran (tipo, modo, esquema, camino, secuencia), van **arriba** y son **chips** (tags). Debajo van los sliders y, al final, las casillas. Si un subcontrol necesita elegir entre opciones, también son chips. El grupo de botones se reserva para los dos selectores del Figma (Stroke / Fill y Repetition / Radiation). Los subcontroles que solo existen con un modo van justo debajo del chip que los activa (por ejemplo *Becomes* bajo *Attribute*). `tests/smoke.html` comprueba que ningún selector aparezca después de un slider.
+**Orden dentro de un panel:** los controles de jerarquía alta, los que definen qué subcontroles se muestran (tipo, modo, esquema, camino, secuencia), van **arriba** y son **chips** (tags). Debajo van los sliders y, al final, las casillas. Si un subcontrol necesita elegir entre opciones, también son chips. El grupo de botones se reserva para el selector Repetition / Radiation; Stroke / Fill son dos tags con icono. Los subcontroles que solo existen con un modo van justo debajo del chip que los activa (por ejemplo *Becomes* bajo *Attribute*). `tests/smoke.html` comprueba que ningún selector aparezca después de un slider.
 
 **Regla:** los controles nuevos se arman con este catálogo, eligiendo el que mejor encaje. Solo si ninguno sirve se pide un diseño nuevo en Figma.
 
@@ -230,7 +230,7 @@ Texto *Body* a la izquierda, casilla 24×24 a la derecha, relleno vertical `spac
 Snackbar de advertencia (nodo `5827:2278`, rediseñado el 8 oct 2026): fondo `neutral/bg/main`, borde `border/weight/1` en `neutral/border/main`, radio `border/radius/2`, relleno `spacing/4`, separación `spacing/3`, contenido alineado arriba. El icono es un disco de 20 px en `warning/bg/soft` con el icono *warning* (regular, 16 px, `warning/icon/strong`) dentro de un anillo de 2 px en `warning/border/soft` (`#f7ca7b`, token nuevo). Texto *Caption* (10 px, peso 400) en `neutral/text/main`. Texto único: *Turn on Layout structure to see this modifier in action.*
 
 ### 5.11 Grupo de botones (`.ds-btn-group`)
-Altura 40 (`sizing/7`), borde `border/weight/1` en `neutral/border/strong`, radio `border/radius/2`, fondo `neutral/bg/light`. Botones de ancho igual (mínimo 80 px) con texto *Body small*, separados por una línea; el activo usa `neutral/interactive/active` con texto `neutral/text/main-inverted`. Se usa en *Structure mode* (Repetition / Radiation) y *Fill / Stroke*.
+Altura 40 (`sizing/7`), borde `border/weight/1` en `neutral/border/strong`, radio `border/radius/2`, fondo `neutral/bg/light`. Botones de ancho igual (mínimo 80 px) con texto *Body small*, separados por una línea; el activo usa `neutral/interactive/active` con texto `neutral/text/main-inverted`. Se usa en *Structure mode* (Repetition / Radiation). *Stroke / Fill* ya no lo usa: son dos tags con icono (ver 5.15).
 
 ### 5.12 Selector de color (`.ds-color-picker`, `.ds-color-row`)
 La muestra mide **24 px en todos los paneles** (Shape color, color de acento de Anomaly y Contrast), con el texto hex al lado.
@@ -486,7 +486,7 @@ Medidas del inventario (320 de ancho, relleno 24, contenido 272) adaptadas al an
 | **Separación entre grupos** | **24 en todos** (arriba, hoy 16 entre grupos y 24 entre deslizantes) |
 | **Cabecera** | Título (Heading), badge de capa, interruptor 32×20 y cierre **solo con icono de 16**, sin botón |
 | **Botones de forma** | 32×32, radio 12, borde en la tinta; separación 8; el activo, en la tinta. Etiqueta encima a 8 |
-| **Grupo de botones** (Stroke / Fill, Repetition / Radiation) | 40 de alto: relleno 4, fondo `neutral/bg/main`, borde 1 px `neutral/border/main`, botones de 32 |
+| **Grupo de botones** (Repetition / Radiation) | 40 de alto: relleno 4, fondo `neutral/bg/main`, borde 1 px `neutral/border/main`, botones de 32 |
 | **Selector (dropdown)** | Etiqueta Label encima (4) y caja de 32 con radio 4 (ver 11.3) |
 | **Tags** | 24 de alto, separados 4, etiqueta encima |
 | **Deslizante + caja de valor** | Etiqueta encima; pista de 4 px y tirador de 20; la caja de valor es el *input-text* de 56×32 a la derecha, con 12 de separación |
@@ -505,3 +505,6 @@ Medidas del inventario (320 de ancho, relleno 24, contenido 272) adaptadas al an
 
 ### 5.14 Ayuda (?) y su popover (`.ds-help`, `.ds-help-popover`) — nodos `5827:2192` y `5827:573`
 El botón (?) mide 16 px (icono *question* regular, `neutral/text/soft`; `neutral/text/main` al pasar el ratón) y va a 4 px del título del panel o del grupo. El popover es el *tooltip* de Figma: fondo `neutral/interactive/default`, radio `border/radius/1`, relleno `spacing/3`, sombra `elevation/4x`, texto *Caption* (10 px, **peso 400**, interlineado 1,7) en `neutral/text/main-inverted`, **ancho entre 148 y 240 px** según el texto, con un puntero de 12 × 6 hacia el botón (arriba o abajo según el espacio). Dos partes, *What it is?* y *What it does?*, separadas por `spacing/2`.
+
+### 5.15 Estilo de la shape: Stroke / Fill y color (`.ds-style-row`, `.ds-tag--icon`) — nodo `5811:12625`
+Una sola fila, 24 de alto: a la izquierda dos **tags con icono** de 16 px (*Stroke* con `line-segment`, *Fill* con `paint-bucket`), con relleno horizontal `spacing/3`, separados 4 px; el activo va en `neutral/interactive/default` con texto invertido y el otro con borde de 1 px. A la derecha, alineados al final, la **muestra de color** de 24 px (borde `neutral/border/strong`, radio 4) y el hex en *Label* (10 px, peso 500, `neutral/text/soft`), a 10 px entre sí. Los dos tags anuncian su estado con `aria-pressed`.

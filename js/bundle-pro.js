@@ -4346,7 +4346,7 @@ class UiHelpers {
  * `enable: (state, mod) => bool` with `why`, to stay in view but dimmed and without response when it does not apply (a function of the
  * panel that is not available now; `why` tells the reason, as a tooltip), and `blockId`, the id of its box;
  * `get(state, app)` and `set(state, value, app)` replace the plain `key` when a setting needs more than a number):
- *   { type: "tags",   label, key, attr, history, fallback, options: [[value, text, title?], ...] }   one choice among several
+ *   { type: "tags",   label, key, attr, history, fallback, help?, options: [[value, text, title?], ...] }   one choice among several (help: a (?) beside the label)
  *   { type: "dropdown", label, key, attr, history, fallback, options: [[value, text, iconHtml?], ...] | "shapes" }   a list of choices ("shapes": every shape, with its icon)
  *   { type: "modes",  label, ariaLabel, attr, options: [[value, text, id], ...], get, onSelect(app, value) }   the two-button switch (a button group)
  *   { type: "chips",  label, ariaLabel, attr, options: [{ key, text, id?, show? }],            chips that switch on and off by themselves
@@ -4401,7 +4401,7 @@ class PanelBuilder {
 
       // One group: its title and divider (when the panel has several), its controls and its Advanced controls
       const drawGroup = (g, i, titled) => {
-        const title = g.help ? `<div class="ds-title-row"><div class="ds-label ds-label--overline">${g.title}</div>${this.helpButtonHtml(`${spec.id}:${g.title}`, g.title, g.help)}</div>\n` : `<div class="ds-label ds-label--overline">${g.title}</div>\n`;
+        const title = g.help ? `<div class="ds-title-row"><div class="ds-label ds-label--overline">${g.title}</div>${this.helpButtonHtml(`${spec.id}:${g.region || ""}:${g.title}`, g.title, g.help)}</div>\n` : `<div class="ds-label ds-label--overline">${g.title}</div>\n`;
         const head = titled ? `${i > 0 ? '<div class="ds-divider" role="separator"></div>\n' : ""}${title}` : "";
         return head + drawControls(g.controls, g.advId);
       };
@@ -4424,7 +4424,8 @@ class PanelBuilder {
           }
           flush();
           if (c.type === "tags") {
-            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-tags">\n${c.options.map(([v, t, title], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}"${title ? ` title="${title}"` : ""}>${t}</button>`).join("\n")}\n</div>\n</div>\n`);
+            const tagsLabel = c.help ? `<div class="ds-title-row"><div class="ds-label">${c.label}</div>${this.helpButtonHtml(`${spec.id}:control:${c.attr}`, c.label, c.help)}</div>` : `<div class="ds-label">${c.label}</div>`;
+            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n${tagsLabel}\n<div class="ds-tags">\n${c.options.map(([v, t, title], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}"${title ? ` title="${title}"` : ""}>${t}</button>`).join("\n")}\n</div>\n</div>\n`);
           } else if (c.type === "dropdown") {
             const opts = c.options === "shapes" ? STUDIO_SHAPE_KEYS.map(k => [k, SHAPE_LABELS[k] || Shapes[k].name.replace(/\s*\([^)]*\)\s*/g, ""), shapeIconHtml(Shapes[k])]) : c.options;
             add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-dropdown" data-select>\n<button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current">${opts[0][2] || ""}<span>${opts[0][1]}</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>\n<div class="ds-dropdown-menu hidden" role="listbox">\n${opts.map(([v, t, icon]) => `<button type="button" class="ds-dropdown-item" role="option" ${c.attr}="${v}">${icon || ""}<span>${t}</span></button>`).join("\n")}\n</div>\n</div>\n</div>\n`);
@@ -5028,7 +5029,7 @@ class ArtLog {
           const r = s.radiation || {};
           const actual = r.sizeMode === "actual" || r.sizeMode === "fixed";
           const byCont = actual && !!r.raysByContainer && r.scheme !== "centripetal";
-          const parts = ["Radiation", pick(SCHEMES, r.scheme), byCont ? `${r.rings} rings` : `${r.rays} rays - ${r.rings} rings`, actual ? "Actual size" : r.moduleScale === "cell" ? "Fit to canvas (modules shrink with the cell)" : "Fit to canvas",
+          const parts = ["Radiation", pick(SCHEMES, r.scheme), byCont ? `${r.rings} rings` : `${r.rays} rays - ${r.rings} rings`, actual ? "Actual size" : r.moduleScale === "cell" ? "Shrink with cell" : "Base size",
             `Orientation ${pick(ORIENT, r.orientation || "auto")}`, `Direction ${pick(DIRS, r.direction || "repeated")}`];
           if (r.scheme !== "spiral" && r.scheme !== "centripetal") parts.push(`Ring shape ${title(r.ringShape || "circle")}`);
           parts.push(`Open center ${r.centerOpen || 0}%`, `Ring rotation ${r.ringRotation || 0}º`);
@@ -5042,7 +5043,7 @@ class ArtLog {
         } else {
           const r = s.repetition || {};
           const actual = r.sizeMode === "actual" || r.sizeMode === "fixed";
-          const parts = ["Repetition", pick(GRIDS, r.gridType), `C${r.cols} - R${r.rows}`, actual ? "Actual size" : r.moduleScale === "cell" ? "Fit to canvas (modules shrink with the cell)" : "Fit to canvas", pick(PLACE, r.placement || "centers"), pick(MIX, r.cellMix || "none"),
+          const parts = ["Repetition", pick(GRIDS, r.gridType), `C${r.cols} - R${r.rows}`, actual ? "Actual size" : r.moduleScale === "cell" ? "Shrink with cell" : "Base size", pick(PLACE, r.placement || "centers"), pick(MIX, r.cellMix || "none"),
             `Direction ${pick(DIRS, r.direction || "repeated")}`, `Reflection ${title(r.reflection || "none")}`];
           if (r.gridType === "sliding") parts.push(`Row offset ${Math.round((r.slideOffset ?? 0.5) * 100)}%`);
           if (r.gridType === "sheared") parts.push(`Shear angle ${r.shearAngle ?? 15}º`);
@@ -5312,8 +5313,8 @@ class ControlsRail {
 
   /**
  * The Layout panel (Repetition and Radiation), described as data (see panel-builder.js). The two modes are two regions of the panel; each is
- * a list of groups (Grid or Radiation, Module, Rhythm, Lines) with its Advanced controls. The Composition container and the Module
- * rotation are shared by both modes: they are floating groups that `place` moves after the Module group of the active mode.
+ * a list of groups (Grid or Radiation, Lines, Rhythm, Module) with its Advanced controls. The Composition container and the Module
+ * rotation are shared by both modes: they are floating groups that `place` moves (the container before the Module group, the rotation at its end).
  * Here the controls write each in its own way (the settings live in repetition, radiation, formalStructure and block), so most carry
  * their own `get` and `set`.
  * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
@@ -5352,6 +5353,15 @@ const blockSet = (key) => (st, v, app) => {
 };
 const blockGet = (key) => (st, app) => app.blockPixels(st)[key];
 
+// Module size: one choice that joins sizeMode (fit / actual) and moduleScale (uniform / cell); the saved project keeps both fields
+const SIZE_OPTIONS = (whole) => [
+  ["uniform", "Base size", `Every module keeps its own size, proportional to ${whole}`],
+  ["cell", "Shrink with cell", "The module shrinks with its cell"],
+  ["actual", "Actual size", "The module keeps its real size and the grid adapts to it"],
+];
+const sizeChoice = (r) => (r.sizeMode === "actual" ? "actual" : r.moduleScale || "uniform");
+const applySizeChoice = (r, v) => { if (v === "actual") r.sizeMode = "actual"; else { r.sizeMode = "fit"; r.moduleScale = v; } };
+
 const LAYOUT_PANEL = {
   id: "layout", cardId: "card-layout-structure", name: "Layout",
   state: (app) => app.getActiveLayerStructure(),
@@ -5366,6 +5376,9 @@ const LAYOUT_PANEL = {
       app.pushHistory(`Layer ${app.activeLayerId} Layout Structure: ${on ? "ON" : "OFF"}`);
     } },
   badgeId: "badge-layout-layer",
+  help: {
+    is: "A structure is the skeleton that organizes modules in a design: it gives each module its place and sets the rhythm between them.",
+    does: "Turns the single module into a whole composition. Repetition lays modules in a grid; Radiation arranges them around a center." },
   syncAll: true,
   allowNoModule: true,
   top: [
@@ -5384,16 +5397,23 @@ const LAYOUT_PANEL = {
       } },
   ],
   regions: { "subpanel-repetition": (st) => !LAYOUT_ISRAD(st), "subpanel-radiation": (st) => LAYOUT_ISRAD(st) },
-  // The Module rotation and the Composition container sit right after the Module group of the active mode
+  // Grid, lines, rhythm and the Composition container come first (they shape the grid); the Module group comes last, with the Module rotation at its end
   place: (app, st) => {
-    const modAdv = document.getElementById(LAYOUT_ISRAD(st) ? "rad-adv-module" : "rep-adv-module");
+    const rad = LAYOUT_ISRAD(st);
+    const modAdv = document.getElementById(rad ? "rad-adv-module" : "rep-adv-module");
     const rotEl = document.getElementById("layout-module-rotation"), blockEl = document.getElementById("layout-block");
     if (rotEl && modAdv && modAdv.previousElementSibling !== rotEl) modAdv.parentNode.insertBefore(rotEl, modAdv);
-    if (blockEl && modAdv && modAdv.nextElementSibling !== blockEl) modAdv.parentNode.insertBefore(blockEl, modAdv.nextSibling);
+    const region = document.getElementById(rad ? "subpanel-radiation" : "subpanel-repetition");
+    const titles = region ? [...region.querySelectorAll(".ds-label--overline")] : [];
+    const modTitle = titles.find(el => el.textContent.trim() === "Module");
+    const anchor = modTitle && (modTitle.closest(".ds-title-row") || modTitle).previousElementSibling; // the divider above the Module title
+    if (blockEl && anchor && anchor.previousElementSibling !== blockEl) anchor.parentNode.insertBefore(blockEl, anchor);
   },
   groups: [
     // ---- Repetition ----
-    { region: "subpanel-repetition", title: "Grid", advId: "rep-adv-grid", controls: [
+    { region: "subpanel-repetition", title: "Grid", help: {
+        is: "A repetition structure divides the surface into equal cells, each holding a module. Its variations bend or shift the grid lines without losing the repetition.",
+        does: "Variation picks the type of grid; Columns and Rows set how many cells divide the canvas. Advanced controls reflect the grid or alternate its direction." }, advId: "rep-adv-grid", controls: [
       { type: "dropdown", label: "Grid structure variation", attr: "data-grid-var", history: "Grid Var", options: GRID_ICONS,
         get: (st) => st.repetition.gridType,
         set: (st, v) => { st.repetition.gridType = v; st.mode = "repetition"; st.enabled = true; } },
@@ -5415,36 +5435,12 @@ const LAYOUT_PANEL = {
         get: (st) => st.repetition.reflection || "none", set: repSet("reflection") },
       { type: "dropdown", label: "Direction", attr: "data-rep-dir", history: "Direction", advanced: true, options: [["repeated", "Repeated"], ["alternated", "Alternated"], ["undefined", "Undefined"]],
         get: (st) => st.repetition.direction || "repeated", set: repSet("direction") },
-    ] },
-    { region: "subpanel-repetition", title: "Module", advId: "rep-adv-module", controls: [
-      { type: "tags", label: "Module size", attr: "data-rep-size", history: "Module Size", options: [["fit", "Fit to canvas"], ["actual", "Actual size"]],
-        get: (st) => st.repetition.sizeMode || "fit",
-        set: (st, v, app) => { st.repetition.sizeMode = v; if (v === "actual") app.startContainerFromCell(st.repetition.cols, st.repetition.rows); st.mode = "repetition"; } },
-      // Placement does not apply to the honeycomb; mixed sizes only to the plain and alternating grids
-      { type: "tags", label: "Module placement", attr: "data-rep-place", history: "Module Placement", blockId: "rep-placement-block", enable: (st) => !["hexagonal", "free"].includes(st.repetition.gridType), why: "Does not apply to the hexagonal grid or to Free",
-        options: [["centers", "Centers"], ["intersections", "Intersections"], ["both", "Both"]], get: (st) => st.repetition.placement || "centers", set: repSet("placement") },
-      { type: "tags", label: "Cell mix", attr: "data-rep-mix", history: "Cell Mix", blockId: "rep-mix-block", enable: (st) => st.repetition.gridType === "basic" || st.repetition.gridType === "alternating", why: "Only with the Grid and Alternating variations",
-        options: [["none", "None"], ["merge", "Merged"], ["divide", "Divided"]], get: (st) => st.repetition.cellMix || "none", set: repSet("cellMix") },
-      { type: "slider", id: "layout-inter", label: "Intersection size", blockId: "rep-inter-block", min: 10, max: 100, step: 5, value: 50, suffix: "%", decimal: true, history: "Intersection Size",
-        show: (st) => !["hexagonal", "free"].includes(st.repetition.gridType) && (st.repetition.placement || "centers") !== "centers",
-        get: (st) => st.repetition.interScale ?? 50, set: repSet("interScale", (v) => layoutClamp(v, 10, 100)) },
-      { type: "tags", label: "Module scale", attr: "data-rep-modscale", history: "Module Scale", advanced: true, blockId: "rep-modscale-block", enable: (st) => !LAYOUT_ACTUAL(st.repetition), why: "In Actual size every module keeps its own size",
-        options: [["uniform", "Base size", "Every module keeps its own size, proportional to the whole canvas"], ["cell", "Shrink with cell", "The module shrinks with its cell"]],
-        get: (st) => st.repetition.moduleScale || "uniform", set: repSet("moduleScale") },
       { type: "toggle", id: "chk-rep-clip", label: "Clip cell", history: "Clip cell", advanced: true, get: (st) => !!st.repetition.activeClipping, set: (st, v) => { st.repetition.activeClipping = v; } },
       { type: "toggle", id: "chk-rep-checker", label: "Checkerboard inversion", history: "Checkerboard", advanced: true, get: (st) => !!st.repetition.checkerInvert, set: (st, v) => { st.repetition.checkerInvert = v; } },
     ] },
-    { region: "subpanel-repetition", title: "Rhythm", controls: [
-      { type: "slider", id: "struct-col-ratio", label: "Col B size [% of A]", min: 10, max: 100, step: 5, value: 100, suffix: "%", decimal: true, history: "Col Ratio",
-        get: (st) => Math.round(100 / (LAYOUT_FORMAL(st).colRatio || 1)), set: formalSet("colRatio", (v) => layoutClamp(100 / Math.max(10, v), 1, 10)) },
-      { type: "slider", id: "struct-row-ratio", label: "Row B size [% of A]", min: 10, max: 100, step: 5, value: 100, suffix: "%", decimal: true, history: "Row Ratio",
-        get: (st) => Math.round(100 / (LAYOUT_FORMAL(st).rowRatio || 1)), set: formalSet("rowRatio", (v) => layoutClamp(100 / Math.max(10, v), 1, 10)) },
-      { type: "slider", id: "struct-col-grade", label: "Col gradation", min: -30, max: 30, step: 1, value: 0, suffix: "%", decimal: true, history: "Col Gradation",
-        get: (st) => LAYOUT_FORMAL(st).colGrade || 0, set: formalSet("colGrade", (v) => layoutClamp(v, -30, 30)) },
-      { type: "slider", id: "struct-row-grade", label: "Row gradation", min: -30, max: 30, step: 1, value: 0, suffix: "%", decimal: true, history: "Row Gradation",
-        get: (st) => LAYOUT_FORMAL(st).rowGrade || 0, set: formalSet("rowGrade", (v) => layoutClamp(v, -30, 30)) },
-    ] },
-    { region: "subpanel-repetition", title: "Lines", controls: [
+    { region: "subpanel-repetition", title: "Lines", help: {
+        is: "The lines of a structure are its skeleton made visible: they show how the surface is divided.",
+        does: "Visible lines draws them as part of the design (they are exported). Direction, spacing, width and color shape how they look." }, controls: [
       { type: "toggle", id: "chk-rep-gridlines", label: "Visible lines", history: "Visible lines", get: (st) => !!st.repetition.showGridLines,
         set: (st, v) => { st.repetition.showGridLines = v; if (st.formalStructure) st.formalStructure.showGridLines = v; } },
       // Visible lines are part of the design: they have colour and width and are exported
@@ -5460,8 +5456,39 @@ const LAYOUT_PANEL = {
           get: (st, app, mod) => st.repetition.lineColor || mod?.color || "#18181f", set: (st, v) => { st.repetition.lineColor = v; } },
       ] },
     ] },
+    { region: "subpanel-repetition", title: "Rhythm", help: {
+        is: "Rhythm comes from changes in the size of the cells: equal cells give an even beat; cells that grow or shrink give movement.",
+        does: "Col B and Row B resize every second column or row as a share of the first; the gradations make columns and rows grow or shrink step by step." }, controls: [
+      { type: "slider", id: "struct-col-ratio", label: "Col B size [% of A]", min: 10, max: 100, step: 5, value: 100, suffix: "%", decimal: true, history: "Col Ratio",
+        get: (st) => Math.round(100 / (LAYOUT_FORMAL(st).colRatio || 1)), set: formalSet("colRatio", (v) => layoutClamp(100 / Math.max(10, v), 1, 10)) },
+      { type: "slider", id: "struct-row-ratio", label: "Row B size [% of A]", min: 10, max: 100, step: 5, value: 100, suffix: "%", decimal: true, history: "Row Ratio",
+        get: (st) => Math.round(100 / (LAYOUT_FORMAL(st).rowRatio || 1)), set: formalSet("rowRatio", (v) => layoutClamp(100 / Math.max(10, v), 1, 10)) },
+      { type: "slider", id: "struct-col-grade", label: "Col gradation", min: -30, max: 30, step: 1, value: 0, suffix: "%", decimal: true, history: "Col Gradation",
+        get: (st) => LAYOUT_FORMAL(st).colGrade || 0, set: formalSet("colGrade", (v) => layoutClamp(v, -30, 30)) },
+      { type: "slider", id: "struct-row-grade", label: "Row gradation", min: -30, max: 30, step: 1, value: 0, suffix: "%", decimal: true, history: "Row Gradation",
+        get: (st) => LAYOUT_FORMAL(st).rowGrade || 0, set: formalSet("rowGrade", (v) => layoutClamp(v, -30, 30)) },
+    ] },
+    { region: "subpanel-repetition", title: "Module", help: {
+        is: "The module is the unit that repeats. Its size, its place in the cell and how it turns decide how the structure reads.",
+        does: "Size sets how big the module is in its cell (its own size, shrunk with the cell, or its real size); placement sets where it sits and Module rotation how it turns." }, advId: "rep-adv-module", controls: [
+      { type: "tags", label: "Module size", attr: "data-rep-size", history: "Module Size", help: { is: "The size of the module inside its cell. It is a choice of three: the module keeps its own size, shrinks with its cell, or keeps its real size and the grid adapts to it.",
+        does: "Base size repeats the module at one size in every cell. Shrink with cell makes it follow its cell. Actual size repeats the module as it is, and the grid grows around it." },
+        options: SIZE_OPTIONS("the whole canvas"),
+        get: (st) => sizeChoice(st.repetition),
+        set: (st, v, app) => { applySizeChoice(st.repetition, v); if (v === "actual") app.startContainerFromCell(st.repetition.cols, st.repetition.rows); st.mode = "repetition"; } },
+      // Placement does not apply to the honeycomb; mixed sizes only to the plain and alternating grids
+      { type: "tags", label: "Module placement", attr: "data-rep-place", history: "Module Placement", blockId: "rep-placement-block", enable: (st) => !["hexagonal", "free"].includes(st.repetition.gridType), why: "Does not apply to the hexagonal grid or to Free",
+        options: [["centers", "Centers"], ["intersections", "Intersections"], ["both", "Both"]], get: (st) => st.repetition.placement || "centers", set: repSet("placement") },
+      { type: "tags", label: "Cell mix", attr: "data-rep-mix", history: "Cell Mix", blockId: "rep-mix-block", enable: (st) => st.repetition.gridType === "basic" || st.repetition.gridType === "alternating", why: "Only with the Grid and Alternating variations",
+        options: [["none", "None"], ["merge", "Merged"], ["divide", "Divided"]], get: (st) => st.repetition.cellMix || "none", set: repSet("cellMix") },
+      { type: "slider", id: "layout-inter", label: "Intersection size", blockId: "rep-inter-block", min: 10, max: 100, step: 5, value: 50, suffix: "%", decimal: true, history: "Intersection Size",
+        show: (st) => !["hexagonal", "free"].includes(st.repetition.gridType) && (st.repetition.placement || "centers") !== "centers",
+        get: (st) => st.repetition.interScale ?? 50, set: repSet("interScale", (v) => layoutClamp(v, 10, 100)) },
+    ] },
     // ---- Radiation ----
-    { region: "subpanel-radiation", title: "Radiation", advId: "rad-adv-radiation", controls: [
+    { region: "subpanel-radiation", title: "Radiation", help: {
+        is: "In a radiation structure the modules spread from, or gather around, a center, along rays and rings.",
+        does: "The scheme chooses the movement (outward, inward, concentric, spiral or several centers); rays and rings set how many modules there are. Advanced controls shape the rings and turn them." }, advId: "rad-adv-radiation", controls: [
       { type: "dropdown", label: "Radiation scheme", attr: "data-rad-scheme", history: "Rad Scheme", get: (st) => st.radiation.scheme,
         options: [["centrifugal", "Centrifugal"], ["centripetal", "Centripetal"], ["concentric", "Concentric"], ["spiral", "Spiral"], ["multi_center", "Multi-center"]],
         set: (st, v) => { st.radiation.scheme = v; st.mode = "radiation"; st.enabled = true; } },
@@ -5472,7 +5499,7 @@ const LAYOUT_PANEL = {
       { type: "slider", id: "layout-rings", label: "Concentric rings", min: 2, max: 20, step: 1, value: 6, suffix: "", decimal: true, history: "Concentric Rings", get: (st) => st.radiation.rings || 6, set: radSet("rings") },
       { type: "slider", id: "layout-centers", label: "Centers", blockId: "rad-centers-block", min: 2, max: 8, step: 1, value: 2, suffix: "", decimal: true, history: "Centers", show: (st) => st.radiation.scheme === "multi_center",
         get: (st) => st.radiation.centerCount || 2, set: (st, v) => { st.radiation.centerCount = layoutClamp(Math.round(v), 2, 8); st.mode = "radiation"; } },
-      { type: "slider", id: "layout-twist", label: "Spiral twist", min: -180, max: 180, step: 1, value: 45, suffix: "", decimal: true, history: "Spiral Twist",
+      { type: "slider", id: "layout-twist", label: "Spiral twist", blockId: "rad-twist-block", show: (st) => st.radiation.scheme === "spiral", min: -180, max: 180, step: 1, value: 45, suffix: "", decimal: true, history: "Spiral Twist",
         get: (st) => (st.radiation.spiralTwist !== undefined ? st.radiation.spiralTwist : 45), set: radSet("spiralTwist") },
       { type: "dropdown", label: "Direction", attr: "data-rad-dir", history: "Radiation Direction", advanced: true, options: [["repeated", "Repeated"], ["alternated", "Alternated"], ["undefined", "Undefined"]],
         get: (st) => st.radiation.direction || "repeated", set: radSet("direction") },
@@ -5485,31 +5512,12 @@ const LAYOUT_PANEL = {
       { type: "toggle", id: "chk-rad-raysbycont", label: "Rays follow container", history: "Rays follow container", advanced: true, labelId: "rad-raysbycont-item",
         title: "Actual size: every ring gets as many rays as fit the container's width, so the cells are as big as the container",
         enable: (st) => LAYOUT_ACTUAL(st.radiation) && st.radiation.scheme !== "centripetal", why: "Only in Actual size, and not with Centripetal", get: (st) => !!st.radiation.raysByContainer, set: (st, v) => { st.radiation.raysByContainer = v; } },
-    ] },
-    { region: "subpanel-radiation", title: "Module", advId: "rad-adv-module", controls: [
-      { type: "tags", label: "Module size", attr: "data-rad-size", history: "Radiation Module Size", options: [["fit", "Fit to canvas"], ["actual", "Actual size"]],
-        get: (st) => st.radiation.sizeMode || "fit",
-        set: (st, v, app) => {
-          st.radiation.sizeMode = v;
-          if (v === "actual") {
-            // each ring starts as thick as a Fit ring
-            const mod = app.getActiveModule();
-            if (mod && !(mod.containerW > 0 || mod.containerH > 0)) {
-              const cfg = ASPECT_RATIOS[app.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
-              mod.containerH = mod.containerW = Math.round((0.5 * Math.min(cfg.w, cfg.h)) / Math.max(2, st.radiation.rings));
-            }
-          }
-          st.mode = "radiation";
-        } },
-      { type: "tags", label: "Module scale", attr: "data-rad-modscale", history: "Module scale", advanced: true, blockId: "rad-modscale-block", enable: (st) => !LAYOUT_ACTUAL(st.radiation), why: "In Actual size every module keeps its own size",
-        options: [["uniform", "Base size", "Every module keeps its own size, proportional to the whole structure"], ["cell", "Shrink with cell", "The module shrinks with its cell"]],
-        get: (st) => st.radiation.moduleScale || "uniform", set: radSet("moduleScale") },
-      { type: "dropdown", label: "Module orientation", attr: "data-rad-orient", history: "Module Orientation", advanced: true,
-        options: [["auto", "Auto"], ["outward", "Outward"], ["inward", "Inward"], ["tangent", "Tangent"], ["fixed", "Fixed"]], get: (st) => st.radiation.orientation || "auto", set: radSet("orientation") },
       { type: "toggle", id: "chk-rad-clip", label: "Clip cell", history: "Clip cell", advanced: true, get: (st) => !!st.radiation.activeClipping, set: (st, v) => { st.radiation.activeClipping = v; } },
       { type: "toggle", id: "chk-rad-checker", label: "Checkerboard inversion", history: "Checkerboard", advanced: true, get: (st) => !!st.radiation.checkerInvert, set: (st, v) => { st.radiation.checkerInvert = v; } },
     ] },
-    { region: "subpanel-radiation", title: "Lines", controls: [
+    { region: "subpanel-radiation", title: "Lines", help: {
+        is: "The lines of a radiation are its rays and rings made visible.",
+        does: "Visible lines draws them as part of the design (they are exported); width and color shape how they look." }, controls: [
       { type: "toggle", id: "chk-rad-gridlines", label: "Visible lines", history: "Visible lines", get: (st) => !!(st.radiation.showRays || st.radiation.showRings),
         set: (st, v) => { st.radiation.showRays = v; st.radiation.showRings = v; } },
       { type: "stack", id: "rad-lines-block", show: (st) => !!(st.radiation.showRays || st.radiation.showRings), controls: [
@@ -5520,12 +5528,36 @@ const LAYOUT_PANEL = {
           get: (st, app, mod) => st.radiation.lineColor || mod?.color || "#18181f", set: (st, v) => { st.radiation.lineColor = v; } },
       ] },
     ] },
+    { region: "subpanel-radiation", title: "Module", help: {
+        is: "The module is the unit that repeats. In a radiation its size and turn decide how it follows the rays and rings.",
+        does: "Size sets how big each module is (its own size, shrunk with the cell, or its real size). Advanced controls orient it along the rays." }, advId: "rad-adv-module", controls: [
+      { type: "tags", label: "Module size", attr: "data-rad-size", history: "Radiation Module Size", help: { is: "The size of the module inside its cell. It is a choice of three: the module keeps its own size, shrinks with its cell, or keeps its real size and the grid adapts to it.",
+        does: "Base size repeats the module at one size in every cell. Shrink with cell makes it follow its cell. Actual size repeats the module as it is, and the grid grows around it." },
+        options: SIZE_OPTIONS("the whole structure"),
+        get: (st) => sizeChoice(st.radiation),
+        set: (st, v, app) => {
+          applySizeChoice(st.radiation, v);
+          if (v === "actual") {
+            // each ring starts as thick as a Fit ring
+            const mod = app.getActiveModule();
+            if (mod && !(mod.containerW > 0 || mod.containerH > 0)) {
+              const cfg = ASPECT_RATIOS[app.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"];
+              mod.containerH = mod.containerW = Math.round((0.5 * Math.min(cfg.w, cfg.h)) / Math.max(2, st.radiation.rings));
+            }
+          }
+          st.mode = "radiation";
+        } },
+      { type: "dropdown", label: "Module orientation", attr: "data-rad-orient", history: "Module Orientation", advanced: true,
+        options: [["auto", "Auto"], ["outward", "Outward"], ["inward", "Inward"], ["tangent", "Tangent"], ["fixed", "Fixed"]], get: (st) => st.radiation.orientation || "auto", set: radSet("orientation") },
+    ] },
     // ---- Shared by both modes (placed after the Module group of the active mode) ----
     { floating: "layout-module-rotation", controls: [
       // the Module rotation is controlled with the rest of the module (the shape inspector)
       { type: "slider", id: "active-rotation", label: "Module rotation", min: 0, max: 360, step: 0.5, value: 0, suffix: "º", decimal: true, bind: false },
     ] },
-    { floating: "layout-block", title: "Composition container", controls: [
+    { floating: "layout-block", title: "Composition container", help: {
+        is: "A composition container is the sheet the structure lives in: whatever lies beyond its edge is cut.",
+        does: "Sets its width and height and moves it from the center of the canvas, in px." }, controls: [
       // the container's size and offset, in px of the canvas; the project keeps percentages so it follows the canvas if its proportion changes
       { type: "stack", id: "block-size-fields", controls: [
         { type: "slider", id: "block-w", label: "Composition container width", min: 10, max: 2000, step: 1, value: 600, suffix: "px", decimal: true, history: "Container Width", get: blockGet("w"), set: blockSet("w") },
@@ -5583,19 +5615,28 @@ const SIMILARITY_PANEL = {
   },
   enabled: { id: "toggle-similarity-active", key: "enabled" },
   badgeId: "badge-similarity-layer",
+  help: {
+    is: "Similarity is the quality that makes elements read as a family: they share a shape, a size or a direction without being identical.",
+    does: "Lets modules drift from a common model. Kinship sets how they change, Association mixes in related shapes and Imperfection breaks some of them." },
   banner: { id: "warning-similarity-grid", hidden: (mod) => !!(mod.structure && mod.structure.enabled) },
   groups: [
-    { title: "Kinship", controls: [
+    { title: "Kinship", help: {
+        is: "Kinship is the way related shapes change while keeping a common origin: stretched, tilted, turned or scaled.",
+        does: "Visual kinship type picks the kind of change; Fluctuation intensity sets how far each module drifts from the model." }, controls: [
       { type: "dropdown", label: "Visual kinship type", key: "kinshipType", attr: "data-kinship-type", history: "Kinship Type", fallback: "distortion",
         options: [["distortion", "Elastic"], ["foreshortening", "3D tilt"], ["rotation_wobble", "Wobble"], ["scale_kinship", "Scale"], ["hybrid", "Hybrid"]] },
       { type: "slider", id: "sim-intensity", label: "Fluctuation intensity", key: "intensity", min: 0, max: 100, step: 1, value: 50, suffix: "%", decimal: true, history: "Intensity" },
     ] },
-    { title: "Association", controls: [
+    { title: "Association", help: {
+        is: "Shapes of the same family (all round, all angular, all lines) go together even when they differ.",
+        does: "Association picks the family that joins the module's shape; Association mix sets how many modules take a family shape." }, controls: [
       { type: "dropdown", label: "Association (family of shapes)", key: "association", attr: "data-sim-assoc", history: "Association", fallback: "none",
         options: [["none", "None"], ["round", "Round"], ["angular", "Angular"], ["lines", "Lines"], ["characters", "Characters"]] },
       { type: "slider", id: "sim-assoc-mix", label: "Association mix", key: "assocMix", min: 0, max: 100, step: 1, value: 50, suffix: "%", decimal: true, history: "Association Mix", blockId: "sim-assoc-block", show: (st) => (st.association || "none") !== "none" },
     ] },
-    { title: "Imperfection", advId: "sim-adv-imperf", controls: [
+    { title: "Imperfection", help: {
+        is: "An imperfection is a flaw that breaks a pure shape: a cut or a break in an otherwise regular form.",
+        does: "Imperfection picks the flaw; Imperfect modules sets how many modules have it. Advanced controls scatter the modules inside their cells." }, advId: "sim-adv-imperf", controls: [
       { type: "dropdown", label: "Imperfection", key: "imperfection", attr: "data-sim-imperf", history: "Imperfection", fallback: "none",
         options: [["none", "None"], ["cut", "Cut"], ["broken", "Broken"]] },
       { type: "slider", id: "sim-imperf-amount", label: "Imperfect modules", key: "imperfAmount", min: 0, max: 100, step: 1, value: 30, suffix: "%", decimal: true, history: "Imperfect Modules", blockId: "sim-imperf-block", show: (st) => (st.imperfection || "none") !== "none" },
@@ -5730,15 +5771,22 @@ const GRADATION_PANEL = {
   state: (app) => app.getActiveGradation(),
   enabled: { id: "toggle-gradation-active", key: "enabled" },
   badgeId: "badge-gradation-layer",
+  help: {
+    is: "Gradation is a gradual change from one state to another, step by step: it gives a design depth, direction and movement.",
+    does: "Makes one attribute of the module change along a path across the structure. Attribute picks what changes, Path where, and Progression how much and how fast." },
   banner: { id: "warning-gradation-grid", hidden: (mod) => !!mod.structure.enabled },
   groups: [
-    { title: "Attribute", controls: [
+    { title: "Attribute", help: {
+        is: "Any quality of a module can be graded: its size, its turn, its position, its shape or its color.",
+        does: "Picks the attribute that changes. Some attributes ask for a second value, such as the end color or the shape it becomes." }, controls: [
       { type: "dropdown", label: "Attribute", key: "type", attr: "data-grad-type", history: "Attribute",
         options: [["rotation", "Rotate"], ["scale", "Scale"], ["depth", "Depth"], ["drift", "Drift"], ["shape", "Shape"], ["texture", "Texture"], ["color", "Color"]] },
       { type: "color", prefix: "grad", label: "End color", key: "endColor", fallback: "#f43f5e", history: "End Color", blockId: "grad-color-block", show: (st) => st.type === "color" },
       { type: "dropdown", label: "Becomes", key: "targetShape", attr: "data-grad-target", history: "Becomes", fallback: "triangle", options: "shapes", blockId: "grad-target-block", show: (st) => st.type === "shape" },
     ] },
-    { title: "Path", advId: "grad-adv-path", controls: [
+    { title: "Path", help: {
+        is: "A gradation follows a path: the direction along which the change advances.",
+        does: "Pathway direction picks the path across the structure. Advanced controls set how it restarts or bounces back, reverse it and alternate rows." }, advId: "grad-adv-path", controls: [
       { type: "dropdown", label: "Pathway direction", key: "pathway", attr: "data-grad-pathway", history: "Pathway",
         options: [["diagonal", "Diagonal"], ["horizontal", "Horizontal"], ["vertical", "Vertical"], ["concentric", "Concentric"], ["zigzag", "Zigzag"]] },
       { type: "dropdown", label: "Sequence", key: "sequence", attr: "data-grad-sequence", history: "Sequence", fallback: "restart", advanced: true,
@@ -5748,7 +5796,9 @@ const GRADATION_PANEL = {
         enable: (st) => st.pathway !== "zigzag", why: "The zigzag path already runs back and forth" },
       { type: "toggle", id: "toggle-grad-reverse", label: "Reverse Gradient Direction", key: "reverse", history: "Reverse", advanced: true },
     ] },
-    { title: "Progression", advId: "grad-adv-prog", controls: [
+    { title: "Progression", help: {
+        is: "The progression is how far and how fast the change advances from the first module to the last.",
+        does: "Range sets the total change; Cycles repeats the change along the path. Speed, in Advanced controls, makes it arrive early or late." }, advId: "grad-adv-prog", controls: [
       { type: "slider", id: "grad-range", label: "Range", key: "range", min: 5, max: 360, step: 5, value: 180, suffix: "º", history: "Range" },
       { type: "slider", id: "grad-steps", label: "Cycles", key: "steps", min: 1, max: 10, step: 1, value: 1, suffix: "", history: "Cycles" },
       // Speed is shown the other way round from the stored easing: + reaches the full effect early, - late
@@ -5799,16 +5849,23 @@ const ANOMALY_PANEL = {
   state: (app) => app.getActiveAnomaly(),
   enabled: { id: "toggle-anomaly-active", key: "enabled" },
   badgeId: "badge-anomaly-layer",
+  help: {
+    is: "An anomaly is an irregularity in a regular structure: a break in the pattern that draws the eye.",
+    does: "Introduces a zone where the modules depart from the structure. Anomaly picks the kind of break; Zone sets where and how strong it is." },
   banner: { id: "warning-anomaly-grid", hidden: (mod) => !!mod.structure.enabled },
   groups: [
-    { title: "Anomaly", controls: [
+    { title: "Anomaly", help: {
+        is: "The kind of break decides how the structure is disturbed: a module that intrudes, a rupture, a swelling, a void or another grid.",
+        does: "Type picks the kind of break. With Another grid, the zone follows a different grid." }, controls: [
       { type: "tags", label: "Type", key: "type", attr: "data-anom-type", history: "Type",
         options: [["focal", "Focal"], ["fracture", "Rupture"], ["swell", "Swell"], ["tear", "Void"], ["regrid", "Another grid"]] },
       // "Another grid": the zone only needs its grid variation, position and radius
       { type: "dropdown", label: "Grid inside the zone", key: "zoneGrid", attr: "data-anom-zonegrid", history: "Zone Grid", fallback: "sliding", blockId: "anom-zonegrid-block", show: (st) => st.type === "regrid",
         options: [["sliding", "Brick"], ["sheared", "Diagonal"], ["curved", "Curved"], ["zigzag", "Zigzag"], ["triangular", "Triangular"], ["alternating", "Alternating"]] },
     ] },
-    { title: "Zone", controls: [
+    { title: "Zone", help: {
+        is: "The zone is the area where the irregularity acts; its size and how it is spread decide how much of the structure it disturbs.",
+        does: "Distribution sets one zone or several; Deviates in picks which properties change; Radius and Severity set the size and strength of the break." }, controls: [
       { type: "tags", label: "Distribution", key: "distribution", attr: "data-anom-dist", history: "Distribution", fallback: "single",
         options: [["single", "Single"], ["regular", "Scattered regular"], ["random", "Scattered random"]] },
       // The attributes each anomaly type can deviate in
@@ -5925,9 +5982,14 @@ const CONCENTRATION_PANEL = {
   state: (app) => app.getActiveConcentration(),
   enabled: { id: "toggle-concentration-active", key: "enabled" },
   badgeId: "badge-concentration-layer",
+  help: {
+    is: "Concentration is the gathering of elements in one part of a design and their scarcity in another: density builds focus and rest.",
+    does: "Attracts or repels modules around a point, a line or several hotspots. Concentration picks the structure; Strength sets its pull and its reach." },
   banner: { id: "warning-concentration-grid", hidden: (mod) => !!mod.structure.enabled },
   groups: [
-    { title: "Concentration", controls: [
+    { title: "Concentration", help: {
+        is: "Elements can gather around a point, keep away from it, follow a line or form several spots, or thin out across the whole design.",
+        does: "Structure picks how they gather; Method moves modules or removes them; Field style shapes how the density fades." }, controls: [
       { type: "tags", label: "Structure", key: "mode", attr: "data-conc-mode", history: "Structure",
         options: [["point", "Point"], ["void", "Void"], ["line", "Line"], ["line_void", "Away from line"], ["free", "Hotspots"], ["dense", "Dense"], ["sparse", "Sparse"]] },
       { type: "tags", label: "Method", key: "method", attr: "data-conc-method", history: "Method", fallback: "move", blockId: "conc-method-block", enable: (st) => !CONC_WHOLE(st), why: "Dense and Sparse work on the whole design",
@@ -5943,7 +6005,9 @@ const CONCENTRATION_PANEL = {
       { type: "slider", id: "conc-y", label: "Y position", key: "attractorY", min: 0, max: 100, step: 1, value: 50, suffix: "%", divisor: 100, fallback: 0.5, history: "Y" },
       { type: "hint", text: "Click anywhere on the canvas to reposition the attractor" },
     ] },
-    { title: "Strength", controls: [
+    { title: "Strength", help: {
+        is: "How strongly elements gather depends on the pull of their center and how far its reach goes.",
+        does: "Gathering pull sets how strongly modules are drawn; Field radius sets how far the effect reaches; the attractor guide marks its center on screen." }, controls: [
       { type: "slider", id: "conc-power", label: "Gathering pull", key: "power", min: 10, max: 100, step: 1, value: 50, suffix: "%", history: "Pull" },
       { type: "slider", id: "conc-radius", label: "Field radius", key: "radius", min: 10, max: 500, step: 5, value: 250, suffix: "px", history: "Radius", blockId: "conc-radius-field", enable: (st) => !CONC_WHOLE(st), why: "Dense and Sparse work on the whole design" },
       { type: "toggle", id: "toggle-conc-guide", label: "Display Attractor Guide", key: "showAttractor", history: "Attractor Guide" },
@@ -5983,12 +6047,19 @@ const SPACE_PANEL = {
   state: (app) => app.getActiveSpace(),
   enabled: { id: "toggle-space-active", key: "enabled" },
   badgeId: "badge-space-layer",
+  help: {
+    is: "Space is the illusion of depth on a flat surface: a form seems to step forward, recede or turn.",
+    does: "Gives the module volume by extruding it. Space picks the kind of depth; Depth sets how far it extends and how it is lit." },
   groups: [
-    { title: "Space", controls: [
+    { title: "Space", help: {
+        is: "Different ways of showing depth read differently: an isometric view keeps parallel lines, a tilt turns the form, and a paradox contradicts itself.",
+        does: "Mode picks the kind of space: Isometric, 3D tilt, Fluctuating or Paradox." }, controls: [
       { type: "tags", label: "Mode", key: "mode", attr: "data-space-mode", history: "Mode",
         options: [["isometric", "Isometric"], ["foreshortening", "3D tilt"], ["fluctuating", "Fluctuating"], ["conflicting", "Paradox"]] },
     ] },
-    { title: "Depth", controls: [
+    { title: "Depth", help: {
+        is: "Depth is how far a form seems to extend behind its front, and how its faces are shaded.",
+        does: "Extrusion depth sets the length, Projection angle the direction, and Facet shading contrast how different the faces look." }, controls: [
       { type: "slider", id: "space-depth", label: "Extrusion depth", key: "depthPct", min: 5, max: 100, step: 1, value: 20, suffix: "%", history: "Depth" },
       { type: "slider", id: "space-angle", label: "Projection angle", key: "angle", min: -180, max: 180, step: 1, value: 30, suffix: "º", history: "Angle" },
       { type: "slider", id: "space-shading", label: "Facet shading contrast", key: "shading", min: 5, max: 100, step: 1, value: 50, suffix: "%", history: "Shading" },
@@ -6020,16 +6091,25 @@ const TEXTURE_PANEL = {
   state: (app) => app.getActiveTexture(),
   enabled: { id: "toggle-texture-active", key: "enabled" },
   badgeId: "badge-texture-layer",
+  help: {
+    is: "Texture is the surface quality of a form: smooth or rough, even or irregular. Here it comes from small distortions of the lines.",
+    does: "Roughens the outline of the module. Irregularity shakes the line, Lines breaks it or adds strokes, and Wave bends the whole module." },
   groups: [
-    { title: "Irregularity", controls: [
+    { title: "Irregularity", help: {
+        is: "A small irregularity takes the machine-made perfection out of a line, as if it were drawn by hand.",
+        does: "Jitter shakes the points of the outline by a small random amount." }, controls: [
       { type: "slider", id: "texture-jitter", label: "Jitter", key: "jitter", min: 0, max: 100, step: 1, value: 10, suffix: "%", unit: 0.1, fallback: 1, history: "Jitter" },
     ] },
-    { title: "Lines", advId: "tex-adv-lines", controls: [
+    { title: "Lines", help: {
+        is: "Lines can be interrupted or crossed by others, which gives a surface a rough, hand-made grain.",
+        does: "Line skipping leaves gaps in the outline; Random lines adds short strokes around it. Their opacity is in Advanced controls." }, advId: "tex-adv-lines", controls: [
       { type: "slider", id: "texture-skip", label: "Line skipping", key: "skipChance", min: 0, max: 90, step: 1, value: 10, suffix: "%", history: "Line Skipping" },
       { type: "slider", id: "texture-crossing", label: "Random lines", key: "crossing", min: 0, max: 100, step: 1, value: 10, suffix: "%", history: "Random Lines" },
       { type: "slider", id: "texture-hairopacity", label: "Random lines opacity", key: "hairOpacity", min: 10, max: 100, step: 1, value: 85, suffix: "%", history: "Random Lines Opacity", advanced: true },
     ] },
-    { title: "Wave", advId: "tex-adv-wave", controls: [
+    { title: "Wave", help: {
+        is: "A wave bends a form as a ripple moves through a sheet.",
+        does: "Plane wave bends the module along its surface. Waves and Direction, in Advanced controls, set how many ripples there are and which way they run." }, advId: "tex-adv-wave", controls: [
       { type: "slider", id: "texture-undulation", label: "Plane wave", key: "undulation", min: 0, max: 100, step: 1, value: 30, suffix: "%", unit: 0.3, fallback: 9, history: "Plane Wave" },
       { type: "slider", id: "texture-waves", label: "Waves", key: "waves", min: 1, max: 6, step: 1, value: 2, suffix: "", history: "Waves", advanced: true },
       { type: "slider", id: "texture-waveangle", label: "Wave direction", key: "waveAngle", min: 0, max: 360, step: 5, value: 0, suffix: "º", history: "Wave Direction", advanced: true },
@@ -6226,8 +6306,7 @@ class ModuleEditor {
     // The look of the shape being edited
     {
       const look = f ? this.engine.figureStyle(f, mod) : { wire: true, color: "#18181F", sw: 1 };
-      document.getElementById("btn-mode-stroke")?.classList.toggle("active", look.wire);
-      document.getElementById("btn-mode-fill")?.classList.toggle("active", !look.wire);
+      this.setModeButtons(look.wire);
       const color = (look.color || "#18181F");
       const cp = document.getElementById("color-active-shape");
       if (cp && /^#[0-9a-f]{6}$/i.test(color)) cp.value = color;
@@ -6304,8 +6383,41 @@ class ModuleEditor {
     canvas.addEventListener("pointercancel", end);
   }
 
+  // Stroke or Fill: which of the two tags is on (and says so to assistive technology)
+  setModeButtons(wire) {
+    for (const [id, on] of [["btn-mode-stroke", !!wire], ["btn-mode-fill", !wire]]) {
+      const b = document.getElementById(id);
+      if (b) { b.classList.toggle("active", on); b.setAttribute("aria-pressed", String(on)); }
+    }
+  }
+
+  // The (?) of the Module panel: its title and its groups. The panel is written in index.html (the editor is not a modifier), so the buttons are put in place here
+  addModuleHelp() {
+    const card = document.getElementById("active-layer-inspector");
+    if (!card) return;
+    const H = {
+      panel: { is: "A module is the unit of a design: a small piece, made of one or more shapes, that is repeated, turned or varied to build a whole.", does: "Opens the module for editing on a canvas of its own. Shapes are drawn one over another; Save keeps the changes and Cancel goes back." },
+      "Shape": { is: "A shape is a basic form, round, angular, straight or curved. Its character is the first thing the eye reads in a module.", does: "Picks the shape of the selected one. Add shape, in the list at the left, builds a module out of up to four shapes." },
+      "Shape interelation": { is: "Shapes in one module relate to each other: they can be apart, touch, overlap, join or cut each other.", does: "Combine merges, subtracts, intersects or excludes all the shapes into one. Relation places a shape next to the previous one, or on its center." },
+      "Shape style": { is: "How a shape is drawn, as a line or as a filled area, with its color and the thickness of its line, changes its weight in the design.", does: "Stroke or Fill, color and line width belong to the selected shape. Its width, height, position and rotation are below." },
+      "Module": { is: "The module is its own sheet of paper: its size sets the space the shapes have, and whatever lies beyond its edge is cut.", does: "Sets the width and height of the module in px. The shapes are placed inside it." }
+    };
+    card.querySelector(".ds-card-title-text")?.insertAdjacentHTML("afterend", this.helpButtonHtml("module:panel", "Module", H.panel));
+    card.querySelectorAll(".ds-label").forEach(label => {
+      const t = label.textContent.trim(), h = H[t];
+      // the titles of the groups: the overline ones, and the label of the shape grid (the first group)
+      if (!h || t === "panel" || !(label.classList.contains("ds-label--overline") || (t === "Shape" && label.nextElementSibling && label.nextElementSibling.id === "fig-shape-grid"))) return;
+      const row = document.createElement("div");
+      row.className = "ds-title-row";
+      label.replaceWith(row);
+      row.append(label);
+      row.insertAdjacentHTML("beforeend", this.helpButtonHtml(`module:${t}`, t, h));
+    });
+  }
+
   setupSmartModule() {
     this.figEdit = null;
+    this.addModuleHelp();
     this.setupFigurePointer();
     document.querySelectorAll("#fig-shape-grid [data-fig-shape]").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -6489,8 +6601,7 @@ class ModuleEditor {
       const target = this.styleTarget();
       if (!target) return;
       target.wireframe = true;
-      btnStroke.classList.add("active");
-      btnFill?.classList.remove("active");
+      this.setModeButtons(true);
       this.render();
       this.updateLayerCardsUI();
       this.pushHistory(`Layer ${this.activeLayerId} Mode: Stroke`);
@@ -6500,8 +6611,7 @@ class ModuleEditor {
       const target = this.styleTarget();
       if (!target) return;
       target.wireframe = false;
-      btnFill.classList.add("active");
-      btnStroke?.classList.remove("active");
+      this.setModeButtons(false);
       this.render();
       this.updateLayerCardsUI();
       this.pushHistory(`Layer ${this.activeLayerId} Mode: Fill`);
@@ -6556,13 +6666,7 @@ class ModuleEditor {
     const btnStroke = document.getElementById("btn-mode-stroke");
     const btnFill = document.getElementById("btn-mode-fill");
     const isWireframe = look.wire;
-    if (isWireframe) {
-      btnStroke?.classList.add("active");
-      btnFill?.classList.remove("active");
-    } else {
-      btnFill?.classList.add("active");
-      btnStroke?.classList.remove("active");
-    }
+    this.setModeButtons(isWireframe);
 
     // Sync Swatch & Color Picker
     const swatch = document.getElementById("swatch-active-color");

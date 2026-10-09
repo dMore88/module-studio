@@ -9,16 +9,23 @@ const ANOMALY_PANEL = {
   state: (app) => app.getActiveAnomaly(),
   enabled: { id: "toggle-anomaly-active", key: "enabled" },
   badgeId: "badge-anomaly-layer",
+  help: {
+    is: "An anomaly is an irregularity in a regular structure: a break in the pattern that draws the eye.",
+    does: "Introduces a zone where the modules depart from the structure. Anomaly picks the kind of break; Zone sets where and how strong it is." },
   banner: { id: "warning-anomaly-grid", hidden: (mod) => !!mod.structure.enabled },
   groups: [
-    { title: "Anomaly", controls: [
+    { title: "Anomaly", help: {
+        is: "The kind of break decides how the structure is disturbed: a module that intrudes, a rupture, a swelling, a void or another grid.",
+        does: "Type picks the kind of break. With Another grid, the zone follows a different grid." }, controls: [
       { type: "tags", label: "Type", key: "type", attr: "data-anom-type", history: "Type",
         options: [["focal", "Focal"], ["fracture", "Rupture"], ["swell", "Swell"], ["tear", "Void"], ["regrid", "Another grid"]] },
       // "Another grid": the zone only needs its grid variation, position and radius
       { type: "dropdown", label: "Grid inside the zone", key: "zoneGrid", attr: "data-anom-zonegrid", history: "Zone Grid", fallback: "sliding", blockId: "anom-zonegrid-block", show: (st) => st.type === "regrid",
         options: [["sliding", "Brick"], ["sheared", "Diagonal"], ["curved", "Curved"], ["zigzag", "Zigzag"], ["triangular", "Triangular"], ["alternating", "Alternating"]] },
     ] },
-    { title: "Zone", controls: [
+    { title: "Zone", help: {
+        is: "The zone is the area where the irregularity acts; its size and how it is spread decide how much of the structure it disturbs.",
+        does: "Distribution sets one zone or several; Deviates in picks which properties change; Radius and Severity set the size and strength of the break." }, controls: [
       { type: "tags", label: "Distribution", key: "distribution", attr: "data-anom-dist", history: "Distribution", fallback: "single",
         options: [["single", "Single"], ["regular", "Scattered regular"], ["random", "Scattered random"]] },
       // The attributes each anomaly type can deviate in

@@ -292,7 +292,7 @@
       assert(Math.abs(t[0] - t[1]) > 150 && Math.abs(t[0] - t[2]) < 40 && Math.abs(t[1] - t[3]) < 40, `Alternate sectors should swap figure and ground (${t})`);
     });
 
-    await test("Radial Fit: Module scale 'Base size' (default) keeps every module at one size taken from the whole structure, 'Shrink with cell' shrinks it with the cell", async () => {
+    await test("Radial Fit: Module size 'Base size' (default) keeps every module at one size taken from the whole structure, 'Shrink with cell' shrinks it with the cell", async () => {
       reset();
       const d = win.document, cv = d.getElementById("studio-canvas");
       const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: false, width: 60, height: 60, showContainer: false }); app.state.showSafeBounds = false;
@@ -306,9 +306,14 @@
       const same = inkInside(80);
       assert(same > shrink * 3, `Base size should leave far more ink near the centre (${shrink} -> ${same})`);
       d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
-      assert(!d.getElementById("rad-modscale-block").classList.contains("is-disabled"), "Fit offers Module scale");
+      const radOn = () => d.querySelector('[data-rad-size].active')?.getAttribute("data-rad-size");
+      assert(radOn() === "uniform", `Module size shows Base size (${radOn()})`);
+      st.radiation.moduleScale = "cell"; app.syncAllInspectorsWithActiveLayer();
+      assert(radOn() === "cell", "Module size shows Shrink with cell");
       st.radiation.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("rad-modscale-block").classList.contains("is-disabled"), "Actual size hides Module scale");
+      assert(radOn() === "actual", "Module size shows Actual size");
+      d.querySelector('[data-rad-size="uniform"]').click(); await wait(40);
+      assert(st.radiation.sizeMode === "fit" && st.radiation.moduleScale === "uniform", "Choosing Base size sets Fit and Base size");
       reset();
     });
 
@@ -497,7 +502,8 @@
       // The inspector: four sliders, the size ones hidden in Actual size, and the art log says it
       d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
       assert(d.getElementById("num-block-x").value === "-150px" && d.getElementById("num-block-w").value === "300px", `The block sliders should show pixels of the canvas (${d.getElementById("num-block-x").value} / ${d.getElementById("num-block-w").value})`);
-      assert(d.getElementById("layout-block").previousElementSibling === d.getElementById("rep-adv-module"), "The Composition container should be its own group, right after the Repetition Module group");
+      const blockNext = d.getElementById("layout-block").nextElementSibling.nextElementSibling;
+      assert(blockNext && blockNext.textContent.trim().startsWith("Module"), "The Composition container should come right before the Repetition Module group (grid first, module last)");
       assert(!d.getElementById("block-size-fields").classList.contains("hidden"), "Fit shows the block size");
       st.repetition.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer(); app.render();
       assert(!d.getElementById("block-size-fields").classList.contains("hidden"), "Actual size also shows the composition container's size (it cuts the grid)");
@@ -505,7 +511,8 @@
       fire0(d.getElementById("input-block-x"), 60);
       assert(Math.abs(st.block.x - 60) < 1e-9, `A 60 px offset should store 60 % of the canvas away from the middle... (${st.block.x})`);
       st.mode = "radiation"; app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("layout-block").previousElementSibling === d.getElementById("rad-adv-module"), "In Radiation the Composition container should move after the Radiation Module group");
+      const radNext = d.getElementById("layout-block").nextElementSibling.nextElementSibling;
+      assert(radNext && radNext.textContent.trim().startsWith("Module"), "In Radiation the Composition container should also come right before the Module group");
     });
 
     await test("Block frame: a dashed guide of the block while the Layout panel is open, never when it is the whole canvas or in an export", async () => {
@@ -1132,7 +1139,7 @@
       assert(inkOf(render({ dimension: "space" }, "radiation", { width: 20, height: 20 })) > 1.5 * inkOf(render({ dimension: "tone" }, "radiation", { width: 20, height: 20 })), "Space did not reverse the radial minority");
     });
 
-    await test("Panel order: selectors (chips, shapes) come before sliders; button groups only for the two Figma mode switches", () => {
+    await test("Panel order: selectors (chips, shapes) come before sliders; button groups only for the layout mode switch", () => {
       const d = win.document;
       const problems = [];
       const containers = [];
@@ -1143,7 +1150,8 @@
       });
       for (const [name, box] of containers) {
         if (!box) continue;
-        const inLines = (el) => !!el.closest("#rep-lines-block, #rad-lines-block");
+        // the lines options and the relation's Direction and Gap are details of an option chosen above them
+        const inLines = (el) => !!el.closest("#rep-lines-block, #rad-lines-block, #fig-relation-stack");
         const sliders = Array.from(box.querySelectorAll(".ds-slider")).filter((e) => !inLines(e));
         const selectors = Array.from(box.querySelectorAll(".ds-tags, .shape-grid")).filter((e) => !inLines(e));
         if (!sliders.length) continue;
@@ -1153,7 +1161,7 @@
         }
       }
       d.querySelectorAll(".ds-btn-group").forEach((g) => {
-        const ok = g.querySelector("#btn-mode-stroke") || g.querySelector("#btn-layout-repetition");
+        const ok = g.querySelector("#btn-layout-repetition");
         if (!ok) problems.push(`unexpected button group: ${g.getAttribute("aria-label")}`);
       });
       assert(problems.length === 0, problems.join("; "));
@@ -1280,7 +1288,7 @@
       q('[data-rail-tab="layout"]').click(); await wait(80);
       q("#toggle-layout-structure").click();
       const rep = () => app.getActiveLayerStructure().repetition;
-      assert(q('[data-rep-size="fit"]').textContent.trim() === "Fit to canvas" && q('[data-rep-size="actual"]').textContent.trim() === "Actual size", "The chips should read Fit to canvas and Actual size");
+      assert(q('[data-rep-size="uniform"]').textContent.trim() === "Base size" && q('[data-rep-size="cell"]').textContent.trim() === "Shrink with cell" && q('[data-rep-size="actual"]').textContent.trim() === "Actual size", "The chips should read Base size, Shrink with cell and Actual size");
       q('[data-rep-size="actual"]').click(); await wait(40);
       assert(rep().sizeMode === "actual" && app.getActiveModule().containerW === Math.round(600 / rep().cols), "Actual size should start with a container as big as a Fit cell");
       assert(!q("#input-layout-cols").closest(".ds-field").classList.contains("is-disabled"), "Actual size should keep the Columns and Rows controls");
@@ -1750,6 +1758,10 @@
       const d = win.document, q = (sel) => d.querySelector(sel);
       q('[data-rail-tab="layout"]').click(); await wait(80); q("#toggle-layout-structure").click(); q("#btn-layout-radiation").click(); await wait(60);
       q('[data-rad-scheme="centrifugal"]').click();
+      assert(q("#rad-twist-block").classList.contains("hidden"), "Spiral twist only appears with the Spiral scheme");
+      q('[data-rad-scheme="spiral"]').click();
+      assert(!q("#rad-twist-block").classList.contains("hidden"), "Spiral twist appears with Spiral");
+      q('[data-rad-scheme="centrifugal"]').click();
       q('[data-rad-shape="hexagon"]').click();
       assert(app.getActiveLayerStructure().radiation.ringShape === "hexagon" && /Hexagon/.test(q("#rad-ringshape-block .ds-dropdown-current").textContent), "The Ring shape dropdown did not apply");
       q('[data-rad-scheme="spiral"]').click(); await wait(40);
@@ -2159,7 +2171,7 @@
       reset();
     });
 
-    await test("Repetition Fit: Module scale 'Base size' (default) keeps the module at its own size in every cell, 'Shrink with cell' shrinks it", async () => {
+    await test("Repetition Fit: Module size 'Base size' (default) keeps the module at its own size in every cell, 'Shrink with cell' shrinks it", async () => {
       reset(true);
       const d = win.document, cv = d.getElementById("studio-canvas");
       const L = app.state.layers[0]; Object.assign(L, { shape: "square", wireframe: false, width: 60, height: 60, showContainer: false }); app.state.showSafeBounds = false;
@@ -2171,9 +2183,15 @@
       const shrunk = ink();
       assert(base > shrunk * 2, `Base size should leave far more ink than Shrink with cell (${shrunk} -> ${base})`);
       d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
-      assert(!d.getElementById("rep-modscale-block").classList.contains("is-disabled"), "Fit offers Module scale in Repetition");
+      st.repetition.moduleScale = "uniform"; app.syncAllInspectorsWithActiveLayer();
+      const repOn = () => d.querySelector('[data-rep-size].active')?.getAttribute("data-rep-size");
+      assert(repOn() === "uniform", `Module size shows Base size in Repetition (${repOn()})`);
+      st.repetition.moduleScale = "cell"; app.syncAllInspectorsWithActiveLayer();
+      assert(repOn() === "cell", "Module size shows Shrink with cell in Repetition");
       st.repetition.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("rep-modscale-block").classList.contains("is-disabled"), "Actual size hides Module scale in Repetition");
+      assert(repOn() === "actual", "Module size shows Actual size in Repetition");
+      d.querySelector('[data-rep-size="cell"]').click(); await wait(40);
+      assert(st.repetition.sizeMode === "fit" && st.repetition.moduleScale === "cell", "Choosing Shrink with cell sets Fit and Shrink with cell");
       reset();
     });
 
@@ -2387,6 +2405,29 @@
       btns[0].click(); await wait(20);
       q("#canvas-column").dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
       assert(pop.hidden, "A click elsewhere closes it");
+    });
+
+    await test("Help (?): every control panel explains itself, with short texts, and its popover stays inside the window", async () => {
+      reset();
+      const d = win.document, texts = app._helpTexts || {}, ids = Object.keys(texts);
+      for (const panel of ["layout", "similarity", "gradation", "anomaly", "contrast", "concentration", "texture", "space", "module"]) assert(texts[`${panel}:panel`], `${panel} has a help for its title`);
+      assert(ids.length >= 35 && ["Shape", "Shape interelation", "Shape style", "Module"].every(t => texts[`module:${t}`]), `Panels and groups carry their help (${ids.length})`);
+      for (const id of ids) {
+        const h = texts[id];
+        assert(h.is && h.does && h.is.length <= 230 && h.does.length <= 230, `${id}: both parts are there and short (${(h.is || "").length} / ${(h.does || "").length})`);
+      }
+      // the two groups called Module (and the two called Lines) in Layout have their own help
+      assert(texts["layout:subpanel-repetition:Module"] && texts["layout:subpanel-radiation:Module"] && texts["layout:subpanel-repetition:Module"].is !== texts["layout:subpanel-radiation:Module"].is, "Repetition and Radiation have their own Module help");
+      // every button opens a popover that fits the window
+      const pop = d.getElementById("help-popover");
+      for (const btn of d.querySelectorAll(".ds-help")) {
+        const tab = btn.closest(".flyout-tab-content");
+        if (tab && tab.classList.contains("hidden")) { d.querySelector(`[data-rail-tab="${tab.dataset.flyoutTab}"]`).click(); await wait(20); }
+        btn.click(); await wait(5);
+        const r = pop.getBoundingClientRect();
+        assert(!pop.hidden && r.left >= 0 && r.right <= win.innerWidth && r.top >= 0 && r.width >= 148 && r.width <= 240.5, `${btn.dataset.help}: the popover opens inside the window (${Math.round(r.left)}, ${Math.round(r.top)}, ${Math.round(r.width)} px)`);
+        btn.click();
+      }
     });
 
     await test("Smart module editor: a click on the canvas picks the shape under the pointer, and dragging moves it", async () => {

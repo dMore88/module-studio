@@ -16,19 +16,28 @@ const SIMILARITY_PANEL = {
   },
   enabled: { id: "toggle-similarity-active", key: "enabled" },
   badgeId: "badge-similarity-layer",
+  help: {
+    is: "Similarity is the quality that makes elements read as a family: they share a shape, a size or a direction without being identical.",
+    does: "Lets modules drift from a common model. Kinship sets how they change, Association mixes in related shapes and Imperfection breaks some of them." },
   banner: { id: "warning-similarity-grid", hidden: (mod) => !!(mod.structure && mod.structure.enabled) },
   groups: [
-    { title: "Kinship", controls: [
+    { title: "Kinship", help: {
+        is: "Kinship is the way related shapes change while keeping a common origin: stretched, tilted, turned or scaled.",
+        does: "Visual kinship type picks the kind of change; Fluctuation intensity sets how far each module drifts from the model." }, controls: [
       { type: "dropdown", label: "Visual kinship type", key: "kinshipType", attr: "data-kinship-type", history: "Kinship Type", fallback: "distortion",
         options: [["distortion", "Elastic"], ["foreshortening", "3D tilt"], ["rotation_wobble", "Wobble"], ["scale_kinship", "Scale"], ["hybrid", "Hybrid"]] },
       { type: "slider", id: "sim-intensity", label: "Fluctuation intensity", key: "intensity", min: 0, max: 100, step: 1, value: 50, suffix: "%", decimal: true, history: "Intensity" },
     ] },
-    { title: "Association", controls: [
+    { title: "Association", help: {
+        is: "Shapes of the same family (all round, all angular, all lines) go together even when they differ.",
+        does: "Association picks the family that joins the module's shape; Association mix sets how many modules take a family shape." }, controls: [
       { type: "dropdown", label: "Association (family of shapes)", key: "association", attr: "data-sim-assoc", history: "Association", fallback: "none",
         options: [["none", "None"], ["round", "Round"], ["angular", "Angular"], ["lines", "Lines"], ["characters", "Characters"]] },
       { type: "slider", id: "sim-assoc-mix", label: "Association mix", key: "assocMix", min: 0, max: 100, step: 1, value: 50, suffix: "%", decimal: true, history: "Association Mix", blockId: "sim-assoc-block", show: (st) => (st.association || "none") !== "none" },
     ] },
-    { title: "Imperfection", advId: "sim-adv-imperf", controls: [
+    { title: "Imperfection", help: {
+        is: "An imperfection is a flaw that breaks a pure shape: a cut or a break in an otherwise regular form.",
+        does: "Imperfection picks the flaw; Imperfect modules sets how many modules have it. Advanced controls scatter the modules inside their cells." }, advId: "sim-adv-imperf", controls: [
       { type: "dropdown", label: "Imperfection", key: "imperfection", attr: "data-sim-imperf", history: "Imperfection", fallback: "none",
         options: [["none", "None"], ["cut", "Cut"], ["broken", "Broken"]] },
       { type: "slider", id: "sim-imperf-amount", label: "Imperfect modules", key: "imperfAmount", min: 0, max: 100, step: 1, value: 30, suffix: "%", decimal: true, history: "Imperfect Modules", blockId: "sim-imperf-block", show: (st) => (st.imperfection || "none") !== "none" },

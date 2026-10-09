@@ -24,7 +24,7 @@ Estado a 7 oct 2026, leído del código (`index.html`, `js/studio/studio-engine.
 
 **Vocabulario:** el **módulo** es la pieza de papel que se repite (*Module width / height*, con sus shapes dibujadas encima y cortadas en su borde); la **celda** es el espacio de la retícula que lo recibe; el **composition container** es la hoja donde se reparten las celdas.
 
-En Fit, columnas y filas dividen el composition container (por defecto, todo el lienzo). Hay dos formas de tratar el módulo (*Module scale*, en *Advanced*):
+En Fit, columnas y filas dividen el composition container (por defecto, todo el lienzo). Hay dos formas de tratar el módulo (opciones de *Module size*):
 
 - **Base size** (por defecto): el módulo **conserva su tamaño en px**. Un módulo de 100 px en celdas de 150 px se ve de 100 px; si es mayor que la celda, se solapa con los vecinos o, con *Clip cell*, se corta en la celda.
 - **Shrink with cell:** el módulo **se escala con su celda**: tamaño dibujado = ancho del módulo × (celda ÷ lienzo). Con 4 × 4 celdas de 150 px, un módulo de 100 se dibuja de 25 px. Es lo que hacía la app antes de *Base size*; los proyectos antiguos se abren así.
@@ -211,4 +211,4 @@ Una sola capa (**Layer 1**): un módulo de **100 × 100 px** con un círculo, tr
 | **Concentration** | Point, Move, atractor en el centro (50 %, 50 %), Gathering pull 50 %, Field radius 250, 2 focos, eje horizontal, flujo y densidad apagados, guía del atractor apagada |
 | **Texture** | Jitter 10 %, Line skipping 10 %, Random lines 10 %, Plane wave 30 % (2 ondas, 0º) |
 | **Space** | Isometric, Extrusion depth 20 %, Projection angle 30º, Shading 50 %, guías isométricas apagadas |
-| **Module scale** (Layout, Fit) | Base size (los proyectos antiguos se abren con Shrink with cell) |
+| **Module size** (Layout: Base size, Shrink with cell, Actual size) | Base size (los proyectos antiguos se abren con Shrink with cell) |
