@@ -2366,6 +2366,29 @@
       assert(px(300 + 24.7, 300 + 24.7) < 160 || px(300 + 24, 300 + 25) < 160, "The arcs inside the module are drawn");
     });
 
+    await test("Help (?): beside the title of a panel and of a group; a click opens a popover with what it is and what it does, Escape or a click elsewhere closes it", async () => {
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel), all = (sel) => [...d.querySelectorAll(sel)];
+      q('[data-rail-tab="contrast"]').click(); await wait(60);
+      const btns = all("#card-contrast .ds-help");
+      assert(btns.length === 3, `Contrast has a (?) for its title and for each of its two groups (${btns.length})`);
+      assert(btns.every(b => b.getAttribute("aria-label").startsWith("What is ") && b.getAttribute("aria-expanded") === "false"), "Every (?) has a name and says it is closed");
+      const pop = q("#help-popover");
+      assert(pop && pop.hidden, "The popover starts closed");
+      btns[1].click(); await wait(20);
+      assert(!pop.hidden && btns[1].getAttribute("aria-expanded") === "true" && /What it is\?/.test(pop.textContent) && /What it does\?/.test(pop.textContent) && /minority/i.test(pop.textContent), "A click opens the popover with both parts");
+      btns[2].click(); await wait(20);
+      assert(!pop.hidden && btns[1].getAttribute("aria-expanded") === "false" && btns[2].getAttribute("aria-expanded") === "true" && /proportion/i.test(pop.textContent), "Another (?) takes its place");
+      btns[2].click(); await wait(20);
+      assert(pop.hidden, "A second click on the same (?) closes it");
+      btns[0].click(); await wait(20);
+      d.dispatchEvent(new win.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      assert(pop.hidden && btns[0].getAttribute("aria-expanded") === "false", "Escape closes it");
+      btns[0].click(); await wait(20);
+      q("#canvas-column").dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+      assert(pop.hidden, "A click elsewhere closes it");
+    });
+
     await test("Smart module editor: a click on the canvas picks the shape under the pointer, and dragging moves it", async () => {
       reset();
       const d = win.document, q = (sel) => d.querySelector(sel), cv = d.getElementById("studio-canvas");

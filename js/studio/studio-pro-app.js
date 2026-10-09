@@ -85,6 +85,7 @@ export class StudioProApp {
     this.setupHeaderActions();
     this.setupFloatingLayersPanel();
     this.setupControlsRail();
+    this.setupHelp();
     this.buildDataPanels(); // the panels described as data (js/studio/app/panel-builder.js) draw their controls first
     this.setupLayoutStructure();
     this.setupSelects();
@@ -648,7 +649,7 @@ export class StudioProApp {
 }
 
 // The rest of the app's methods live in js/studio/app/*.js, one file per panel or area
-applyMixins(StudioProApp, [UiHelpers, PanelBuilder, LayersPanel, ArtLog, ControlsRail, PanelLayout, PanelSimilarity, Accessibility, PanelGradation, PanelAnomaly, PanelContrast, PanelConcentration, PanelSpace, PanelTexture, ModuleEditor]);
+applyMixins(StudioProApp, [HelpPopover, UiHelpers, PanelBuilder, LayersPanel, ArtLog, ControlsRail, PanelLayout, PanelSimilarity, Accessibility, PanelGradation, PanelAnomaly, PanelContrast, PanelConcentration, PanelSpace, PanelTexture, ModuleEditor]);
 
 // Auto-boot upon DOM readiness
 document.addEventListener("DOMContentLoaded", () => {

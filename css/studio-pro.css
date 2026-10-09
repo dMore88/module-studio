@@ -1108,3 +1108,28 @@ body.is-editing-module .ds-select { opacity: 0.5; pointer-events: none; }
 /* A control that does not apply now stays in view, dimmed and without response; its reason is the tooltip (see panel-builder.js) */
 .is-disabled { opacity: 0.45; cursor: not-allowed; }
 .is-disabled button, .is-disabled input, .is-disabled label { cursor: not-allowed; }
+
+/* The (?) help beside a title and its popover (Figma "tooltip"): dark card, two short parts, a pointer to the button */
+.ds-title-row { display: flex; align-items: center; gap: var(--spacing-2); }
+.ds-card-title .ds-help { margin-left: var(--spacing-1); }
+.ds-help {
+  display: inline-grid; place-items: center; flex: none; width: var(--sizing-4); height: var(--sizing-4); padding: 0;
+  border: 0; border-radius: var(--border-radius-full, 99999px); background: transparent; color: var(--neutral-text-soft); cursor: pointer;
+}
+.ds-help i { font-size: var(--sizing-4); }
+.ds-help:hover, .ds-help[aria-expanded="true"] { color: var(--neutral-text-main); }
+.ds-help:focus-visible { outline: var(--border-weight-2) solid var(--neutral-interactive-default); outline-offset: var(--spacing-1); }
+.ds-help-popover {
+  position: fixed; z-index: 70; box-sizing: border-box; width: 202px; padding: var(--spacing-3);
+  display: flex; flex-direction: column; gap: var(--spacing-2);
+  border-radius: var(--border-radius-1); background: var(--neutral-interactive-default); color: var(--neutral-text-main-inverted);
+  box-shadow: var(--elevation-4x); font-family: var(--typography-family-body); font-size: var(--font-size-xs); font-weight: var(--typography-weight-500); line-height: 1.7;
+}
+.ds-help-popover[hidden] { display: none; }
+.ds-help-popover p { margin: 0; }
+.ds-help-popover__label { display: block; }
+.ds-help-popover__pointer {
+  position: absolute; left: var(--pointer-x, 50%); bottom: -6px; width: 0; height: 0; transform: translateX(-50%);
+  border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 6px solid var(--neutral-interactive-default);
+}
+.ds-help-popover.is-below .ds-help-popover__pointer { bottom: auto; top: -6px; border-top: 0; border-bottom: 6px solid var(--neutral-interactive-default); }
