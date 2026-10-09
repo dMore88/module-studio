@@ -253,8 +253,33 @@ class ModuleEditor {
     canvas.addEventListener("pointercancel", end);
   }
 
+  // The (?) of the Module panel: its title and its groups. The panel is written in index.html (the editor is not a modifier), so the buttons are put in place here
+  addModuleHelp() {
+    const card = document.getElementById("active-layer-inspector");
+    if (!card) return;
+    const H = {
+      panel: { is: "A module is the unit of a design: a small piece, made of one or more shapes, that is repeated, turned or varied to build a whole.", does: "Opens the module for editing on a canvas of its own. Shapes are drawn one over another; Save keeps the changes and Cancel goes back." },
+      "Shape": { is: "A shape is a basic form, round, angular, straight or curved. Its character is the first thing the eye reads in a module.", does: "Picks the shape of the selected one. Add shape, in the list at the left, builds a module out of up to four shapes." },
+      "Shape interelation": { is: "Shapes in one module relate to each other: they can be apart, touch, overlap, join or cut each other.", does: "Combine merges, subtracts, intersects or excludes all the shapes into one. Relation places a shape next to the previous one, or on its center." },
+      "Shape style": { is: "How a shape is drawn, as a line or as a filled area, with its color and the thickness of its line, changes its weight in the design.", does: "Stroke or Fill, color and line width belong to the selected shape. Its width, height, position and rotation are below." },
+      "Module": { is: "The module is its own sheet of paper: its size sets the space the shapes have, and whatever lies beyond its edge is cut.", does: "Sets the width and height of the module in px. The shapes are placed inside it." }
+    };
+    card.querySelector(".ds-card-title-text")?.insertAdjacentHTML("afterend", this.helpButtonHtml("module:panel", "Module", H.panel));
+    card.querySelectorAll(".ds-label").forEach(label => {
+      const t = label.textContent.trim(), h = H[t];
+      // the titles of the groups: the overline ones, and the label of the shape grid (the first group)
+      if (!h || t === "panel" || !(label.classList.contains("ds-label--overline") || (t === "Shape" && label.nextElementSibling && label.nextElementSibling.id === "fig-shape-grid"))) return;
+      const row = document.createElement("div");
+      row.className = "ds-title-row";
+      label.replaceWith(row);
+      row.append(label);
+      row.insertAdjacentHTML("beforeend", this.helpButtonHtml(`module:${t}`, t, h));
+    });
+  }
+
   setupSmartModule() {
     this.figEdit = null;
+    this.addModuleHelp();
     this.setupFigurePointer();
     document.querySelectorAll("#fig-shape-grid [data-fig-shape]").forEach(btn => {
       btn.addEventListener("click", () => {

@@ -2392,8 +2392,8 @@
     await test("Help (?): every control panel explains itself, with short texts, and its popover stays inside the window", async () => {
       reset();
       const d = win.document, texts = app._helpTexts || {}, ids = Object.keys(texts);
-      for (const panel of ["layout", "similarity", "gradation", "anomaly", "contrast", "concentration", "texture", "space"]) assert(texts[`${panel}:panel`], `${panel} has a help for its title`);
-      assert(ids.length >= 30, `Panels and groups carry their help (${ids.length})`);
+      for (const panel of ["layout", "similarity", "gradation", "anomaly", "contrast", "concentration", "texture", "space", "module"]) assert(texts[`${panel}:panel`], `${panel} has a help for its title`);
+      assert(ids.length >= 35 && ["Shape", "Shape interelation", "Shape style", "Module"].every(t => texts[`module:${t}`]), `Panels and groups carry their help (${ids.length})`);
       for (const id of ids) {
         const h = texts[id];
         assert(h.is && h.does && h.is.length <= 230 && h.does.length <= 230, `${id}: both parts are there and short (${(h.is || "").length} / ${(h.does || "").length})`);
