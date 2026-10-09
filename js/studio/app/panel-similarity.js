@@ -37,7 +37,7 @@ const SIMILARITY_PANEL = {
     ] },
     { title: "Imperfection", help: {
         is: "An imperfection is a flaw that breaks a pure shape: a cut or a break in an otherwise regular form.",
-        does: "Imperfection picks the flaw; Imperfect modules sets how many modules have it. Advanced controls scatter the modules inside their cells." }, advId: "sim-adv-imperf", controls: [
+        does: "Imperfection picks the flaw; Imperfect modules sets how many modules have it. Spatial cell jitter scatters the modules inside their cells." }, advId: "sim-adv-imperf", controls: [
       { type: "dropdown", label: "Imperfection", key: "imperfection", attr: "data-sim-imperf", history: "Imperfection", fallback: "none",
         options: [["none", "None"], ["cut", "Cut"], ["broken", "Broken"]] },
       { type: "slider", id: "sim-imperf-amount", label: "Imperfect modules", key: "imperfAmount", min: 0, max: 100, step: 1, value: 30, suffix: "%", decimal: true, history: "Imperfect Modules", blockId: "sim-imperf-block", show: (st) => (st.imperfection || "none") !== "none" },

@@ -35,7 +35,7 @@
  *       meta,      // (state) => { label, min, max, step, suffix, history }: the slider changes its name and range with the state (Layout's grid parameter)
  *       decimal,   // the value box asks for a decimal keyboard
  *       bind,      // false: drawn only (its controller lives elsewhere)
- *       advanced } // true: the control goes in the group's "Advanced controls" accordion (the group needs advId)
+ *       advanced } // true: the control goes in the group's "Advanced controls" accordion (the group needs advId; a group with only one such control shows it in view, without the accordion)
  *   { type: "toggle", id, label, key, history, labelId?, title?, show? }
  *   { type: "color",  prefix, label, key, fallback, history, get?, set? }   a colour row without an on/off (Gradation's end colour, a line colour)
  *   { type: "accent", prefix, colorKey, flagKey }   the accent colour row (swatch, hex, remove); picking a colour turns the accent on
@@ -81,13 +81,16 @@ class PanelBuilder {
         return head + drawControls(g.controls, g.advId);
       };
       // A list of controls; the ones marked `advanced` go in an accordion with the id advId
+      // A group with a single Advanced control does not get the accordion: that control stays in view, at the end of the group
       const drawControls = (controls, advId) => {
+        const single = controls.filter(c => c.advanced).length === 1;
         let out = "", adv = "", toggles = [];
         let target = "out";
         const add = (t) => { if (target === "adv") adv += t; else out += t; };
         const flush = () => { if (toggles.length) { add(`<div class="ds-toggles">\n${toggles.join("\n")}\n</div>\n`); toggles = []; } };
         for (const c of controls) {
-          if (!!c.advanced !== (target === "adv")) { flush(); target = c.advanced ? "adv" : "out"; }
+          const isAdv = !!c.advanced && !single;
+          if (isAdv !== (target === "adv")) { flush(); target = isAdv ? "adv" : "out"; }
           if (c.type === "toggle") {
             toggles.push(`<label${c.labelId ? ` id="${c.labelId}"` : ""} class="ds-toggle-item${hid(c) && c.labelId ? " hidden" : ""}"${c.title ? ` title="${c.title}"` : ""}>\n<span class="ds-toggle-label">${c.label}</span>\n<input type="checkbox" id="${c.id}" class="ds-checkbox">\n</label>`);
             continue;

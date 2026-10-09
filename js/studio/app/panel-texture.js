@@ -20,7 +20,7 @@ const TEXTURE_PANEL = {
     ] },
     { title: "Lines", help: {
         is: "Lines can be interrupted or crossed by others, which gives a surface a rough, hand-made grain.",
-        does: "Line skipping leaves gaps in the outline; Random lines adds short strokes around it. Their opacity is in Advanced controls." }, advId: "tex-adv-lines", controls: [
+        does: "Line skipping leaves gaps in the outline; Random lines adds short strokes around it. Random lines opacity sets how strong they look." }, advId: "tex-adv-lines", controls: [
       { type: "slider", id: "texture-skip", label: "Line skipping", key: "skipChance", min: 0, max: 90, step: 1, value: 10, suffix: "%", history: "Line Skipping" },
       { type: "slider", id: "texture-crossing", label: "Random lines", key: "crossing", min: 0, max: 100, step: 1, value: 10, suffix: "%", history: "Random Lines" },
       { type: "slider", id: "texture-hairopacity", label: "Random lines opacity", key: "hairOpacity", min: 10, max: 100, step: 1, value: 85, suffix: "%", history: "Random Lines Opacity", advanced: true },

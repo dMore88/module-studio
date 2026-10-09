@@ -89,8 +89,9 @@ const LAYOUT_PANEL = {
     const rad = LAYOUT_ISRAD(st);
     const modAdv = document.getElementById(rad ? "rad-adv-module" : "rep-adv-module");
     const rotEl = document.getElementById("layout-module-rotation"), blockEl = document.getElementById("layout-block");
-    if (rotEl && modAdv && modAdv.previousElementSibling !== rotEl) modAdv.parentNode.insertBefore(rotEl, modAdv);
     const region = document.getElementById(rad ? "subpanel-radiation" : "subpanel-repetition");
+    // the rotation closes the visible controls of the Module group (before its Advanced accordion, if it has one)
+    if (rotEl && region) { if (modAdv) { if (modAdv.previousElementSibling !== rotEl) modAdv.parentNode.insertBefore(rotEl, modAdv); } else if (region.lastElementChild !== rotEl) region.appendChild(rotEl); }
     const titles = region ? [...region.querySelectorAll(".ds-label--overline")] : [];
     const modTitle = titles.find(el => el.textContent.trim() === "Module");
     const anchor = modTitle && (modTitle.closest(".ds-title-row") || modTitle).previousElementSibling; // the divider above the Module title
@@ -217,7 +218,7 @@ const LAYOUT_PANEL = {
     ] },
     { region: "subpanel-radiation", title: "Module", help: {
         is: "The module is the unit that repeats. In a radiation its size and turn decide how it follows the rays and rings.",
-        does: "Size sets how big each module is (its own size, shrunk with the cell, or its real size). Advanced controls orient it along the rays." }, advId: "rad-adv-module", controls: [
+        does: "Size sets how big each module is (its own size, shrunk with the cell, or its real size). Module orientation turns it along the rays." }, advId: "rad-adv-module", controls: [
       { type: "tags", label: "Module size", attr: "data-rad-size", history: "Radiation Module Size", help: { is: "The size of the module inside its cell. It is a choice of three: the module keeps its own size, shrinks with its cell, or keeps its real size and the grid adapts to it.",
         does: "Base size repeats the module at one size in every cell. Shrink with cell makes it follow its cell. Actual size repeats the module as it is, and the grid grows around it." },
         options: SIZE_OPTIONS("the whole structure"),

@@ -4360,7 +4360,7 @@ class UiHelpers {
  *       meta,      // (state) => { label, min, max, step, suffix, history }: the slider changes its name and range with the state (Layout's grid parameter)
  *       decimal,   // the value box asks for a decimal keyboard
  *       bind,      // false: drawn only (its controller lives elsewhere)
- *       advanced } // true: the control goes in the group's "Advanced controls" accordion (the group needs advId)
+ *       advanced } // true: the control goes in the group's "Advanced controls" accordion (the group needs advId; a group with only one such control shows it in view, without the accordion)
  *   { type: "toggle", id, label, key, history, labelId?, title?, show? }
  *   { type: "color",  prefix, label, key, fallback, history, get?, set? }   a colour row without an on/off (Gradation's end colour, a line colour)
  *   { type: "accent", prefix, colorKey, flagKey }   the accent colour row (swatch, hex, remove); picking a colour turns the accent on
@@ -4406,13 +4406,16 @@ class PanelBuilder {
         return head + drawControls(g.controls, g.advId);
       };
       // A list of controls; the ones marked `advanced` go in an accordion with the id advId
+      // A group with a single Advanced control does not get the accordion: that control stays in view, at the end of the group
       const drawControls = (controls, advId) => {
+        const single = controls.filter(c => c.advanced).length === 1;
         let out = "", adv = "", toggles = [];
         let target = "out";
         const add = (t) => { if (target === "adv") adv += t; else out += t; };
         const flush = () => { if (toggles.length) { add(`<div class="ds-toggles">\n${toggles.join("\n")}\n</div>\n`); toggles = []; } };
         for (const c of controls) {
-          if (!!c.advanced !== (target === "adv")) { flush(); target = c.advanced ? "adv" : "out"; }
+          const isAdv = !!c.advanced && !single;
+          if (isAdv !== (target === "adv")) { flush(); target = isAdv ? "adv" : "out"; }
           if (c.type === "toggle") {
             toggles.push(`<label${c.labelId ? ` id="${c.labelId}"` : ""} class="ds-toggle-item${hid(c) && c.labelId ? " hidden" : ""}"${c.title ? ` title="${c.title}"` : ""}>\n<span class="ds-toggle-label">${c.label}</span>\n<input type="checkbox" id="${c.id}" class="ds-checkbox">\n</label>`);
             continue;
@@ -5402,8 +5405,9 @@ const LAYOUT_PANEL = {
     const rad = LAYOUT_ISRAD(st);
     const modAdv = document.getElementById(rad ? "rad-adv-module" : "rep-adv-module");
     const rotEl = document.getElementById("layout-module-rotation"), blockEl = document.getElementById("layout-block");
-    if (rotEl && modAdv && modAdv.previousElementSibling !== rotEl) modAdv.parentNode.insertBefore(rotEl, modAdv);
     const region = document.getElementById(rad ? "subpanel-radiation" : "subpanel-repetition");
+    // the rotation closes the visible controls of the Module group (before its Advanced accordion, if it has one)
+    if (rotEl && region) { if (modAdv) { if (modAdv.previousElementSibling !== rotEl) modAdv.parentNode.insertBefore(rotEl, modAdv); } else if (region.lastElementChild !== rotEl) region.appendChild(rotEl); }
     const titles = region ? [...region.querySelectorAll(".ds-label--overline")] : [];
     const modTitle = titles.find(el => el.textContent.trim() === "Module");
     const anchor = modTitle && (modTitle.closest(".ds-title-row") || modTitle).previousElementSibling; // the divider above the Module title
@@ -5530,7 +5534,7 @@ const LAYOUT_PANEL = {
     ] },
     { region: "subpanel-radiation", title: "Module", help: {
         is: "The module is the unit that repeats. In a radiation its size and turn decide how it follows the rays and rings.",
-        does: "Size sets how big each module is (its own size, shrunk with the cell, or its real size). Advanced controls orient it along the rays." }, advId: "rad-adv-module", controls: [
+        does: "Size sets how big each module is (its own size, shrunk with the cell, or its real size). Module orientation turns it along the rays." }, advId: "rad-adv-module", controls: [
       { type: "tags", label: "Module size", attr: "data-rad-size", history: "Radiation Module Size", help: { is: "The size of the module inside its cell. It is a choice of three: the module keeps its own size, shrinks with its cell, or keeps its real size and the grid adapts to it.",
         does: "Base size repeats the module at one size in every cell. Shrink with cell makes it follow its cell. Actual size repeats the module as it is, and the grid grows around it." },
         options: SIZE_OPTIONS("the whole structure"),
@@ -5636,7 +5640,7 @@ const SIMILARITY_PANEL = {
     ] },
     { title: "Imperfection", help: {
         is: "An imperfection is a flaw that breaks a pure shape: a cut or a break in an otherwise regular form.",
-        does: "Imperfection picks the flaw; Imperfect modules sets how many modules have it. Advanced controls scatter the modules inside their cells." }, advId: "sim-adv-imperf", controls: [
+        does: "Imperfection picks the flaw; Imperfect modules sets how many modules have it. Spatial cell jitter scatters the modules inside their cells." }, advId: "sim-adv-imperf", controls: [
       { type: "dropdown", label: "Imperfection", key: "imperfection", attr: "data-sim-imperf", history: "Imperfection", fallback: "none",
         options: [["none", "None"], ["cut", "Cut"], ["broken", "Broken"]] },
       { type: "slider", id: "sim-imperf-amount", label: "Imperfect modules", key: "imperfAmount", min: 0, max: 100, step: 1, value: 30, suffix: "%", decimal: true, history: "Imperfect Modules", blockId: "sim-imperf-block", show: (st) => (st.imperfection || "none") !== "none" },
@@ -5798,7 +5802,7 @@ const GRADATION_PANEL = {
     ] },
     { title: "Progression", help: {
         is: "The progression is how far and how fast the change advances from the first module to the last.",
-        does: "Range sets the total change; Cycles repeats the change along the path. Speed, in Advanced controls, makes it arrive early or late." }, advId: "grad-adv-prog", controls: [
+        does: "Range sets the total change; Cycles repeats the change along the path. Speed makes it arrive early or late." }, advId: "grad-adv-prog", controls: [
       { type: "slider", id: "grad-range", label: "Range", key: "range", min: 5, max: 360, step: 5, value: 180, suffix: "º", history: "Range" },
       { type: "slider", id: "grad-steps", label: "Cycles", key: "steps", min: 1, max: 10, step: 1, value: 1, suffix: "", history: "Cycles" },
       // Speed is shown the other way round from the stored easing: + reaches the full effect early, - late
@@ -6102,7 +6106,7 @@ const TEXTURE_PANEL = {
     ] },
     { title: "Lines", help: {
         is: "Lines can be interrupted or crossed by others, which gives a surface a rough, hand-made grain.",
-        does: "Line skipping leaves gaps in the outline; Random lines adds short strokes around it. Their opacity is in Advanced controls." }, advId: "tex-adv-lines", controls: [
+        does: "Line skipping leaves gaps in the outline; Random lines adds short strokes around it. Random lines opacity sets how strong they look." }, advId: "tex-adv-lines", controls: [
       { type: "slider", id: "texture-skip", label: "Line skipping", key: "skipChance", min: 0, max: 90, step: 1, value: 10, suffix: "%", history: "Line Skipping" },
       { type: "slider", id: "texture-crossing", label: "Random lines", key: "crossing", min: 0, max: 100, step: 1, value: 10, suffix: "%", history: "Random Lines" },
       { type: "slider", id: "texture-hairopacity", label: "Random lines opacity", key: "hairOpacity", min: 10, max: 100, step: 1, value: 85, suffix: "%", history: "Random Lines Opacity", advanced: true },
