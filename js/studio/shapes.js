@@ -139,16 +139,17 @@ export const Shapes = {
     name: "Triangle",
     category: "geometric",
     draw(ctx, size) {
+      // The bounding box is centred on the module (the centroid is not the visual centre): the apex is at -0.75 r and the base at +0.75 r
       const r = size * 0.55;
       ctx.beginPath();
-      ctx.moveTo(0, -r);
-      ctx.lineTo(r * 0.866, r * 0.5);
-      ctx.lineTo(-r * 0.866, r * 0.5);
+      ctx.moveTo(0, -r * 0.75);
+      ctx.lineTo(r * 0.866, r * 0.75);
+      ctx.lineTo(-r * 0.866, r * 0.75);
       ctx.closePath();
     },
     svgPath(size) {
       const r = size * 0.55;
-      return `<polygon points="0,${-r} ${r*0.866},${r*0.5} ${-r*0.866},${r*0.5}" />`;
+      return `<polygon points="0,${-r*0.75} ${r*0.866},${r*0.75} ${-r*0.866},${r*0.75}" />`;
     },
     phIcon: "triangle"
   },
