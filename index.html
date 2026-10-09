@@ -229,12 +229,15 @@
           </div>
         </div>
 
-        <div id="fig-relation-block" class="ds-field">
+        <div id="fig-relation-block" class="ds-field ds-field--row">
           <div class="ds-label">Relation to the previous shape</div>
-          <div class="ds-tags">
-            <button type="button" class="ds-tag active" data-fig-rel="free" title="Place it by its position">Free</button>
-            <button type="button" class="ds-tag" data-fig-rel="coincident" title="Same centre as the previous shape">Coincident</button>
-            <button type="button" class="ds-tag" data-fig-rel="distance" title="Next to the previous shape: touching, apart or overlapping">Distance</button>
+          <div class="ds-dropdown" data-select>
+            <button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current"><span>Free</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>
+            <div class="ds-dropdown-menu hidden" role="listbox">
+              <button type="button" class="ds-dropdown-item active" role="option" data-fig-rel="free" title="Place it by its position"><span>Free</span></button>
+              <button type="button" class="ds-dropdown-item" role="option" data-fig-rel="coincident" title="Same centre as the previous shape"><span>Coincident</span></button>
+              <button type="button" class="ds-dropdown-item" role="option" data-fig-rel="distance" title="Next to the previous shape: touching, apart or overlapping"><span>Distance</span></button>
+            </div>
           </div>
         </div>
 
@@ -521,7 +524,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=2b8967e1"></script>
+  <script src="js/bundle-pro.js?v=6500ee97"></script>
 
 </body>
 </html>

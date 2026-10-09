@@ -4291,8 +4291,14 @@ class UiHelpers {
         const want = Math.min(320, menu.scrollHeight);
         const up = below < want && above > below;
         const room = Math.max(120, up ? above : below);
-        menu.style.left = `${r.left}px`;
-        menu.style.width = `${r.width}px`;
+        if (sel.closest(".ds-field--row")) {
+          // Row dropdown (label beside a narrow trigger): the menu grows to the right edge of the trigger so every option reads in full
+          menu.style.width = "max-content"; menu.style.minWidth = `${r.width}px`; menu.style.maxWidth = `${Math.max(r.width, Math.min(320, r.right - 8))}px`;
+          menu.style.left = `${Math.max(8, r.right - menu.offsetWidth)}px`;
+        } else {
+          menu.style.left = `${r.left}px`;
+          menu.style.width = `${r.width}px`;
+        }
         menu.style.maxHeight = `${Math.min(320, room)}px`;
         const h = Math.min(want, room);
         menu.style.top = `${up ? r.top - gap - h : r.bottom + gap}px`;
@@ -4346,8 +4352,8 @@ class UiHelpers {
  * `enable: (state, mod) => bool` with `why`, to stay in view but dimmed and without response when it does not apply (a function of the
  * panel that is not available now; `why` tells the reason, as a tooltip), and `blockId`, the id of its box;
  * `get(state, app)` and `set(state, value, app)` replace the plain `key` when a setting needs more than a number):
- *   { type: "tags",   label, key, attr, history, fallback, help?, options: [[value, text, title?], ...] }   one choice among several (help: a (?) beside the label)
- *   { type: "dropdown", label, key, attr, history, fallback, options: [[value, text, iconHtml?], ...] | "shapes" }   a list of choices ("shapes": every shape, with its icon)
+ *   { type: "tags",   label, key, attr, history, fallback, help?, options: [[value, text, title?], ...] }   chips: for the few things that switch the panel, with icons (selectors are dropdowns); help: a (?) beside the label
+ *   { type: "dropdown", label, key, attr, history, fallback, options: [[value, text, iconHtml?, title?], ...] | "shapes", row? }   a list of choices ("shapes": every shape, with its icon); label on the left and a 132 px dropdown on the right (row: false puts the label above)
  *   { type: "modes",  label, ariaLabel, attr, options: [[value, text, id], ...], get, onSelect(app, value) }   the two-button switch (a button group)
  *   { type: "chips",  label, ariaLabel, attr, options: [{ key, text, id?, show? }],            chips that switch on and off by themselves
  *       nested }  // optional { key, defaults, history }: the chips live in an object of the setting (Anomaly's attrs: on unless set to false)
@@ -4431,7 +4437,8 @@ class PanelBuilder {
             add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n${tagsLabel}\n<div class="ds-tags">\n${c.options.map(([v, t, title], k) => `<button type="button" class="ds-tag${k === 0 ? " active" : ""}" ${c.attr}="${v}"${title ? ` title="${title}"` : ""}>${t}</button>`).join("\n")}\n</div>\n</div>\n`);
           } else if (c.type === "dropdown") {
             const opts = c.options === "shapes" ? STUDIO_SHAPE_KEYS.map(k => [k, SHAPE_LABELS[k] || Shapes[k].name.replace(/\s*\([^)]*\)\s*/g, ""), shapeIconHtml(Shapes[k])]) : c.options;
-            add(`<div${idAttr(c)} class="ds-field${hid(c)}">\n<div class="ds-label">${c.label}</div>\n<div class="ds-dropdown" data-select>\n<button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current">${opts[0][2] || ""}<span>${opts[0][1]}</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>\n<div class="ds-dropdown-menu hidden" role="listbox">\n${opts.map(([v, t, icon]) => `<button type="button" class="ds-dropdown-item" role="option" ${c.attr}="${v}">${icon || ""}<span>${t}</span></button>`).join("\n")}\n</div>\n</div>\n</div>\n`);
+            const ddLabel = c.help ? `<div class="ds-title-row"><div class="ds-label">${c.label}</div>${this.helpButtonHtml(`${spec.id}:control:${c.attr}`, c.label, c.help)}</div>` : `<div class="ds-label">${c.label}</div>`;
+            add(`<div${idAttr(c)} class="ds-field${c.row === false ? "" : " ds-field--row"}${hid(c)}">\n${ddLabel}\n<div class="ds-dropdown" data-select>\n<button type="button" class="ds-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="ds-dropdown-current">${opts[0][2] || ""}<span>${opts[0][1]}</span></span><i class="ph ph-caret-down" aria-hidden="true"></i></button>\n<div class="ds-dropdown-menu hidden" role="listbox">\n${opts.map(([v, t, icon, title]) => `<button type="button" class="ds-dropdown-item" role="option" ${c.attr}="${v}"${title ? ` title="${title}"` : ""}>${icon || ""}<span>${t}</span></button>`).join("\n")}\n</div>\n</div>\n</div>\n`);
           } else if (c.type === "modes") {
             add(`<div${idAttr(c)} class="ds-field">\n<div class="ds-label">${c.label}</div>\n<div class="ds-btn-group" role="group" aria-label="${c.ariaLabel || c.label}">\n${c.options.map(([v, t, id], k) => `<button type="button" id="${id}" class="ds-btn-group__button${k === 0 ? " active" : ""}" ${c.attr}="${v}">${t}</button>`).join("\n")}\n</div>\n</div>\n`);
           } else if (c.type === "color") {
@@ -5358,9 +5365,9 @@ const blockGet = (key) => (st, app) => app.blockPixels(st)[key];
 
 // Module size: one choice that joins sizeMode (fit / actual) and moduleScale (uniform / cell); the saved project keeps both fields
 const SIZE_OPTIONS = (whole) => [
-  ["uniform", "Base size", `Every module keeps its own size, proportional to ${whole}`],
-  ["cell", "Shrink with cell", "The module shrinks with its cell"],
-  ["actual", "Actual size", "The module keeps its real size and the grid adapts to it"],
+  ["uniform", "Base size", "", `Every module keeps its own size, proportional to ${whole}`],
+  ["cell", "Shrink with cell", "", "The module shrinks with its cell"],
+  ["actual", "Actual size", "", "The module keeps its real size and the grid adapts to it"],
 ];
 const sizeChoice = (r) => (r.sizeMode === "actual" ? "actual" : r.moduleScale || "uniform");
 const applySizeChoice = (r, v) => { if (v === "actual") r.sizeMode = "actual"; else { r.sizeMode = "fit"; r.moduleScale = v; } };
@@ -5475,15 +5482,15 @@ const LAYOUT_PANEL = {
     { region: "subpanel-repetition", title: "Module", help: {
         is: "The module is the unit that repeats. Its size, its place in the cell and how it turns decide how the structure reads.",
         does: "Size sets how big the module is in its cell (its own size, shrunk with the cell, or its real size); placement sets where it sits and Module rotation how it turns." }, advId: "rep-adv-module", controls: [
-      { type: "tags", label: "Module size", attr: "data-rep-size", history: "Module Size", help: { is: "The size of the module inside its cell. It is a choice of three: the module keeps its own size, shrinks with its cell, or keeps its real size and the grid adapts to it.",
+      { type: "dropdown", label: "Module size", attr: "data-rep-size", history: "Module Size", help: { is: "The size of the module inside its cell. It is a choice of three: the module keeps its own size, shrinks with its cell, or keeps its real size and the grid adapts to it.",
         does: "Base size repeats the module at one size in every cell. Shrink with cell makes it follow its cell. Actual size repeats the module as it is, and the grid grows around it." },
         options: SIZE_OPTIONS("the whole canvas"),
         get: (st) => sizeChoice(st.repetition),
         set: (st, v, app) => { applySizeChoice(st.repetition, v); if (v === "actual") app.startContainerFromCell(st.repetition.cols, st.repetition.rows); st.mode = "repetition"; } },
       // Placement does not apply to the honeycomb; mixed sizes only to the plain and alternating grids
-      { type: "tags", label: "Module placement", attr: "data-rep-place", history: "Module Placement", blockId: "rep-placement-block", enable: (st) => !["hexagonal", "free"].includes(st.repetition.gridType), why: "Does not apply to the hexagonal grid or to Free",
+      { type: "dropdown", label: "Module placement", attr: "data-rep-place", history: "Module Placement", blockId: "rep-placement-block", enable: (st) => !["hexagonal", "free"].includes(st.repetition.gridType), why: "Does not apply to the hexagonal grid or to Free",
         options: [["centers", "Centers"], ["intersections", "Intersections"], ["both", "Both"]], get: (st) => st.repetition.placement || "centers", set: repSet("placement") },
-      { type: "tags", label: "Cell mix", attr: "data-rep-mix", history: "Cell Mix", blockId: "rep-mix-block", enable: (st) => st.repetition.gridType === "basic" || st.repetition.gridType === "alternating", why: "Only with the Grid and Alternating variations",
+      { type: "dropdown", label: "Cell mix", attr: "data-rep-mix", history: "Cell Mix", blockId: "rep-mix-block", enable: (st) => st.repetition.gridType === "basic" || st.repetition.gridType === "alternating", why: "Only with the Grid and Alternating variations",
         options: [["none", "None"], ["merge", "Merged"], ["divide", "Divided"]], get: (st) => st.repetition.cellMix || "none", set: repSet("cellMix") },
       { type: "slider", id: "layout-inter", label: "Intersection size", blockId: "rep-inter-block", min: 10, max: 100, step: 5, value: 50, suffix: "%", decimal: true, history: "Intersection Size",
         show: (st) => !["hexagonal", "free"].includes(st.repetition.gridType) && (st.repetition.placement || "centers") !== "centers",
@@ -5535,7 +5542,7 @@ const LAYOUT_PANEL = {
     { region: "subpanel-radiation", title: "Module", help: {
         is: "The module is the unit that repeats. In a radiation its size and turn decide how it follows the rays and rings.",
         does: "Size sets how big each module is (its own size, shrunk with the cell, or its real size). Module orientation turns it along the rays." }, advId: "rad-adv-module", controls: [
-      { type: "tags", label: "Module size", attr: "data-rad-size", history: "Radiation Module Size", help: { is: "The size of the module inside its cell. It is a choice of three: the module keeps its own size, shrinks with its cell, or keeps its real size and the grid adapts to it.",
+      { type: "dropdown", label: "Module size", attr: "data-rad-size", history: "Radiation Module Size", help: { is: "The size of the module inside its cell. It is a choice of three: the module keeps its own size, shrinks with its cell, or keeps its real size and the grid adapts to it.",
         does: "Base size repeats the module at one size in every cell. Shrink with cell makes it follow its cell. Actual size repeats the module as it is, and the grid grows around it." },
         options: SIZE_OPTIONS("the whole structure"),
         get: (st) => sizeChoice(st.radiation),
@@ -5627,21 +5634,21 @@ const SIMILARITY_PANEL = {
     { title: "Kinship", help: {
         is: "Kinship is the way related shapes change while keeping a common origin: stretched, tilted, turned or scaled.",
         does: "Visual kinship type picks the kind of change; Fluctuation intensity sets how far each module drifts from the model." }, controls: [
-      { type: "dropdown", label: "Visual kinship type", key: "kinshipType", attr: "data-kinship-type", history: "Kinship Type", fallback: "distortion",
+      { type: "dropdown", row: true, label: "Visual kinship type", key: "kinshipType", attr: "data-kinship-type", history: "Kinship Type", fallback: "distortion",
         options: [["distortion", "Elastic"], ["foreshortening", "3D tilt"], ["rotation_wobble", "Wobble"], ["scale_kinship", "Scale"], ["hybrid", "Hybrid"]] },
       { type: "slider", id: "sim-intensity", label: "Fluctuation intensity", key: "intensity", min: 0, max: 100, step: 1, value: 50, suffix: "%", decimal: true, history: "Intensity" },
     ] },
     { title: "Association", help: {
         is: "Shapes of the same family (all round, all angular, all lines) go together even when they differ.",
         does: "Association picks the family that joins the module's shape; Association mix sets how many modules take a family shape." }, controls: [
-      { type: "dropdown", label: "Association (family of shapes)", key: "association", attr: "data-sim-assoc", history: "Association", fallback: "none",
+      { type: "dropdown", row: true, label: "Association (family of shapes)", key: "association", attr: "data-sim-assoc", history: "Association", fallback: "none",
         options: [["none", "None"], ["round", "Round"], ["angular", "Angular"], ["lines", "Lines"], ["characters", "Characters"]] },
       { type: "slider", id: "sim-assoc-mix", label: "Association mix", key: "assocMix", min: 0, max: 100, step: 1, value: 50, suffix: "%", decimal: true, history: "Association Mix", blockId: "sim-assoc-block", show: (st) => (st.association || "none") !== "none" },
     ] },
     { title: "Imperfection", help: {
         is: "An imperfection is a flaw that breaks a pure shape: a cut or a break in an otherwise regular form.",
         does: "Imperfection picks the flaw; Imperfect modules sets how many modules have it. Spatial cell jitter scatters the modules inside their cells." }, advId: "sim-adv-imperf", controls: [
-      { type: "dropdown", label: "Imperfection", key: "imperfection", attr: "data-sim-imperf", history: "Imperfection", fallback: "none",
+      { type: "dropdown", row: true, label: "Imperfection", key: "imperfection", attr: "data-sim-imperf", history: "Imperfection", fallback: "none",
         options: [["none", "None"], ["cut", "Cut"], ["broken", "Broken"]] },
       { type: "slider", id: "sim-imperf-amount", label: "Imperfect modules", key: "imperfAmount", min: 0, max: 100, step: 1, value: 30, suffix: "%", decimal: true, history: "Imperfect Modules", blockId: "sim-imperf-block", show: (st) => (st.imperfection || "none") !== "none" },
       { type: "slider", id: "sim-jitter", label: "Spatial cell jitter", min: 0, max: 90, step: 1, value: 0, suffix: "%", decimal: true, history: "Cell Jitter", advanced: true,
@@ -5861,10 +5868,10 @@ const ANOMALY_PANEL = {
     { title: "Anomaly", help: {
         is: "The kind of break decides how the structure is disturbed: a module that intrudes, a rupture, a swelling, a void or another grid.",
         does: "Type picks the kind of break; Deviates in picks which properties change (and the intruder's shape, with Focal). With Another grid, the zone follows a different grid." }, controls: [
-      { type: "tags", label: "Type", key: "type", attr: "data-anom-type", history: "Type",
+      { type: "dropdown", row: true, label: "Type", key: "type", attr: "data-anom-type", history: "Type",
         options: [["focal", "Focal"], ["fracture", "Rupture"], ["swell", "Swell"], ["tear", "Void"], ["regrid", "Another grid"]] },
       // "Another grid": the zone only needs its grid variation, position and radius
-      { type: "dropdown", label: "Grid inside the zone", key: "zoneGrid", attr: "data-anom-zonegrid", history: "Zone Grid", fallback: "sliding", blockId: "anom-zonegrid-block", show: (st) => st.type === "regrid",
+      { type: "dropdown", row: true, label: "Grid inside the zone", key: "zoneGrid", attr: "data-anom-zonegrid", history: "Zone Grid", fallback: "sliding", blockId: "anom-zonegrid-block", show: (st) => st.type === "regrid",
         options: [["sliding", "Brick"], ["sheared", "Diagonal"], ["curved", "Curved"], ["zigzag", "Zigzag"], ["triangular", "Triangular"], ["alternating", "Alternating"]] },
       // The attributes each anomaly type can deviate in
       { type: "chips", label: "Deviates in", attr: "data-anom-attr", blockId: "anom-attrs-block", enable: (st) => st.type !== "regrid", why: "With Another grid only the grid of the zone counts",
@@ -5876,7 +5883,7 @@ const ANOMALY_PANEL = {
     { title: "Zone", help: {
         is: "The zone is the area where the irregularity acts; its size and how it is spread decide how much of the structure it disturbs.",
         does: "Distribution sets one zone or several; Radius and Severity set the size and strength of the break." }, controls: [
-      { type: "tags", label: "Distribution", key: "distribution", attr: "data-anom-dist", history: "Distribution", fallback: "single",
+      { type: "dropdown", row: true, label: "Distribution", key: "distribution", attr: "data-anom-dist", history: "Distribution", fallback: "single",
         options: [["single", "Single"], ["regular", "Scattered regular"], ["random", "Scattered random"]] },
       { type: "hint", text: "Click anywhere on the canvas to set focal point", blockId: "anom-position-block", show: (st) => (st.distribution || "single") === "single" },
       { type: "slider", id: "anom-count", label: "Count", key: "count", min: 1, max: 10, step: 1, value: 5, suffix: "", history: "Count", blockId: "anom-count-block", show: (st) => (st.distribution || "single") !== "single" },
@@ -5994,11 +6001,11 @@ const CONCENTRATION_PANEL = {
     { title: "Concentration", help: {
         is: "Elements can gather around a point, keep away from it, follow a line or form several spots, or thin out across the whole design.",
         does: "Structure picks how they gather; Method moves modules or removes them; Field style shapes how the density fades." }, controls: [
-      { type: "tags", label: "Structure", key: "mode", attr: "data-conc-mode", history: "Structure",
+      { type: "dropdown", label: "Structure", key: "mode", attr: "data-conc-mode", history: "Structure",
         options: [["point", "Point"], ["void", "Void"], ["line", "Line"], ["line_void", "Away from line"], ["free", "Hotspots"], ["dense", "Dense"], ["sparse", "Sparse"]] },
-      { type: "tags", label: "Method", key: "method", attr: "data-conc-method", history: "Method", fallback: "move", blockId: "conc-method-block", enable: (st) => !CONC_WHOLE(st), why: "Dense and Sparse work on the whole design",
+      { type: "dropdown", label: "Method", key: "method", attr: "data-conc-method", history: "Method", fallback: "move", blockId: "conc-method-block", enable: (st) => !CONC_WHOLE(st), why: "Dense and Sparse work on the whole design",
         options: [["move", "Move"], ["absence", "Absence"]] },
-      { type: "tags", label: "Line axis", key: "lineAxis", attr: "data-conc-axis", history: "Axis", blockId: "conc-axis-block", show: (st) => st.mode === "line" || st.mode === "line_void",
+      { type: "dropdown", label: "Line axis", key: "lineAxis", attr: "data-conc-axis", history: "Axis", blockId: "conc-axis-block", show: (st) => st.mode === "line" || st.mode === "line_void",
         options: [["horizontal", "Horizontal"], ["vertical", "Vertical"]] },
       { type: "chips", label: "Field style", attr: "data-conc-flag", options: [
         { key: "edgeFade", text: "Soft edge", id: "conc-fade-block", enable: (st) => CONC_WHOLE(st), why: "Only with Dense or Sparse" },
@@ -6058,7 +6065,7 @@ const SPACE_PANEL = {
     { title: "Space", help: {
         is: "Different ways of showing depth read differently: an isometric view keeps parallel lines, a tilt turns the form, and a paradox contradicts itself.",
         does: "Mode picks the kind of space: Isometric, 3D tilt, Fluctuating or Paradox." }, controls: [
-      { type: "tags", label: "Mode", key: "mode", attr: "data-space-mode", history: "Mode",
+      { type: "dropdown", label: "Mode", key: "mode", attr: "data-space-mode", history: "Mode",
         options: [["isometric", "Isometric"], ["foreshortening", "3D tilt"], ["fluctuating", "Fluctuating"], ["conflicting", "Paradox"]] },
     ] },
     { title: "Depth", help: {

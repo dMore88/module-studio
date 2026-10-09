@@ -17,10 +17,10 @@ const ANOMALY_PANEL = {
     { title: "Anomaly", help: {
         is: "The kind of break decides how the structure is disturbed: a module that intrudes, a rupture, a swelling, a void or another grid.",
         does: "Type picks the kind of break; Deviates in picks which properties change (and the intruder's shape, with Focal). With Another grid, the zone follows a different grid." }, controls: [
-      { type: "tags", label: "Type", key: "type", attr: "data-anom-type", history: "Type",
+      { type: "dropdown", row: true, label: "Type", key: "type", attr: "data-anom-type", history: "Type",
         options: [["focal", "Focal"], ["fracture", "Rupture"], ["swell", "Swell"], ["tear", "Void"], ["regrid", "Another grid"]] },
       // "Another grid": the zone only needs its grid variation, position and radius
-      { type: "dropdown", label: "Grid inside the zone", key: "zoneGrid", attr: "data-anom-zonegrid", history: "Zone Grid", fallback: "sliding", blockId: "anom-zonegrid-block", show: (st) => st.type === "regrid",
+      { type: "dropdown", row: true, label: "Grid inside the zone", key: "zoneGrid", attr: "data-anom-zonegrid", history: "Zone Grid", fallback: "sliding", blockId: "anom-zonegrid-block", show: (st) => st.type === "regrid",
         options: [["sliding", "Brick"], ["sheared", "Diagonal"], ["curved", "Curved"], ["zigzag", "Zigzag"], ["triangular", "Triangular"], ["alternating", "Alternating"]] },
       // The attributes each anomaly type can deviate in
       { type: "chips", label: "Deviates in", attr: "data-anom-attr", blockId: "anom-attrs-block", enable: (st) => st.type !== "regrid", why: "With Another grid only the grid of the zone counts",
@@ -32,7 +32,7 @@ const ANOMALY_PANEL = {
     { title: "Zone", help: {
         is: "The zone is the area where the irregularity acts; its size and how it is spread decide how much of the structure it disturbs.",
         does: "Distribution sets one zone or several; Radius and Severity set the size and strength of the break." }, controls: [
-      { type: "tags", label: "Distribution", key: "distribution", attr: "data-anom-dist", history: "Distribution", fallback: "single",
+      { type: "dropdown", row: true, label: "Distribution", key: "distribution", attr: "data-anom-dist", history: "Distribution", fallback: "single",
         options: [["single", "Single"], ["regular", "Scattered regular"], ["random", "Scattered random"]] },
       { type: "hint", text: "Click anywhere on the canvas to set focal point", blockId: "anom-position-block", show: (st) => (st.distribution || "single") === "single" },
       { type: "slider", id: "anom-count", label: "Count", key: "count", min: 1, max: 10, step: 1, value: 5, suffix: "", history: "Count", blockId: "anom-count-block", show: (st) => (st.distribution || "single") !== "single" },

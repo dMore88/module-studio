@@ -42,9 +42,9 @@ const blockGet = (key) => (st, app) => app.blockPixels(st)[key];
 
 // Module size: one choice that joins sizeMode (fit / actual) and moduleScale (uniform / cell); the saved project keeps both fields
 const SIZE_OPTIONS = (whole) => [
-  ["uniform", "Base size", `Every module keeps its own size, proportional to ${whole}`],
-  ["cell", "Shrink with cell", "The module shrinks with its cell"],
-  ["actual", "Actual size", "The module keeps its real size and the grid adapts to it"],
+  ["uniform", "Base size", "", `Every module keeps its own size, proportional to ${whole}`],
+  ["cell", "Shrink with cell", "", "The module shrinks with its cell"],
+  ["actual", "Actual size", "", "The module keeps its real size and the grid adapts to it"],
 ];
 const sizeChoice = (r) => (r.sizeMode === "actual" ? "actual" : r.moduleScale || "uniform");
 const applySizeChoice = (r, v) => { if (v === "actual") r.sizeMode = "actual"; else { r.sizeMode = "fit"; r.moduleScale = v; } };
@@ -159,15 +159,15 @@ const LAYOUT_PANEL = {
     { region: "subpanel-repetition", title: "Module", help: {
         is: "The module is the unit that repeats. Its size, its place in the cell and how it turns decide how the structure reads.",
         does: "Size sets how big the module is in its cell (its own size, shrunk with the cell, or its real size); placement sets where it sits and Module rotation how it turns." }, advId: "rep-adv-module", controls: [
-      { type: "tags", label: "Module size", attr: "data-rep-size", history: "Module Size", help: { is: "The size of the module inside its cell. It is a choice of three: the module keeps its own size, shrinks with its cell, or keeps its real size and the grid adapts to it.",
+      { type: "dropdown", label: "Module size", attr: "data-rep-size", history: "Module Size", help: { is: "The size of the module inside its cell. It is a choice of three: the module keeps its own size, shrinks with its cell, or keeps its real size and the grid adapts to it.",
         does: "Base size repeats the module at one size in every cell. Shrink with cell makes it follow its cell. Actual size repeats the module as it is, and the grid grows around it." },
         options: SIZE_OPTIONS("the whole canvas"),
         get: (st) => sizeChoice(st.repetition),
         set: (st, v, app) => { applySizeChoice(st.repetition, v); if (v === "actual") app.startContainerFromCell(st.repetition.cols, st.repetition.rows); st.mode = "repetition"; } },
       // Placement does not apply to the honeycomb; mixed sizes only to the plain and alternating grids
-      { type: "tags", label: "Module placement", attr: "data-rep-place", history: "Module Placement", blockId: "rep-placement-block", enable: (st) => !["hexagonal", "free"].includes(st.repetition.gridType), why: "Does not apply to the hexagonal grid or to Free",
+      { type: "dropdown", label: "Module placement", attr: "data-rep-place", history: "Module Placement", blockId: "rep-placement-block", enable: (st) => !["hexagonal", "free"].includes(st.repetition.gridType), why: "Does not apply to the hexagonal grid or to Free",
         options: [["centers", "Centers"], ["intersections", "Intersections"], ["both", "Both"]], get: (st) => st.repetition.placement || "centers", set: repSet("placement") },
-      { type: "tags", label: "Cell mix", attr: "data-rep-mix", history: "Cell Mix", blockId: "rep-mix-block", enable: (st) => st.repetition.gridType === "basic" || st.repetition.gridType === "alternating", why: "Only with the Grid and Alternating variations",
+      { type: "dropdown", label: "Cell mix", attr: "data-rep-mix", history: "Cell Mix", blockId: "rep-mix-block", enable: (st) => st.repetition.gridType === "basic" || st.repetition.gridType === "alternating", why: "Only with the Grid and Alternating variations",
         options: [["none", "None"], ["merge", "Merged"], ["divide", "Divided"]], get: (st) => st.repetition.cellMix || "none", set: repSet("cellMix") },
       { type: "slider", id: "layout-inter", label: "Intersection size", blockId: "rep-inter-block", min: 10, max: 100, step: 5, value: 50, suffix: "%", decimal: true, history: "Intersection Size",
         show: (st) => !["hexagonal", "free"].includes(st.repetition.gridType) && (st.repetition.placement || "centers") !== "centers",
@@ -219,7 +219,7 @@ const LAYOUT_PANEL = {
     { region: "subpanel-radiation", title: "Module", help: {
         is: "The module is the unit that repeats. In a radiation its size and turn decide how it follows the rays and rings.",
         does: "Size sets how big each module is (its own size, shrunk with the cell, or its real size). Module orientation turns it along the rays." }, advId: "rad-adv-module", controls: [
-      { type: "tags", label: "Module size", attr: "data-rad-size", history: "Radiation Module Size", help: { is: "The size of the module inside its cell. It is a choice of three: the module keeps its own size, shrinks with its cell, or keeps its real size and the grid adapts to it.",
+      { type: "dropdown", label: "Module size", attr: "data-rad-size", history: "Radiation Module Size", help: { is: "The size of the module inside its cell. It is a choice of three: the module keeps its own size, shrinks with its cell, or keeps its real size and the grid adapts to it.",
         does: "Base size repeats the module at one size in every cell. Shrink with cell makes it follow its cell. Actual size repeats the module as it is, and the grid grows around it." },
         options: SIZE_OPTIONS("the whole structure"),
         get: (st) => sizeChoice(st.radiation),
