@@ -5860,24 +5860,24 @@ const ANOMALY_PANEL = {
   groups: [
     { title: "Anomaly", help: {
         is: "The kind of break decides how the structure is disturbed: a module that intrudes, a rupture, a swelling, a void or another grid.",
-        does: "Type picks the kind of break. With Another grid, the zone follows a different grid." }, controls: [
+        does: "Type picks the kind of break; Deviates in picks which properties change (and the intruder's shape, with Focal). With Another grid, the zone follows a different grid." }, controls: [
       { type: "tags", label: "Type", key: "type", attr: "data-anom-type", history: "Type",
         options: [["focal", "Focal"], ["fracture", "Rupture"], ["swell", "Swell"], ["tear", "Void"], ["regrid", "Another grid"]] },
       // "Another grid": the zone only needs its grid variation, position and radius
       { type: "dropdown", label: "Grid inside the zone", key: "zoneGrid", attr: "data-anom-zonegrid", history: "Zone Grid", fallback: "sliding", blockId: "anom-zonegrid-block", show: (st) => st.type === "regrid",
         options: [["sliding", "Brick"], ["sheared", "Diagonal"], ["curved", "Curved"], ["zigzag", "Zigzag"], ["triangular", "Triangular"], ["alternating", "Alternating"]] },
-    ] },
-    { title: "Zone", help: {
-        is: "The zone is the area where the irregularity acts; its size and how it is spread decide how much of the structure it disturbs.",
-        does: "Distribution sets one zone or several; Deviates in picks which properties change; Radius and Severity set the size and strength of the break." }, controls: [
-      { type: "tags", label: "Distribution", key: "distribution", attr: "data-anom-dist", history: "Distribution", fallback: "single",
-        options: [["single", "Single"], ["regular", "Scattered regular"], ["random", "Scattered random"]] },
       // The attributes each anomaly type can deviate in
       { type: "chips", label: "Deviates in", attr: "data-anom-attr", blockId: "anom-attrs-block", enable: (st) => st.type !== "regrid", why: "With Another grid only the grid of the zone counts",
         nested: { key: "attrs", defaults: { shape: true, scale: true, rotation: true, position: true }, history: "Deviates in" },
         options: ["shape", "scale", "rotation", "position"].map(k => ({ key: k, text: k[0].toUpperCase() + k.slice(1), enable: (st) => (StudioProApp.ANOMALY_ATTRS[st.type] || []).includes(k), why: "This type does not change this property" })) },
       { type: "dropdown", label: "Focal Intruder Shape", key: "anomalousShape", attr: "data-anom-shape", history: "Shape", options: "shapes", blockId: "anom-shape-block",
         show: (st) => st.type === "focal" && (st.attrs || {}).shape !== false },
+    ] },
+    { title: "Zone", help: {
+        is: "The zone is the area where the irregularity acts; its size and how it is spread decide how much of the structure it disturbs.",
+        does: "Distribution sets one zone or several; Radius and Severity set the size and strength of the break." }, controls: [
+      { type: "tags", label: "Distribution", key: "distribution", attr: "data-anom-dist", history: "Distribution", fallback: "single",
+        options: [["single", "Single"], ["regular", "Scattered regular"], ["random", "Scattered random"]] },
       { type: "hint", text: "Click anywhere on the canvas to set focal point", blockId: "anom-position-block", show: (st) => (st.distribution || "single") === "single" },
       { type: "slider", id: "anom-count", label: "Count", key: "count", min: 1, max: 10, step: 1, value: 5, suffix: "", history: "Count", blockId: "anom-count-block", show: (st) => (st.distribution || "single") !== "single" },
       { type: "slider", id: "anom-seed", label: "Seed", key: "seed", min: 1, max: 99, step: 1, value: 7, suffix: "", history: "Seed", blockId: "anom-seed-block", show: (st) => st.distribution === "random" },
@@ -5941,10 +5941,15 @@ const CONTRAST_PANEL = {
   groups: [
     { title: "Minority", help: {
         is: "The minority is the group of elements that departs from the rest. The quality it departs in is the dimension of the contrast.",
-        does: "Dimension picks the quality that differs. The values that appear below set how strong the difference is." }, controls: [
+        does: "Dimension picks the quality that differs. The values that appear below it set how strong that difference is." }, controls: [
       { type: "dropdown", label: "Dimension", key: "dimension", attr: "data-contrast-dimension", history: "Dimension",
         options: [["scale", "Scale"], ["shape", "Shape"], ["direction", "Angle"], ["position", "Position"], ["tone", "Tone"], ["texture", "Texture"], ["space", "Space"]] },
       { type: "dropdown", label: "Minority Shape", key: "contrastShape", attr: "data-contrast-shape", history: "Shape", options: "shapes", blockId: "contrast-shape-block", show: (st) => st.dimension === "shape" },
+      { type: "slider", id: "contrast-scale", label: "Contrast Scale Multiplier", key: "scaleFactor", min: 0.2, max: 5, step: 0.1, value: 2, suffix: "x", decimal: true, history: "Scale", blockId: "contrast-scale-block", show: (st) => st.dimension === "scale" },
+      { type: "slider", id: "contrast-tone", label: "Tone", key: "toneAmount", min: 0, max: 100, step: 5, value: 50, suffix: "%", decimal: true, history: "Tone", blockId: "contrast-tone-block", show: (st) => st.dimension === "tone" },
+      { type: "slider", id: "contrast-shift", label: "Shift", key: "positionShift", min: 0, max: 50, step: 1, value: 25, suffix: "%", decimal: true, history: "Shift", blockId: "contrast-shift-block", show: (st) => st.dimension === "position" },
+      { type: "slider", id: "contrast-shiftangle", label: "Shift direction", key: "positionAngle", min: 0, max: 360, step: 5, value: 45, suffix: "º", decimal: true, history: "Shift direction", blockId: "contrast-shiftangle-block", show: (st) => st.dimension === "position" },
+      { type: "slider", id: "contrast-angle", label: "Clash Angle", key: "angle", min: 5, max: 90, step: 5, value: 45, suffix: "º", decimal: true, history: "Angle", blockId: "contrast-angle-block", show: (st) => st.dimension === "direction" },
     ] },
     { title: "Proportion", help: {
         is: "The strength of a contrast depends on proportion: a few different elements among many alike stand out more than an even split.",
@@ -5952,11 +5957,6 @@ const CONTRAST_PANEL = {
       { type: "dropdown", label: "Minority spread", key: "spread", attr: "data-contrast-spread", history: "Spread", fallback: "scattered", blockId: "contrast-spread-block",
         options: [["scattered", "Scattered"], ["balanced", "Balanced"], ["edge", "Toward the edges"], ["center", "Toward the center"]] },
       { type: "slider", id: "contrast-dominance", label: "Dominance ratio", key: "dominanceRatio", min: 50, max: 95, step: 1, value: 80, suffix: "%", decimal: true, history: "Dominance", blockId: "contrast-dominance-block" },
-      { type: "slider", id: "contrast-scale", label: "Contrast Scale Multiplier", key: "scaleFactor", min: 0.2, max: 5, step: 0.1, value: 2, suffix: "x", decimal: true, history: "Scale", blockId: "contrast-scale-block", show: (st) => st.dimension === "scale" },
-      { type: "slider", id: "contrast-tone", label: "Tone", key: "toneAmount", min: 0, max: 100, step: 5, value: 50, suffix: "%", decimal: true, history: "Tone", blockId: "contrast-tone-block", show: (st) => st.dimension === "tone" },
-      { type: "slider", id: "contrast-shift", label: "Shift", key: "positionShift", min: 0, max: 50, step: 1, value: 25, suffix: "%", decimal: true, history: "Shift", blockId: "contrast-shift-block", show: (st) => st.dimension === "position" },
-      { type: "slider", id: "contrast-shiftangle", label: "Shift direction", key: "positionAngle", min: 0, max: 360, step: 5, value: 45, suffix: "º", decimal: true, history: "Shift direction", blockId: "contrast-shiftangle-block", show: (st) => st.dimension === "position" },
-      { type: "slider", id: "contrast-angle", label: "Clash Angle", key: "angle", min: 5, max: 90, step: 5, value: 45, suffix: "º", decimal: true, history: "Angle", blockId: "contrast-angle-block", show: (st) => st.dimension === "direction" },
       { type: "accent", prefix: "contrast", colorKey: "accentColor", flagKey: "highlightContrast" },
     ] },
   ],

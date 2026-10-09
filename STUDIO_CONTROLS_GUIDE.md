@@ -389,7 +389,7 @@ Para incorporar estos conceptos dentro de [Abstract Studio](https://github.com/d
 4. **Arquetipos Radiales Avanzados:** expandir los generadores radiales con los esquemas de `Radiation`: `centrifugal`, `concentric`, `spiral` con torsión continua (`spiralTwist`), centros múltiples (`multi_center`) y anillos poligonales (`ringShape`).
 
 
-**Grupos con título.** Los controles de cada panel se agrupan por **tipo de propiedad**, con un título en mayúsculas y una línea divisoria entre grupos, como en la plantilla del diseño. Un panel lleva títulos de grupo solo si tiene dos o más grupos; con uno solo, solo lleva el título del panel. Cada grupo puede tener sus **controles secundarios** en su propio acordeón *Advanced controls*, al final del grupo y cerrado por defecto; un grupo cuyos controles son todos esenciales (por ejemplo *Rhythm*, *Lines*, *Association*) no lo lleva.
+**Grupos con título.** Los controles de cada panel se agrupan por **tipo de propiedad**, con un título en mayúsculas y una línea divisoria entre grupos, como en la plantilla del diseño. Un panel lleva títulos de grupo solo si tiene dos o más grupos; con uno solo, solo lleva el título del panel. Los grupos se ordenan **por intención**, lo principal primero, y el detalle de una opción elegida va junto a ella. Cada grupo puede tener sus **controles secundarios** en su propio acordeón *Advanced controls*, al final del grupo y cerrado por defecto; un grupo con **un solo** control secundario lo muestra a la vista, al final del grupo y sin acordeón (el acordeón es para dos o más); un grupo cuyos controles son todos esenciales (por ejemplo *Rhythm*, *Lines*, *Association*) no lo lleva.
 
 | Panel | Grupos (con sus *Advanced controls*) |
 |---|---|
@@ -399,8 +399,8 @@ Para incorporar estos conceptos dentro de [Abstract Studio](https://github.com/d
 Orden del Layout: primero lo que **dibuja la retícula** (Grid o Radiation con su Clip cell y Checkerboard, Lines, Rhythm, Composition container) y al final lo que es **del módulo** (Module). *Module size* reúne en **un solo control** tres opciones: *Base size* (por defecto), *Shrink with cell* y *Actual size* (antes eran dos controles, *Module size* y *Module scale*, que se confundían). El proyecto sigue guardando `sizeMode` y `moduleScale`. Lleva un (?) junto a su etiqueta (primer control suelto con ayuda; se pide con `help` en el control `tags`).
 | Similarity | Kinship, Association, Imperfection (jitter espacial) |
 | Gradation | Attribute, Path (sequence, Alternate rows, Reverse), Progression (speed) |
-| Anomaly | Anomaly, Zone |
-| Contrast | Minority, Proportion |
+| Anomaly | Anomaly (qué rompe: Type, Deviates in, forma del intruso), Zone (dónde y cuánto) |
+| Contrast | Minority (qué difiere: Dimension y su detalle), Proportion (cuánta: spread, dominance, accent) |
 | Concentration | Concentration, Strength |
 | Texture | Irregularity, Lines (opacidad), Wave (waves y dirección) |
 | Space | Space, Depth |
