@@ -205,8 +205,57 @@ class ModuleEditor {
     this.render();
   }
 
+  // The module canvas as a pointer sees it: a point of the module (px from its centre) and how many screen px a module px is worth
+  figurePointer(e) {
+    const mod = this.state.layers.find(l => l.id === this.figEdit.layerId);
+    const rect = this.canvas.getBoundingClientRect();
+    const scale = rect.width / Math.max(1, mod.containerW);
+    return { mod, scale, x: (e.clientX - rect.left) / scale - mod.containerW / 2, y: (e.clientY - rect.top) / scale - mod.containerH / 2 };
+  }
+
+  // Pointer on the module canvas: a click picks the shape under it (the one in front if several), and dragging moves it. A shape that is
+  // placed by a relation (coincident, distance) becomes free where it is, so it can be moved
+  setupFigurePointer() {
+    const canvas = this.canvas;
+    if (!canvas) return;
+    let drag = null;
+    canvas.addEventListener("pointerdown", (e) => {
+      if (!this.figEdit || e.button !== 0) return;
+      const p = this.figurePointer(e);
+      const i = figureAt(p.mod.figures, p.x, p.y, 5 / p.scale);
+      if (i < 0) return;
+      const r = resolveFigures(p.mod.figures)[i];
+      drag = { i, sx: p.x, sy: p.y, fx: r.x || 0, fy: r.y || 0, moved: false };
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* a synthetic pointer cannot be captured */ }
+      if (this.figEdit.index !== i) { this.figEdit.index = i; this.syncFigureEditor(); }
+    });
+    canvas.addEventListener("pointermove", (e) => {
+      if (!this.figEdit) return;
+      const p = this.figurePointer(e);
+      if (!drag) { canvas.style.cursor = figureAt(p.mod.figures, p.x, p.y, 5 / p.scale) >= 0 ? "pointer" : ""; return; }
+      if (!drag.moved && Math.hypot(p.x - drag.sx, p.y - drag.sy) * p.scale < 3) return; // a click does not nudge the shape
+      drag.moved = true;
+      canvas.style.cursor = "move";
+      const f = p.mod.figures[drag.i];
+      if (!f) return;
+      if (f.relation && f.relation !== "free") f.relation = "free";
+      const lim = (id, v) => { const el = document.getElementById(id); return Math.max(Number(el?.min ?? -1000), Math.min(Number(el?.max ?? 1000), v)); };
+      f.x = lim("input-fig-x", Math.round(drag.fx + p.x - drag.sx));
+      f.y = lim("input-fig-y", Math.round(drag.fy + p.y - drag.sy));
+      this.syncFigureEditor();
+    });
+    const end = () => {
+      if (drag && drag.moved) this.recordFigureStep();
+      drag = null;
+      canvas.style.cursor = "";
+    };
+    canvas.addEventListener("pointerup", end);
+    canvas.addEventListener("pointercancel", end);
+  }
+
   setupSmartModule() {
     this.figEdit = null;
+    this.setupFigurePointer();
     document.querySelectorAll("#fig-shape-grid [data-fig-shape]").forEach(btn => {
       btn.addEventListener("click", () => {
         const f = this.currentFigure();

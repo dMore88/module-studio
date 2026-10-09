@@ -1,4 +1,4 @@
-import { regionBoolean, contourArea } from './booleans.js';
+import { regionBoolean, contourArea, inRegion } from './booleans.js';
 // The shapes available in the studio, in the order of the shape grid (6 per row).
 // `phIcon` is the Phosphor icon name, rendered with the regular weight (`ph ph-<name>`); the ring has no Phosphor icon
 // and the letters show their own glyph (see `glyph`).
@@ -699,6 +699,34 @@ function shapeRegion(f, def) {
     region = regionBoolean("subtract", region, h);
   }
   return region;
+}
+
+// Which figure is under a point of the module (px from its centre): the one in front wins, hidden ones never. A point counts when it is
+// inside the figure (the closed outlines, as it is filled) or within `tol` px of any of its lines. Returns the index, or -1.
+export function figureAt(figures, px, py, tol = 0) {
+  const list = resolveFigures(figures || []);
+  for (let i = list.length - 1; i >= 0; i--) {
+    const f = list[i], def = f && Shapes[f.shape];
+    if (!def || f.visible === false || !(f.width > 0)) continue;
+    const w = f.width, h = f.height ?? f.width, m = f.shape === "line" ? w : Math.max(w, h);
+    if (!(m > 0)) continue;
+    const sx = w / m, sy = h / m, a = ((f.rotation || 0) * Math.PI) / 180, c = Math.cos(a), sn = Math.sin(a);
+    const lines = flattenShape(def, m, Math.max(0.5, Math.min(3, m / 100))).map(sp => ({
+      closed: sp.closed && sp.pts.length >= 3,
+      pts: sp.pts.map(p => { const qx = p.x * sx, qy = p.y * sy; return { x: (f.x || 0) + qx * c - qy * sn, y: (f.y || 0) + qx * sn + qy * c }; })
+    }));
+    const region = shapeRegion(f, def);
+    if (region.length && inRegion(region, px, py)) return i;
+    for (const sp of lines) {
+      for (let k = 0; k + 1 < sp.pts.length + (sp.closed ? 1 : 0); k++) {
+        const p0 = sp.pts[k], p1 = sp.pts[(k + 1) % sp.pts.length];
+        const dx = p1.x - p0.x, dy = p1.y - p0.y, len2 = dx * dx + dy * dy;
+        const t = len2 > 0 ? Math.max(0, Math.min(1, ((px - p0.x) * dx + (py - p0.y) * dy) / len2)) : 0;
+        if (Math.hypot(px - (p0.x + t * dx), py - (p0.y + t * dy)) <= tol) return i;
+      }
+    }
+  }
+  return -1;
 }
 
 export function compositeShape(figures, ref = 100, combine = "none") {

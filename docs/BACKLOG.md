@@ -36,7 +36,7 @@ Sale de las filas ⏳ del mapa de conceptos, más las mejoras de filas 🟡 que 
 | :-- | :-- | :-- |
 | — | **Integrar la rama con `main`** | Punto de retorno guardado: la etiqueta `checkpoint-main-before-smart-module` (el `main` de antes). Comprobado el 8 oct 2026: los proyectos antiguos se abren con el mismo dibujo (diferencias solo de un 1 % por suavizado, más lo esperado: las letras y números nuevos, el desfase del módulo y el *Show container*, que se quitaron, y el recorte del container) |
 | — | **Formas abiertas dentro de Combine** (línea, onda, espiral) | Hoy no tienen área: se dibujan encima y en *Fill* no se ven. Posible: darles un grosor y tratarlas como siluetas |
-| — | **Selección de shapes con clic o arrastre en el canvas del editor** (y mover o escalar con el puntero) | Hoy se elige en la lista y se mueve con los sliders |
+| — | **Escalar y girar shapes con el puntero** (tiradores en el marco de la shape seleccionada) | Elegir con un clic y mover arrastrando ya está hecho (9 oct 2026); falta cambiar el tamaño y el giro con el puntero |
 | — | **Ver los contornos de las shapes cuando están combinadas** (guía de pantalla) | Con *Combine* solo se ve el resultado |
 | — | **Opciones de trazo por shape** (extremos, uniones, discontinuo) | Hoy cada shape tiene grosor y color, no más |
 | — | **Tamaño conjunto de las shapes** del módulo y **editar el módulo viendo a sus vecinos** | Ver [`IDEA_SMART_MODULE.md`](./IDEA_SMART_MODULE.md), apartado *Pendiente* |

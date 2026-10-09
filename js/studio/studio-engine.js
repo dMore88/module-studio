@@ -2295,9 +2295,10 @@ export class StudioEngine {
         ctx.rotate(((mod.rotation || 0) * Math.PI) / 180);
         ctx.translate(fb.x || 0, fb.y || 0);
         ctx.rotate(((fb.rotation || 0) * Math.PI) / 180);
+        // a solid hairline that keeps its size on screen (0.5 px) whatever the canvas is scaled to
         ctx.strokeStyle = this.guideColor();
-        ctx.lineWidth = 1.2;
-        ctx.setLineDash([4, 3]);
+        ctx.lineWidth = 0.5 / (this.viewScale || 1);
+        ctx.setLineDash([]);
         ctx.strokeRect(-fb.width / 2, -(fb.height ?? fb.width) / 2, fb.width, fb.height ?? fb.width);
         ctx.restore();
       }

@@ -869,6 +869,34 @@ function shapeRegion(f, def) {
   }
   return region;
 }
+
+// Which figure is under a point of the module (px from its centre): the one in front wins, hidden ones never. A point counts when it is
+// inside the figure (the closed outlines, as it is filled) or within `tol` px of any of its lines. Returns the index, or -1.
+function figureAt(figures, px, py, tol = 0) {
+  const list = resolveFigures(figures || []);
+  for (let i = list.length - 1; i >= 0; i--) {
+    const f = list[i], def = f && Shapes[f.shape];
+    if (!def || f.visible === false || !(f.width > 0)) continue;
+    const w = f.width, h = f.height ?? f.width, m = f.shape === "line" ? w : Math.max(w, h);
+    if (!(m > 0)) continue;
+    const sx = w / m, sy = h / m, a = ((f.rotation || 0) * Math.PI) / 180, c = Math.cos(a), sn = Math.sin(a);
+    const lines = flattenShape(def, m, Math.max(0.5, Math.min(3, m / 100))).map(sp => ({
+      closed: sp.closed && sp.pts.length >= 3,
+      pts: sp.pts.map(p => { const qx = p.x * sx, qy = p.y * sy; return { x: (f.x || 0) + qx * c - qy * sn, y: (f.y || 0) + qx * sn + qy * c }; })
+    }));
+    const region = shapeRegion(f, def);
+    if (region.length && inRegion(region, px, py)) return i;
+    for (const sp of lines) {
+      for (let k = 0; k + 1 < sp.pts.length + (sp.closed ? 1 : 0); k++) {
+        const p0 = sp.pts[k], p1 = sp.pts[(k + 1) % sp.pts.length];
+        const dx = p1.x - p0.x, dy = p1.y - p0.y, len2 = dx * dx + dy * dy;
+        const t = len2 > 0 ? Math.max(0, Math.min(1, ((px - p0.x) * dx + (py - p0.y) * dy) / len2)) : 0;
+        if (Math.hypot(px - (p0.x + t * dx), py - (p0.y + t * dy)) <= tol) return i;
+      }
+    }
+  }
+  return -1;
+}
 function compositeShape(figures, ref = 100, combine = "none") {
   const R = ref > 0 ? ref : 100;
   const list = resolveFigures((figures || []).filter(f => f && Shapes[f.shape]).map(f => (f.width !== undefined ? f : {
@@ -3749,9 +3777,10 @@ class StudioEngine {
         ctx.rotate(((mod.rotation || 0) * Math.PI) / 180);
         ctx.translate(fb.x || 0, fb.y || 0);
         ctx.rotate(((fb.rotation || 0) * Math.PI) / 180);
+        // a solid hairline that keeps its size on screen (0.5 px) whatever the canvas is scaled to
         ctx.strokeStyle = this.guideColor();
-        ctx.lineWidth = 1.2;
-        ctx.setLineDash([4, 3]);
+        ctx.lineWidth = 0.5 / (this.viewScale || 1);
+        ctx.setLineDash([]);
         ctx.strokeRect(-fb.width / 2, -(fb.height ?? fb.width) / 2, fb.width, fb.height ?? fb.width);
         ctx.restore();
       }
@@ -6157,8 +6186,57 @@ class ModuleEditor {
     this.render();
   }
 
+  // The module canvas as a pointer sees it: a point of the module (px from its centre) and how many screen px a module px is worth
+  figurePointer(e) {
+    const mod = this.state.layers.find(l => l.id === this.figEdit.layerId);
+    const rect = this.canvas.getBoundingClientRect();
+    const scale = rect.width / Math.max(1, mod.containerW);
+    return { mod, scale, x: (e.clientX - rect.left) / scale - mod.containerW / 2, y: (e.clientY - rect.top) / scale - mod.containerH / 2 };
+  }
+
+  // Pointer on the module canvas: a click picks the shape under it (the one in front if several), and dragging moves it. A shape that is
+  // placed by a relation (coincident, distance) becomes free where it is, so it can be moved
+  setupFigurePointer() {
+    const canvas = this.canvas;
+    if (!canvas) return;
+    let drag = null;
+    canvas.addEventListener("pointerdown", (e) => {
+      if (!this.figEdit || e.button !== 0) return;
+      const p = this.figurePointer(e);
+      const i = figureAt(p.mod.figures, p.x, p.y, 5 / p.scale);
+      if (i < 0) return;
+      const r = resolveFigures(p.mod.figures)[i];
+      drag = { i, sx: p.x, sy: p.y, fx: r.x || 0, fy: r.y || 0, moved: false };
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* a synthetic pointer cannot be captured */ }
+      if (this.figEdit.index !== i) { this.figEdit.index = i; this.syncFigureEditor(); }
+    });
+    canvas.addEventListener("pointermove", (e) => {
+      if (!this.figEdit) return;
+      const p = this.figurePointer(e);
+      if (!drag) { canvas.style.cursor = figureAt(p.mod.figures, p.x, p.y, 5 / p.scale) >= 0 ? "pointer" : ""; return; }
+      if (!drag.moved && Math.hypot(p.x - drag.sx, p.y - drag.sy) * p.scale < 3) return; // a click does not nudge the shape
+      drag.moved = true;
+      canvas.style.cursor = "move";
+      const f = p.mod.figures[drag.i];
+      if (!f) return;
+      if (f.relation && f.relation !== "free") f.relation = "free";
+      const lim = (id, v) => { const el = document.getElementById(id); return Math.max(Number(el?.min ?? -1000), Math.min(Number(el?.max ?? 1000), v)); };
+      f.x = lim("input-fig-x", Math.round(drag.fx + p.x - drag.sx));
+      f.y = lim("input-fig-y", Math.round(drag.fy + p.y - drag.sy));
+      this.syncFigureEditor();
+    });
+    const end = () => {
+      if (drag && drag.moved) this.recordFigureStep();
+      drag = null;
+      canvas.style.cursor = "";
+    };
+    canvas.addEventListener("pointerup", end);
+    canvas.addEventListener("pointercancel", end);
+  }
+
   setupSmartModule() {
     this.figEdit = null;
+    this.setupFigurePointer();
     document.querySelectorAll("#fig-shape-grid [data-fig-shape]").forEach(btn => {
       btn.addEventListener("click", () => {
         const f = this.currentFigure();
@@ -6663,6 +6741,8 @@ class StudioProApp {
     const layer = this.figEdit ? this.state.layers.find(l => l.id === this.figEdit.layerId) : null;
     const key = layer ? `${layer.containerW}x${layer.containerH}` : "";
     if (key !== this._editorCanvasKey) { this._editorCanvasKey = key; this.fitArtboard(); }
+    // how many screen px a design px is worth (the guides keep their size on screen whatever the canvas is scaled to)
+    this.engine.viewScale = this.artboardSize ? this.artboardSize.w / Math.max(1, layer ? layer.containerW : (ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"]).w) : 1;
     this.engine.renderScale = layer && this.artboardSize ? Math.max(1, Math.min(8, Math.ceil(this.artboardSize.w / Math.max(1, layer.containerW)))) : 1;
   }
 
