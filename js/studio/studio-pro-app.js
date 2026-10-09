@@ -85,6 +85,7 @@ export class StudioProApp {
     this.setupHeaderActions();
     this.setupFloatingLayersPanel();
     this.setupControlsRail();
+    this.setupHelp();
     this.buildDataPanels(); // the panels described as data (js/studio/app/panel-builder.js) draw their controls first
     this.setupLayoutStructure();
     this.setupSelects();
@@ -494,7 +495,7 @@ export class StudioProApp {
     const workspace = document.querySelector(".ds-workspace");
     if (!stage || !column || !workspace || !stage.clientHeight) return;
 
-    const BORDER = 20; // white frame around the canvas, each side (Figma "Moiré artwork")
+    const BORDER = 10; // white frame around the canvas, each side (Figma "Moiré artwork")
     const GAP = 24;
     const editing = this.figEdit ? this.state.layers.find(l => l.id === this.figEdit.layerId) : null;
     const cfg = editing ? { w: editing.containerW, h: editing.containerH } : (ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"]);
@@ -648,7 +649,7 @@ export class StudioProApp {
 }
 
 // The rest of the app's methods live in js/studio/app/*.js, one file per panel or area
-applyMixins(StudioProApp, [UiHelpers, PanelBuilder, LayersPanel, ArtLog, ControlsRail, PanelLayout, PanelSimilarity, Accessibility, PanelGradation, PanelAnomaly, PanelContrast, PanelConcentration, PanelSpace, PanelTexture, ModuleEditor]);
+applyMixins(StudioProApp, [HelpPopover, UiHelpers, PanelBuilder, LayersPanel, ArtLog, ControlsRail, PanelLayout, PanelSimilarity, Accessibility, PanelGradation, PanelAnomaly, PanelContrast, PanelConcentration, PanelSpace, PanelTexture, ModuleEditor]);
 
 // Auto-boot upon DOM readiness
 document.addEventListener("DOMContentLoaded", () => {

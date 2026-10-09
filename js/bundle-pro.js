@@ -4182,6 +4182,66 @@ const StudioExporter = {
 
 
   /**
+ * The (?) help: a small button beside the title of a panel or of a group that opens a popover with two short parts, "What it is?" (the design
+ * concept) and "What it does?" (what the controls change here). The texts live in each panel's description (`help: { is, does }`).
+ * One popover serves them all; it opens with a click and closes with Escape, a click elsewhere, or when the panel scrolls or the window changes.
+ * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
+ */
+class HelpPopover {
+  // The button drawn beside a title; `id` finds its texts again when it is clicked
+  helpButtonHtml(id, topic, help) {
+    (this._helpTexts ||= {})[id] = help;
+    return `<button type="button" class="ds-help" data-help="${id}" aria-label="What is ${topic}?" aria-haspopup="dialog" aria-expanded="false"><i class="ph ph-question" aria-hidden="true"></i></button>`;
+  }
+
+  setupHelp() {
+    let pop = document.getElementById("help-popover");
+    if (!pop) {
+      pop = document.createElement("div");
+      pop.id = "help-popover";
+      pop.className = "ds-help-popover";
+      pop.setAttribute("role", "dialog");
+      pop.hidden = true;
+      document.body.appendChild(pop);
+    }
+    let current = null;
+    const close = () => {
+      if (!current) return;
+      current.setAttribute("aria-expanded", "false");
+      current = null;
+      pop.hidden = true;
+    };
+    const open = (btn) => {
+      const h = (this._helpTexts || {})[btn.dataset.help];
+      if (!h) return;
+      const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+      pop.innerHTML = `<p><span class="ds-help-popover__label">What it is?</span>${esc(h.is)}</p><p><span class="ds-help-popover__label">What it does?</span>${esc(h.does)}</p><span class="ds-help-popover__pointer"></span>`;
+      pop.setAttribute("aria-label", btn.getAttribute("aria-label"));
+      pop.hidden = false;
+      // above the button, pointing down; below it (pointing up) when there is no room above; kept inside the window
+      const r = btn.getBoundingClientRect(), w = pop.offsetWidth, hgt = pop.offsetHeight, gap = 10;
+      const above = r.top - hgt - gap >= 8;
+      const left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+      pop.style.left = `${left}px`;
+      pop.style.top = `${above ? r.top - hgt - gap : r.bottom + gap}px`;
+      pop.style.setProperty("--pointer-x", `${Math.max(10, Math.min(w - 10, r.left + r.width / 2 - left))}px`);
+      pop.classList.toggle("is-below", !above);
+      btn.setAttribute("aria-expanded", "true");
+      current = btn;
+    };
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest && e.target.closest(".ds-help");
+      if (btn) { e.stopPropagation(); const same = btn === current; close(); if (!same) open(btn); return; }
+      if (current && !pop.contains(e.target)) close();
+    });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && current) { const b = current; close(); b.focus(); } });
+    window.addEventListener("resize", close);
+    document.querySelectorAll(".inspector-flyout-card").forEach(card => card.addEventListener("scroll", close, { passive: true }));
+  }
+}
+
+
+  /**
  * Small pieces of interface shared by every panel: the arrow keys on the value boxes and the dropdowns.
  * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
  */
@@ -4273,7 +4333,8 @@ class UiHelpers {
  *     state: (app) => the settings object of the active layer,
  *     enabled: { id, key, auto?, onToggle? },  // the switch of the header; every edit turns it on unless auto is false; onToggle(app, state, checked) replaces the default
  *     badgeId,                               // the layer badge in the header
- *     banner: { id, text, hidden: (mod) => bool },   // optional notice under the header
+ *     banner: { id, hidden: (mod) => bool, text? },   // optional notice under the header (the dependency notice by default)
+ *     help: { is, does },                    // the (?) beside the panel title (see help-popover.js); a group may carry its own help beside its title
  *     top: [ controls ],                     // controls above the groups (Layout's Repetition / Radiation switch)
  *     groups: [{ title, advId?, region?, floating?, controls: [ ... ] }],
  *     regions: { id: (state) => bool },      // a group with `region` lives in a box that shows only when its test passes (Layout's two modes)
@@ -4340,7 +4401,8 @@ class PanelBuilder {
 
       // One group: its title and divider (when the panel has several), its controls and its Advanced controls
       const drawGroup = (g, i, titled) => {
-        const head = titled ? `${i > 0 ? '<div class="ds-divider" role="separator"></div>\n' : ""}<div class="ds-label ds-label--overline">${g.title}</div>\n` : "";
+        const title = g.help ? `<div class="ds-title-row"><div class="ds-label ds-label--overline">${g.title}</div>${this.helpButtonHtml(`${spec.id}:${g.title}`, g.title, g.help)}</div>\n` : `<div class="ds-label ds-label--overline">${g.title}</div>\n`;
+        const head = titled ? `${i > 0 ? '<div class="ds-divider" role="separator"></div>\n' : ""}${title}` : "";
         return head + drawControls(g.controls, g.advId);
       };
       // A list of controls; the ones marked `advanced` go in an accordion with the id advId
@@ -4385,7 +4447,7 @@ class PanelBuilder {
         return out;
       };
 
-      let html = spec.banner ? `<div id="${spec.banner.id}" class="ds-snackbar hidden" role="status">\n<i class="ph-fill ph-warning"></i>\n<p>${spec.banner.text}</p>\n</div>\n` : "";
+      let html = spec.banner ? `<div id="${spec.banner.id}" class="ds-snackbar hidden" role="status">\n<span class="ds-snackbar__icon"><span class="ds-snackbar__icon-inner"><i class="ph ph-warning" aria-hidden="true"></i></span></span>\n<p>${spec.banner.text || "Turn on Layout structure to see this modifier in action."}</p>\n</div>\n` : "";
       if (spec.top) html += drawControls(spec.top);
       // The groups, in order; the ones of a region share a box; the floating ones go in their own box at the end
       const plain = spec.groups.filter(g => !g.floating);
@@ -4405,6 +4467,7 @@ class PanelBuilder {
       if (open) html += "</div>\n";
       for (const g of spec.groups.filter(g => g.floating)) html += `<div id="${g.floating}" class="ds-stack">\n${drawGroup(g, 1, !!g.title)}</div>\n`;
       card.insertAdjacentHTML("beforeend", html);
+      if (spec.help) card.querySelector(".ds-card-title-text")?.insertAdjacentHTML("afterend", this.helpButtonHtml(`${spec.id}:panel`, spec.name, spec.help));
     }
   }
 
@@ -5520,7 +5583,7 @@ const SIMILARITY_PANEL = {
   },
   enabled: { id: "toggle-similarity-active", key: "enabled" },
   badgeId: "badge-similarity-layer",
-  banner: { id: "warning-similarity-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!(mod.structure && mod.structure.enabled) },
+  banner: { id: "warning-similarity-grid", hidden: (mod) => !!(mod.structure && mod.structure.enabled) },
   groups: [
     { title: "Kinship", controls: [
       { type: "dropdown", label: "Visual kinship type", key: "kinshipType", attr: "data-kinship-type", history: "Kinship Type", fallback: "distortion",
@@ -5667,7 +5730,7 @@ const GRADATION_PANEL = {
   state: (app) => app.getActiveGradation(),
   enabled: { id: "toggle-gradation-active", key: "enabled" },
   badgeId: "badge-gradation-layer",
-  banner: { id: "warning-gradation-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+  banner: { id: "warning-gradation-grid", hidden: (mod) => !!mod.structure.enabled },
   groups: [
     { title: "Attribute", controls: [
       { type: "dropdown", label: "Attribute", key: "type", attr: "data-grad-type", history: "Attribute",
@@ -5736,7 +5799,7 @@ const ANOMALY_PANEL = {
   state: (app) => app.getActiveAnomaly(),
   enabled: { id: "toggle-anomaly-active", key: "enabled" },
   badgeId: "badge-anomaly-layer",
-  banner: { id: "warning-anomaly-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+  banner: { id: "warning-anomaly-grid", hidden: (mod) => !!mod.structure.enabled },
   groups: [
     { title: "Anomaly", controls: [
       { type: "tags", label: "Type", key: "type", attr: "data-anom-type", history: "Type",
@@ -5810,14 +5873,21 @@ const CONTRAST_PANEL = {
   state: (app) => app.getActiveContrast(),
   enabled: { id: "toggle-contrast-active", key: "enabled" },
   badgeId: "badge-contrast-layer",
-  banner: { id: "warning-contrast-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+  help: {
+    is: "Contrast appears when elements differ in a visual quality, such as size, shape or direction. The difference makes some elements stand out and gives the design a focus.",
+    does: "Turns a minority of modules into the contrasting ones. Minority picks what changes; Proportion decides how many modules change and where." },
+  banner: { id: "warning-contrast-grid", hidden: (mod) => !!mod.structure.enabled },
   groups: [
-    { title: "Minority", controls: [
+    { title: "Minority", help: {
+        is: "The minority is the group of elements that departs from the rest. The quality it departs in is the dimension of the contrast.",
+        does: "Dimension picks the quality that differs. The values that appear below set how strong the difference is." }, controls: [
       { type: "dropdown", label: "Dimension", key: "dimension", attr: "data-contrast-dimension", history: "Dimension",
         options: [["scale", "Scale"], ["shape", "Shape"], ["direction", "Angle"], ["position", "Position"], ["tone", "Tone"], ["texture", "Texture"], ["space", "Space"]] },
       { type: "dropdown", label: "Minority Shape", key: "contrastShape", attr: "data-contrast-shape", history: "Shape", options: "shapes", blockId: "contrast-shape-block", show: (st) => st.dimension === "shape" },
     ] },
-    { title: "Proportion", controls: [
+    { title: "Proportion", help: {
+        is: "The strength of a contrast depends on proportion: a few different elements among many alike stand out more than an even split.",
+        does: "Minority spread sets where the minority sits; Dominance ratio sets the share that stays like the rest; the accent color can mark the minority." }, controls: [
       { type: "dropdown", label: "Minority spread", key: "spread", attr: "data-contrast-spread", history: "Spread", fallback: "scattered", blockId: "contrast-spread-block",
         options: [["scattered", "Scattered"], ["balanced", "Balanced"], ["edge", "Toward the edges"], ["center", "Toward the center"]] },
       { type: "slider", id: "contrast-dominance", label: "Dominance ratio", key: "dominanceRatio", min: 50, max: 95, step: 1, value: 80, suffix: "%", decimal: true, history: "Dominance", blockId: "contrast-dominance-block" },
@@ -5855,7 +5925,7 @@ const CONCENTRATION_PANEL = {
   state: (app) => app.getActiveConcentration(),
   enabled: { id: "toggle-concentration-active", key: "enabled" },
   badgeId: "badge-concentration-layer",
-  banner: { id: "warning-concentration-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+  banner: { id: "warning-concentration-grid", hidden: (mod) => !!mod.structure.enabled },
   groups: [
     { title: "Concentration", controls: [
       { type: "tags", label: "Structure", key: "mode", attr: "data-conc-mode", history: "Structure",
@@ -6593,6 +6663,7 @@ class StudioProApp {
     this.setupHeaderActions();
     this.setupFloatingLayersPanel();
     this.setupControlsRail();
+    this.setupHelp();
     this.buildDataPanels(); // the panels described as data (js/studio/app/panel-builder.js) draw their controls first
     this.setupLayoutStructure();
     this.setupSelects();
@@ -7002,7 +7073,7 @@ class StudioProApp {
     const workspace = document.querySelector(".ds-workspace");
     if (!stage || !column || !workspace || !stage.clientHeight) return;
 
-    const BORDER = 20; // white frame around the canvas, each side (Figma "Moiré artwork")
+    const BORDER = 10; // white frame around the canvas, each side (Figma "Moiré artwork")
     const GAP = 24;
     const editing = this.figEdit ? this.state.layers.find(l => l.id === this.figEdit.layerId) : null;
     const cfg = editing ? { w: editing.containerW, h: editing.containerH } : (ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"]);
@@ -7156,7 +7227,7 @@ class StudioProApp {
 }
 
 // The rest of the app's methods live in js/studio/app/*.js, one file per panel or area
-applyMixins(StudioProApp, [UiHelpers, PanelBuilder, LayersPanel, ArtLog, ControlsRail, PanelLayout, PanelSimilarity, Accessibility, PanelGradation, PanelAnomaly, PanelContrast, PanelConcentration, PanelSpace, PanelTexture, ModuleEditor]);
+applyMixins(StudioProApp, [HelpPopover, UiHelpers, PanelBuilder, LayersPanel, ArtLog, ControlsRail, PanelLayout, PanelSimilarity, Accessibility, PanelGradation, PanelAnomaly, PanelContrast, PanelConcentration, PanelSpace, PanelTexture, ModuleEditor]);
 
 // Auto-boot upon DOM readiness
 document.addEventListener("DOMContentLoaded", () => {

@@ -9,7 +9,7 @@ const GRADATION_PANEL = {
   state: (app) => app.getActiveGradation(),
   enabled: { id: "toggle-gradation-active", key: "enabled" },
   badgeId: "badge-gradation-layer",
-  banner: { id: "warning-gradation-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+  banner: { id: "warning-gradation-grid", hidden: (mod) => !!mod.structure.enabled },
   groups: [
     { title: "Attribute", controls: [
       { type: "dropdown", label: "Attribute", key: "type", attr: "data-grad-type", history: "Attribute",

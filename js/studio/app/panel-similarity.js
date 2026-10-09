@@ -16,7 +16,7 @@ const SIMILARITY_PANEL = {
   },
   enabled: { id: "toggle-similarity-active", key: "enabled" },
   badgeId: "badge-similarity-layer",
-  banner: { id: "warning-similarity-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!(mod.structure && mod.structure.enabled) },
+  banner: { id: "warning-similarity-grid", hidden: (mod) => !!(mod.structure && mod.structure.enabled) },
   groups: [
     { title: "Kinship", controls: [
       { type: "dropdown", label: "Visual kinship type", key: "kinshipType", attr: "data-kinship-type", history: "Kinship Type", fallback: "distortion",

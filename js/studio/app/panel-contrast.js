@@ -9,14 +9,21 @@ const CONTRAST_PANEL = {
   state: (app) => app.getActiveContrast(),
   enabled: { id: "toggle-contrast-active", key: "enabled" },
   badgeId: "badge-contrast-layer",
-  banner: { id: "warning-contrast-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+  help: {
+    is: "Contrast appears when elements differ in a visual quality, such as size, shape or direction. The difference makes some elements stand out and gives the design a focus.",
+    does: "Turns a minority of modules into the contrasting ones. Minority picks what changes; Proportion decides how many modules change and where." },
+  banner: { id: "warning-contrast-grid", hidden: (mod) => !!mod.structure.enabled },
   groups: [
-    { title: "Minority", controls: [
+    { title: "Minority", help: {
+        is: "The minority is the group of elements that departs from the rest. The quality it departs in is the dimension of the contrast.",
+        does: "Dimension picks the quality that differs. The values that appear below set how strong the difference is." }, controls: [
       { type: "dropdown", label: "Dimension", key: "dimension", attr: "data-contrast-dimension", history: "Dimension",
         options: [["scale", "Scale"], ["shape", "Shape"], ["direction", "Angle"], ["position", "Position"], ["tone", "Tone"], ["texture", "Texture"], ["space", "Space"]] },
       { type: "dropdown", label: "Minority Shape", key: "contrastShape", attr: "data-contrast-shape", history: "Shape", options: "shapes", blockId: "contrast-shape-block", show: (st) => st.dimension === "shape" },
     ] },
-    { title: "Proportion", controls: [
+    { title: "Proportion", help: {
+        is: "The strength of a contrast depends on proportion: a few different elements among many alike stand out more than an even split.",
+        does: "Minority spread sets where the minority sits; Dominance ratio sets the share that stays like the rest; the accent color can mark the minority." }, controls: [
       { type: "dropdown", label: "Minority spread", key: "spread", attr: "data-contrast-spread", history: "Spread", fallback: "scattered", blockId: "contrast-spread-block",
         options: [["scattered", "Scattered"], ["balanced", "Balanced"], ["edge", "Toward the edges"], ["center", "Toward the center"]] },
       { type: "slider", id: "contrast-dominance", label: "Dominance ratio", key: "dominanceRatio", min: 50, max: 95, step: 1, value: 80, suffix: "%", decimal: true, history: "Dominance", blockId: "contrast-dominance-block" },

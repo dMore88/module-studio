@@ -10,7 +10,7 @@ const CONCENTRATION_PANEL = {
   state: (app) => app.getActiveConcentration(),
   enabled: { id: "toggle-concentration-active", key: "enabled" },
   badgeId: "badge-concentration-layer",
-  banner: { id: "warning-concentration-grid", text: "Turn on Layout structure (Repetition or Radiation) to see this effect across many modules.", hidden: (mod) => !!mod.structure.enabled },
+  banner: { id: "warning-concentration-grid", hidden: (mod) => !!mod.structure.enabled },
   groups: [
     { title: "Concentration", controls: [
       { type: "tags", label: "Structure", key: "mode", attr: "data-conc-mode", history: "Structure",

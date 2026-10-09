@@ -765,7 +765,7 @@
         assert(Math.abs(c.width / c.height - r) < 0.01, `${key}: the canvas ratio is ${(c.width / c.height).toFixed(3)}`);
         assert(a.bottom <= st.bottom + 1 && a.top >= st.top - 1, `${key}: the artboard does not fit the free height`);
         assert(a.right <= fl.left - 20, `${key}: the artboard reaches the controls panel`);
-        const tol = 41; // 20 px border on each side plus rounding
+        const tol = 21; // 10 px border on each side plus rounding
         assert(Math.abs(a.height - st.height) <= tol || Math.abs(a.width - (fl.left - 24 - a.left)) <= tol, `${key}: the artboard leaves free space on both axes`);
       }
       assert(/Canvas: \d+ × \d+ PX/.test(d.getElementById("art-log-lines").textContent), "The Art log does not show the canvas size");
@@ -2364,6 +2364,29 @@
       assert(px(330, 300) > 230 && px(300, 330) > 230 && px(300, 300) > 230, "A stroked outline cut by the module has no line along the cut");
       assert(px(335, 300) > 230 && px(300, 335) > 230, "The parts of the circle outside the module are not drawn");
       assert(px(300 + 24.7, 300 + 24.7) < 160 || px(300 + 24, 300 + 25) < 160, "The arcs inside the module are drawn");
+    });
+
+    await test("Help (?): beside the title of a panel and of a group; a click opens a popover with what it is and what it does, Escape or a click elsewhere closes it", async () => {
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel), all = (sel) => [...d.querySelectorAll(sel)];
+      q('[data-rail-tab="contrast"]').click(); await wait(60);
+      const btns = all("#card-contrast .ds-help");
+      assert(btns.length === 3, `Contrast has a (?) for its title and for each of its two groups (${btns.length})`);
+      assert(btns.every(b => b.getAttribute("aria-label").startsWith("What is ") && b.getAttribute("aria-expanded") === "false"), "Every (?) has a name and says it is closed");
+      const pop = q("#help-popover");
+      assert(pop && pop.hidden, "The popover starts closed");
+      btns[1].click(); await wait(20);
+      assert(!pop.hidden && btns[1].getAttribute("aria-expanded") === "true" && /What it is\?/.test(pop.textContent) && /What it does\?/.test(pop.textContent) && /minority/i.test(pop.textContent), "A click opens the popover with both parts");
+      btns[2].click(); await wait(20);
+      assert(!pop.hidden && btns[1].getAttribute("aria-expanded") === "false" && btns[2].getAttribute("aria-expanded") === "true" && /proportion/i.test(pop.textContent), "Another (?) takes its place");
+      btns[2].click(); await wait(20);
+      assert(pop.hidden, "A second click on the same (?) closes it");
+      btns[0].click(); await wait(20);
+      d.dispatchEvent(new win.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      assert(pop.hidden && btns[0].getAttribute("aria-expanded") === "false", "Escape closes it");
+      btns[0].click(); await wait(20);
+      q("#canvas-column").dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+      assert(pop.hidden, "A click elsewhere closes it");
     });
 
     await test("Smart module editor: a click on the canvas picks the shape under the pointer, and dragging moves it", async () => {
