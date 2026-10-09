@@ -259,21 +259,20 @@
 
         <div class="ds-label ds-label--overline">Shape style</div>
 
+        <!-- Stroke or Fill as two tags with an icon, and the color of the shape (swatch and hex) at the end of the same row (Figma, Smart module controls) -->
         <div class="ds-field">
-          <div class="ds-btn-group" role="group" aria-label="Fill or stroke">
-            <button type="button" id="btn-mode-stroke" class="ds-btn-group__button active">Stroke</button>
-            <button type="button" id="btn-mode-fill" class="ds-btn-group__button">Fill</button>
-          </div>
-        </div>
-
-        <div class="ds-field">
-          <div class="ds-label ds-label--overline">Shape color</div>
-          <div class="ds-color-picker">
-            <span class="ds-swatch">
-              <input type="color" id="color-active-shape" value="#18181f">
-              <span id="swatch-active-color" class="ds-swatch-fill"></span>
-            </span>
-            <span id="text-color-hex" class="ds-color-hex">#18181F</span>
+          <div class="ds-style-row">
+            <div class="ds-tags" role="group" aria-label="Fill or stroke">
+              <button type="button" id="btn-mode-stroke" class="ds-tag ds-tag--icon active" aria-pressed="true"><i class="ph ph-line-segment" aria-hidden="true"></i>Stroke</button>
+              <button type="button" id="btn-mode-fill" class="ds-tag ds-tag--icon" aria-pressed="false"><i class="ph ph-paint-bucket" aria-hidden="true"></i>Fill</button>
+            </div>
+            <div class="ds-color-picker">
+              <span class="ds-swatch" title="Shape color">
+                <input type="color" id="color-active-shape" value="#18181f" aria-label="Shape color">
+                <span id="swatch-active-color" class="ds-swatch-fill"></span>
+              </span>
+              <span id="text-color-hex" class="ds-color-hex">#18181F</span>
+            </div>
           </div>
         </div>
 
@@ -522,7 +521,7 @@
   </main>
 
   <!-- Master Script Bundle -->
-  <script src="js/bundle-pro.js?v=f77e898f"></script>
+  <script src="js/bundle-pro.js?v=f481caaf"></script>
 
 </body>
 </html>

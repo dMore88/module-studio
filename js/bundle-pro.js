@@ -6293,8 +6293,7 @@ class ModuleEditor {
     // The look of the shape being edited
     {
       const look = f ? this.engine.figureStyle(f, mod) : { wire: true, color: "#18181F", sw: 1 };
-      document.getElementById("btn-mode-stroke")?.classList.toggle("active", look.wire);
-      document.getElementById("btn-mode-fill")?.classList.toggle("active", !look.wire);
+      this.setModeButtons(look.wire);
       const color = (look.color || "#18181F");
       const cp = document.getElementById("color-active-shape");
       if (cp && /^#[0-9a-f]{6}$/i.test(color)) cp.value = color;
@@ -6369,6 +6368,14 @@ class ModuleEditor {
     };
     canvas.addEventListener("pointerup", end);
     canvas.addEventListener("pointercancel", end);
+  }
+
+  // Stroke or Fill: which of the two tags is on (and says so to assistive technology)
+  setModeButtons(wire) {
+    for (const [id, on] of [["btn-mode-stroke", !!wire], ["btn-mode-fill", !wire]]) {
+      const b = document.getElementById(id);
+      if (b) { b.classList.toggle("active", on); b.setAttribute("aria-pressed", String(on)); }
+    }
   }
 
   // The (?) of the Module panel: its title and its groups. The panel is written in index.html (the editor is not a modifier), so the buttons are put in place here
@@ -6581,8 +6588,7 @@ class ModuleEditor {
       const target = this.styleTarget();
       if (!target) return;
       target.wireframe = true;
-      btnStroke.classList.add("active");
-      btnFill?.classList.remove("active");
+      this.setModeButtons(true);
       this.render();
       this.updateLayerCardsUI();
       this.pushHistory(`Layer ${this.activeLayerId} Mode: Stroke`);
@@ -6592,8 +6598,7 @@ class ModuleEditor {
       const target = this.styleTarget();
       if (!target) return;
       target.wireframe = false;
-      btnFill.classList.add("active");
-      btnStroke?.classList.remove("active");
+      this.setModeButtons(false);
       this.render();
       this.updateLayerCardsUI();
       this.pushHistory(`Layer ${this.activeLayerId} Mode: Fill`);
@@ -6648,13 +6653,7 @@ class ModuleEditor {
     const btnStroke = document.getElementById("btn-mode-stroke");
     const btnFill = document.getElementById("btn-mode-fill");
     const isWireframe = look.wire;
-    if (isWireframe) {
-      btnStroke?.classList.add("active");
-      btnFill?.classList.remove("active");
-    } else {
-      btnFill?.classList.add("active");
-      btnStroke?.classList.remove("active");
-    }
+    this.setModeButtons(isWireframe);
 
     // Sync Swatch & Color Picker
     const swatch = document.getElementById("swatch-active-color");
