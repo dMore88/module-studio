@@ -1,7 +1,7 @@
 /**
  * The Layout panel (Repetition and Radiation), described as data (see panel-builder.js). The two modes are two regions of the panel; each is
- * a list of groups (Grid or Radiation, Module, Rhythm, Lines) with its Advanced controls. The Composition container and the Module
- * rotation are shared by both modes: they are floating groups that `place` moves after the Module group of the active mode.
+ * a list of groups (Grid or Radiation, Lines, Rhythm, Module) with its Advanced controls. The Composition container and the Module
+ * rotation are shared by both modes: they are floating groups that `place` moves (the container before the Module group, the rotation at its end).
  * Here the controls write each in its own way (the settings live in repetition, radiation, formalStructure and block), so most carry
  * their own `get` and `set`.
  * These methods are added to StudioProApp (see studio-pro-app.js); build-pro.py puts this file in the bundle before it.
@@ -75,12 +75,17 @@ const LAYOUT_PANEL = {
       } },
   ],
   regions: { "subpanel-repetition": (st) => !LAYOUT_ISRAD(st), "subpanel-radiation": (st) => LAYOUT_ISRAD(st) },
-  // The Module rotation and the Composition container sit right after the Module group of the active mode
+  // Grid, lines, rhythm and the Composition container come first (they shape the grid); the Module group comes last, with the Module rotation at its end
   place: (app, st) => {
-    const modAdv = document.getElementById(LAYOUT_ISRAD(st) ? "rad-adv-module" : "rep-adv-module");
+    const rad = LAYOUT_ISRAD(st);
+    const modAdv = document.getElementById(rad ? "rad-adv-module" : "rep-adv-module");
     const rotEl = document.getElementById("layout-module-rotation"), blockEl = document.getElementById("layout-block");
     if (rotEl && modAdv && modAdv.previousElementSibling !== rotEl) modAdv.parentNode.insertBefore(rotEl, modAdv);
-    if (blockEl && modAdv && modAdv.nextElementSibling !== blockEl) modAdv.parentNode.insertBefore(blockEl, modAdv.nextSibling);
+    const region = document.getElementById(rad ? "subpanel-radiation" : "subpanel-repetition");
+    const titles = region ? [...region.querySelectorAll(".ds-label--overline")] : [];
+    const modTitle = titles.find(el => el.textContent.trim() === "Module");
+    const anchor = modTitle && (modTitle.closest(".ds-title-row") || modTitle).previousElementSibling; // the divider above the Module title
+    if (blockEl && anchor && anchor.previousElementSibling !== blockEl) anchor.parentNode.insertBefore(blockEl, anchor);
   },
   groups: [
     // ---- Repetition ----
@@ -108,38 +113,8 @@ const LAYOUT_PANEL = {
         get: (st) => st.repetition.reflection || "none", set: repSet("reflection") },
       { type: "dropdown", label: "Direction", attr: "data-rep-dir", history: "Direction", advanced: true, options: [["repeated", "Repeated"], ["alternated", "Alternated"], ["undefined", "Undefined"]],
         get: (st) => st.repetition.direction || "repeated", set: repSet("direction") },
-    ] },
-    { region: "subpanel-repetition", title: "Module", help: {
-        is: "The module is the unit that repeats. Its size, its place in the cell and how it turns decide how the structure reads.",
-        does: "Sets how the module fills the canvas (Fit or Actual size), where it sits in the cell and how it turns. Advanced controls scale it, clip it to its cell or invert alternate cells." }, advId: "rep-adv-module", controls: [
-      { type: "tags", label: "Module size", attr: "data-rep-size", history: "Module Size", options: [["fit", "Fit to canvas"], ["actual", "Actual size"]],
-        get: (st) => st.repetition.sizeMode || "fit",
-        set: (st, v, app) => { st.repetition.sizeMode = v; if (v === "actual") app.startContainerFromCell(st.repetition.cols, st.repetition.rows); st.mode = "repetition"; } },
-      // Placement does not apply to the honeycomb; mixed sizes only to the plain and alternating grids
-      { type: "tags", label: "Module placement", attr: "data-rep-place", history: "Module Placement", blockId: "rep-placement-block", enable: (st) => !["hexagonal", "free"].includes(st.repetition.gridType), why: "Does not apply to the hexagonal grid or to Free",
-        options: [["centers", "Centers"], ["intersections", "Intersections"], ["both", "Both"]], get: (st) => st.repetition.placement || "centers", set: repSet("placement") },
-      { type: "tags", label: "Cell mix", attr: "data-rep-mix", history: "Cell Mix", blockId: "rep-mix-block", enable: (st) => st.repetition.gridType === "basic" || st.repetition.gridType === "alternating", why: "Only with the Grid and Alternating variations",
-        options: [["none", "None"], ["merge", "Merged"], ["divide", "Divided"]], get: (st) => st.repetition.cellMix || "none", set: repSet("cellMix") },
-      { type: "slider", id: "layout-inter", label: "Intersection size", blockId: "rep-inter-block", min: 10, max: 100, step: 5, value: 50, suffix: "%", decimal: true, history: "Intersection Size",
-        show: (st) => !["hexagonal", "free"].includes(st.repetition.gridType) && (st.repetition.placement || "centers") !== "centers",
-        get: (st) => st.repetition.interScale ?? 50, set: repSet("interScale", (v) => layoutClamp(v, 10, 100)) },
-      { type: "tags", label: "Module scale", attr: "data-rep-modscale", history: "Module Scale", advanced: true, blockId: "rep-modscale-block", enable: (st) => !LAYOUT_ACTUAL(st.repetition), why: "In Actual size every module keeps its own size",
-        options: [["uniform", "Base size", "Every module keeps its own size, proportional to the whole canvas"], ["cell", "Shrink with cell", "The module shrinks with its cell"]],
-        get: (st) => st.repetition.moduleScale || "uniform", set: repSet("moduleScale") },
       { type: "toggle", id: "chk-rep-clip", label: "Clip cell", history: "Clip cell", advanced: true, get: (st) => !!st.repetition.activeClipping, set: (st, v) => { st.repetition.activeClipping = v; } },
       { type: "toggle", id: "chk-rep-checker", label: "Checkerboard inversion", history: "Checkerboard", advanced: true, get: (st) => !!st.repetition.checkerInvert, set: (st, v) => { st.repetition.checkerInvert = v; } },
-    ] },
-    { region: "subpanel-repetition", title: "Rhythm", help: {
-        is: "Rhythm comes from changes in the size of the cells: equal cells give an even beat; cells that grow or shrink give movement.",
-        does: "Col B and Row B resize every second column or row as a share of the first; the gradations make columns and rows grow or shrink step by step." }, controls: [
-      { type: "slider", id: "struct-col-ratio", label: "Col B size [% of A]", min: 10, max: 100, step: 5, value: 100, suffix: "%", decimal: true, history: "Col Ratio",
-        get: (st) => Math.round(100 / (LAYOUT_FORMAL(st).colRatio || 1)), set: formalSet("colRatio", (v) => layoutClamp(100 / Math.max(10, v), 1, 10)) },
-      { type: "slider", id: "struct-row-ratio", label: "Row B size [% of A]", min: 10, max: 100, step: 5, value: 100, suffix: "%", decimal: true, history: "Row Ratio",
-        get: (st) => Math.round(100 / (LAYOUT_FORMAL(st).rowRatio || 1)), set: formalSet("rowRatio", (v) => layoutClamp(100 / Math.max(10, v), 1, 10)) },
-      { type: "slider", id: "struct-col-grade", label: "Col gradation", min: -30, max: 30, step: 1, value: 0, suffix: "%", decimal: true, history: "Col Gradation",
-        get: (st) => LAYOUT_FORMAL(st).colGrade || 0, set: formalSet("colGrade", (v) => layoutClamp(v, -30, 30)) },
-      { type: "slider", id: "struct-row-grade", label: "Row gradation", min: -30, max: 30, step: 1, value: 0, suffix: "%", decimal: true, history: "Row Gradation",
-        get: (st) => LAYOUT_FORMAL(st).rowGrade || 0, set: formalSet("rowGrade", (v) => layoutClamp(v, -30, 30)) },
     ] },
     { region: "subpanel-repetition", title: "Lines", help: {
         is: "The lines of a structure are its skeleton made visible: they show how the surface is divided.",
@@ -158,6 +133,36 @@ const LAYOUT_PANEL = {
         { type: "color", prefix: "repline", label: "Line color", history: "Line Color",
           get: (st, app, mod) => st.repetition.lineColor || mod?.color || "#18181f", set: (st, v) => { st.repetition.lineColor = v; } },
       ] },
+    ] },
+    { region: "subpanel-repetition", title: "Rhythm", help: {
+        is: "Rhythm comes from changes in the size of the cells: equal cells give an even beat; cells that grow or shrink give movement.",
+        does: "Col B and Row B resize every second column or row as a share of the first; the gradations make columns and rows grow or shrink step by step." }, controls: [
+      { type: "slider", id: "struct-col-ratio", label: "Col B size [% of A]", min: 10, max: 100, step: 5, value: 100, suffix: "%", decimal: true, history: "Col Ratio",
+        get: (st) => Math.round(100 / (LAYOUT_FORMAL(st).colRatio || 1)), set: formalSet("colRatio", (v) => layoutClamp(100 / Math.max(10, v), 1, 10)) },
+      { type: "slider", id: "struct-row-ratio", label: "Row B size [% of A]", min: 10, max: 100, step: 5, value: 100, suffix: "%", decimal: true, history: "Row Ratio",
+        get: (st) => Math.round(100 / (LAYOUT_FORMAL(st).rowRatio || 1)), set: formalSet("rowRatio", (v) => layoutClamp(100 / Math.max(10, v), 1, 10)) },
+      { type: "slider", id: "struct-col-grade", label: "Col gradation", min: -30, max: 30, step: 1, value: 0, suffix: "%", decimal: true, history: "Col Gradation",
+        get: (st) => LAYOUT_FORMAL(st).colGrade || 0, set: formalSet("colGrade", (v) => layoutClamp(v, -30, 30)) },
+      { type: "slider", id: "struct-row-grade", label: "Row gradation", min: -30, max: 30, step: 1, value: 0, suffix: "%", decimal: true, history: "Row Gradation",
+        get: (st) => LAYOUT_FORMAL(st).rowGrade || 0, set: formalSet("rowGrade", (v) => layoutClamp(v, -30, 30)) },
+    ] },
+    { region: "subpanel-repetition", title: "Module", help: {
+        is: "The module is the unit that repeats. Its size, its place in the cell and how it turns decide how the structure reads.",
+        does: "Sets how the module fills the canvas (Fit or Actual size), where it sits in the cell and how it turns. Advanced controls scale it, clip it to its cell or invert alternate cells." }, advId: "rep-adv-module", controls: [
+      { type: "tags", label: "Module size", attr: "data-rep-size", history: "Module Size", options: [["fit", "Fit to canvas"], ["actual", "Actual size"]],
+        get: (st) => st.repetition.sizeMode || "fit",
+        set: (st, v, app) => { st.repetition.sizeMode = v; if (v === "actual") app.startContainerFromCell(st.repetition.cols, st.repetition.rows); st.mode = "repetition"; } },
+      // Placement does not apply to the honeycomb; mixed sizes only to the plain and alternating grids
+      { type: "tags", label: "Module placement", attr: "data-rep-place", history: "Module Placement", blockId: "rep-placement-block", enable: (st) => !["hexagonal", "free"].includes(st.repetition.gridType), why: "Does not apply to the hexagonal grid or to Free",
+        options: [["centers", "Centers"], ["intersections", "Intersections"], ["both", "Both"]], get: (st) => st.repetition.placement || "centers", set: repSet("placement") },
+      { type: "tags", label: "Cell mix", attr: "data-rep-mix", history: "Cell Mix", blockId: "rep-mix-block", enable: (st) => st.repetition.gridType === "basic" || st.repetition.gridType === "alternating", why: "Only with the Grid and Alternating variations",
+        options: [["none", "None"], ["merge", "Merged"], ["divide", "Divided"]], get: (st) => st.repetition.cellMix || "none", set: repSet("cellMix") },
+      { type: "slider", id: "layout-inter", label: "Intersection size", blockId: "rep-inter-block", min: 10, max: 100, step: 5, value: 50, suffix: "%", decimal: true, history: "Intersection Size",
+        show: (st) => !["hexagonal", "free"].includes(st.repetition.gridType) && (st.repetition.placement || "centers") !== "centers",
+        get: (st) => st.repetition.interScale ?? 50, set: repSet("interScale", (v) => layoutClamp(v, 10, 100)) },
+      { type: "tags", label: "Module scale", attr: "data-rep-modscale", history: "Module Scale", advanced: true, blockId: "rep-modscale-block", enable: (st) => !LAYOUT_ACTUAL(st.repetition), why: "In Actual size every module keeps its own size",
+        options: [["uniform", "Base size", "Every module keeps its own size, proportional to the whole canvas"], ["cell", "Shrink with cell", "The module shrinks with its cell"]],
+        get: (st) => st.repetition.moduleScale || "uniform", set: repSet("moduleScale") },
     ] },
     // ---- Radiation ----
     { region: "subpanel-radiation", title: "Radiation", help: {
@@ -186,6 +191,21 @@ const LAYOUT_PANEL = {
       { type: "toggle", id: "chk-rad-raysbycont", label: "Rays follow container", history: "Rays follow container", advanced: true, labelId: "rad-raysbycont-item",
         title: "Actual size: every ring gets as many rays as fit the container's width, so the cells are as big as the container",
         enable: (st) => LAYOUT_ACTUAL(st.radiation) && st.radiation.scheme !== "centripetal", why: "Only in Actual size, and not with Centripetal", get: (st) => !!st.radiation.raysByContainer, set: (st, v) => { st.radiation.raysByContainer = v; } },
+      { type: "toggle", id: "chk-rad-clip", label: "Clip cell", history: "Clip cell", advanced: true, get: (st) => !!st.radiation.activeClipping, set: (st, v) => { st.radiation.activeClipping = v; } },
+      { type: "toggle", id: "chk-rad-checker", label: "Checkerboard inversion", history: "Checkerboard", advanced: true, get: (st) => !!st.radiation.checkerInvert, set: (st, v) => { st.radiation.checkerInvert = v; } },
+    ] },
+    { region: "subpanel-radiation", title: "Lines", help: {
+        is: "The lines of a radiation are its rays and rings made visible.",
+        does: "Visible lines draws them as part of the design (they are exported); width and color shape how they look." }, controls: [
+      { type: "toggle", id: "chk-rad-gridlines", label: "Visible lines", history: "Visible lines", get: (st) => !!(st.radiation.showRays || st.radiation.showRings),
+        set: (st, v) => { st.radiation.showRays = v; st.radiation.showRings = v; } },
+      { type: "stack", id: "rad-lines-block", show: (st) => !!(st.radiation.showRays || st.radiation.showRings), controls: [
+        { type: "hint", text: "Lines are part of the design and are exported." },
+        { type: "slider", id: "layout-radline", label: "Line width", blockId: "rad-linewidth-block", min: 0.5, max: 10, step: 0.5, value: 1, suffix: "px", decimal: true, history: "Radiation Line Width",
+          get: (st) => st.radiation.lineWidth ?? 1, set: (st, v) => { st.radiation.lineWidth = layoutClamp(v, 0.5, 10); } },
+        { type: "color", prefix: "radline", label: "Line color", history: "Radiation Line Color",
+          get: (st, app, mod) => st.radiation.lineColor || mod?.color || "#18181f", set: (st, v) => { st.radiation.lineColor = v; } },
+      ] },
     ] },
     { region: "subpanel-radiation", title: "Module", help: {
         is: "The module is the unit that repeats. In a radiation its size and turn decide how it follows the rays and rings.",
@@ -209,21 +229,6 @@ const LAYOUT_PANEL = {
         get: (st) => st.radiation.moduleScale || "uniform", set: radSet("moduleScale") },
       { type: "dropdown", label: "Module orientation", attr: "data-rad-orient", history: "Module Orientation", advanced: true,
         options: [["auto", "Auto"], ["outward", "Outward"], ["inward", "Inward"], ["tangent", "Tangent"], ["fixed", "Fixed"]], get: (st) => st.radiation.orientation || "auto", set: radSet("orientation") },
-      { type: "toggle", id: "chk-rad-clip", label: "Clip cell", history: "Clip cell", advanced: true, get: (st) => !!st.radiation.activeClipping, set: (st, v) => { st.radiation.activeClipping = v; } },
-      { type: "toggle", id: "chk-rad-checker", label: "Checkerboard inversion", history: "Checkerboard", advanced: true, get: (st) => !!st.radiation.checkerInvert, set: (st, v) => { st.radiation.checkerInvert = v; } },
-    ] },
-    { region: "subpanel-radiation", title: "Lines", help: {
-        is: "The lines of a radiation are its rays and rings made visible.",
-        does: "Visible lines draws them as part of the design (they are exported); width and color shape how they look." }, controls: [
-      { type: "toggle", id: "chk-rad-gridlines", label: "Visible lines", history: "Visible lines", get: (st) => !!(st.radiation.showRays || st.radiation.showRings),
-        set: (st, v) => { st.radiation.showRays = v; st.radiation.showRings = v; } },
-      { type: "stack", id: "rad-lines-block", show: (st) => !!(st.radiation.showRays || st.radiation.showRings), controls: [
-        { type: "hint", text: "Lines are part of the design and are exported." },
-        { type: "slider", id: "layout-radline", label: "Line width", blockId: "rad-linewidth-block", min: 0.5, max: 10, step: 0.5, value: 1, suffix: "px", decimal: true, history: "Radiation Line Width",
-          get: (st) => st.radiation.lineWidth ?? 1, set: (st, v) => { st.radiation.lineWidth = layoutClamp(v, 0.5, 10); } },
-        { type: "color", prefix: "radline", label: "Line color", history: "Radiation Line Color",
-          get: (st, app, mod) => st.radiation.lineColor || mod?.color || "#18181f", set: (st, v) => { st.radiation.lineColor = v; } },
-      ] },
     ] },
     // ---- Shared by both modes (placed after the Module group of the active mode) ----
     { floating: "layout-module-rotation", controls: [

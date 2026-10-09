@@ -497,7 +497,8 @@
       // The inspector: four sliders, the size ones hidden in Actual size, and the art log says it
       d.querySelector('[data-rail-tab="layout"]').click(); await wait(80); app.syncAllInspectorsWithActiveLayer();
       assert(d.getElementById("num-block-x").value === "-150px" && d.getElementById("num-block-w").value === "300px", `The block sliders should show pixels of the canvas (${d.getElementById("num-block-x").value} / ${d.getElementById("num-block-w").value})`);
-      assert(d.getElementById("layout-block").previousElementSibling === d.getElementById("rep-adv-module"), "The Composition container should be its own group, right after the Repetition Module group");
+      const blockNext = d.getElementById("layout-block").nextElementSibling.nextElementSibling;
+      assert(blockNext && blockNext.textContent.trim().startsWith("Module"), "The Composition container should come right before the Repetition Module group (grid first, module last)");
       assert(!d.getElementById("block-size-fields").classList.contains("hidden"), "Fit shows the block size");
       st.repetition.sizeMode = "actual"; app.syncAllInspectorsWithActiveLayer(); app.render();
       assert(!d.getElementById("block-size-fields").classList.contains("hidden"), "Actual size also shows the composition container's size (it cuts the grid)");
@@ -505,7 +506,8 @@
       fire0(d.getElementById("input-block-x"), 60);
       assert(Math.abs(st.block.x - 60) < 1e-9, `A 60 px offset should store 60 % of the canvas away from the middle... (${st.block.x})`);
       st.mode = "radiation"; app.syncAllInspectorsWithActiveLayer();
-      assert(d.getElementById("layout-block").previousElementSibling === d.getElementById("rad-adv-module"), "In Radiation the Composition container should move after the Radiation Module group");
+      const radNext = d.getElementById("layout-block").nextElementSibling.nextElementSibling;
+      assert(radNext && radNext.textContent.trim().startsWith("Module"), "In Radiation the Composition container should also come right before the Module group");
     });
 
     await test("Block frame: a dashed guide of the block while the Layout panel is open, never when it is the whole canvas or in an export", async () => {

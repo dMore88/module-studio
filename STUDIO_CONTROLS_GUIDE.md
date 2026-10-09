@@ -143,7 +143,7 @@ Multiplica el módulo en una retícula ortogonal sobre el plano cartesiano $X, Y
 
 **Module rotation** (`rotation`, 0 a 360º, en *Layout*, justo encima del composition container): gira la pieza entera (con su borde y sus shapes) en la composición. No está en el editor del módulo porque el editor es el canvas del propio módulo, sin girar: la rotación es *cómo se coloca la pieza* en su celda, y en Layout se ve su efecto al instante.
 
-**Composition container** (cuatro sliders visibles en *Layout*, justo debajo del diseño del modo activo y antes de su *Advanced*; el mismo bloque sirve a los dos modos): la **hoja de papel donde vive el layout de la capa**, para componer varias capas (por ejemplo una retícula a la izquierda y otra polar a la derecha). Se guarda en `layer.structure.block` (en % del lienzo, para que siga al lienzo si cambia la proporción) y el layout se dibuja como si el container fuera un lienzo pequeño, con todo lo suyo dentro (módulos, líneas visibles, y las posiciones de Anomaly y Concentration, que son relativas a él). **Corta** todo lo que el layout dibuje fuera de su borde, también en *Actual size*. Los sliders muestran **píxeles del lienzo**:
+**Composition container** (cuatro sliders visibles en *Layout*, después de la retícula (Grid/Radiation, Lines y Rhythm) y antes del grupo Module; el mismo bloque sirve a los dos modos): la **hoja de papel donde vive el layout de la capa**, para componer varias capas (por ejemplo una retícula a la izquierda y otra polar a la derecha). Se guarda en `layer.structure.block` (en % del lienzo, para que siga al lienzo si cambia la proporción) y el layout se dibuja como si el container fuera un lienzo pequeño, con todo lo suyo dentro (módulos, líneas visibles, y las posiciones de Anomaly y Concentration, que son relativas a él). **Corta** todo lo que el layout dibuje fuera de su borde, también en *Actual size*. Los sliders muestran **píxeles del lienzo**:
 * **`w` / `h`** (*Composition container width* y *height*, 10 a 2000 px, por defecto el tamaño del lienzo: 600 px en 1:1): en *Fit to canvas* la retícula se reparte dentro; en *Radiation* el radio máximo sale de su lado menor; en *Actual size* los módulos conservan su tamaño real, la cuadrícula va centrada en la hoja y la hoja corta lo que sobresale.
 * **`x` / `y`** (*Composition container offset X* y *offset Y*, −1000 a 1000 px, por defecto 0 px): el **desfase del centro de la hoja respecto al centro del lienzo**.
 * Con los valores por defecto el dibujo es idéntico al de siempre. En Anomaly y Concentration, el clic en el lienzo se convierte en una posición dentro de la hoja. **Marco:** mientras el panel *Layout* está abierto y la hoja no es el lienzo entero, la capa activa dibuja un marco punteado con el color de guías. Es una ayuda de pantalla: no se exporta y se oculta al cerrar el panel o abrir otro. El *Art log* añade `Composition container: 300 x 300px / offset -150, -150px`.
@@ -393,8 +393,10 @@ Para incorporar estos conceptos dentro de [Abstract Studio](https://github.com/d
 
 | Panel | Grupos (con sus *Advanced controls*) |
 |---|---|
-| Layout › Repetition | Grid (reflexión, dirección), Module (escala, Clip cell, Checkerboard), Composition container, Rhythm, Lines |
-| Layout › Radiation | Radiation (dirección, forma de anillo, centro abierto, rotación de anillos, Rays follow container), Module (escala, orientación, Clip cell, Checkerboard), Lines |
+| Layout › Repetition | Grid (reflexión, dirección, Clip cell, Checkerboard), Lines, Rhythm, Composition container, Module (escala en Advanced, rotación) |
+| Layout › Radiation | Radiation (dirección, forma de anillo, centro abierto, rotación de anillos, Rays follow container, Clip cell, Checkerboard), Lines, Composition container, Module (escala y orientación en Advanced, rotación) |
+
+Orden del Layout: primero lo que **dibuja la retícula** (Grid o Radiation con su Clip cell y Checkerboard, Lines, Rhythm, Composition container) y al final lo que es **del módulo** (Module). *Module scale* depende de la retícula pero es del módulo, así que vive en el Advanced de Module.
 | Similarity | Kinship, Association, Imperfection (jitter espacial) |
 | Gradation | Attribute, Path (sequence, Alternate rows, Reverse), Progression (speed) |
 | Anomaly | Anomaly, Zone |
