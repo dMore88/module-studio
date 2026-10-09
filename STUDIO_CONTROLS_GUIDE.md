@@ -396,7 +396,7 @@ Para incorporar estos conceptos dentro de [Abstract Studio](https://github.com/d
 | Layout › Repetition | Grid (reflexión, dirección, Clip cell, Checkerboard), Lines, Rhythm, Composition container, Module (tamaño, colocación, mezcla, rotación) |
 | Layout › Radiation | Radiation (dirección, forma de anillo, centro abierto, rotación de anillos, Rays follow container, Clip cell, Checkerboard), Lines, Composition container, Module (tamaño, orientación en Advanced, rotación) |
 
-Orden del Layout: primero lo que **dibuja la retícula** (Grid o Radiation con su Clip cell y Checkerboard, Lines, Rhythm, Composition container) y al final lo que es **del módulo** (Module). *Module size* reúne en **un solo control** tres opciones: *Base size* (por defecto), *Shrink with cell* y *Actual size* (antes eran dos controles, *Module size* y *Module scale*, que se confundían). El proyecto sigue guardando `sizeMode` y `moduleScale`.
+Orden del Layout: primero lo que **dibuja la retícula** (Grid o Radiation con su Clip cell y Checkerboard, Lines, Rhythm, Composition container) y al final lo que es **del módulo** (Module). *Module size* reúne en **un solo control** tres opciones: *Base size* (por defecto), *Shrink with cell* y *Actual size* (antes eran dos controles, *Module size* y *Module scale*, que se confundían). El proyecto sigue guardando `sizeMode` y `moduleScale`. Lleva un (?) junto a su etiqueta (primer control suelto con ayuda; se pide con `help` en el control `tags`).
 | Similarity | Kinship, Association, Imperfection (jitter espacial) |
 | Gradation | Attribute, Path (sequence, Alternate rows, Reverse), Progression (speed) |
 | Anomaly | Anomaly, Zone |

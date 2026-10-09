@@ -158,7 +158,9 @@ const LAYOUT_PANEL = {
     { region: "subpanel-repetition", title: "Module", help: {
         is: "The module is the unit that repeats. Its size, its place in the cell and how it turns decide how the structure reads.",
         does: "Size sets how big the module is in its cell (its own size, shrunk with the cell, or its real size); placement sets where it sits and Module rotation how it turns." }, advId: "rep-adv-module", controls: [
-      { type: "tags", label: "Module size", attr: "data-rep-size", history: "Module Size", options: SIZE_OPTIONS("the whole canvas"),
+      { type: "tags", label: "Module size", attr: "data-rep-size", history: "Module Size", help: { is: "The size of the module inside its cell. It is a choice of three: the module keeps its own size, shrinks with its cell, or keeps its real size and the grid adapts to it.",
+        does: "Base size repeats the module at one size in every cell. Shrink with cell makes it follow its cell. Actual size repeats the module as it is, and the grid grows around it." },
+        options: SIZE_OPTIONS("the whole canvas"),
         get: (st) => sizeChoice(st.repetition),
         set: (st, v, app) => { applySizeChoice(st.repetition, v); if (v === "actual") app.startContainerFromCell(st.repetition.cols, st.repetition.rows); st.mode = "repetition"; } },
       // Placement does not apply to the honeycomb; mixed sizes only to the plain and alternating grids
@@ -216,7 +218,9 @@ const LAYOUT_PANEL = {
     { region: "subpanel-radiation", title: "Module", help: {
         is: "The module is the unit that repeats. In a radiation its size and turn decide how it follows the rays and rings.",
         does: "Size sets how big each module is (its own size, shrunk with the cell, or its real size). Advanced controls orient it along the rays." }, advId: "rad-adv-module", controls: [
-      { type: "tags", label: "Module size", attr: "data-rad-size", history: "Radiation Module Size", options: SIZE_OPTIONS("the whole structure"),
+      { type: "tags", label: "Module size", attr: "data-rad-size", history: "Radiation Module Size", help: { is: "The size of the module inside its cell. It is a choice of three: the module keeps its own size, shrinks with its cell, or keeps its real size and the grid adapts to it.",
+        does: "Base size repeats the module at one size in every cell. Shrink with cell makes it follow its cell. Actual size repeats the module as it is, and the grid grows around it." },
+        options: SIZE_OPTIONS("the whole structure"),
         get: (st) => sizeChoice(st.radiation),
         set: (st, v, app) => {
           applySizeChoice(st.radiation, v);
