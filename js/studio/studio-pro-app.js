@@ -4,7 +4,7 @@
  */
 
 import { StudioEngine, defaultStudioState, createDefaultLayerStructure, createDefaultLayer } from './studio-engine.js';
-import { Shapes, STUDIO_SHAPE_KEYS, resolveFigures } from './shapes.js';
+import { Shapes, STUDIO_SHAPE_KEYS, resolveFigures, figureAt } from './shapes.js';
 import { CanvasUtils } from '../canvas-utils.js';
 import { StudioExporter } from './exporter.js';
 
@@ -233,6 +233,8 @@ export class StudioProApp {
     const layer = this.figEdit ? this.state.layers.find(l => l.id === this.figEdit.layerId) : null;
     const key = layer ? `${layer.containerW}x${layer.containerH}` : "";
     if (key !== this._editorCanvasKey) { this._editorCanvasKey = key; this.fitArtboard(); }
+    // how many screen px a design px is worth (the guides keep their size on screen whatever the canvas is scaled to)
+    this.engine.viewScale = this.artboardSize ? this.artboardSize.w / Math.max(1, layer ? layer.containerW : (ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"]).w) : 1;
     this.engine.renderScale = layer && this.artboardSize ? Math.max(1, Math.min(8, Math.ceil(this.artboardSize.w / Math.max(1, layer.containerW)))) : 1;
   }
 

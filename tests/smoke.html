@@ -2366,6 +2366,42 @@
       assert(px(300 + 24.7, 300 + 24.7) < 160 || px(300 + 24, 300 + 25) < 160, "The arcs inside the module are drawn");
     });
 
+    await test("Smart module editor: a click on the canvas picks the shape under the pointer, and dragging moves it", async () => {
+      reset();
+      const d = win.document, q = (sel) => d.querySelector(sel), cv = d.getElementById("studio-canvas");
+      const fire = (el, v) => { el.value = String(v); el.dispatchEvent(new win.Event("input", { bubbles: true })); el.dispatchEvent(new win.Event("change", { bubbles: true })); };
+      const L = app.state.layers[0]; Object.assign(L, { shape: "circle", wireframe: true, width: 100, height: 100 }); app.state.showSafeBounds = false;
+      app.isFlyoutOpen = false; app.updateRailUI();
+      q('[data-rail-tab="module"]').click(); await wait(60);
+      q("#btn-fig-add").click(); await wait(30);
+      q('[data-fig-shape="square"]').click();
+      fire(q("#input-fig-w"), 30); fire(q("#input-fig-h"), 30); fire(q("#input-fig-x"), 120);
+      assert(app.figEdit.index === 1 && L.figures.length === 2, "Two figures: a circle at the centre and a square apart");
+      // a module px as a client position
+      const at = (mx, my) => { const r = cv.getBoundingClientRect(), k = r.width / L.containerW; return { clientX: r.left + (mx + L.containerW / 2) * k, clientY: r.top + (my + L.containerH / 2) * k }; };
+      const ptr = (type, pos) => cv.dispatchEvent(new win.PointerEvent(type, { ...pos, button: 0, bubbles: true, pointerId: 7 }));
+      ptr("pointerdown", at(0, 0)); ptr("pointerup", at(0, 0));
+      assert(app.figEdit.index === 0, "A click inside the circle picks it");
+      ptr("pointerdown", at(120, 0)); ptr("pointerup", at(120, 0));
+      assert(app.figEdit.index === 1, "A click on the square picks it");
+      // the shape in front wins where they overlap
+      fire(q("#input-fig-x"), 0); fire(q("#input-fig-w"), 60); fire(q("#input-fig-h"), 60);
+      ptr("pointerdown", at(0, 0)); ptr("pointerup", at(0, 0));
+      assert(app.figEdit.index === 1, "Where two shapes overlap, the one in front is picked");
+      // a click on an empty place keeps the selection
+      ptr("pointerdown", at(-190, -190)); ptr("pointerup", at(-190, -190));
+      assert(app.figEdit.index === 1, "A click on nothing keeps the selection");
+      // drag: the shape follows the pointer by whole px; one undo step
+      const steps0 = app.figEdit.steps.length;
+      ptr("pointerdown", at(0, 0)); ptr("pointermove", at(40, 25)); ptr("pointermove", at(60, 50)); ptr("pointerup", at(60, 50));
+      assert(L.figures[1].x === 60 && L.figures[1].y === 50 && q("#num-fig-x").value === "60px", `Dragging moves the shape (${L.figures[1].x}, ${L.figures[1].y})`);
+      assert(app.figEdit.steps.length === steps0 + 1, "The whole drag is one undo step");
+      // a related shape becomes free where it is when it is dragged
+      Object.assign(L.figures[1], { relation: "distance", gap: 0, angle: 0, x: 0, y: 0 }); app.syncFigureEditor(); // touching the circle on its right: the centre is at 80
+      ptr("pointerdown", at(80, 0)); ptr("pointermove", at(95, 0)); ptr("pointerup", at(95, 0));
+      assert(L.figures[1].relation === "free" && L.figures[1].x === 95 && L.figures[1].y === 0, `A related shape becomes free where it was and follows the pointer (${L.figures[1].relation}, ${L.figures[1].x}, ${L.figures[1].y})`);
+    });
+
     await test("Smart module editor: the selected figure has a frame on the canvas (never exported) and undo / redo go step by step inside the editor", async () => {
       reset();
       const d = win.document, q = (s) => d.querySelector(s), cv = d.getElementById("studio-canvas");
