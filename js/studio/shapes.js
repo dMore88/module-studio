@@ -30,11 +30,11 @@ function circleOps(cx, cy, r, hole) {
   return [["M", cx + r, cy], ...arcOps(cx, cy, r, 0, a1), ["Z"]];
 }
 
-function polygonOps(n, r, start) {
+function polygonOps(n, r, start, dy = 0) {
   const ops = [];
   for (let i = 0; i < n; i++) {
     const a = start + (i * Math.PI * 2) / n;
-    ops.push([i === 0 ? "M" : "L", r * Math.cos(a), r * Math.sin(a)]);
+    ops.push([i === 0 ? "M" : "L", r * Math.cos(a), r * Math.sin(a) + dy]);
   }
   ops.push(["Z"]);
   return ops;
@@ -139,16 +139,17 @@ export const Shapes = {
     name: "Triangle",
     category: "geometric",
     draw(ctx, size) {
+      // The bounding box is centred on the module (the centroid is not the visual centre): the apex is at -0.75 r and the base at +0.75 r
       const r = size * 0.55;
       ctx.beginPath();
-      ctx.moveTo(0, -r);
-      ctx.lineTo(r * 0.866, r * 0.5);
-      ctx.lineTo(-r * 0.866, r * 0.5);
+      ctx.moveTo(0, -r * 0.75);
+      ctx.lineTo(r * 0.866, r * 0.75);
+      ctx.lineTo(-r * 0.866, r * 0.75);
       ctx.closePath();
     },
     svgPath(size) {
       const r = size * 0.55;
-      return `<polygon points="0,${-r} ${r*0.866},${r*0.5} ${-r*0.866},${r*0.5}" />`;
+      return `<polygon points="0,${-r*0.75} ${r*0.866},${r*0.75} ${-r*0.866},${r*0.75}" />`;
     },
     phIcon: "triangle"
   },
@@ -352,7 +353,8 @@ export const Shapes = {
     id: "pentagon",
     name: "Pentagon",
     category: "polygonal",
-    ...pathShape((s) => polygonOps(5, s * 0.52, -Math.PI / 2)),
+    // pointing up, its bounding box is centred on the module (the centroid is not the visual centre)
+    ...pathShape((s) => polygonOps(5, s * 0.52, -Math.PI / 2, s * 0.52 * (1 - Math.cos(Math.PI / 5)) / 2)),
     phIcon: "pentagon"
   },
 
@@ -369,10 +371,10 @@ export const Shapes = {
     name: "Star",
     category: "polygonal",
     ...pathShape((s) => {
-      const ro = s * 0.52, ri = s * 0.22, ops = [];
+      const ro = s * 0.52, ri = s * 0.22, ops = [], dy = ro * (1 - Math.cos(Math.PI / 5)) / 2; // bounding box centred on the module
       for (let i = 0; i < 10; i++) {
         const a = -Math.PI / 2 + (i * Math.PI) / 5, r = i % 2 === 0 ? ro : ri;
-        ops.push([i === 0 ? "M" : "L", r * Math.cos(a), r * Math.sin(a)]);
+        ops.push([i === 0 ? "M" : "L", r * Math.cos(a), r * Math.sin(a) + dy]);
       }
       ops.push(["Z"]);
       return ops;
