@@ -833,9 +833,9 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .ds-artboard {
   display: inline-block;
   box-sizing: content-box;
-  border: var(--sizing-5) solid var(--neutral-bg-light);
-  border-radius: var(--border-radius-5);
-  box-shadow: var(--elevation-5x);
+  border: 10px solid var(--neutral-bg-light); /* the white frame of the canvas and of the module canvas, 10 px (Figma "Moiré artwork") */
+  border-radius: var(--border-radius-1);
+  box-shadow: var(--elevation-1x);
   overflow: hidden;
   line-height: 0;
 }

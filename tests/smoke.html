@@ -765,7 +765,7 @@
         assert(Math.abs(c.width / c.height - r) < 0.01, `${key}: the canvas ratio is ${(c.width / c.height).toFixed(3)}`);
         assert(a.bottom <= st.bottom + 1 && a.top >= st.top - 1, `${key}: the artboard does not fit the free height`);
         assert(a.right <= fl.left - 20, `${key}: the artboard reaches the controls panel`);
-        const tol = 41; // 20 px border on each side plus rounding
+        const tol = 21; // 10 px border on each side plus rounding
         assert(Math.abs(a.height - st.height) <= tol || Math.abs(a.width - (fl.left - 24 - a.left)) <= tol, `${key}: the artboard leaves free space on both axes`);
       }
       assert(/Canvas: \d+ × \d+ PX/.test(d.getElementById("art-log-lines").textContent), "The Art log does not show the canvas size");

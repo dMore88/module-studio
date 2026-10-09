@@ -7073,7 +7073,7 @@ class StudioProApp {
     const workspace = document.querySelector(".ds-workspace");
     if (!stage || !column || !workspace || !stage.clientHeight) return;
 
-    const BORDER = 20; // white frame around the canvas, each side (Figma "Moiré artwork")
+    const BORDER = 10; // white frame around the canvas, each side (Figma "Moiré artwork")
     const GAP = 24;
     const editing = this.figEdit ? this.state.layers.find(l => l.id === this.figEdit.layerId) : null;
     const cfg = editing ? { w: editing.containerW, h: editing.containerH } : (ASPECT_RATIOS[this.state.aspectRatio || "1:1"] || ASPECT_RATIOS["1:1"]);
