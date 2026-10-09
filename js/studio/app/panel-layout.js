@@ -54,6 +54,9 @@ const LAYOUT_PANEL = {
       app.pushHistory(`Layer ${app.activeLayerId} Layout Structure: ${on ? "ON" : "OFF"}`);
     } },
   badgeId: "badge-layout-layer",
+  help: {
+    is: "A structure is the skeleton that organizes modules in a design: it gives each module its place and sets the rhythm between them.",
+    does: "Turns the single module into a whole composition. Repetition lays modules in a grid; Radiation arranges them around a center." },
   syncAll: true,
   allowNoModule: true,
   top: [
@@ -81,7 +84,9 @@ const LAYOUT_PANEL = {
   },
   groups: [
     // ---- Repetition ----
-    { region: "subpanel-repetition", title: "Grid", advId: "rep-adv-grid", controls: [
+    { region: "subpanel-repetition", title: "Grid", help: {
+        is: "A repetition structure divides the surface into equal cells, each holding a module. Its variations bend or shift the grid lines without losing the repetition.",
+        does: "Variation picks the type of grid; Columns and Rows set how many cells divide the canvas. Advanced controls reflect the grid or alternate its direction." }, advId: "rep-adv-grid", controls: [
       { type: "dropdown", label: "Grid structure variation", attr: "data-grid-var", history: "Grid Var", options: GRID_ICONS,
         get: (st) => st.repetition.gridType,
         set: (st, v) => { st.repetition.gridType = v; st.mode = "repetition"; st.enabled = true; } },
@@ -104,7 +109,9 @@ const LAYOUT_PANEL = {
       { type: "dropdown", label: "Direction", attr: "data-rep-dir", history: "Direction", advanced: true, options: [["repeated", "Repeated"], ["alternated", "Alternated"], ["undefined", "Undefined"]],
         get: (st) => st.repetition.direction || "repeated", set: repSet("direction") },
     ] },
-    { region: "subpanel-repetition", title: "Module", advId: "rep-adv-module", controls: [
+    { region: "subpanel-repetition", title: "Module", help: {
+        is: "The module is the unit that repeats. Its size, its place in the cell and how it turns decide how the structure reads.",
+        does: "Sets how the module fills the canvas (Fit or Actual size), where it sits in the cell and how it turns. Advanced controls scale it, clip it to its cell or invert alternate cells." }, advId: "rep-adv-module", controls: [
       { type: "tags", label: "Module size", attr: "data-rep-size", history: "Module Size", options: [["fit", "Fit to canvas"], ["actual", "Actual size"]],
         get: (st) => st.repetition.sizeMode || "fit",
         set: (st, v, app) => { st.repetition.sizeMode = v; if (v === "actual") app.startContainerFromCell(st.repetition.cols, st.repetition.rows); st.mode = "repetition"; } },
@@ -122,7 +129,9 @@ const LAYOUT_PANEL = {
       { type: "toggle", id: "chk-rep-clip", label: "Clip cell", history: "Clip cell", advanced: true, get: (st) => !!st.repetition.activeClipping, set: (st, v) => { st.repetition.activeClipping = v; } },
       { type: "toggle", id: "chk-rep-checker", label: "Checkerboard inversion", history: "Checkerboard", advanced: true, get: (st) => !!st.repetition.checkerInvert, set: (st, v) => { st.repetition.checkerInvert = v; } },
     ] },
-    { region: "subpanel-repetition", title: "Rhythm", controls: [
+    { region: "subpanel-repetition", title: "Rhythm", help: {
+        is: "Rhythm comes from changes in the size of the cells: equal cells give an even beat; cells that grow or shrink give movement.",
+        does: "Col B and Row B resize every second column or row as a share of the first; the gradations make columns and rows grow or shrink step by step." }, controls: [
       { type: "slider", id: "struct-col-ratio", label: "Col B size [% of A]", min: 10, max: 100, step: 5, value: 100, suffix: "%", decimal: true, history: "Col Ratio",
         get: (st) => Math.round(100 / (LAYOUT_FORMAL(st).colRatio || 1)), set: formalSet("colRatio", (v) => layoutClamp(100 / Math.max(10, v), 1, 10)) },
       { type: "slider", id: "struct-row-ratio", label: "Row B size [% of A]", min: 10, max: 100, step: 5, value: 100, suffix: "%", decimal: true, history: "Row Ratio",
@@ -132,7 +141,9 @@ const LAYOUT_PANEL = {
       { type: "slider", id: "struct-row-grade", label: "Row gradation", min: -30, max: 30, step: 1, value: 0, suffix: "%", decimal: true, history: "Row Gradation",
         get: (st) => LAYOUT_FORMAL(st).rowGrade || 0, set: formalSet("rowGrade", (v) => layoutClamp(v, -30, 30)) },
     ] },
-    { region: "subpanel-repetition", title: "Lines", controls: [
+    { region: "subpanel-repetition", title: "Lines", help: {
+        is: "The lines of a structure are its skeleton made visible: they show how the surface is divided.",
+        does: "Visible lines draws them as part of the design (they are exported). Direction, spacing, width and color shape how they look." }, controls: [
       { type: "toggle", id: "chk-rep-gridlines", label: "Visible lines", history: "Visible lines", get: (st) => !!st.repetition.showGridLines,
         set: (st, v) => { st.repetition.showGridLines = v; if (st.formalStructure) st.formalStructure.showGridLines = v; } },
       // Visible lines are part of the design: they have colour and width and are exported
@@ -149,7 +160,9 @@ const LAYOUT_PANEL = {
       ] },
     ] },
     // ---- Radiation ----
-    { region: "subpanel-radiation", title: "Radiation", advId: "rad-adv-radiation", controls: [
+    { region: "subpanel-radiation", title: "Radiation", help: {
+        is: "In a radiation structure the modules spread from, or gather around, a center, along rays and rings.",
+        does: "The scheme chooses the movement (outward, inward, concentric, spiral or several centers); rays and rings set how many modules there are. Advanced controls shape the rings and turn them." }, advId: "rad-adv-radiation", controls: [
       { type: "dropdown", label: "Radiation scheme", attr: "data-rad-scheme", history: "Rad Scheme", get: (st) => st.radiation.scheme,
         options: [["centrifugal", "Centrifugal"], ["centripetal", "Centripetal"], ["concentric", "Concentric"], ["spiral", "Spiral"], ["multi_center", "Multi-center"]],
         set: (st, v) => { st.radiation.scheme = v; st.mode = "radiation"; st.enabled = true; } },
@@ -174,7 +187,9 @@ const LAYOUT_PANEL = {
         title: "Actual size: every ring gets as many rays as fit the container's width, so the cells are as big as the container",
         enable: (st) => LAYOUT_ACTUAL(st.radiation) && st.radiation.scheme !== "centripetal", why: "Only in Actual size, and not with Centripetal", get: (st) => !!st.radiation.raysByContainer, set: (st, v) => { st.radiation.raysByContainer = v; } },
     ] },
-    { region: "subpanel-radiation", title: "Module", advId: "rad-adv-module", controls: [
+    { region: "subpanel-radiation", title: "Module", help: {
+        is: "The module is the unit that repeats. In a radiation its size and turn decide how it follows the rays and rings.",
+        does: "Fit or Actual size sets how big each module is. Advanced controls scale it, orient it along the rays, clip it to its cell or invert alternate cells." }, advId: "rad-adv-module", controls: [
       { type: "tags", label: "Module size", attr: "data-rad-size", history: "Radiation Module Size", options: [["fit", "Fit to canvas"], ["actual", "Actual size"]],
         get: (st) => st.radiation.sizeMode || "fit",
         set: (st, v, app) => {
@@ -197,7 +212,9 @@ const LAYOUT_PANEL = {
       { type: "toggle", id: "chk-rad-clip", label: "Clip cell", history: "Clip cell", advanced: true, get: (st) => !!st.radiation.activeClipping, set: (st, v) => { st.radiation.activeClipping = v; } },
       { type: "toggle", id: "chk-rad-checker", label: "Checkerboard inversion", history: "Checkerboard", advanced: true, get: (st) => !!st.radiation.checkerInvert, set: (st, v) => { st.radiation.checkerInvert = v; } },
     ] },
-    { region: "subpanel-radiation", title: "Lines", controls: [
+    { region: "subpanel-radiation", title: "Lines", help: {
+        is: "The lines of a radiation are its rays and rings made visible.",
+        does: "Visible lines draws them as part of the design (they are exported); width and color shape how they look." }, controls: [
       { type: "toggle", id: "chk-rad-gridlines", label: "Visible lines", history: "Visible lines", get: (st) => !!(st.radiation.showRays || st.radiation.showRings),
         set: (st, v) => { st.radiation.showRays = v; st.radiation.showRings = v; } },
       { type: "stack", id: "rad-lines-block", show: (st) => !!(st.radiation.showRays || st.radiation.showRings), controls: [
@@ -213,7 +230,9 @@ const LAYOUT_PANEL = {
       // the Module rotation is controlled with the rest of the module (the shape inspector)
       { type: "slider", id: "active-rotation", label: "Module rotation", min: 0, max: 360, step: 0.5, value: 0, suffix: "º", decimal: true, bind: false },
     ] },
-    { floating: "layout-block", title: "Composition container", controls: [
+    { floating: "layout-block", title: "Composition container", help: {
+        is: "A composition container is the sheet the structure lives in: whatever lies beyond its edge is cut.",
+        does: "Sets its width and height and moves it from the center of the canvas, in px." }, controls: [
       // the container's size and offset, in px of the canvas; the project keeps percentages so it follows the canvas if its proportion changes
       { type: "stack", id: "block-size-fields", controls: [
         { type: "slider", id: "block-w", label: "Composition container width", min: 10, max: 2000, step: 1, value: 600, suffix: "px", decimal: true, history: "Container Width", get: blockGet("w"), set: blockSet("w") },

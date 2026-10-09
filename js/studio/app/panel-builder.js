@@ -76,7 +76,7 @@ class PanelBuilder {
 
       // One group: its title and divider (when the panel has several), its controls and its Advanced controls
       const drawGroup = (g, i, titled) => {
-        const title = g.help ? `<div class="ds-title-row"><div class="ds-label ds-label--overline">${g.title}</div>${this.helpButtonHtml(`${spec.id}:${g.title}`, g.title, g.help)}</div>\n` : `<div class="ds-label ds-label--overline">${g.title}</div>\n`;
+        const title = g.help ? `<div class="ds-title-row"><div class="ds-label ds-label--overline">${g.title}</div>${this.helpButtonHtml(`${spec.id}:${g.region || ""}:${g.title}`, g.title, g.help)}</div>\n` : `<div class="ds-label ds-label--overline">${g.title}</div>\n`;
         const head = titled ? `${i > 0 ? '<div class="ds-divider" role="separator"></div>\n' : ""}${title}` : "";
         return head + drawControls(g.controls, g.advId);
       };

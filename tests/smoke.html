@@ -2389,6 +2389,29 @@
       assert(pop.hidden, "A click elsewhere closes it");
     });
 
+    await test("Help (?): every control panel explains itself, with short texts, and its popover stays inside the window", async () => {
+      reset();
+      const d = win.document, texts = app._helpTexts || {}, ids = Object.keys(texts);
+      for (const panel of ["layout", "similarity", "gradation", "anomaly", "contrast", "concentration", "texture", "space"]) assert(texts[`${panel}:panel`], `${panel} has a help for its title`);
+      assert(ids.length >= 30, `Panels and groups carry their help (${ids.length})`);
+      for (const id of ids) {
+        const h = texts[id];
+        assert(h.is && h.does && h.is.length <= 230 && h.does.length <= 230, `${id}: both parts are there and short (${(h.is || "").length} / ${(h.does || "").length})`);
+      }
+      // the two groups called Module (and the two called Lines) in Layout have their own help
+      assert(texts["layout:subpanel-repetition:Module"] && texts["layout:subpanel-radiation:Module"] && texts["layout:subpanel-repetition:Module"].is !== texts["layout:subpanel-radiation:Module"].is, "Repetition and Radiation have their own Module help");
+      // every button opens a popover that fits the window
+      const pop = d.getElementById("help-popover");
+      for (const btn of d.querySelectorAll(".ds-help")) {
+        const tab = btn.closest(".flyout-tab-content");
+        if (tab && tab.classList.contains("hidden")) { d.querySelector(`[data-rail-tab="${tab.dataset.flyoutTab}"]`).click(); await wait(20); }
+        btn.click(); await wait(5);
+        const r = pop.getBoundingClientRect();
+        assert(!pop.hidden && r.left >= 0 && r.right <= win.innerWidth && r.top >= 0 && r.width >= 148 && r.width <= 240.5, `${btn.dataset.help}: the popover opens inside the window (${Math.round(r.left)}, ${Math.round(r.top)}, ${Math.round(r.width)} px)`);
+        btn.click();
+      }
+    });
+
     await test("Smart module editor: a click on the canvas picks the shape under the pointer, and dragging moves it", async () => {
       reset();
       const d = win.document, q = (sel) => d.querySelector(sel), cv = d.getElementById("studio-canvas");

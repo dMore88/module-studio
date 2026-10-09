@@ -10,9 +10,14 @@ const CONCENTRATION_PANEL = {
   state: (app) => app.getActiveConcentration(),
   enabled: { id: "toggle-concentration-active", key: "enabled" },
   badgeId: "badge-concentration-layer",
+  help: {
+    is: "Concentration is the gathering of elements in one part of a design and their scarcity in another: density builds focus and rest.",
+    does: "Attracts or repels modules around a point, a line or several hotspots. Concentration picks the structure; Strength sets its pull and its reach." },
   banner: { id: "warning-concentration-grid", hidden: (mod) => !!mod.structure.enabled },
   groups: [
-    { title: "Concentration", controls: [
+    { title: "Concentration", help: {
+        is: "Elements can gather around a point, keep away from it, follow a line or form several spots, or thin out across the whole design.",
+        does: "Structure picks how they gather; Method moves modules or removes them; Field style shapes how the density fades." }, controls: [
       { type: "tags", label: "Structure", key: "mode", attr: "data-conc-mode", history: "Structure",
         options: [["point", "Point"], ["void", "Void"], ["line", "Line"], ["line_void", "Away from line"], ["free", "Hotspots"], ["dense", "Dense"], ["sparse", "Sparse"]] },
       { type: "tags", label: "Method", key: "method", attr: "data-conc-method", history: "Method", fallback: "move", blockId: "conc-method-block", enable: (st) => !CONC_WHOLE(st), why: "Dense and Sparse work on the whole design",
@@ -28,7 +33,9 @@ const CONCENTRATION_PANEL = {
       { type: "slider", id: "conc-y", label: "Y position", key: "attractorY", min: 0, max: 100, step: 1, value: 50, suffix: "%", divisor: 100, fallback: 0.5, history: "Y" },
       { type: "hint", text: "Click anywhere on the canvas to reposition the attractor" },
     ] },
-    { title: "Strength", controls: [
+    { title: "Strength", help: {
+        is: "How strongly elements gather depends on the pull of their center and how far its reach goes.",
+        does: "Gathering pull sets how strongly modules are drawn; Field radius sets how far the effect reaches; the attractor guide marks its center on screen." }, controls: [
       { type: "slider", id: "conc-power", label: "Gathering pull", key: "power", min: 10, max: 100, step: 1, value: 50, suffix: "%", history: "Pull" },
       { type: "slider", id: "conc-radius", label: "Field radius", key: "radius", min: 10, max: 500, step: 5, value: 250, suffix: "px", history: "Radius", blockId: "conc-radius-field", enable: (st) => !CONC_WHOLE(st), why: "Dense and Sparse work on the whole design" },
       { type: "toggle", id: "toggle-conc-guide", label: "Display Attractor Guide", key: "showAttractor", history: "Attractor Guide" },
